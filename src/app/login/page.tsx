@@ -77,7 +77,7 @@ export default function LoginPage() {
           <div className="flex flex-col gap-4">
             {/* Google */}
             <button
-              onClick={handleGoogle}
+              onClick={() => handleOAuth("google")}
               className="glass-card flex items-center justify-center gap-3 py-4 font-semibold text-sm transition-all hover:border-white/30"
               style={{ borderRadius: "14px" }}
             >
