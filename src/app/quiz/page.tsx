@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/lib/store";
@@ -32,6 +33,7 @@ const slideVariants = {
 
 export default function QuizPage() {
   const router = useRouter();
+  const [dir, setDir] = useState(1);
   const {
     quizAnswers,
     currentQuizStep,
@@ -52,11 +54,18 @@ export default function QuizPage() {
   };
 
   const handleNext = () => {
+    setDir(1);
     if (currentQuizStep < TOTAL_STEPS - 1) {
       nextQuizStep();
     } else {
       router.push("/flights");
     }
+  };
+
+  const handleBack = () => {
+    setDir(-1);
+    if (currentQuizStep === 0) router.push("/");
+    else prevQuizStep();
   };
 
   return (
@@ -65,7 +74,7 @@ export default function QuizPage() {
       <div className="pt-6 pb-4">
         <div className="flex items-center justify-between mb-4">
           <button
-            onClick={() => currentQuizStep === 0 ? router.push("/") : prevQuizStep()}
+            onClick={handleBack}
             className="text-sm font-medium transition-opacity hover:opacity-70"
             style={{ color: "var(--text-muted)" }}
           >
@@ -87,11 +96,11 @@ export default function QuizPage() {
 
       {/* Steps */}
       <div className="flex-1 relative overflow-hidden">
-        <AnimatePresence mode="wait" custom={1}>
+        <AnimatePresence mode="wait" custom={dir}>
           {currentQuizStep === 0 && (
             <motion.div
               key="step-budget"
-              custom={1}
+              custom={dir}
               variants={slideVariants}
               initial="enter"
               animate="center"
@@ -104,7 +113,7 @@ export default function QuizPage() {
           {currentQuizStep === 1 && (
             <motion.div
               key="step-style"
-              custom={1}
+              custom={dir}
               variants={slideVariants}
               initial="enter"
               animate="center"
@@ -117,7 +126,7 @@ export default function QuizPage() {
           {currentQuizStep === 2 && (
             <motion.div
               key="step-month"
-              custom={1}
+              custom={dir}
               variants={slideVariants}
               initial="enter"
               animate="center"
@@ -133,7 +142,7 @@ export default function QuizPage() {
           {currentQuizStep === 3 && (
             <motion.div
               key="step-duration"
-              custom={1}
+              custom={dir}
               variants={slideVariants}
               initial="enter"
               animate="center"
@@ -175,10 +184,11 @@ function StepBudget() {
       <p className="text-sm mt-2 mb-6" style={{ color: "var(--text-muted)" }}>
         Chodzi o całkowity koszt wyjazdu (loty + hotel + jedzenie).
       </p>
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3" role="radiogroup" aria-label="Wybierz budżet">
         <button
           className={`option-card ${quizAnswers.budget === "low" ? "selected" : ""}`}
           onClick={() => setQuizAnswer("budget", "low")}
+          aria-pressed={quizAnswers.budget === "low"}
         >
           <div className="flex items-center gap-3">
             <span className="text-2xl">🎒</span>
@@ -193,6 +203,7 @@ function StepBudget() {
         <button
           className={`option-card ${quizAnswers.budget === "medium" ? "selected" : ""}`}
           onClick={() => setQuizAnswer("budget", "medium")}
+          aria-pressed={quizAnswers.budget === "medium"}
         >
           <div className="flex items-center gap-3">
             <span className="text-2xl">🧳</span>
@@ -222,12 +233,13 @@ function StepStyle({
       <p className="text-sm mt-2 mb-6" style={{ color: "var(--text-muted)" }}>
         Wybierz co najmniej jedno — AI dopasuje plan do Twoich gustów.
       </p>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3" role="group" aria-label="Wybierz zainteresowania">
         {STYLE_OPTIONS.map((opt) => (
           <button
             key={opt.value}
             className={`option-card ${styles.includes(opt.value) ? "selected" : ""}`}
             onClick={() => toggleStyle(opt.value)}
+            aria-pressed={styles.includes(opt.value)}
           >
             <span className="text-xl">{opt.emoji}</span>
             <p className="font-semibold text-sm mt-2">{opt.label}</p>
@@ -254,12 +266,13 @@ function StepMonth({
       <p className="text-sm mt-2 mb-6" style={{ color: "var(--text-muted)" }}>
         Miesiąc wyjazdu — AI uwzględni pogodę i sezon.
       </p>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Wybierz miesiąc">
         {MONTH_NAMES.map((name, i) => (
           <button
             key={name}
             className={`option-card text-center py-3 ${month === i + 1 ? "selected" : ""}`}
             onClick={() => setMonth(i + 1)}
+            aria-pressed={month === i + 1}
           >
             <p className="font-semibold text-sm">{name}</p>
           </button>
@@ -286,12 +299,13 @@ function StepDuration({
       <p className="text-sm mt-2 mb-6" style={{ color: "var(--text-muted)" }}>
         Czas trwania wyjazdu bez podróży.
       </p>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Wybierz czas trwania">
         {DURATION_OPTIONS.map((opt) => (
           <button
             key={opt.value}
             className={`option-card text-center ${duration === opt.value ? "selected" : ""}`}
             onClick={() => setDuration(opt.value)}
+            aria-pressed={duration === opt.value}
           >
             <p className="font-bold text-lg">{opt.label}</p>
             <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
@@ -305,6 +319,8 @@ function StepDuration({
       <button
         className="glass-card w-full mt-5 p-4 flex items-center justify-between cursor-pointer"
         onClick={() => setIncludeBerlin(!includeBerlin)}
+        role="switch"
+        aria-checked={includeBerlin}
       >
         <div className="flex items-center gap-3">
           <span className="text-xl">🇩🇪</span>

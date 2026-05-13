@@ -97,7 +97,7 @@ function LoginContent() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-3 rounded-2xl text-sm outline-none"
+                className="w-full px-4 py-3 rounded-2xl text-sm"
                 style={{
                   background: "rgba(255,255,255,0.07)",
                   border: "1.5px solid rgba(255,255,255,0.1)",

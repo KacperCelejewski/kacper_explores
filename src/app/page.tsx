@@ -95,13 +95,11 @@ export default function HomePage() {
         transition={{ duration: 0.5, delay: 0.6 }}
         className="mt-8"
       >
-        <Link href="/quiz">
-          <button className="btn-primary">
-            Zaplanuj podróż →
-          </button>
+        <Link href="/quiz" className="btn-primary" style={{ display: "block", textAlign: "center", textDecoration: "none" }}>
+          Zaplanuj podróż →
         </Link>
         <p className="text-center text-xs mt-3" style={{ color: "var(--text-muted)" }}>
-          Zajmuje ~2 minuty · Bez rejestracji
+          Zajmuje ~2 minuty · 1 darmowy plan po rejestracji
         </p>
       </motion.div>
     </div>

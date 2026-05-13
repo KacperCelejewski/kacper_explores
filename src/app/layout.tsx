@@ -17,9 +17,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="pl" className={geist.variable}>
       <body>
-        <div className="app-shell">
+        <main className="app-shell">
           {children}
-        </div>
+        </main>
       </body>
     </html>
   );

@@ -17,8 +17,8 @@ export default function PaymentSuccessPage() {
           Twoje kredyty zostały dodane. Możesz teraz generować plany podróży.
         </p>
 
-        <Link href="/quiz" className="block mt-8">
-          <button className="btn-primary">Zaplanuj podróż →</button>
+        <Link href="/quiz" className="btn-primary" style={{ display: "block", textAlign: "center", textDecoration: "none", marginTop: "2rem" }}>
+          Zaplanuj podróż →
         </Link>
 
         <Link href="/pricing">

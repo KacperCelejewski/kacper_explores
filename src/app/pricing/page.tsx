@@ -42,24 +42,32 @@ const PLANS = [
 export default function PricingPage() {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   const handleCheckout = async (planKey: string) => {
     setLoading(planKey);
+    setCheckoutError(null);
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ planKey }),
       });
-      const data = await res.json();
 
       if (res.status === 401) {
         router.push(`/login?next=/pricing`);
         return;
       }
+
+      const data = await res.json();
+
       if (data.url) {
         window.location.href = data.url;
+      } else {
+        setCheckoutError("Nie udało się uruchomić płatności. Spróbuj ponownie.");
       }
+    } catch {
+      setCheckoutError("Błąd połączenia. Sprawdź internet i spróbuj ponownie.");
     } finally {
       setLoading(null);
     }
@@ -76,6 +84,12 @@ export default function PricingPage() {
           </p>
         </motion.div>
       </div>
+
+      {checkoutError && (
+        <div className="mb-4 glass-card p-3 text-center" style={{ border: "1px solid rgba(239,68,68,0.3)" }}>
+          <p className="text-sm text-red-400">{checkoutError}</p>
+        </div>
+      )}
 
       <div className="flex flex-col gap-4">
         {/* Free tier */}

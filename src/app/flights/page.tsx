@@ -22,6 +22,7 @@ export default function FlightsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [userStatus, setUserStatus] = useState<UserStatus | null>(null);
+  const [generateError, setGenerateError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!quizAnswers.budget) {
@@ -56,6 +57,7 @@ export default function FlightsPage() {
 
     const id = dest.city;
     setSelectedId(id);
+    setGenerateError(null);
     selectDestination(dest);
     setIsGeneratingPlan(true);
 
@@ -76,10 +78,13 @@ export default function FlightsPage() {
           createdAt: new Date().toISOString(),
         });
         router.push(`/plan/${data.tripId}`);
+      } else {
+        throw new Error(data.error ?? "Nieznany błąd");
       }
     } catch {
       setIsGeneratingPlan(false);
       setSelectedId(null);
+      setGenerateError("Nie udało się wygenerować planu. Spróbuj ponownie.");
     }
   };
 
@@ -149,6 +154,34 @@ export default function FlightsPage() {
           Wybierz kierunek — AI wygeneruje kompletny plan
         </p>
       </div>
+
+      {generateError && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-card mt-4 p-4 text-center"
+          style={{ border: "1px solid rgba(239,68,68,0.3)" }}
+        >
+          <p className="text-sm text-red-400">{generateError}</p>
+        </motion.div>
+      )}
+
+      {recommendations.length === 0 && (
+        <div className="flex flex-col flex-1 items-center justify-center gap-3 text-center py-12">
+          <span className="text-4xl">🔍</span>
+          <p className="text-sm font-medium">Brak rekomendacji</p>
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+            Zmień odpowiedzi w quizie i spróbuj ponownie.
+          </p>
+          <button
+            onClick={() => router.push("/quiz")}
+            className="text-xs font-semibold mt-2"
+            style={{ color: "#f59e0b" }}
+          >
+            ← Wróć do quizu
+          </button>
+        </div>
+      )}
 
       {/* Cards */}
       <div className="mt-4 flex flex-col gap-4">
