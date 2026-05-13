@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get("next") ?? "/flights";
@@ -75,7 +75,6 @@ export default function LoginPage() {
           </div>
         ) : (
           <div className="flex flex-col gap-4">
-            {/* Google */}
             <button
               onClick={() => handleOAuth("google")}
               className="glass-card flex items-center justify-center gap-3 py-4 font-semibold text-sm transition-all hover:border-white/30"
@@ -91,7 +90,6 @@ export default function LoginPage() {
               <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.1)" }} />
             </div>
 
-            {/* Magic link */}
             <form onSubmit={handleMagicLink} className="flex flex-col gap-3">
               <input
                 type="email"
@@ -125,5 +123,13 @@ export default function LoginPage() {
         )}
       </motion.div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
   );
 }
