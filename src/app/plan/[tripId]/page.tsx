@@ -136,7 +136,7 @@ export default function PlanPage() {
       </div>
 
       {/* Active day */}
-      {plan.days[activeDay] && <DayPlanView day={plan.days[activeDay]} />}
+      {plan.days[activeDay] && <DayPlanView day={plan.days[activeDay]} city={plan.city} />}
 
       {/* New trip CTA */}
       <div className="px-5 mt-6">
@@ -163,7 +163,20 @@ function BudgetItem({ label, value, emoji }: { label: string; value: string; emo
   );
 }
 
-function DayPlanView({ day }: { day: DayPlan }) {
+function buildMapsRouteUrl(activities: DayActivity[], city: string): string | null {
+  const locations = activities
+    .filter((a) => a.location && a.type !== "tip" && a.type !== "transport")
+    .map((a) => encodeURIComponent(`${a.location}, ${city}`));
+  if (locations.length < 1) return null;
+  if (locations.length === 1) {
+    return `https://www.google.com/maps/search/?api=1&query=${locations[0]}`;
+  }
+  return `https://www.google.com/maps/dir/${locations.join("/")}`;
+}
+
+function DayPlanView({ day, city }: { day: DayPlan; city: string }) {
+  const mapsUrl = buildMapsRouteUrl(day.activities, city);
+
   return (
     <motion.div
       key={day.day}
@@ -173,11 +186,27 @@ function DayPlanView({ day }: { day: DayPlan }) {
       className="px-5"
     >
       <div
-        className="px-4 py-3 mb-4 rounded-2xl"
+        className="px-4 py-3 mb-3 rounded-2xl flex items-center justify-between gap-3"
         style={{ background: "#F7F7F5", border: "1px solid var(--border)" }}
       >
-        <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>{day.date}</p>
-        <p className="text-sm font-medium mt-0.5">{day.theme}</p>
+        <div>
+          <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>{day.date}</p>
+          <p className="text-sm font-medium mt-0.5">{day.theme}</p>
+        </div>
+        {mapsUrl && (
+          <a
+            href={mapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-shrink-0 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-opacity hover:opacity-70"
+            style={{ background: "#E8F4FD", color: "#1A73E8", textDecoration: "none" }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+            </svg>
+            Trasa dnia
+          </a>
+        )}
       </div>
 
       <div className="relative">
@@ -239,9 +268,21 @@ function ActivityCard({ activity, index }: { activity: DayActivity; index: numbe
           {activity.description}
         </p>
         {activity.location && (
-          <p className="text-xs mt-1.5 font-medium" style={{ color: "var(--accent)" }}>
-            📍 {activity.location}
-          </p>
+          <div className="flex items-center justify-between mt-1.5">
+            <p className="text-xs font-medium" style={{ color: "var(--accent)" }}>
+              📍 {activity.location}
+            </p>
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activity.location)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="text-xs font-semibold ml-2 flex-shrink-0 transition-opacity hover:opacity-70"
+              style={{ color: "#1A73E8", textDecoration: "none" }}
+            >
+              Nawiguj →
+            </a>
+          </div>
         )}
       </div>
     </motion.div>
