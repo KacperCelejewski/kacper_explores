@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const recommendations = getRecommendations(
+  let recommendations = getRecommendations(
     styles as string[],
     budget as string,
     includeBerlin as boolean,
@@ -56,6 +56,20 @@ export async function POST(req: NextRequest) {
     3,
     pool ?? undefined
   );
+
+  // Add estimated dates when real API not used but month is known
+  if (!pool && month) {
+    const m = month as number;
+    const now = new Date();
+    const year = m >= now.getMonth() + 1 ? now.getFullYear() : now.getFullYear() + 1;
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const dep = `${year}-${pad(m)}-10`;
+    const ret = `${year}-${pad(m)}-17`;
+    recommendations = recommendations.map((rec) => ({
+      ...rec,
+      bestOffer: { ...rec.bestOffer, departureDate: dep, returnDate: ret },
+    }));
+  }
 
   return NextResponse.json({ recommendations });
 }

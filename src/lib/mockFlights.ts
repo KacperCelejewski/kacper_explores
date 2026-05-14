@@ -5,8 +5,17 @@ const BER: FlightOffer["origin"] = { code: "BER", city: "Berlin", country: "DE" 
 
 const BER_TRANSFER_COST = 100; // PLN dojazd Wrocław → Berlin
 
-function skyscannerLink(from: string, to: string): string {
-  return `https://www.skyscanner.pl/transport/flights/${from.toLowerCase()}/${to.toLowerCase()}/?adults=1&rtn=1`;
+function airlineLink(origin: string, dest: string, airline: string): string {
+  if (airline === "Ryanair") {
+    return `https://www.ryanair.com/en/gb/trip/flights/select?adults=1&teens=0&children=0&infants=0&isConnectedFlight=false&isReturn=true&discount=0&originIata=${origin}&destinationIata=${dest}`;
+  }
+  if (airline === "Wizz Air") {
+    return `https://wizzair.com/en-gb/booking/select-flight/${origin}/${dest}////1/0/0`;
+  }
+  if (airline === "easyJet") {
+    return `https://www.easyjet.com/en/cheap-flights/${origin.toLowerCase()}/${dest.toLowerCase()}`;
+  }
+  return `https://www.skyscanner.pl/transport/flights/${origin.toLowerCase()}/${dest.toLowerCase()}/?adults=1&rtn=1`;
 }
 
 function wroFlight(
@@ -32,7 +41,7 @@ function wroFlight(
     arrivalTime: arr,
     isBerlinAlternative: false,
     savingsVsWro: null,
-    affiliateUrl: skyscannerLink(WRO.code, destCode),
+    affiliateUrl: airlineLink(WRO.code, destCode, airline),
   };
 }
 
@@ -61,7 +70,7 @@ function berFlight(
     arrivalTime: arr,
     isBerlinAlternative: true,
     savingsVsWro: wroPrice - realCost,
-    affiliateUrl: skyscannerLink(BER.code, destCode),
+    affiliateUrl: airlineLink(BER.code, destCode, airline),
   };
 }
 
