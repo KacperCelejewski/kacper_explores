@@ -29,18 +29,20 @@ export async function POST(req: NextRequest) {
   const {
     styles = [],
     budget = "low",
-    includeBerlin = true,
+    airports = ["WRO"],
     vibe = null,
     placeType = null,
     month = null,
   } = body as Record<string, unknown>;
+
+  const airportCodes = airports as string[];
 
   let pool: DestinationRecommendation[] | undefined;
   const hasRealApi = !!process.env.TRAVELPAYOUTS_TOKEN;
 
   if (hasRealApi && month) {
     try {
-      pool = await getRealRecommendations(month as number, includeBerlin as boolean);
+      pool = await getRealRecommendations(month as number, airportCodes);
     } catch (err) {
       console.error("Travelpayouts error, using mock:", err);
       pool = undefined;
@@ -51,7 +53,7 @@ export async function POST(req: NextRequest) {
   let recommendations = getRecommendations(
     styles as string[],
     budget as string,
-    includeBerlin as boolean,
+    airportCodes,
     vibe as string | null,
     placeType as string | null,
     999,

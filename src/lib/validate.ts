@@ -5,6 +5,7 @@ const VALID_STYLES = new Set(["nature", "history", "architecture", "food", "beac
 const VALID_VIBES = new Set(["chill", "intense", "social", "active"]);
 const VALID_PLACE_TYPES = new Set(["big_city", "charming", "beach_sun"]);
 const VALID_DURATIONS = new Set([3, 5, 7, 10]);
+const VALID_AIRPORTS = new Set(["WRO", "KTW", "KRK", "WAW", "WMI", "POZ", "GDN", "BER"]);
 
 export function validateQuizAnswers(data: unknown): data is Partial<QuizAnswers> {
   if (!data || typeof data !== "object") return false;
@@ -23,6 +24,11 @@ export function validateQuizAnswers(data: unknown): data is Partial<QuizAnswers>
     if (!Number.isInteger(m) || m < 1 || m > 12) return false;
   }
   if (d.duration !== undefined && !VALID_DURATIONS.has(d.duration as number)) return false;
+  if (d.airports !== undefined) {
+    if (!Array.isArray(d.airports)) return false;
+    if (d.airports.length === 0 || d.airports.length > 8) return false;
+    if (!d.airports.every((a) => VALID_AIRPORTS.has(a))) return false;
+  }
 
   return true;
 }

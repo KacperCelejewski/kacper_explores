@@ -21,7 +21,10 @@ export interface QuizAnswers {
   placeType: PlaceType | null;
   month: number | null; // 1-12
   duration: TripDuration | null;
-  includeBerlin: boolean;
+  /** Selected departure airport codes, e.g. ["WRO", "KTW", "BER"] */
+  airports: string[];
+  /** @deprecated use airports instead */
+  includeBerlin?: boolean;
 }
 
 export interface Airport {
@@ -60,6 +63,8 @@ export interface DestinationRecommendation {
   description: string;
   vibes?: TravelVibe[];
   placeTypes?: PlaceType[];
+  /** All fetched flights keyed by departure airport code */
+  flights?: Record<string, FlightOffer>;
 }
 
 export interface DayActivity {

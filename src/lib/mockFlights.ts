@@ -1,8 +1,7 @@
 import type { DestinationRecommendation, FlightOffer } from "@/types";
 import { CATALOG, type CatalogEntry } from "@/lib/destinations/catalog";
+import { AIRPORTS, AIRPORT_BY_CODE, DEFAULT_AIRPORTS } from "@/lib/airports";
 
-const WRO_ORIGIN: FlightOffer["origin"] = { code: "WRO", city: "Wrocław", country: "PL" };
-const BER_ORIGIN: FlightOffer["origin"] = { code: "BER", city: "Berlin", country: "DE" };
 const BER_TRANSFER_COST = 100;
 
 function airlineLink(origin: string, dest: string, airline: string): string {
@@ -18,45 +17,70 @@ function airlineLink(origin: string, dest: string, airline: string): string {
   return `https://www.skyscanner.pl/transport/flights/${origin.toLowerCase()}/${dest.toLowerCase()}/?adults=1&rtn=1`;
 }
 
-function buildDestination(e: CatalogEntry): DestinationRecommendation {
-  const destAirport = { code: e.iataWro, city: e.city, country: e.countryFlag };
+function buildFlightForAirport(
+  e: CatalogEntry,
+  airportCode: string,
+): FlightOffer | null {
+  const airport = AIRPORT_BY_CODE.get(airportCode);
+  if (!airport) return null;
 
-  const flightWro: FlightOffer = {
-    id: `wro-${e.iataWro.toLowerCase()}`,
-    origin: WRO_ORIGIN,
+  const destIata = e.iataWro; // same IATA for all Polish airports
+  const destAirport = { code: destIata, city: e.city, country: e.countryFlag };
+
+  if (airportCode === "BER") {
+    // Use catalog BER price if available, otherwise estimate from WRO price
+    const berBasePrice = e.berPrice !== null
+      ? e.berPrice
+      : Math.round(e.wroPrice * airport.mockPriceFactor);
+    const berIata = e.iataBer ?? destIata;
+    const realCost = berBasePrice + BER_TRANSFER_COST;
+    return {
+      id: `ber-${berIata.toLowerCase()}`,
+      origin: { code: "BER", city: "Berlin", country: "DE" },
+      destination: { code: berIata, city: e.city, country: e.countryFlag },
+      price: berBasePrice,
+      realCost,
+      durationMinutes: e.berDurationMin ?? Math.round(e.wroDurationMin * 1.05),
+      airline: e.berAirline ?? e.wroAirline,
+      departureTime: e.berDep ?? e.wroDep,
+      arrivalTime: e.berArr ?? e.wroArr,
+      isBerlinAlternative: true,
+      savingsVsWro: e.wroPrice - realCost,
+      affiliateUrl: airlineLink("BER", berIata, e.berAirline ?? e.wroAirline),
+    };
+  }
+
+  // Polish airports: scale WRO price by mockPriceFactor
+  const price = Math.round(e.wroPrice * airport.mockPriceFactor);
+  return {
+    id: `${airportCode.toLowerCase()}-${destIata.toLowerCase()}`,
+    origin: { code: airportCode, city: airport.city, country: "PL" },
     destination: destAirport,
-    price: e.wroPrice,
-    realCost: e.wroPrice,
+    price,
+    realCost: price + airport.transferCost,
     durationMinutes: e.wroDurationMin,
     airline: e.wroAirline,
     departureTime: e.wroDep,
     arrivalTime: e.wroArr,
     isBerlinAlternative: false,
     savingsVsWro: null,
-    affiliateUrl: airlineLink(WRO_ORIGIN.code, e.iataWro, e.wroAirline),
+    affiliateUrl: airlineLink(airportCode, destIata, e.wroAirline),
   };
+}
 
-  let flightBer: FlightOffer | null = null;
-  if (e.iataBer && e.berPrice !== null && e.berDurationMin !== null && e.berAirline && e.berDep && e.berArr) {
-    const berRealCost = e.berPrice + BER_TRANSFER_COST;
-    flightBer = {
-      id: `ber-${e.iataBer.toLowerCase()}`,
-      origin: BER_ORIGIN,
-      destination: { code: e.iataBer, city: e.city, country: e.countryFlag },
-      price: e.berPrice,
-      realCost: berRealCost,
-      durationMinutes: e.berDurationMin,
-      airline: e.berAirline,
-      departureTime: e.berDep,
-      arrivalTime: e.berArr,
-      isBerlinAlternative: true,
-      savingsVsWro: e.wroPrice - berRealCost,
-      affiliateUrl: airlineLink(BER_ORIGIN.code, e.iataBer, e.berAirline),
-    };
+function buildDestination(e: CatalogEntry): DestinationRecommendation {
+  // Build flights map for all airports
+  const flights: Record<string, FlightOffer> = {};
+  for (const ap of AIRPORTS) {
+    const f = buildFlightForAirport(e, ap.code);
+    if (f) flights[ap.code] = f;
   }
 
-  const bestOffer =
-    flightBer && flightBer.realCost < flightWro.realCost - 150 ? flightBer : flightWro;
+  const flightWro = flights["WRO"] ?? null;
+  const flightBer = flights["BER"] ?? null;
+
+  // Default bestOffer = WRO (will be overridden per-user in getRecommendations)
+  const bestOffer = flightWro ?? flightBer!;
 
   return {
     city: e.city,
@@ -71,35 +95,48 @@ function buildDestination(e: CatalogEntry): DestinationRecommendation {
     bestOffer,
     vibes: e.vibes,
     placeTypes: e.placeTypes,
+    flights,
   };
 }
 
 export const MOCK_DESTINATIONS: DestinationRecommendation[] = CATALOG.map(buildDestination);
 
+function pickBestOffer(
+  dest: DestinationRecommendation,
+  airports: string[]
+): FlightOffer | null {
+  const flightsMap = dest.flights ?? {};
+  const candidates = airports
+    .map((code) => flightsMap[code])
+    .filter((f): f is FlightOffer => !!f);
+
+  if (candidates.length === 0) return null;
+  return candidates.reduce((best, f) => f.realCost < best.realCost ? f : best);
+}
+
 export function getRecommendations(
   styles: string[],
   budget: string,
-  includeBerlin: boolean,
+  airports: string[] = DEFAULT_AIRPORTS,
   vibe: string | null = null,
   placeType: string | null = null,
   count = 999,
   pool: DestinationRecommendation[] = MOCK_DESTINATIONS
 ): DestinationRecommendation[] {
-  const scored = pool.map((dest) => {
-    const styleMatch = styles.filter((s) => dest.tags.includes(s as never)).length;
-    const budgetMatch = dest.budgetLevel === budget ? 2 : 1;
-    const hasBerSavings =
-      includeBerlin &&
-      dest.flightBer &&
-      dest.flightBer.savingsVsWro !== null &&
-      dest.flightBer.savingsVsWro > 150
-        ? 1
-        : 0;
-    const vibeMatch = vibe && dest.vibes?.includes(vibe as never) ? 3 : 0;
-    const placeMatch = placeType && dest.placeTypes?.includes(placeType as never) ? 3 : 0;
+  const scored = pool
+    .map((dest) => {
+      const best = pickBestOffer(dest, airports);
+      if (!best) return null; // no flight from any selected airport
 
-    return { dest, score: styleMatch * 2 + budgetMatch + hasBerSavings + vibeMatch + placeMatch };
-  });
+      const styleMatch = styles.filter((s) => dest.tags.includes(s as never)).length;
+      const budgetMatch = dest.budgetLevel === budget ? 2 : 1;
+      const vibeMatch = vibe && dest.vibes?.includes(vibe as never) ? 3 : 0;
+      const placeMatch = placeType && dest.placeTypes?.includes(placeType as never) ? 3 : 0;
+      const score = styleMatch * 2 + budgetMatch + vibeMatch + placeMatch;
+
+      return { dest: { ...dest, bestOffer: best }, score };
+    })
+    .filter((x): x is { dest: DestinationRecommendation; score: number } => x !== null);
 
   return scored
     .sort((a, b) => b.score - a.score)

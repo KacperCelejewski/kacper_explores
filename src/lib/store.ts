@@ -35,7 +35,7 @@ const defaultQuizAnswers: QuizAnswers = {
   placeType: null,
   month: null,
   duration: null,
-  includeBerlin: true,
+  airports: ["WRO"],
 };
 
 export const useAppStore = create<AppState>()(

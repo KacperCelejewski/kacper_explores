@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/lib/store";
 import type { TravelStyle, TripDuration, TravelVibe, PlaceType, QuizAnswers } from "@/types";
 import { MONTH_NAMES } from "@/lib/mockFlights";
+import { AIRPORTS } from "@/lib/airports";
 
 const TOTAL_STEPS = 6;
 
@@ -68,7 +69,7 @@ export default function QuizPage() {
     if (savedPrefs.placeType) setQuizAnswer("placeType", savedPrefs.placeType);
     if (savedPrefs.month) setQuizAnswer("month", savedPrefs.month);
     if (savedPrefs.duration) setQuizAnswer("duration", savedPrefs.duration);
-    setQuizAnswer("includeBerlin", savedPrefs.includeBerlin);
+    if (savedPrefs.airports?.length) setQuizAnswer("airports", savedPrefs.airports);
     savedPrefs.styles.forEach((s) => toggleStyle(s));
     router.push("/flights");
   };
@@ -190,8 +191,8 @@ export default function QuizPage() {
               <StepDuration
                 duration={quizAnswers.duration}
                 setDuration={(d) => setQuizAnswer("duration", d)}
-                includeBerlin={quizAnswers.includeBerlin}
-                setIncludeBerlin={(v) => setQuizAnswer("includeBerlin", v)}
+                airports={quizAnswers.airports}
+                setAirports={(v) => setQuizAnswer("airports", v)}
               />
             </motion.div>
           )}
@@ -345,13 +346,22 @@ function StepMonth({ month, setMonth }: { month: number | null; setMonth: (m: nu
 }
 
 function StepDuration({
-  duration, setDuration, includeBerlin, setIncludeBerlin,
+  duration, setDuration, airports, setAirports,
 }: {
   duration: TripDuration | null;
   setDuration: (d: TripDuration) => void;
-  includeBerlin: boolean;
-  setIncludeBerlin: (v: boolean) => void;
+  airports: string[];
+  setAirports: (v: string[]) => void;
 }) {
+  const toggleAirport = (code: string) => {
+    if (airports.includes(code)) {
+      if (airports.length === 1) return; // keep at least one
+      setAirports(airports.filter((a) => a !== code));
+    } else {
+      setAirports([...airports, code]);
+    }
+  };
+
   return (
     <div>
       <h2 className="text-2xl font-bold mt-2">Ile dni?</h2>
@@ -372,34 +382,35 @@ function StepDuration({
         ))}
       </div>
 
-      {/* Berlin toggle */}
-      <button
-        className="w-full mt-5 p-4 flex items-center justify-between cursor-pointer rounded-2xl"
-        style={{ border: "1.5px solid var(--border)", background: "#FAFAFA" }}
-        onClick={() => setIncludeBerlin(!includeBerlin)}
-        role="switch"
-        aria-checked={includeBerlin}
-      >
-        <div className="flex items-center gap-3">
-          <span className="text-xl">🇩🇪</span>
-          <div className="text-left">
-            <p className="text-sm font-semibold">Loty z Berlina</p>
-            <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-              Dojazd ~100 PLN · często oszczędność 200+ PLN
-            </p>
-          </div>
+      <div className="mt-6">
+        <p className="text-sm font-semibold mb-1">Skąd lecisz?</p>
+        <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>
+          Wybierz jeden lub więcej portów odlotu.
+        </p>
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Wybierz lotnisko odlotu">
+          {AIRPORTS.map((ap) => {
+            const selected = airports.includes(ap.code);
+            return (
+              <button
+                key={ap.code}
+                onClick={() => toggleAirport(ap.code)}
+                aria-pressed={selected}
+                className="px-3 py-1.5 rounded-full text-sm font-medium transition-all"
+                style={{
+                  background: selected ? "var(--accent)" : "var(--surface)",
+                  color: selected ? "#fff" : "var(--text-primary)",
+                  border: `1.5px solid ${selected ? "var(--accent)" : "var(--border)"}`,
+                }}
+              >
+                {ap.flag} {ap.city}
+                {ap.code === "BER" && (
+                  <span className="ml-1 text-xs opacity-70">+100 PLN</span>
+                )}
+              </button>
+            );
+          })}
         </div>
-        <div
-          className="w-12 h-6 rounded-full flex items-center transition-all duration-300 px-1 flex-shrink-0"
-          style={{ background: includeBerlin ? "var(--accent)" : "#E5E7EB" }}
-        >
-          <motion.div
-            className="w-4 h-4 bg-white rounded-full shadow-sm"
-            animate={{ x: includeBerlin ? 24 : 0 }}
-            transition={{ type: "spring", stiffness: 500, damping: 30 }}
-          />
-        </div>
-      </button>
+      </div>
     </div>
   );
 }
