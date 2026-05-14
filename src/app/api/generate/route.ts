@@ -114,22 +114,36 @@ export async function POST(req: NextRequest) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema,
-        // @ts-expect-error thinkingConfig not yet in SDK types but supported by API
-        thinkingConfig: { thinkingBudget: 0 },
-      },
-    });
 
-    const prompt = buildPlanPrompt(
-      destination as DestinationRecommendation,
-      quizAnswers as QuizAnswers
-    );
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    // Try gemini-2.5-flash first, fall back to gemini-2.0-flash on quota errors
+    async function callGemini(modelName: string): Promise<string> {
+      const m = genAI.getGenerativeModel({
+        model: modelName,
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema,
+          // @ts-expect-error thinkingConfig not yet in SDK types but supported by API
+          thinkingConfig: { thinkingBudget: 0 },
+        },
+      });
+      const result = await m.generateContent(
+        buildPlanPrompt(destination as DestinationRecommendation, quizAnswers as QuizAnswers)
+      );
+      return result.response.text();
+    }
+
+    let text: string;
+    try {
+      text = await callGemini("gemini-2.5-flash");
+    } catch (primaryErr) {
+      const msg = primaryErr instanceof Error ? primaryErr.message : String(primaryErr);
+      if (msg.includes("429") || msg.includes("quota") || msg.includes("Too Many Requests")) {
+        // Quota exceeded on 2.5-flash — try 2.0-flash (1500 req/day free)
+        text = await callGemini("gemini-2.0-flash");
+      } else {
+        throw primaryErr;
+      }
+    }
 
     const dest = destination as DestinationRecommendation;
     const quiz = quizAnswers as QuizAnswers;
@@ -173,6 +187,14 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("Generate error:", message);
+
+    if (message.includes("429") || message.includes("quota") || message.includes("Too Many Requests")) {
+      return NextResponse.json(
+        { error: "Limit zapytań AI wyczerpany. Spróbuj ponownie za kilka minut lub jutro.", code: "QUOTA_EXCEEDED" },
+        { status: 429 }
+      );
+    }
+
     return NextResponse.json({ error: "Błąd generowania planu. Spróbuj ponownie.", detail: message }, { status: 500 });
   }
 }
