@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI, SchemaType, type Schema } from "@google/generative-ai";
 
 export const maxDuration = 60;
-import { buildPlanPrompt, parsePlanResponse } from "@/lib/gemini";
+import { buildPlanPrompt, parsePlanResponse, validateAndFixPlan } from "@/lib/gemini";
 import { checkRateLimit, LIMITS } from "@/lib/rateLimit";
 import { validateQuizAnswers, validateDestination, getClientIp } from "@/lib/validate";
 import { getUserProfile, canGenerate, isPro } from "@/lib/userProfile";
@@ -131,10 +131,11 @@ export async function POST(req: NextRequest) {
     const result = await model.generateContent(prompt);
     const text = result.response.text();
 
-    const plan = parsePlanResponse(text);
-
     const dest = destination as DestinationRecommendation;
     const quiz = quizAnswers as QuizAnswers;
+
+    const rawPlan = parsePlanResponse(text);
+    const plan = validateAndFixPlan(rawPlan, quiz.duration ?? 3);
     const tripId = `${dest.city.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`;
 
     // 5. Dekrementuj kredyty (tylko jeśli nie Pro unlimited)
