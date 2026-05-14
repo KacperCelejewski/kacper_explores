@@ -3,6 +3,7 @@ import { getRecommendations } from "@/lib/mockFlights";
 import { getRealRecommendations } from "@/lib/flights/travelpayouts";
 import { checkRateLimit, LIMITS } from "@/lib/rateLimit";
 import { validateQuizAnswers, getClientIp } from "@/lib/validate";
+import type { DestinationRecommendation } from "@/types";
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
@@ -34,8 +35,7 @@ export async function POST(req: NextRequest) {
     month = null,
   } = body as Record<string, unknown>;
 
-  // Use real API if token is configured, otherwise fall back to mock
-  let pool: import("@/types").DestinationRecommendation[] | undefined;
+  let pool: DestinationRecommendation[] | undefined;
   const hasRealApi = !!process.env.TRAVELPAYOUTS_TOKEN;
 
   if (hasRealApi && month) {
@@ -47,13 +47,14 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Return ALL destinations sorted by match score (frontend handles display limit)
   let recommendations = getRecommendations(
     styles as string[],
     budget as string,
     includeBerlin as boolean,
     vibe as string | null,
     placeType as string | null,
-    3,
+    999,
     pool ?? undefined
   );
 

@@ -1,10 +1,10 @@
 import type { DestinationRecommendation, FlightOffer } from "@/types";
 import { MOCK_DESTINATIONS } from "@/lib/mockFlights";
+import { CATALOG } from "@/lib/destinations/catalog";
 
 const BASE = "https://api.travelpayouts.com";
 const BER_TRANSFER_COST = 100;
 
-// Airline IATA codes → names
 const AIRLINE_NAMES: Record<string, string> = {
   FR: "Ryanair", W6: "Wizz Air", U2: "easyJet", LO: "LOT",
   VY: "Vueling", IB: "Iberia", TP: "TAP Air Portugal",
@@ -21,22 +21,24 @@ interface TpOffer {
   duration_back?: number;
 }
 
-// API returns data[IATA][index] where index is "0", "1", etc.
 type TpApiResponse = {
   data: Record<string, Record<string, TpOffer>>;
 };
 
-// In-memory cache: cacheKey → { data, expiresAt }
 const cache = new Map<string, { data: Record<string, TpOffer>; expiresAt: number }>();
 const CACHE_TTL = 3 * 60 * 60 * 1000; // 3h
 
-// Build IATA → mock destination map
-const DEST_BY_IATA = new Map<string, DestinationRecommendation>(
-  MOCK_DESTINATIONS.flatMap((d) => {
-    const code = d.flightWro?.destination.code ?? d.flightBer?.destination.code;
-    return code ? [[code, d]] : [];
-  })
-);
+// Build IATA → mock destination map from the full catalog (both WRO and BER codes)
+const DEST_BY_IATA = new Map<string, DestinationRecommendation>();
+for (const dest of MOCK_DESTINATIONS) {
+  const wroCode = dest.flightWro?.destination.code;
+  const berCode = dest.flightBer?.destination.code;
+  if (wroCode) DEST_BY_IATA.set(wroCode, dest);
+  if (berCode && berCode !== wroCode) DEST_BY_IATA.set(berCode, dest);
+}
+
+// Quick lookup: IATA → catalog entry for iata/berlin codes
+const CATALOG_BY_WRO_IATA = new Map(CATALOG.map((e) => [e.iataWro, e]));
 
 function targetYearMonth(month: number): { year: number; monthStr: string } {
   const now = new Date();
@@ -71,7 +73,6 @@ async function fetchCheapFlights(
   const json = await res.json() as TpApiResponse;
   const raw = json.data ?? {};
 
-  // Flatten: pick cheapest offer per destination (first key "0", "1", …)
   const data: Record<string, TpOffer> = {};
   for (const [iata, offers] of Object.entries(raw)) {
     const best = Object.values(offers)[0];
@@ -83,12 +84,7 @@ async function fetchCheapFlights(
 }
 
 function formatDate(iso: string): string {
-  return iso.slice(0, 10); // "2026-06-17"
-}
-
-function ddmm(iso: string): string {
-  const d = new Date(iso);
-  return `${String(d.getUTCDate()).padStart(2, "0")}${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+  return iso.slice(0, 10);
 }
 
 function buildBuyLink(
@@ -112,7 +108,7 @@ function buildBuyLink(
   return `https://www.skyscanner.pl/transport/flights/${origin.toLowerCase()}/${destCode.toLowerCase()}/${depFlat}/${retFlat}/?adults=1&rtn=1`;
 }
 
-function buildFlightOffer(
+function enrichFlightOffer(
   base: FlightOffer,
   offer: TpOffer,
   origin: "WRO" | "BER"
@@ -121,7 +117,7 @@ function buildFlightOffer(
   const dep = new Date(offer.departure_at);
   const ret = new Date(offer.return_at);
   const depTime = `${String(dep.getUTCHours()).padStart(2, "0")}:${String(dep.getUTCMinutes()).padStart(2, "0")}`;
-  const retTime = `${String(ret.getUTCHours()).padStart(2, "0")}:${String(ret.getUTCMinutes()).padStart(2, "0")}`;
+  const arrTime = `${String(ret.getUTCHours()).padStart(2, "0")}:${String(ret.getUTCMinutes()).padStart(2, "0")}`;
   const realCost = origin === "BER" ? offer.price + BER_TRANSFER_COST : offer.price;
 
   return {
@@ -131,7 +127,7 @@ function buildFlightOffer(
     durationMinutes: offer.duration_to ?? base.durationMinutes,
     airline: airlineName,
     departureTime: depTime,
-    arrivalTime: retTime,
+    arrivalTime: arrTime,
     departureDate: formatDate(offer.departure_at),
     returnDate: formatDate(offer.return_at),
     affiliateUrl: buildBuyLink(origin, base.destination.code, offer.airline, offer.departure_at, offer.return_at),
@@ -150,30 +146,29 @@ export async function getRealRecommendations(
 
   const enriched: DestinationRecommendation[] = [];
 
-  for (const dest of MOCK_DESTINATIONS) {
-    const iata = dest.flightWro?.destination.code ?? dest.flightBer?.destination.code;
-    if (!iata) continue;
+  // Go through every IATA code returned by WRO API
+  for (const [iata, wroOffer] of Object.entries(wroPrices)) {
+    const mockDest = DEST_BY_IATA.get(iata);
+    if (!mockDest) continue; // not in our catalog, skip
 
-    const wroOffer = wroPrices[iata];
-    const berOffer = berPrices[iata];
+    const updated: DestinationRecommendation = { ...mockDest };
 
-    // Skip if no data from either airport
-    if (!wroOffer && !berOffer) continue;
-
-    const updated: DestinationRecommendation = { ...dest };
-
-    if (wroOffer && dest.flightWro) {
-      updated.flightWro = buildFlightOffer(dest.flightWro, wroOffer, "WRO");
+    // Enrich WRO flight with real data
+    if (mockDest.flightWro) {
+      updated.flightWro = enrichFlightOffer(mockDest.flightWro, wroOffer, "WRO");
     }
 
-    if (berOffer && dest.flightBer) {
-      const berFlight = buildFlightOffer(dest.flightBer, berOffer, "BER");
+    // Enrich BER flight if available
+    const berIata = CATALOG_BY_WRO_IATA.get(iata)?.iataBer ?? iata;
+    const berOffer = berPrices[berIata];
+    if (berOffer && mockDest.flightBer) {
+      const berFlight = enrichFlightOffer(mockDest.flightBer, berOffer, "BER");
       const wroReal = updated.flightWro?.realCost ?? 9999;
       berFlight.savingsVsWro = wroReal - berFlight.realCost;
       updated.flightBer = berFlight;
     }
 
-    // Recalculate bestOffer with real prices (spread evaluates the getter with mock prices)
+    // Recalculate bestOffer with real prices
     const wroReal = updated.flightWro?.realCost ?? Infinity;
     const berReal = updated.flightBer?.realCost ?? Infinity;
     updated.bestOffer =
@@ -184,5 +179,6 @@ export async function getRealRecommendations(
     enriched.push(updated);
   }
 
-  return enriched.length >= 3 ? enriched : MOCK_DESTINATIONS;
+  // Fall back to full mock catalog if real API returned too few results
+  return enriched.length >= 5 ? enriched : MOCK_DESTINATIONS;
 }

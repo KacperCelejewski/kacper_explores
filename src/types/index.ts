@@ -58,6 +58,8 @@ export interface DestinationRecommendation {
   flightBer: FlightOffer | null;
   bestOffer: FlightOffer;
   description: string;
+  vibes?: TravelVibe[];
+  placeTypes?: PlaceType[];
 }
 
 export interface DayActivity {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useAppStore } from "@/lib/store";
@@ -12,6 +12,8 @@ interface UserStatus {
   credits_remaining?: number;
   is_pro?: boolean;
 }
+
+type SortKey = "best_match" | "cheapest" | "flight_time";
 
 const TAG_LABELS: Record<string, string> = {
   history: "historia",
@@ -29,16 +31,20 @@ function formatShortDate(iso: string): string {
   return `${d.getUTCDate()} ${SHORT_MONTHS[d.getUTCMonth()]}`;
 }
 
+const INITIAL_VISIBLE = 5;
+
 export default function FlightsPage() {
   const router = useRouter();
   const { quizAnswers, selectDestination, setCurrentTrip, setIsGeneratingPlan, isGeneratingPlan } =
     useAppStore();
 
-  const [recommendations, setRecommendations] = useState<DestinationRecommendation[]>([]);
+  const [allRecs, setAllRecs] = useState<DestinationRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [userStatus, setUserStatus] = useState<UserStatus | null>(null);
   const [generateError, setGenerateError] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>("best_match");
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
 
   useEffect(() => {
     if (!quizAnswers.budget) {
@@ -53,7 +59,7 @@ export default function FlightsPage() {
       }).then((r) => r.json()),
       fetch("/api/profile").then((r) => r.json()),
     ]).then(([flightsData, profileData]) => {
-      setRecommendations(flightsData.recommendations ?? []);
+      setAllRecs(flightsData.recommendations ?? []);
       setUserStatus(profileData);
       if (profileData?.authenticated) {
         fetch("/api/profile", {
@@ -64,6 +70,22 @@ export default function FlightsPage() {
       }
     }).finally(() => setLoading(false));
   }, [quizAnswers, router]);
+
+  // Reset visible count when sort changes
+  useEffect(() => { setVisibleCount(INITIAL_VISIBLE); }, [sortKey]);
+
+  const sorted = useMemo(() => {
+    if (sortKey === "cheapest") {
+      return [...allRecs].sort((a, b) => a.bestOffer.realCost - b.bestOffer.realCost);
+    }
+    if (sortKey === "flight_time") {
+      return [...allRecs].sort((a, b) => a.bestOffer.durationMinutes - b.bestOffer.durationMinutes);
+    }
+    return allRecs; // best_match = original API order
+  }, [allRecs, sortKey]);
+
+  const visible = sorted.slice(0, visibleCount);
+  const hasMore = visibleCount < sorted.length;
 
   const handleSelect = async (dest: DestinationRecommendation) => {
     if (!userStatus?.authenticated) {
@@ -89,9 +111,7 @@ export default function FlightsPage() {
       });
       const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.error ?? `HTTP ${res.status}`);
-      }
+      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
       if (data.plan) {
         setCurrentTrip({
           id: data.tripId,
@@ -172,11 +192,41 @@ export default function FlightsPage() {
             </button>
           )}
         </div>
-        <h1 className="text-2xl font-bold">Twoje rekomendacje</h1>
-        <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
-          Wybierz kierunek i wygeneruj plan z AI
-        </p>
+
+        <div className="flex items-end justify-between gap-2">
+          <div>
+            <h1 className="text-2xl font-bold">Twoje destynacje</h1>
+            <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
+              {allRecs.length} kierunków · wybierz i wygeneruj plan z AI
+            </p>
+          </div>
+        </div>
       </div>
+
+      {/* Sort bar */}
+      {allRecs.length > 1 && (
+        <div className="flex gap-2 mt-3 mb-1 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+          {(
+            [
+              { key: "best_match", label: "✦ Najlepsze" },
+              { key: "cheapest",   label: "💸 Najtańsze" },
+              { key: "flight_time", label: "⚡ Najkrótszy lot" },
+            ] as { key: SortKey; label: string }[]
+          ).map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setSortKey(key)}
+              className="flex-shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200"
+              style={{
+                background: sortKey === key ? "var(--accent)" : "#F0F0F0",
+                color: sortKey === key ? "white" : "var(--text-secondary)",
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {generateError && (
         <motion.div
@@ -189,10 +239,10 @@ export default function FlightsPage() {
         </motion.div>
       )}
 
-      {recommendations.length === 0 && (
+      {allRecs.length === 0 && (
         <div className="flex flex-col flex-1 items-center justify-center gap-3 text-center py-12">
           <span className="text-4xl">🔍</span>
-          <p className="text-sm font-medium">Brak rekomendacji</p>
+          <p className="text-sm font-medium">Brak wyników</p>
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
             Zmień odpowiedzi w quizie i spróbuj ponownie.
           </p>
@@ -207,17 +257,28 @@ export default function FlightsPage() {
       )}
 
       <div className="mt-4 flex flex-col gap-3">
-        {recommendations.map((dest, i) => (
+        {visible.map((dest, i) => (
           <DestinationCard
-            key={dest.city}
+            key={`${dest.city}-${sortKey}`}
             dest={dest}
             index={i}
+            isTop={sortKey === "best_match" && i === 0}
             isLoading={isGeneratingPlan && selectedId === dest.city}
             isDisabled={isGeneratingPlan && selectedId !== dest.city}
             onSelect={() => handleSelect(dest)}
           />
         ))}
       </div>
+
+      {hasMore && (
+        <button
+          onClick={() => setVisibleCount((c) => c + 5)}
+          className="mt-4 w-full py-3 rounded-2xl text-sm font-semibold transition-all"
+          style={{ background: "#F0F0F0", color: "var(--text-secondary)" }}
+        >
+          Pokaż więcej ({sorted.length - visibleCount} pozostałych)
+        </button>
+      )}
 
       {isGeneratingPlan && (
         <motion.div
@@ -239,10 +300,11 @@ export default function FlightsPage() {
 }
 
 function DestinationCard({
-  dest, index, isLoading, isDisabled, onSelect,
+  dest, index, isTop, isLoading, isDisabled, onSelect,
 }: {
   dest: DestinationRecommendation;
   index: number;
+  isTop: boolean;
   isLoading: boolean;
   isDisabled: boolean;
   onSelect: () => void;
@@ -263,14 +325,14 @@ function DestinationCard({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, delay: index * 0.08 }}
+      transition={{ duration: 0.35, delay: Math.min(index, 4) * 0.07 }}
       className="glass-card overflow-hidden"
       style={{ opacity: isDisabled ? 0.4 : 1, transition: "opacity 0.2s" }}
     >
       {/* Top */}
       <div
         className="px-4 pt-4 pb-3"
-        style={{ background: index === 0 ? "var(--accent-light)" : "transparent" }}
+        style={{ background: isTop ? "var(--accent-light)" : "transparent" }}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -279,7 +341,7 @@ function DestinationCard({
               <div className="flex items-center gap-1.5">
                 <h3 className="font-bold text-base leading-tight">{dest.city}</h3>
                 <span className="text-sm">{dest.countryFlag}</span>
-                {index === 0 && (
+                {isTop && (
                   <span
                     className="text-xs font-bold px-1.5 py-0.5 rounded-full"
                     style={{ background: "var(--accent)", color: "white" }}
@@ -299,7 +361,6 @@ function DestinationCard({
           </div>
         </div>
 
-        {/* Description */}
         <p
           className="text-xs mt-2 leading-relaxed"
           style={{
@@ -313,7 +374,6 @@ function DestinationCard({
           {dest.description}
         </p>
 
-        {/* Tags */}
         <div className="flex flex-wrap gap-1.5 mt-2">
           {dest.tags.slice(0, 3).map((tag) => (
             <span
@@ -327,7 +387,7 @@ function DestinationCard({
           {hasBerSavings && (
             <span
               className="text-xs px-2 py-0.5 rounded-full font-medium"
-              style={{ background: "#F0F0F0", color: "var(--text-secondary)" }}
+              style={{ background: "#EFF6FF", color: "#1D4ED8" }}
             >
               −{dest.flightBer!.savingsVsWro} PLN z Berlina
             </span>
@@ -352,7 +412,7 @@ function DestinationCard({
             )}
           </div>
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-            {best.departureTime}–{best.arrivalTime} · {best.airline}
+            {best.departureTime}–{best.arrivalTime} · {best.airline} · {Math.floor(best.durationMinutes / 60)}h {best.durationMinutes % 60}m
           </p>
         </div>
 
