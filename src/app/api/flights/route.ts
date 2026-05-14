@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
   } = body as Record<string, unknown>;
 
   // Use real API if token is configured, otherwise fall back to mock
-  let pool;
+  let pool: import("@/types").DestinationRecommendation[] | undefined;
   const hasRealApi = !!process.env.TRAVELPAYOUTS_TOKEN;
 
   if (hasRealApi && month) {
