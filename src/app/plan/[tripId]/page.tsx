@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { useAppStore } from "@/lib/store";
-import type { DayPlan, DayActivity } from "@/types";
+import type { DayPlan, DayActivity, TripPlan, DestinationRecommendation } from "@/types";
 
 const ACTIVITY_COLORS: Record<string, string> = {
   attraction: "rgba(255,107,53,0.07)",
@@ -24,9 +24,11 @@ const ACTIVITY_BORDER: Record<string, string> = {
 
 export default function PlanPage() {
   const router = useRouter();
-  const { currentTrip, resetQuiz } = useAppStore();
+  const params = useParams<{ tripId: string }>();
+  const { currentTrip, setCurrentTrip, resetQuiz } = useAppStore();
   const [activeDay, setActiveDay] = useState(0);
   const [copied, setCopied] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleShare = () => {
     if (!currentTrip?.id) return;
@@ -37,19 +39,50 @@ export default function PlanPage() {
     });
   };
 
+  // Store-first, Supabase fallback (active session required)
   useEffect(() => {
-    if (!currentTrip?.plan) router.replace("/");
-  }, [currentTrip, router]);
+    const tripId = params?.tripId;
+    if (!tripId) { router.replace("/"); return; }
+    if (currentTrip?.id === tripId && currentTrip.plan) return;
 
-  if (!currentTrip?.plan) {
+    setLoading(true);
+    fetch(`/api/trips/${tripId}`)
+      .then((r) => {
+        if (r.status === 401) { router.replace(`/login?next=/plan/${tripId}`); return null; }
+        if (!r.ok) { router.replace("/"); return null; }
+        return r.json();
+      })
+      .then((data) => {
+        if (!data) return;
+        setCurrentTrip({
+          id: data.id,
+          destination: data.destination,
+          quizAnswers: data.quizAnswers,
+          plan: data.plan as TripPlan,
+          createdAt: new Date().toISOString(),
+        });
+      })
+      .catch(() => router.replace("/"))
+      .finally(() => setLoading(false));
+  }, [params?.tripId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (loading || !currentTrip?.plan) {
     return (
-      <div className="flex flex-col flex-1 items-center justify-center">
-        <p style={{ color: "var(--text-muted)" }}>Ładowanie planu…</p>
+      <div className="flex flex-col flex-1 items-center justify-center gap-4">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+          className="text-3xl"
+        >
+          ✈️
+        </motion.div>
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>Ładowanie planu…</p>
       </div>
     );
   }
 
   const { plan, destination } = currentTrip;
+  const dest = destination as DestinationRecommendation | null;
 
   return (
     <div className="flex flex-col flex-1 pb-8">
@@ -69,10 +102,10 @@ export default function PlanPage() {
           className="glass-card p-5"
         >
           <div className="flex items-center gap-3">
-            <span className="text-4xl">{destination.coverImage}</span>
+            <span className="text-4xl">{dest?.coverImage ?? "🗺️"}</span>
             <div>
               <h1 className="text-xl font-bold">
-                {plan.city} {destination.countryFlag}
+                {plan.city} {dest?.countryFlag ?? ""}
               </h1>
               <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
                 {plan.duration} dni · {plan.country}
