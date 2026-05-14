@@ -59,6 +59,12 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     recommendations,
-    _debug: { source: pool ? "api" : "mock", hasToken: hasRealApi, month },
+    _debug: {
+      source: pool ? "api" : "mock",
+      hasToken: hasRealApi,
+      month,
+      poolSize: pool?.length ?? 0,
+      firstPrice: pool?.[0]?.bestOffer?.realCost ?? null,
+    },
   });
 }
