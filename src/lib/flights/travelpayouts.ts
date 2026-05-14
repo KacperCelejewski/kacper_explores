@@ -82,6 +82,26 @@ async function fetchCheapFlights(
   return data;
 }
 
+function formatDate(iso: string): string {
+  return iso.slice(0, 10); // "2026-06-17"
+}
+
+function ddmm(iso: string): string {
+  const d = new Date(iso);
+  return `${String(d.getUTCDate()).padStart(2, "0")}${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+function buildAffiliateUrl(
+  origin: string,
+  destCode: string,
+  departureIso: string,
+  returnIso: string
+): string {
+  const marker = process.env.TRAVELPAYOUTS_MARKER ?? "528873";
+  const search = `${origin}${ddmm(departureIso)}${destCode}${ddmm(returnIso)}1`;
+  return `https://tp.media/r?marker=${marker}&p=4114&u=https%3A%2F%2Fwww.aviasales.com%2Fsearch%2F${search}`;
+}
+
 function buildFlightOffer(
   base: FlightOffer,
   offer: TpOffer,
@@ -102,6 +122,9 @@ function buildFlightOffer(
     airline: airlineName,
     departureTime: depTime,
     arrivalTime: retTime,
+    departureDate: formatDate(offer.departure_at),
+    returnDate: formatDate(offer.return_at),
+    affiliateUrl: buildAffiliateUrl(origin, base.destination.code, offer.departure_at, offer.return_at),
     savingsVsWro: origin === "BER" ? null : base.savingsVsWro,
   };
 }

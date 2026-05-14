@@ -40,6 +40,9 @@ export interface FlightOffer {
   airline: string;
   departureTime: string; // "06:30"
   arrivalTime: string;   // "08:45"
+  departureDate?: string; // "2026-06-17"
+  returnDate?: string;    // "2026-06-24"
+  affiliateUrl?: string;
   isBerlinAlternative: boolean;
   savingsVsWro: number | null; // PLN oszczędności vs WRO (null jeśli WRO)
 }

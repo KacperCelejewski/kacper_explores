@@ -215,6 +215,13 @@ export default function FlightsPage() {
   );
 }
 
+const SHORT_MONTHS = ["sty","lut","mar","kwi","maj","cze","lip","sie","wrz","paź","lis","gru"];
+
+function formatShortDate(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getUTCDate()} ${SHORT_MONTHS[d.getUTCMonth()]}`;
+}
+
 function DestinationCard({
   dest,
   index,
@@ -303,29 +310,46 @@ function DestinationCard({
 
       {/* Flight info */}
       <div
-        className="px-5 py-3 border-t flex items-center justify-between"
+        className="px-5 py-3 border-t"
         style={{ borderColor: "rgba(255,255,255,0.08)" }}
       >
-        <div className="text-xs" style={{ color: "var(--text-muted)" }}>
-          <span className="font-medium" style={{ color: "var(--text-primary)" }}>
-            {best.origin.code} → {best.destination.code}
-          </span>
-          {"  "}·{"  "}
-          {best.departureTime} – {best.arrivalTime}{"  "}·{"  "}
-          {best.airline}
+        <div className="flex items-center justify-between">
+          <div className="text-xs" style={{ color: "var(--text-muted)" }}>
+            <span className="font-medium" style={{ color: "var(--text-primary)" }}>
+              {best.origin.code} → {best.destination.code}
+            </span>
+            {"  "}·{"  "}
+            {best.departureTime} – {best.arrivalTime}{"  "}·{"  "}
+            {best.airline}
+          </div>
+          {hasBerSavings && (
+            <span
+              className="text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
+              style={{ background: "rgba(124,58,237,0.2)", color: "#a78bfa" }}
+            >
+              −{dest.flightBer!.savingsVsWro} PLN vs WRO
+            </span>
+          )}
         </div>
-        {hasBerSavings && (
-          <span
-            className="text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
-            style={{ background: "rgba(124,58,237,0.2)", color: "#a78bfa" }}
-          >
-            −{dest.flightBer!.savingsVsWro} PLN vs WRO
-          </span>
+
+        {/* Dates */}
+        {best.departureDate && best.returnDate && (
+          <div className="flex items-center gap-2 mt-2">
+            <span className="text-xs px-2 py-0.5 rounded-full font-medium"
+              style={{ background: "rgba(245,158,11,0.12)", color: "#f59e0b" }}>
+              ✈ {formatShortDate(best.departureDate)}
+            </span>
+            <span className="text-xs" style={{ color: "var(--text-muted)" }}>→</span>
+            <span className="text-xs px-2 py-0.5 rounded-full font-medium"
+              style={{ background: "rgba(245,158,11,0.12)", color: "#f59e0b" }}>
+              ✈ {formatShortDate(best.returnDate)}
+            </span>
+          </div>
         )}
       </div>
 
       {/* CTA */}
-      <div className="px-5 pb-4 pt-3">
+      <div className="px-5 pb-4 pt-3 flex flex-col gap-2">
         <button
           className="btn-primary flex items-center justify-center gap-2"
           disabled={isDisabled || isLoading}
@@ -345,6 +369,24 @@ function DestinationCard({
             <>Wybierz i wygeneruj plan</>
           )}
         </button>
+
+        {best.affiliateUrl && (
+          <a
+            href={best.affiliateUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-center text-xs py-2.5 rounded-2xl font-semibold transition-opacity hover:opacity-80"
+            style={{
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              color: "var(--text-muted)",
+              textDecoration: "none",
+              display: "block",
+            }}
+          >
+            🔗 Kup lot na Aviasales
+          </a>
+        )}
       </div>
     </motion.div>
   );
