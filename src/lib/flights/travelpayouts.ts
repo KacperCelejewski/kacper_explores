@@ -91,15 +91,25 @@ function ddmm(iso: string): string {
   return `${String(d.getUTCDate()).padStart(2, "0")}${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
-function buildAffiliateUrl(
+function buildBuyLink(
   origin: string,
   destCode: string,
+  airlineCode: string,
   departureIso: string,
   returnIso: string
 ): string {
-  const marker = process.env.TRAVELPAYOUTS_MARKER ?? "528873";
-  const search = `${origin}${ddmm(departureIso)}${destCode}${ddmm(returnIso)}1`;
-  return `https://tp.media/r?marker=${marker}&p=4114&u=https%3A%2F%2Fwww.aviasales.com%2Fsearch%2F${search}`;
+  const dep = formatDate(departureIso);
+  const ret = formatDate(returnIso);
+  const depFlat = dep.replace(/-/g, "");
+  const retFlat = ret.replace(/-/g, "");
+
+  if (airlineCode === "FR") {
+    return `https://www.ryanair.com/en/gb/trip/flights/select?adults=1&teens=0&children=0&infants=0&dateOut=${dep}&dateIn=${ret}&isConnectedFlight=false&isReturn=true&discount=0&originIata=${origin}&destinationIata=${destCode}`;
+  }
+  if (airlineCode === "W6") {
+    return `https://wizzair.com/en-gb/booking/select-flight/${origin}/${destCode}/${depFlat}/${retFlat}/1/0/0`;
+  }
+  return `https://www.skyscanner.pl/transport/flights/${origin.toLowerCase()}/${destCode.toLowerCase()}/${depFlat}/${retFlat}/?adults=1&rtn=1`;
 }
 
 function buildFlightOffer(
@@ -124,7 +134,7 @@ function buildFlightOffer(
     arrivalTime: retTime,
     departureDate: formatDate(offer.departure_at),
     returnDate: formatDate(offer.return_at),
-    affiliateUrl: buildAffiliateUrl(origin, base.destination.code, offer.departure_at, offer.return_at),
+    affiliateUrl: buildBuyLink(origin, base.destination.code, offer.airline, offer.departure_at, offer.return_at),
     savingsVsWro: origin === "BER" ? null : base.savingsVsWro,
   };
 }

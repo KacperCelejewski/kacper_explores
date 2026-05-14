@@ -370,23 +370,25 @@ function DestinationCard({
           )}
         </button>
 
-        {best.affiliateUrl && (
-          <a
-            href={best.affiliateUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-center text-xs py-2.5 rounded-2xl font-semibold transition-opacity hover:opacity-80"
-            style={{
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              color: "var(--text-muted)",
-              textDecoration: "none",
-              display: "block",
-            }}
-          >
-            🔗 Kup lot na Aviasales
-          </a>
-        )}
+        <a
+          href={best.affiliateUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-center text-xs py-2.5 rounded-2xl font-semibold transition-opacity hover:opacity-80"
+          style={{
+            background: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            color: "var(--text-muted)",
+            textDecoration: "none",
+            display: "block",
+          }}
+        >
+          {best.airline === "Ryanair"
+            ? "🟡 Kup bilet na Ryanair.com"
+            : best.airline === "Wizz Air"
+            ? "🟣 Kup bilet na WizzAir.com"
+            : "🔍 Szukaj i kup na Skyscanner"}
+        </a>
       </div>
     </motion.div>
   );

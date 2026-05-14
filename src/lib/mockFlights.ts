@@ -5,6 +5,10 @@ const BER: FlightOffer["origin"] = { code: "BER", city: "Berlin", country: "DE" 
 
 const BER_TRANSFER_COST = 100; // PLN dojazd Wrocław → Berlin
 
+function skyscannerLink(from: string, to: string): string {
+  return `https://www.skyscanner.pl/transport/flights/${from.toLowerCase()}/${to.toLowerCase()}/?adults=1&rtn=1`;
+}
+
 function wroFlight(
   id: string,
   destCode: string,
@@ -28,6 +32,7 @@ function wroFlight(
     arrivalTime: arr,
     isBerlinAlternative: false,
     savingsVsWro: null,
+    affiliateUrl: skyscannerLink(WRO.code, destCode),
   };
 }
 
@@ -56,6 +61,7 @@ function berFlight(
     arrivalTime: arr,
     isBerlinAlternative: true,
     savingsVsWro: wroPrice - realCost,
+    affiliateUrl: skyscannerLink(BER.code, destCode),
   };
 }
 
