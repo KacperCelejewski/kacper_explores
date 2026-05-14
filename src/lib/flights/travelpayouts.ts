@@ -16,8 +16,15 @@ interface TpOffer {
   airline: string;
   departure_at: string;
   return_at: string;
-  number_of_changes: number;
+  number_of_changes?: number;
+  duration_to?: number;
+  duration_back?: number;
 }
+
+// API returns data[IATA][index] where index is "0", "1", etc.
+type TpApiResponse = {
+  data: Record<string, Record<string, TpOffer>>;
+};
 
 // In-memory cache: cacheKey → { data, expiresAt }
 const cache = new Map<string, { data: Record<string, TpOffer>; expiresAt: number }>();
@@ -61,10 +68,16 @@ async function fetchCheapFlights(
   const res = await fetch(url.toString());
   if (!res.ok) throw new Error(`Travelpayouts ${origin}: HTTP ${res.status}`);
 
-  const json = await res.json() as { success: boolean; data: Record<string, TpOffer> };
-  if (!json.success) throw new Error(`Travelpayouts ${origin}: success=false`);
+  const json = await res.json() as TpApiResponse;
+  const raw = json.data ?? {};
 
-  const data = json.data ?? {};
+  // Flatten: pick cheapest offer per destination (first key "0", "1", …)
+  const data: Record<string, TpOffer> = {};
+  for (const [iata, offers] of Object.entries(raw)) {
+    const best = Object.values(offers)[0];
+    if (best) data[iata] = best;
+  }
+
   cache.set(cacheKey, { data, expiresAt: Date.now() + CACHE_TTL });
   return data;
 }
@@ -85,6 +98,7 @@ function buildFlightOffer(
     ...base,
     price: offer.price,
     realCost,
+    durationMinutes: offer.duration_to ?? base.durationMinutes,
     airline: airlineName,
     departureTime: depTime,
     arrivalTime: retTime,
