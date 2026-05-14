@@ -114,36 +114,46 @@ export async function POST(req: NextRequest) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
+    const prompt = buildPlanPrompt(
+      destination as DestinationRecommendation,
+      quizAnswers as QuizAnswers
+    );
 
-    // Try gemini-2.5-flash first, fall back to gemini-2.0-flash on quota errors
-    async function callGemini(modelName: string): Promise<string> {
-      const m = genAI.getGenerativeModel({
-        model: modelName,
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema,
-          // @ts-expect-error thinkingConfig not yet in SDK types but supported by API
-          thinkingConfig: { thinkingBudget: 0 },
-        },
-      });
-      const result = await m.generateContent(
-        buildPlanPrompt(destination as DestinationRecommendation, quizAnswers as QuizAnswers)
-      );
-      return result.response.text();
+    // Model fallback chain: 2.5-flash (best) → 2.0-flash → 1.5-flash (highest free quota)
+    const MODELS = [
+      { name: "gemini-2.5-flash", thinking: true },
+      { name: "gemini-2.0-flash", thinking: false },
+      { name: "gemini-1.5-flash", thinking: false },
+    ];
+
+    function isQuotaError(err: unknown): boolean {
+      const msg = err instanceof Error ? err.message : String(err);
+      return msg.includes("429") || msg.toLowerCase().includes("quota") || msg.includes("Too Many Requests");
     }
 
-    let text: string;
-    try {
-      text = await callGemini("gemini-2.5-flash");
-    } catch (primaryErr) {
-      const msg = primaryErr instanceof Error ? primaryErr.message : String(primaryErr);
-      if (msg.includes("429") || msg.includes("quota") || msg.includes("Too Many Requests")) {
-        // Quota exceeded on 2.5-flash — try 2.0-flash (1500 req/day free)
-        text = await callGemini("gemini-2.0-flash");
-      } else {
-        throw primaryErr;
+    let text = "";
+    let lastErr: unknown;
+    for (const { name, thinking } of MODELS) {
+      try {
+        const m = genAI.getGenerativeModel({
+          model: name,
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            ...(thinking ? { thinkingConfig: { thinkingBudget: 0 } } as any : {}),
+          },
+        });
+        const result = await m.generateContent(prompt);
+        text = result.response.text();
+        break;
+      } catch (err) {
+        lastErr = err;
+        if (isQuotaError(err)) continue; // try next model
+        throw err; // non-quota error → bubble up immediately
       }
     }
+    if (!text) throw lastErr;
 
     const dest = destination as DestinationRecommendation;
     const quiz = quizAnswers as QuizAnswers;
