@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
       pool = await getRealRecommendations(month as number, includeBerlin as boolean);
     } catch (err) {
       console.error("Travelpayouts error, using mock:", err);
-      pool = null;
+      pool = undefined;
     }
   }
 
