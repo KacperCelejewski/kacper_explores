@@ -160,6 +160,7 @@ export async function POST(req: NextRequest) {
         flight_data: dest.bestOffer,
         ai_plan_json: plan,
         quiz_answers: quiz,
+        destination_data: dest,
       });
     }
 

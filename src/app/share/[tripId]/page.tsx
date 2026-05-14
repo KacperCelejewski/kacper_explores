@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { useAppStore } from "@/lib/store";
-import type { DayPlan, DayActivity } from "@/types";
+import type { TripPlan, DayPlan, DayActivity, DestinationRecommendation } from "@/types";
+import Link from "next/link";
 
 const ACTIVITY_COLORS: Record<string, string> = {
   attraction: "rgba(255,107,53,0.07)",
@@ -22,57 +22,92 @@ const ACTIVITY_BORDER: Record<string, string> = {
   accommodation: "rgba(59,130,246,0.25)",
 };
 
-export default function PlanPage() {
+function buildMapsRouteUrl(activities: DayActivity[], city: string): string | null {
+  const locations = activities
+    .filter((a) => a.location && a.type !== "tip" && a.type !== "transport")
+    .map((a) => encodeURIComponent(`${a.location}, ${city}`));
+  if (locations.length < 1) return null;
+  if (locations.length === 1) return `https://www.google.com/maps/search/?api=1&query=${locations[0]}`;
+  return `https://www.google.com/maps/dir/${locations.join("/")}`;
+}
+
+interface SharedTrip {
+  id: string;
+  city: string;
+  country: string;
+  plan: TripPlan;
+  destination: DestinationRecommendation | null;
+}
+
+export default function SharePage() {
+  const params = useParams<{ tripId: string }>();
   const router = useRouter();
-  const { currentTrip, resetQuiz } = useAppStore();
+  const [trip, setTrip] = useState<SharedTrip | null>(null);
+  const [loading, setLoading] = useState(true);
   const [activeDay, setActiveDay] = useState(0);
   const [copied, setCopied] = useState(false);
 
-  const handleShare = () => {
-    if (!currentTrip?.id) return;
-    const url = `${window.location.origin}/share/${currentTrip.id}`;
-    navigator.clipboard.writeText(url).then(() => {
+  useEffect(() => {
+    fetch(`/api/share/${params.tripId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.error) { router.replace("/"); return; }
+        setTrip(data);
+      })
+      .catch(() => router.replace("/"))
+      .finally(() => setLoading(false));
+  }, [params.tripId, router]);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(window.location.href).then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
+      setTimeout(() => setCopied(false), 2000);
     });
   };
 
-  useEffect(() => {
-    if (!currentTrip?.plan) router.replace("/");
-  }, [currentTrip, router]);
-
-  if (!currentTrip?.plan) {
+  if (loading) {
     return (
-      <div className="flex flex-col flex-1 items-center justify-center">
-        <p style={{ color: "var(--text-muted)" }}>Ładowanie planu…</p>
+      <div className="flex flex-col flex-1 items-center justify-center gap-4">
+        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }} className="text-3xl">✈️</motion.div>
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>Ładowanie planu…</p>
       </div>
     );
   }
 
-  const { plan, destination } = currentTrip;
+  if (!trip) return null;
+
+  const { plan, destination } = trip;
 
   return (
     <div className="flex flex-col flex-1 pb-8">
       {/* Header */}
       <div className="px-5 pt-6 pb-4">
-        <button
-          onClick={() => router.push("/flights")}
-          className="text-sm mb-5 block transition-opacity hover:opacity-60"
-          style={{ color: "var(--text-muted)" }}
+        {/* Share banner */}
+        <div
+          className="mb-5 px-4 py-3 rounded-2xl flex items-center justify-between gap-3"
+          style={{ background: "var(--accent-light)", border: "1px solid rgba(255,107,53,0.2)" }}
         >
-          ← Zmień kierunek
-        </button>
+          <p className="text-xs font-medium leading-relaxed" style={{ color: "var(--accent)" }}>
+            Plan wygenerowany przez <strong>Włóczykij</strong> · AI podróże budżetowe
+          </p>
+          <button
+            onClick={handleCopy}
+            className="flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full transition-all"
+            style={{
+              background: copied ? "#DCFCE7" : "var(--accent)",
+              color: copied ? "#16A34A" : "white",
+            }}
+          >
+            {copied ? "Skopiowano ✓" : "Kopiuj link"}
+          </button>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="glass-card p-5"
-        >
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-5">
           <div className="flex items-center gap-3">
-            <span className="text-4xl">{destination.coverImage}</span>
+            <span className="text-4xl">{destination?.coverImage ?? "🗺️"}</span>
             <div>
               <h1 className="text-xl font-bold">
-                {plan.city} {destination.countryFlag}
+                {plan.city} {destination?.countryFlag ?? ""}
               </h1>
               <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
                 {plan.duration} dni · {plan.country}
@@ -80,21 +115,26 @@ export default function PlanPage() {
             </div>
           </div>
 
-          {/* Budget breakdown */}
           <div className="mt-4 pt-4 border-t grid grid-cols-2 gap-3" style={{ borderColor: "var(--border)" }}>
-            <BudgetItem label="Loty" value={plan.budgetBreakdown.flights} emoji="✈️" />
-            <BudgetItem label="Nocleg" value={plan.budgetBreakdown.accommodation} emoji="🛏️" />
-            <BudgetItem label="Jedzenie" value={plan.budgetBreakdown.food} emoji="🍽️" />
-            <BudgetItem label="Atrakcje" value={plan.budgetBreakdown.attractions} emoji="🎟️" />
+            {[
+              { label: "Loty", value: plan.budgetBreakdown.flights, emoji: "✈️" },
+              { label: "Nocleg", value: plan.budgetBreakdown.accommodation, emoji: "🛏️" },
+              { label: "Jedzenie", value: plan.budgetBreakdown.food, emoji: "🍽️" },
+              { label: "Atrakcje", value: plan.budgetBreakdown.attractions, emoji: "🎟️" },
+            ].map((item) => (
+              <div key={item.label} className="flex items-center gap-2">
+                <span className="text-base">{item.emoji}</span>
+                <div>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>{item.label}</p>
+                  <p className="text-sm font-semibold">{item.value}</p>
+                </div>
+              </div>
+            ))}
           </div>
 
           <div className="mt-3 pt-3 border-t flex items-center justify-between" style={{ borderColor: "var(--border)" }}>
-            <span className="text-sm" style={{ color: "var(--text-muted)" }}>
-              Szacowany całkowity koszt
-            </span>
-            <span className="text-base font-bold" style={{ color: "var(--accent)" }}>
-              {plan.totalBudgetEstimate}
-            </span>
+            <span className="text-sm" style={{ color: "var(--text-muted)" }}>Szacowany całkowity koszt</span>
+            <span className="text-base font-bold" style={{ color: "var(--accent)" }}>{plan.totalBudgetEstimate}</span>
           </div>
         </motion.div>
       </div>
@@ -145,56 +185,34 @@ export default function PlanPage() {
         </div>
       </div>
 
-      {/* Active day */}
-      {plan.days[activeDay] && <DayPlanView day={plan.days[activeDay]} city={plan.city} />}
+      {plan.days[activeDay] && <SharedDayPlanView day={plan.days[activeDay]} city={plan.city} />}
 
-      {/* Actions */}
-      <div className="px-5 mt-6 flex flex-col gap-3">
-        <button
-          onClick={handleShare}
-          className="w-full py-3.5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 transition-all"
-          style={{
-            background: copied ? "#DCFCE7" : "#F0F0F0",
-            color: copied ? "#16A34A" : "var(--text-secondary)",
-          }}
+      {/* CTA */}
+      <div className="px-5 mt-8">
+        <div
+          className="p-5 rounded-2xl text-center"
+          style={{ background: "var(--accent-light)", border: "1px solid rgba(255,107,53,0.2)" }}
         >
-          {copied ? "✓ Link skopiowany!" : "🔗 Udostępnij ten plan"}
-        </button>
-        <button
-          className="btn-primary"
-          onClick={() => { resetQuiz(); router.push("/"); }}
-        >
-          Zaplanuj nową podróż →
-        </button>
+          <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>
+            Wygeneruj swój plan z AI →
+          </p>
+          <p className="text-xs mt-1 mb-4" style={{ color: "var(--text-muted)" }}>
+            Odpowiedz na 6 pytań — znajdziemy najtańszy lot i ułożymy plan dla Ciebie
+          </p>
+          <Link
+            href="/"
+            className="btn-primary"
+            style={{ display: "block", textAlign: "center", textDecoration: "none", fontSize: "0.875rem" }}
+          >
+            Zacznij za darmo →
+          </Link>
+        </div>
       </div>
     </div>
   );
 }
 
-function BudgetItem({ label, value, emoji }: { label: string; value: string; emoji: string }) {
-  return (
-    <div className="flex items-center gap-2">
-      <span className="text-base">{emoji}</span>
-      <div>
-        <p className="text-xs" style={{ color: "var(--text-muted)" }}>{label}</p>
-        <p className="text-sm font-semibold">{value}</p>
-      </div>
-    </div>
-  );
-}
-
-function buildMapsRouteUrl(activities: DayActivity[], city: string): string | null {
-  const locations = activities
-    .filter((a) => a.location && a.type !== "tip" && a.type !== "transport")
-    .map((a) => encodeURIComponent(`${a.location}, ${city}`));
-  if (locations.length < 1) return null;
-  if (locations.length === 1) {
-    return `https://www.google.com/maps/search/?api=1&query=${locations[0]}`;
-  }
-  return `https://www.google.com/maps/dir/${locations.join("/")}`;
-}
-
-function DayPlanView({ day, city }: { day: DayPlan; city: string }) {
+function SharedDayPlanView({ day, city }: { day: DayPlan; city: string }) {
   const mapsUrl = buildMapsRouteUrl(day.activities, city);
 
   return (
@@ -230,13 +248,10 @@ function DayPlanView({ day, city }: { day: DayPlan; city: string }) {
       </div>
 
       <div className="relative">
-        <div
-          className="absolute left-[22px] top-0 bottom-0 w-px"
-          style={{ background: "var(--border)" }}
-        />
+        <div className="absolute left-[22px] top-0 bottom-0 w-px" style={{ background: "var(--border)" }} />
         <div className="flex flex-col gap-3">
           {day.activities.map((activity, i) => (
-            <ActivityCard key={i} activity={activity} index={i} />
+            <SharedActivityCard key={i} activity={activity} index={i} />
           ))}
         </div>
       </div>
@@ -244,7 +259,7 @@ function DayPlanView({ day, city }: { day: DayPlan; city: string }) {
   );
 }
 
-function ActivityCard({ activity, index }: { activity: DayActivity; index: number }) {
+function SharedActivityCard({ activity, index }: { activity: DayActivity; index: number }) {
   const bg = ACTIVITY_COLORS[activity.type] ?? ACTIVITY_COLORS.transport;
   const border = ACTIVITY_BORDER[activity.type] ?? ACTIVITY_BORDER.transport;
 
@@ -257,46 +272,30 @@ function ActivityCard({ activity, index }: { activity: DayActivity; index: numbe
     >
       <div className="flex-shrink-0 w-11 text-center relative z-10">
         <span className="text-lg">{activity.emoji}</span>
-        <p className="text-xs mt-0.5 font-mono" style={{ color: "var(--text-muted)" }}>
-          {activity.time}
-        </p>
+        <p className="text-xs mt-0.5 font-mono" style={{ color: "var(--text-muted)" }}>{activity.time}</p>
       </div>
 
-      <div
-        className="flex-1 rounded-2xl px-4 py-3 mb-1"
-        style={{ background: bg, border: `1px solid ${border}` }}
-      >
+      <div className="flex-1 rounded-2xl px-4 py-3 mb-1" style={{ background: bg, border: `1px solid ${border}` }}>
         <div className="flex items-start justify-between gap-2">
           <p className="text-sm font-semibold leading-tight">{activity.title}</p>
           <span
             className="flex-shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
             style={{
-              background:
-                activity.cost === "Free" || activity.cost === "Bezpłatnie"
-                  ? "rgba(34,197,94,0.12)"
-                  : "#F0F0F0",
-              color:
-                activity.cost === "Free" || activity.cost === "Bezpłatnie"
-                  ? "#16A34A"
-                  : "var(--text-muted)",
+              background: activity.cost === "Free" || activity.cost === "Bezpłatnie" ? "rgba(34,197,94,0.12)" : "#F0F0F0",
+              color: activity.cost === "Free" || activity.cost === "Bezpłatnie" ? "#16A34A" : "var(--text-muted)",
             }}
           >
             {activity.cost}
           </span>
         </div>
-        <p className="text-xs mt-1.5 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-          {activity.description}
-        </p>
+        <p className="text-xs mt-1.5 leading-relaxed" style={{ color: "var(--text-muted)" }}>{activity.description}</p>
         {activity.location && (
           <div className="flex items-center justify-between mt-1.5">
-            <p className="text-xs font-medium" style={{ color: "var(--accent)" }}>
-              📍 {activity.location}
-            </p>
+            <p className="text-xs font-medium" style={{ color: "var(--accent)" }}>📍 {activity.location}</p>
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activity.location)}`}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
               className="text-xs font-semibold ml-2 flex-shrink-0 transition-opacity hover:opacity-70"
               style={{ color: "#1A73E8", textDecoration: "none" }}
             >
