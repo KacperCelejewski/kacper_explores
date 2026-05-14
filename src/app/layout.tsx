@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
@@ -20,6 +21,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main className="app-shell">
           {children}
         </main>
+        <Script
+          id="tp-drive"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var s=document.createElement("script");s.async=1;s.src="https://emrldco.com/NTI4ODcz.js?t=528873";document.head.appendChild(s);})();`,
+          }}
+        />
       </body>
     </html>
   );
