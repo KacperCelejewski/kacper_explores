@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/lib/store";
-import type { TravelStyle, TripDuration, TravelVibe, PlaceType } from "@/types";
+import type { TravelStyle, TripDuration, TravelVibe, PlaceType, QuizAnswers } from "@/types";
 import { MONTH_NAMES } from "@/lib/mockFlights";
 
 const TOTAL_STEPS = 6;
@@ -47,8 +47,31 @@ const slideVariants = {
 export default function QuizPage() {
   const router = useRouter();
   const [dir, setDir] = useState(1);
-  const { quizAnswers, currentQuizStep, setQuizAnswer, toggleStyle, nextQuizStep, prevQuizStep } =
+  const [savedPrefs, setSavedPrefs] = useState<QuizAnswers | null>(null);
+  const { quizAnswers, currentQuizStep, setQuizAnswer, toggleStyle, nextQuizStep, prevQuizStep, resetQuiz } =
     useAppStore();
+
+  useEffect(() => {
+    fetch("/api/profile")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.authenticated && d.quiz_preferences) setSavedPrefs(d.quiz_preferences);
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleUseSaved = () => {
+    if (!savedPrefs) return;
+    resetQuiz();
+    if (savedPrefs.budget) setQuizAnswer("budget", savedPrefs.budget);
+    if (savedPrefs.vibe) setQuizAnswer("vibe", savedPrefs.vibe);
+    if (savedPrefs.placeType) setQuizAnswer("placeType", savedPrefs.placeType);
+    if (savedPrefs.month) setQuizAnswer("month", savedPrefs.month);
+    if (savedPrefs.duration) setQuizAnswer("duration", savedPrefs.duration);
+    setQuizAnswer("includeBerlin", savedPrefs.includeBerlin);
+    savedPrefs.styles.forEach((s) => toggleStyle(s));
+    router.push("/flights");
+  };
 
   const progress = ((currentQuizStep + 1) / TOTAL_STEPS) * 100;
 
@@ -99,6 +122,34 @@ export default function QuizPage() {
           />
         </div>
       </div>
+
+      {/* Saved prefs shortcut — only on step 0 */}
+      <AnimatePresence>
+        {savedPrefs && currentQuizStep === 0 && (
+          <motion.button
+            key="saved-prefs"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.25 }}
+            onClick={handleUseSaved}
+            className="w-full mb-4 p-4 rounded-2xl text-left transition-opacity hover:opacity-90"
+            style={{ background: "var(--accent-light)", border: "1px solid rgba(255,107,53,0.25)" }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>
+                  Użyj poprzednich ustawień ↗
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                  Pomiń quiz — załaduj zapisane preferencje i przejdź do lotów
+                </p>
+              </div>
+              <span className="text-xl ml-3">✦</span>
+            </div>
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       {/* Steps */}
       <div className="flex-1 relative overflow-hidden">

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import type { QuizAnswers } from "@/types";
 
 export interface UserProfile {
   id: string;
@@ -6,6 +7,7 @@ export interface UserProfile {
   subscription_tier: "free" | "pro";
   subscription_expires_at: string | null;
   stripe_customer_id: string | null;
+  quiz_preferences: QuizAnswers | null;
 }
 
 export async function getUserProfile(): Promise<UserProfile | null> {

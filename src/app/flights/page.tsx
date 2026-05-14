@@ -55,6 +55,13 @@ export default function FlightsPage() {
     ]).then(([flightsData, profileData]) => {
       setRecommendations(flightsData.recommendations ?? []);
       setUserStatus(profileData);
+      if (profileData?.authenticated) {
+        fetch("/api/profile", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ quiz_preferences: quizAnswers }),
+        }).catch(() => {});
+      }
     }).finally(() => setLoading(false));
   }, [quizAnswers, router]);
 
@@ -136,7 +143,7 @@ export default function FlightsPage() {
           </button>
           {userStatus?.authenticated ? (
             <button
-              onClick={() => router.push("/pricing")}
+              onClick={() => router.push("/profile")}
               className="text-xs font-bold px-3 py-1.5 rounded-full transition-opacity hover:opacity-80"
               style={{
                 background: userStatus.is_pro
