@@ -252,9 +252,10 @@ export function getRecommendations(
   includeBerlin: boolean,
   vibe: string | null = null,
   placeType: string | null = null,
-  count = 3
+  count = 3,
+  pool: DestinationRecommendation[] = MOCK_DESTINATIONS
 ): DestinationRecommendation[] {
-  const scored = MOCK_DESTINATIONS.map((dest) => {
+  const scored = pool.map((dest) => {
     const styleMatch = styles.filter((s) => dest.tags.includes(s as never)).length;
     const budgetMatch = dest.budgetLevel === budget ? 2 : 1;
     const hasBerSavings =
