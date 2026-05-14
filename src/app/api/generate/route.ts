@@ -119,11 +119,12 @@ export async function POST(req: NextRequest) {
       quizAnswers as QuizAnswers
     );
 
-    // Model fallback chain: 2.5-flash (best) → 2.0-flash → 1.5-flash (highest free quota)
+    // Model fallback chain: best quality first, lighter models as quota backup
     const MODELS = [
       { name: "gemini-2.5-flash", thinking: true },
       { name: "gemini-2.0-flash", thinking: false },
-      { name: "gemini-1.5-flash", thinking: false },
+      { name: "gemini-2.5-flash-lite", thinking: false },
+      { name: "gemini-flash-latest", thinking: false },
     ];
 
     function isQuotaError(err: unknown): boolean {
