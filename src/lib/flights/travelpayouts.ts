@@ -40,7 +40,7 @@ const DEST_BY_IATA = new Map<string, DestinationRecommendation>(
 
 function targetYearMonth(month: number): { year: number; monthStr: string } {
   const now = new Date();
-  const year = month <= now.getMonth() + 1 ? now.getFullYear() + 1 : now.getFullYear();
+  const year = month < now.getMonth() + 1 ? now.getFullYear() + 1 : now.getFullYear();
   return { year, monthStr: `${year}-${String(month).padStart(2, "0")}` };
 }
 
