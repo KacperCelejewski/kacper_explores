@@ -57,5 +57,8 @@ export async function POST(req: NextRequest) {
     pool ?? undefined
   );
 
-  return NextResponse.json({ recommendations });
+  return NextResponse.json({
+    recommendations,
+    _debug: { source: pool ? "api" : "mock", hasToken: hasRealApi, month },
+  });
 }
