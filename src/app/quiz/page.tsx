@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/lib/store";
 import type { TravelStyle, TripDuration, TravelVibe, PlaceType, QuizAnswers } from "@/types";
 import { MONTH_NAMES } from "@/lib/mockFlights";
-import { AIRPORTS } from "@/lib/airports";
+import { POLISH_AIRPORTS, HUB_AIRPORTS } from "@/lib/airports";
 
 const TOTAL_STEPS = 6;
 
@@ -385,10 +385,12 @@ function StepDuration({
       <div className="mt-6">
         <p className="text-sm font-semibold mb-1">Skąd lecisz?</p>
         <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>
-          Wybierz jeden lub więcej portów odlotu.
+          Wybierz jedno lub więcej lotnisk.
         </p>
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Wybierz lotnisko odlotu">
-          {AIRPORTS.map((ap) => {
+
+        {/* Polish airports */}
+        <div className="flex flex-wrap gap-2 mb-3" role="group" aria-label="Polskie lotniska">
+          {POLISH_AIRPORTS.map((ap) => {
             const selected = airports.includes(ap.code);
             return (
               <button
@@ -403,8 +405,36 @@ function StepDuration({
                 }}
               >
                 {ap.flag} {ap.city}
-                {ap.code === "BER" && (
-                  <span className="ml-1 text-xs opacity-70">+100 PLN</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* European hubs */}
+        <p className="text-xs font-semibold mb-2" style={{ color: "var(--text-muted)" }}>
+          🌍 Huby europejskie — taniej do Azji, USA i Afryki
+        </p>
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Huby europejskie">
+          {HUB_AIRPORTS.map((ap) => {
+            const selected = airports.includes(ap.code);
+            const modeIcon = ap.transit?.mode === "bus" ? "🚌" : ap.transit?.mode === "train" ? "🚂" : "✈️";
+            return (
+              <button
+                key={ap.code}
+                onClick={() => toggleAirport(ap.code)}
+                aria-pressed={selected}
+                className="px-3 py-1.5 rounded-full text-sm font-medium transition-all"
+                style={{
+                  background: selected ? "#1D4ED8" : "var(--surface)",
+                  color: selected ? "#fff" : "var(--text-primary)",
+                  border: `1.5px solid ${selected ? "#1D4ED8" : "var(--border)"}`,
+                }}
+              >
+                {ap.flag} {ap.city}
+                {ap.transit && (
+                  <span className="ml-1 text-xs opacity-70">
+                    {modeIcon} ~{ap.transit.costPln} PLN
+                  </span>
                 )}
               </button>
             );

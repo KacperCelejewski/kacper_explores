@@ -1,6 +1,7 @@
 import type { DestinationRecommendation, FlightOffer } from "@/types";
 import { CATALOG, type CatalogEntry } from "@/lib/destinations/catalog";
 import { AIRPORTS, AIRPORT_BY_CODE, DEFAULT_AIRPORTS } from "@/lib/airports";
+import type { AirportDef } from "@/lib/airports";
 
 const BER_TRANSFER_COST = 100;
 
@@ -21,24 +22,25 @@ function buildFlightForAirport(
   e: CatalogEntry,
   airportCode: string,
 ): FlightOffer | null {
-  const airport = AIRPORT_BY_CODE.get(airportCode);
+  const airport: AirportDef | undefined = AIRPORT_BY_CODE.get(airportCode);
   if (!airport) return null;
 
-  const destIata = e.iataWro; // same IATA for all Polish airports
+  const isHub = airport.isHub ?? false;
+
+  // For BER, use iataBer if available; for other hubs and Polish airports use iataWro
+  const destIata = airportCode === "BER" ? (e.iataBer ?? e.iataWro) : e.iataWro;
   const destAirport = { code: destIata, city: e.city, country: e.countryFlag };
 
   if (airportCode === "BER") {
-    // Use catalog BER price if available, otherwise estimate from WRO price
-    const berBasePrice = e.berPrice !== null
+    const basePrice = e.berPrice !== null
       ? e.berPrice
       : Math.round(e.wroPrice * airport.mockPriceFactor);
-    const berIata = e.iataBer ?? destIata;
-    const realCost = berBasePrice + BER_TRANSFER_COST;
+    const realCost = basePrice + airport.transferCost;
     return {
-      id: `ber-${berIata.toLowerCase()}`,
+      id: `ber-${destIata.toLowerCase()}`,
       origin: { code: "BER", city: "Berlin", country: "DE" },
-      destination: { code: berIata, city: e.city, country: e.countryFlag },
-      price: berBasePrice,
+      destination: destAirport,
+      price: basePrice,
       realCost,
       durationMinutes: e.berDurationMin ?? Math.round(e.wroDurationMin * 1.05),
       airline: e.berAirline ?? e.wroAirline,
@@ -46,7 +48,29 @@ function buildFlightForAirport(
       arrivalTime: e.berArr ?? e.wroArr,
       isBerlinAlternative: true,
       savingsVsWro: e.wroPrice - realCost,
-      affiliateUrl: airlineLink("BER", berIata, e.berAirline ?? e.wroAirline),
+      affiliateUrl: airlineLink("BER", destIata, e.berAirline ?? e.wroAirline),
+      transitToHub: airport.transit,
+    };
+  }
+
+  // Other hub airports (IST, AMS, BUD, VIE, LGW)
+  if (isHub) {
+    const price = Math.round(e.wroPrice * airport.mockPriceFactor);
+    const realCost = price + airport.transferCost;
+    return {
+      id: `${airportCode.toLowerCase()}-${destIata.toLowerCase()}`,
+      origin: { code: airportCode, city: airport.city, country: airport.country },
+      destination: destAirport,
+      price,
+      realCost,
+      durationMinutes: e.wroDurationMin,
+      airline: e.wroAirline,
+      departureTime: e.wroDep,
+      arrivalTime: e.wroArr,
+      isBerlinAlternative: false,
+      savingsVsWro: e.wroPrice - realCost,
+      affiliateUrl: airlineLink(airportCode, destIata, e.wroAirline),
+      transitToHub: airport.transit,
     };
   }
 

@@ -5,7 +5,7 @@ const VALID_STYLES = new Set(["nature", "history", "architecture", "food", "beac
 const VALID_VIBES = new Set(["chill", "intense", "social", "active"]);
 const VALID_PLACE_TYPES = new Set(["big_city", "charming", "beach_sun"]);
 const VALID_DURATIONS = new Set([3, 5, 7, 10]);
-const VALID_AIRPORTS = new Set(["WRO", "KTW", "KRK", "WAW", "WMI", "POZ", "GDN", "BER"]);
+const VALID_AIRPORTS = new Set(["WRO", "KTW", "KRK", "WAW", "WMI", "POZ", "GDN", "BER", "BUD", "VIE", "AMS", "LGW", "IST"]);
 
 export function validateQuizAnswers(data: unknown): data is Partial<QuizAnswers> {
   if (!data || typeof data !== "object") return false;

@@ -310,10 +310,10 @@ function DestinationCard({
   onSelect: () => void;
 }) {
   const best = dest.bestOffer;
-  const hasBerSavings =
-    dest.flightBer &&
-    dest.flightBer.savingsVsWro !== null &&
-    dest.flightBer.savingsVsWro > 150;
+  // Show hub savings badge when best offer is via a hub and saves meaningfully vs WRO direct
+  const hubSavings =
+    best.savingsVsWro !== null && best.savingsVsWro > 150 ? best.savingsVsWro : null;
+  const hasBerSavings = !hubSavings && dest.flightBer?.savingsVsWro != null && dest.flightBer.savingsVsWro > 150;
 
   const buyLabel =
     best.airline === "Ryanair" ? "Ryanair ↗"
@@ -384,6 +384,14 @@ function DestinationCard({
               {TAG_LABELS[tag] ?? tag}
             </span>
           ))}
+          {hubSavings && (
+            <span
+              className="text-xs px-2 py-0.5 rounded-full font-medium"
+              style={{ background: "#EFF6FF", color: "#1D4ED8" }}
+            >
+              −{hubSavings} PLN via {best.origin.city}
+            </span>
+          )}
           {hasBerSavings && (
             <span
               className="text-xs px-2 py-0.5 rounded-full font-medium"
@@ -414,6 +422,12 @@ function DestinationCard({
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
             {best.departureTime}–{best.arrivalTime} · {best.airline} · {Math.floor(best.durationMinutes / 60)}h {best.durationMinutes % 60}m
           </p>
+          {best.transitToHub && (
+            <p className="text-xs mt-0.5 font-medium" style={{ color: "#1D4ED8" }}>
+              {best.transitToHub.mode === "bus" ? "🚌" : best.transitToHub.mode === "train" ? "🚂" : "✈️"}{" "}
+              {best.transitToHub.carrier} z Polski ~{best.transitToHub.costPln} PLN · {best.transitToHub.durationH}h dojazd
+            </p>
+          )}
         </div>
 
         {best.affiliateUrl && (

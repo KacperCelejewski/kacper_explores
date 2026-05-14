@@ -109,6 +109,7 @@ function enrichFlight(base: FlightOffer, offer: TpOffer, originCode: string): Fl
     affiliateUrl: buildBuyLink(originCode, base.destination.code, offer.airline, offer.departure_at, offer.return_at),
     isBerlinAlternative: originCode === "BER",
     savingsVsWro: null, // recalculated below
+    transitToHub: ap?.transit,
   };
 }
 

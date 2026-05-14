@@ -33,12 +33,19 @@ export interface Airport {
   country: string;
 }
 
+export interface TransitToHub {
+  mode: "bus" | "flight" | "train";
+  carrier: string;
+  costPln: number;
+  durationH: number;
+}
+
 export interface FlightOffer {
   id: string;
   origin: Airport;
   destination: Airport;
   price: number; // PLN
-  realCost: number; // PLN (po doliczeniu dojazdu do BER)
+  realCost: number; // PLN (lot + dojazd do hubu)
   durationMinutes: number;
   airline: string;
   departureTime: string; // "06:30"
@@ -48,6 +55,7 @@ export interface FlightOffer {
   affiliateUrl?: string;
   isBerlinAlternative: boolean;
   savingsVsWro: number | null; // PLN oszczędności vs WRO (null jeśli WRO)
+  transitToHub?: TransitToHub; // jak dotrzeć do hubu z Polski
 }
 
 export interface DestinationRecommendation {
