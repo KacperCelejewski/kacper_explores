@@ -135,10 +135,18 @@ export async function getRealRecommendations(
 
     if (berOffer && dest.flightBer) {
       const berFlight = buildFlightOffer(dest.flightBer, berOffer, "BER");
-      const wroReal = updated.flightWro?.realCost ?? wroOffer?.price ?? 9999;
+      const wroReal = updated.flightWro?.realCost ?? 9999;
       berFlight.savingsVsWro = wroReal - berFlight.realCost;
       updated.flightBer = berFlight;
     }
+
+    // Recalculate bestOffer with real prices (spread evaluates the getter with mock prices)
+    const wroReal = updated.flightWro?.realCost ?? Infinity;
+    const berReal = updated.flightBer?.realCost ?? Infinity;
+    updated.bestOffer =
+      updated.flightBer && berReal < wroReal - 150
+        ? updated.flightBer
+        : updated.flightWro ?? updated.flightBer!;
 
     enriched.push(updated);
   }
