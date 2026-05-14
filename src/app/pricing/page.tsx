@@ -10,15 +10,14 @@ const PLANS = [
     name: "Pack",
     price: "5 PLN",
     period: "jednorazowo",
-    credits: "5 planów",
     features: [
-      "5 wygenerowanych planów",
+      "5 planów podróży",
       "Pełny itinerary godzina po godzinie",
       "Triki budżetowe AI",
       "Bez wygasania",
     ],
     highlight: false,
-    cta: "Kup Pack",
+    cta: "Kup Pack →",
     emoji: "🎒",
   },
   {
@@ -26,7 +25,6 @@ const PLANS = [
     name: "Pro",
     price: "19 PLN",
     period: "miesięcznie",
-    credits: "Unlimited",
     features: [
       "Nielimitowane plany podróży",
       "Historia wszystkich wyjazdów",
@@ -34,8 +32,8 @@ const PLANS = [
       "Dostęp do nowych funkcji",
     ],
     highlight: true,
-    cta: "Zostań Pro",
-    emoji: "✨",
+    cta: "Zostań Pro →",
+    emoji: "✦",
   },
 ];
 
@@ -53,19 +51,10 @@ export default function PricingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ planKey }),
       });
-
-      if (res.status === 401) {
-        router.push(`/login?next=/pricing`);
-        return;
-      }
-
+      if (res.status === 401) { router.push(`/login?next=/pricing`); return; }
       const data = await res.json();
-
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        setCheckoutError("Nie udało się uruchomić płatności. Spróbuj ponownie.");
-      }
+      if (data.url) window.location.href = data.url;
+      else setCheckoutError("Nie udało się uruchomić płatności. Spróbuj ponownie.");
     } catch {
       setCheckoutError("Błąd połączenia. Sprawdź internet i spróbuj ponownie.");
     } finally {
@@ -75,93 +64,92 @@ export default function PricingPage() {
 
   return (
     <div className="flex flex-col flex-1 px-5 pb-8">
-      <div className="pt-8 pb-6 text-center">
+      <div className="pt-10 pb-6">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-          <span className="text-4xl">💎</span>
-          <h1 className="text-2xl font-bold mt-3">Wybierz plan</h1>
-          <p className="text-sm mt-2" style={{ color: "var(--text-muted)" }}>
+          <p className="text-xs font-bold tracking-widest uppercase mb-4" style={{ color: "var(--accent)" }}>
+            Plany
+          </p>
+          <h1 className="text-3xl font-bold leading-tight">
+            Wybierz swój plan.
+          </h1>
+          <p className="text-sm mt-2 leading-relaxed" style={{ color: "var(--text-muted)" }}>
             Zaczynasz z 1 darmowym planem po rejestracji.
           </p>
         </motion.div>
       </div>
 
       {checkoutError && (
-        <div className="mb-4 glass-card p-3 text-center" style={{ border: "1px solid rgba(239,68,68,0.3)" }}>
-          <p className="text-sm text-red-400">{checkoutError}</p>
+        <div className="mb-4 p-3 rounded-2xl text-center" style={{ background: "#FEF2F2", border: "1px solid #FECACA" }}>
+          <p className="text-sm" style={{ color: "#EF4444" }}>{checkoutError}</p>
         </div>
       )}
 
       <div className="flex flex-col gap-4">
         {/* Free tier */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="glass-card p-5"
+          className="p-5 rounded-2xl flex items-center justify-between"
+          style={{ background: "#F7F7F5", border: "1px solid var(--border)" }}
         >
-          <div className="flex items-center justify-between">
-            <div>
-              <span className="text-xl">🆓</span>
-              <h3 className="font-bold mt-1">Free</h3>
-              <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-                0 PLN
-              </p>
-            </div>
-            <span
-              className="text-sm font-semibold px-3 py-1 rounded-full"
-              style={{ background: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}
-            >
-              1 plan
-            </span>
+          <div>
+            <p className="font-bold text-sm">Free</p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+              Po rejestracji · bez karty
+            </p>
           </div>
-          <p className="text-xs mt-3" style={{ color: "var(--text-muted)" }}>
-            Jeden darmowy plan po rejestracji. Bez karty kredytowej.
-          </p>
+          <span
+            className="text-sm font-bold px-3 py-1 rounded-full"
+            style={{ background: "var(--border)", color: "var(--text-muted)" }}
+          >
+            1 plan
+          </span>
         </motion.div>
 
         {/* Paid plans */}
         {PLANS.map((plan, i) => (
           <motion.div
             key={plan.key}
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 + i * 0.1 }}
-            className="glass-card overflow-hidden"
-            style={
-              plan.highlight
-                ? { border: "1.5px solid rgba(245,158,11,0.5)" }
-                : {}
-            }
+            transition={{ delay: 0.1 + i * 0.08 }}
+            className="rounded-2xl overflow-hidden"
+            style={{
+              background: "#FFFFFF",
+              border: plan.highlight ? `2px solid var(--accent)` : "1px solid var(--border)",
+              boxShadow: plan.highlight ? "0 4px 20px rgba(255,107,53,0.12)" : "0 1px 8px rgba(0,0,0,0.04)",
+            }}
           >
             {plan.highlight && (
               <div
-                className="px-5 py-2 text-xs font-bold text-center"
-                style={{
-                  background: "linear-gradient(135deg, rgba(245,158,11,0.2), rgba(249,115,22,0.2))",
-                  color: "#f59e0b",
-                }}
+                className="px-5 py-2 text-xs font-bold text-center tracking-wider uppercase"
+                style={{ background: "var(--accent)", color: "white" }}
               >
-                ✦ NAJLEPSZY WYBÓR
+                Najlepszy wybór
               </div>
             )}
             <div className="p-5">
               <div className="flex items-start justify-between">
                 <div>
-                  <span className="text-2xl">{plan.emoji}</span>
-                  <h3 className="font-bold mt-1 text-lg">{plan.name}</h3>
+                  <span className="text-xl">{plan.emoji}</span>
+                  <h3 className="font-bold text-lg mt-1">{plan.name}</h3>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-bold gradient-text">{plan.price}</p>
-                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                    {plan.period}
-                  </p>
+                  <p className="text-2xl font-bold" style={{ color: "var(--accent)" }}>{plan.price}</p>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>{plan.period}</p>
                 </div>
               </div>
 
-              <div className="mt-4 flex flex-col gap-2">
+              <div className="mt-4 flex flex-col gap-2.5">
                 {plan.features.map((f) => (
-                  <div key={f} className="flex items-center gap-2">
-                    <span className="text-xs" style={{ color: "#4ade80" }}>✓</span>
+                  <div key={f} className="flex items-center gap-2.5">
+                    <div
+                      className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
+                      style={{ background: "var(--accent-light)" }}
+                    >
+                      <span className="text-xs" style={{ color: "var(--accent)" }}>✓</span>
+                    </div>
                     <p className="text-sm">{f}</p>
                   </div>
                 ))}

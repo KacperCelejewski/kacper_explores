@@ -7,19 +7,19 @@ import { useAppStore } from "@/lib/store";
 import type { DayPlan, DayActivity } from "@/types";
 
 const ACTIVITY_COLORS: Record<string, string> = {
-  attraction: "rgba(245,158,11,0.15)",
-  food: "rgba(249,115,22,0.15)",
-  transport: "rgba(255,255,255,0.05)",
-  tip: "rgba(124,58,237,0.15)",
-  accommodation: "rgba(59,130,246,0.15)",
+  attraction: "rgba(255,107,53,0.07)",
+  food: "rgba(255,107,53,0.05)",
+  transport: "#F7F7F5",
+  tip: "rgba(255,107,53,0.06)",
+  accommodation: "rgba(59,130,246,0.07)",
 };
 
 const ACTIVITY_BORDER: Record<string, string> = {
-  attraction: "rgba(245,158,11,0.35)",
-  food: "rgba(249,115,22,0.35)",
-  transport: "rgba(255,255,255,0.1)",
-  tip: "rgba(124,58,237,0.35)",
-  accommodation: "rgba(59,130,246,0.35)",
+  attraction: "rgba(255,107,53,0.25)",
+  food: "rgba(255,107,53,0.2)",
+  transport: "#EBEBEB",
+  tip: "rgba(255,107,53,0.2)",
+  accommodation: "rgba(59,130,246,0.25)",
 };
 
 export default function PlanPage() {
@@ -28,9 +28,7 @@ export default function PlanPage() {
   const [activeDay, setActiveDay] = useState(0);
 
   useEffect(() => {
-    if (!currentTrip?.plan) {
-      router.replace("/");
-    }
+    if (!currentTrip?.plan) router.replace("/");
   }, [currentTrip, router]);
 
   if (!currentTrip?.plan) {
@@ -45,11 +43,11 @@ export default function PlanPage() {
 
   return (
     <div className="flex flex-col flex-1 pb-8">
-      {/* Hero header */}
+      {/* Header */}
       <div className="px-5 pt-6 pb-4">
         <button
           onClick={() => router.push("/flights")}
-          className="text-sm mb-4 block transition-opacity hover:opacity-70"
+          className="text-sm mb-5 block transition-opacity hover:opacity-60"
           style={{ color: "var(--text-muted)" }}
         >
           ← Zmień kierunek
@@ -73,46 +71,41 @@ export default function PlanPage() {
           </div>
 
           {/* Budget breakdown */}
-          <div
-            className="mt-4 pt-4 border-t grid grid-cols-2 gap-3"
-            style={{ borderColor: "rgba(255,255,255,0.08)" }}
-          >
+          <div className="mt-4 pt-4 border-t grid grid-cols-2 gap-3" style={{ borderColor: "var(--border)" }}>
             <BudgetItem label="Loty" value={plan.budgetBreakdown.flights} emoji="✈️" />
             <BudgetItem label="Nocleg" value={plan.budgetBreakdown.accommodation} emoji="🛏️" />
             <BudgetItem label="Jedzenie" value={plan.budgetBreakdown.food} emoji="🍽️" />
             <BudgetItem label="Atrakcje" value={plan.budgetBreakdown.attractions} emoji="🎟️" />
           </div>
 
-          <div
-            className="mt-3 pt-3 border-t flex items-center justify-between"
-            style={{ borderColor: "rgba(255,255,255,0.08)" }}
-          >
+          <div className="mt-3 pt-3 border-t flex items-center justify-between" style={{ borderColor: "var(--border)" }}>
             <span className="text-sm" style={{ color: "var(--text-muted)" }}>
               Szacowany całkowity koszt
             </span>
-            <span className="text-base font-bold gradient-text">
+            <span className="text-base font-bold" style={{ color: "var(--accent)" }}>
               {plan.totalBudgetEstimate}
             </span>
           </div>
         </motion.div>
       </div>
 
-      {/* General tips */}
+      {/* Tips */}
       {plan.generalTips?.length > 0 && (
         <div className="px-5 mb-4">
-          <h2 className="text-sm font-semibold mb-3" style={{ color: "var(--text-muted)" }}>
-            💡 WSKAZÓWKI BUDŻETOWE
-          </h2>
+          <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: "var(--text-muted)" }}>
+            Wskazówki budżetowe
+          </p>
           <div className="flex flex-col gap-2">
             {plan.generalTips.map((tip, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, x: -12 }}
+                initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.1 + i * 0.07 }}
-                className="glass-card px-4 py-3 flex items-start gap-2"
+                transition={{ delay: 0.05 + i * 0.06 }}
+                className="flex items-start gap-3 px-4 py-3 rounded-2xl"
+                style={{ background: "var(--accent-light)", border: "1px solid rgba(255,107,53,0.15)" }}
               >
-                <span className="text-xs mt-0.5" style={{ color: "#a78bfa" }}>✦</span>
+                <span style={{ color: "var(--accent)", fontWeight: 700, fontSize: 14, lineHeight: "20px", flexShrink: 0 }}>✦</span>
                 <p className="text-xs leading-relaxed">{tip}</p>
               </motion.div>
             ))}
@@ -122,9 +115,9 @@ export default function PlanPage() {
 
       {/* Day tabs */}
       <div className="px-5 mb-4">
-        <h2 className="text-sm font-semibold mb-3" style={{ color: "var(--text-muted)" }}>
-          📅 PLAN DZIENNY
-        </h2>
+        <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: "var(--text-muted)" }}>
+          Plan dzienny
+        </p>
         <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
           {plan.days.map((day, i) => (
             <button
@@ -132,11 +125,8 @@ export default function PlanPage() {
               onClick={() => setActiveDay(i)}
               className="flex-shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200"
               style={{
-                background:
-                  activeDay === i
-                    ? "linear-gradient(135deg, #f59e0b, #f97316)"
-                    : "rgba(255,255,255,0.07)",
-                color: activeDay === i ? "white" : "var(--text-muted)",
+                background: activeDay === i ? "var(--accent)" : "#F0F0F0",
+                color: activeDay === i ? "white" : "var(--text-secondary)",
               }}
             >
               Dzień {day.day}
@@ -145,21 +135,16 @@ export default function PlanPage() {
         </div>
       </div>
 
-      {/* Active day plan */}
-      {plan.days[activeDay] && (
-        <DayPlanView day={plan.days[activeDay]} />
-      )}
+      {/* Active day */}
+      {plan.days[activeDay] && <DayPlanView day={plan.days[activeDay]} />}
 
       {/* New trip CTA */}
       <div className="px-5 mt-6">
         <button
           className="btn-primary"
-          onClick={() => {
-            resetQuiz();
-            router.push("/");
-          }}
+          onClick={() => { resetQuiz(); router.push("/"); }}
         >
-          🌍 Zaplanuj nową podróż
+          Zaplanuj nową podróż →
         </button>
       </div>
     </div>
@@ -182,25 +167,24 @@ function DayPlanView({ day }: { day: DayPlan }) {
   return (
     <motion.div
       key={day.day}
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.25 }}
       className="px-5"
     >
-      <div className="glass-card px-4 py-3 mb-4">
-        <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
-          {day.date}
-        </p>
+      <div
+        className="px-4 py-3 mb-4 rounded-2xl"
+        style={{ background: "#F7F7F5", border: "1px solid var(--border)" }}
+      >
+        <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>{day.date}</p>
         <p className="text-sm font-medium mt-0.5">{day.theme}</p>
       </div>
 
       <div className="relative">
-        {/* Timeline line */}
         <div
           className="absolute left-[22px] top-0 bottom-0 w-px"
-          style={{ background: "rgba(255,255,255,0.08)" }}
+          style={{ background: "var(--border)" }}
         />
-
         <div className="flex flex-col gap-3">
           {day.activities.map((activity, i) => (
             <ActivityCard key={i} activity={activity} index={i} />
@@ -217,27 +201,18 @@ function ActivityCard({ activity, index }: { activity: DayActivity; index: numbe
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 12 }}
+      initial={{ opacity: 0, x: 10 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: index * 0.05 }}
+      transition={{ delay: index * 0.04 }}
       className="flex gap-3 relative"
     >
-      {/* Time bubble */}
       <div className="flex-shrink-0 w-11 text-center relative z-10">
-        <span
-          className="text-lg"
-          style={{
-            filter: "drop-shadow(0 0 6px rgba(245,158,11,0.4))",
-          }}
-        >
-          {activity.emoji}
-        </span>
+        <span className="text-lg">{activity.emoji}</span>
         <p className="text-xs mt-0.5 font-mono" style={{ color: "var(--text-muted)" }}>
           {activity.time}
         </p>
       </div>
 
-      {/* Content */}
       <div
         className="flex-1 rounded-2xl px-4 py-3 mb-1"
         style={{ background: bg, border: `1px solid ${border}` }}
@@ -247,10 +222,14 @@ function ActivityCard({ activity, index }: { activity: DayActivity; index: numbe
           <span
             className="flex-shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
             style={{
-              background: "rgba(255,255,255,0.08)",
-              color: activity.cost === "Free" || activity.cost === "Bezpłatnie"
-                ? "#4ade80"
-                : "var(--text-muted)",
+              background:
+                activity.cost === "Free" || activity.cost === "Bezpłatnie"
+                  ? "rgba(34,197,94,0.12)"
+                  : "#F0F0F0",
+              color:
+                activity.cost === "Free" || activity.cost === "Bezpłatnie"
+                  ? "#16A34A"
+                  : "var(--text-muted)",
             }}
           >
             {activity.cost}
@@ -260,7 +239,7 @@ function ActivityCard({ activity, index }: { activity: DayActivity; index: numbe
           {activity.description}
         </p>
         {activity.location && (
-          <p className="text-xs mt-1.5" style={{ color: "rgba(167,139,250,0.8)" }}>
+          <p className="text-xs mt-1.5 font-medium" style={{ color: "var(--accent)" }}>
             📍 {activity.location}
           </p>
         )}

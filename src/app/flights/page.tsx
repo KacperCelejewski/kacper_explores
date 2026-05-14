@@ -125,7 +125,7 @@ export default function FlightsPage() {
         <div className="flex items-center justify-between mb-4">
           <button
             onClick={() => router.push("/quiz")}
-            className="text-sm font-medium transition-opacity hover:opacity-70"
+            className="text-sm font-medium transition-opacity hover:opacity-60"
             style={{ color: "var(--text-muted)" }}
           >
             ← Zmień odpowiedzi
@@ -133,29 +133,29 @@ export default function FlightsPage() {
           {userStatus?.authenticated ? (
             <button
               onClick={() => router.push("/pricing")}
-              className="text-xs font-semibold px-3 py-1.5 rounded-full transition-opacity hover:opacity-80"
+              className="text-xs font-bold px-3 py-1.5 rounded-full transition-opacity hover:opacity-80"
               style={{
                 background: userStatus.is_pro
-                  ? "linear-gradient(135deg, rgba(245,158,11,0.2), rgba(249,115,22,0.2))"
+                  ? "var(--accent)"
                   : userStatus.credits_remaining === 0
-                  ? "rgba(239,68,68,0.15)"
-                  : "rgba(74,222,128,0.15)",
+                  ? "#FEE2E2"
+                  : "#DCFCE7",
                 color: userStatus.is_pro
-                  ? "#f59e0b"
+                  ? "white"
                   : userStatus.credits_remaining === 0
-                  ? "#f87171"
-                  : "#4ade80",
+                  ? "#DC2626"
+                  : "#16A34A",
               }}
             >
               {userStatus.is_pro
-                ? "✨ Pro"
+                ? "✦ Pro"
                 : `${userStatus.credits_remaining} ${userStatus.credits_remaining === 1 ? "plan" : "plany"}`}
             </button>
           ) : (
             <button
               onClick={() => router.push("/login?next=/flights")}
               className="text-xs font-semibold px-3 py-1.5 rounded-full"
-              style={{ background: "rgba(255,255,255,0.08)", color: "var(--text-muted)" }}
+              style={{ background: "#F0F0F0", color: "var(--text-secondary)" }}
             >
               Zaloguj się
             </button>
@@ -171,10 +171,10 @@ export default function FlightsPage() {
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-card mt-3 p-3 text-center"
-          style={{ border: "1px solid rgba(239,68,68,0.3)" }}
+          className="mt-3 p-3 rounded-2xl text-center"
+          style={{ background: "#FEF2F2", border: "1px solid #FECACA" }}
         >
-          <p className="text-sm text-red-400">{generateError}</p>
+          <p className="text-sm" style={{ color: "#EF4444" }}>{generateError}</p>
         </motion.div>
       )}
 
@@ -188,7 +188,7 @@ export default function FlightsPage() {
           <button
             onClick={() => router.push("/quiz")}
             className="text-xs font-semibold mt-2"
-            style={{ color: "#f59e0b" }}
+            style={{ color: "var(--accent)" }}
           >
             ← Wróć do quizu
           </button>
@@ -212,9 +212,12 @@ export default function FlightsPage() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="glass-card mt-5 p-4 text-center"
+          className="mt-5 p-4 rounded-2xl text-center"
+          style={{ background: "var(--accent-light)", border: "1px solid rgba(255,107,53,0.2)" }}
         >
-          <p className="text-sm font-medium">🤖 AI generuje Twój plan podróży…</p>
+          <p className="text-sm font-semibold" style={{ color: "var(--accent)" }}>
+            AI generuje Twój plan podróży…
+          </p>
           <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
             Może potrwać kilkanaście sekund
           </p>
@@ -225,11 +228,7 @@ export default function FlightsPage() {
 }
 
 function DestinationCard({
-  dest,
-  index,
-  isLoading,
-  isDisabled,
-  onSelect,
+  dest, index, isLoading, isDisabled, onSelect,
 }: {
   dest: DestinationRecommendation;
   index: number;
@@ -244,33 +243,24 @@ function DestinationCard({
     dest.flightBer.savingsVsWro > 150;
 
   const buyLabel =
-    best.airline === "Ryanair"
-      ? "Ryanair ↗"
-      : best.airline === "Wizz Air"
-      ? "Wizz Air ↗"
-      : best.airline === "easyJet"
-      ? "easyJet ↗"
-      : "Skyscanner ↗";
+    best.airline === "Ryanair" ? "Ryanair ↗"
+    : best.airline === "Wizz Air" ? "Wizz Air ↗"
+    : best.airline === "easyJet" ? "easyJet ↗"
+    : "Skyscanner ↗";
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.1 }}
+      transition={{ duration: 0.35, delay: index * 0.08 }}
       className="glass-card overflow-hidden"
-      style={{ opacity: isDisabled ? 0.45 : 1, transition: "opacity 0.2s" }}
+      style={{ opacity: isDisabled ? 0.4 : 1, transition: "opacity 0.2s" }}
     >
-      {/* Top section */}
+      {/* Top */}
       <div
         className="px-4 pt-4 pb-3"
-        style={{
-          background:
-            index === 0
-              ? "linear-gradient(135deg, rgba(245,158,11,0.12), rgba(249,115,22,0.08))"
-              : "transparent",
-        }}
+        style={{ background: index === 0 ? "var(--accent-light)" : "transparent" }}
       >
-        {/* City row */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="text-2xl">{dest.coverImage}</span>
@@ -280,8 +270,8 @@ function DestinationCard({
                 <span className="text-sm">{dest.countryFlag}</span>
                 {index === 0 && (
                   <span
-                    className="text-xs font-semibold px-1.5 py-0.5 rounded-full"
-                    style={{ background: "rgba(245,158,11,0.2)", color: "#f59e0b" }}
+                    className="text-xs font-bold px-1.5 py-0.5 rounded-full"
+                    style={{ background: "var(--accent)", color: "white" }}
                   >
                     #1
                   </span>
@@ -290,17 +280,15 @@ function DestinationCard({
               <p className="text-xs" style={{ color: "var(--text-muted)" }}>{dest.country}</p>
             </div>
           </div>
-
-          {/* Price */}
           <div className="text-right">
-            <p className="text-xl font-bold leading-tight" style={{ color: "#f59e0b" }}>
+            <p className="text-xl font-bold" style={{ color: "var(--accent)" }}>
               {best.realCost} PLN
             </p>
             <p className="text-xs" style={{ color: "var(--text-muted)" }}>tam i z powrotem</p>
           </div>
         </div>
 
-        {/* Description — 1 line */}
+        {/* Description */}
         <p
           className="text-xs mt-2 leading-relaxed"
           style={{
@@ -320,7 +308,7 @@ function DestinationCard({
             <span
               key={tag}
               className="text-xs px-2 py-0.5 rounded-full"
-              style={{ background: "rgba(255,255,255,0.07)", color: "var(--text-muted)" }}
+              style={{ background: "#F0F0F0", color: "var(--text-secondary)" }}
             >
               {TAG_LABELS[tag] ?? tag}
             </span>
@@ -328,7 +316,7 @@ function DestinationCard({
           {hasBerSavings && (
             <span
               className="text-xs px-2 py-0.5 rounded-full font-medium"
-              style={{ background: "rgba(124,58,237,0.15)", color: "#a78bfa" }}
+              style={{ background: "#F0F0F0", color: "var(--text-secondary)" }}
             >
               −{dest.flightBer!.savingsVsWro} PLN z Berlina
             </span>
@@ -339,7 +327,7 @@ function DestinationCard({
       {/* Flight row */}
       <div
         className="px-4 py-2.5 flex items-center justify-between border-t"
-        style={{ borderColor: "rgba(255,255,255,0.07)" }}
+        style={{ borderColor: "var(--border)" }}
       >
         <div className="flex flex-col gap-0.5">
           <div className="flex items-center gap-1.5 text-sm font-medium">
@@ -347,7 +335,7 @@ function DestinationCard({
             <span style={{ color: "var(--text-muted)" }}>→</span>
             <span>{best.destination.code}</span>
             {best.departureDate && best.returnDate && (
-              <span className="text-xs font-normal" style={{ color: "#f59e0b" }}>
+              <span className="text-xs font-normal" style={{ color: "var(--accent)" }}>
                 · {formatShortDate(best.departureDate)}–{formatShortDate(best.returnDate)}
               </span>
             )}
@@ -363,13 +351,8 @@ function DestinationCard({
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="text-xs font-semibold px-3 py-1.5 rounded-full transition-opacity hover:opacity-80 whitespace-nowrap"
-            style={{
-              background: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              color: "var(--text-muted)",
-              textDecoration: "none",
-            }}
+            className="text-xs font-semibold px-3 py-1.5 rounded-full transition-opacity hover:opacity-70 whitespace-nowrap"
+            style={{ background: "#F0F0F0", color: "var(--text-secondary)", textDecoration: "none" }}
           >
             {buyLabel}
           </a>
@@ -379,7 +362,7 @@ function DestinationCard({
       {/* CTA */}
       <div className="px-4 pb-4 pt-2.5">
         <button
-          className="btn-primary w-full flex items-center justify-center gap-2"
+          className="btn-primary flex items-center justify-center gap-2"
           disabled={isDisabled || isLoading}
           onClick={onSelect}
         >

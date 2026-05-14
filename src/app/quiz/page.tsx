@@ -47,14 +47,8 @@ const slideVariants = {
 export default function QuizPage() {
   const router = useRouter();
   const [dir, setDir] = useState(1);
-  const {
-    quizAnswers,
-    currentQuizStep,
-    setQuizAnswer,
-    toggleStyle,
-    nextQuizStep,
-    prevQuizStep,
-  } = useAppStore();
+  const { quizAnswers, currentQuizStep, setQuizAnswer, toggleStyle, nextQuizStep, prevQuizStep } =
+    useAppStore();
 
   const progress = ((currentQuizStep + 1) / TOTAL_STEPS) * 100;
 
@@ -70,11 +64,8 @@ export default function QuizPage() {
 
   const handleNext = () => {
     setDir(1);
-    if (currentQuizStep < TOTAL_STEPS - 1) {
-      nextQuizStep();
-    } else {
-      router.push("/flights");
-    }
+    if (currentQuizStep < TOTAL_STEPS - 1) nextQuizStep();
+    else router.push("/flights");
   };
 
   const handleBack = () => {
@@ -90,12 +81,12 @@ export default function QuizPage() {
         <div className="flex items-center justify-between mb-4">
           <button
             onClick={handleBack}
-            className="text-sm font-medium transition-opacity hover:opacity-70"
+            className="text-sm font-medium transition-opacity hover:opacity-60"
             style={{ color: "var(--text-muted)" }}
           >
             ← Wstecz
           </button>
-          <span className="text-sm font-medium" style={{ color: "var(--text-muted)" }}>
+          <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
             {currentQuizStep + 1} / {TOTAL_STEPS}
           </span>
         </div>
@@ -113,83 +104,38 @@ export default function QuizPage() {
       <div className="flex-1 relative overflow-hidden">
         <AnimatePresence mode="wait" custom={dir}>
           {currentQuizStep === 0 && (
-            <motion.div
-              key="step-budget"
-              custom={dir}
-              variants={slideVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-            >
+            <motion.div key="step-budget" custom={dir} variants={slideVariants}
+              initial="enter" animate="center" exit="exit" transition={{ duration: 0.28, ease: "easeInOut" }}>
               <StepBudget />
             </motion.div>
           )}
           {currentQuizStep === 1 && (
-            <motion.div
-              key="step-vibe"
-              custom={dir}
-              variants={slideVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-            >
+            <motion.div key="step-vibe" custom={dir} variants={slideVariants}
+              initial="enter" animate="center" exit="exit" transition={{ duration: 0.28, ease: "easeInOut" }}>
               <StepVibe />
             </motion.div>
           )}
           {currentQuizStep === 2 && (
-            <motion.div
-              key="step-style"
-              custom={dir}
-              variants={slideVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-            >
+            <motion.div key="step-style" custom={dir} variants={slideVariants}
+              initial="enter" animate="center" exit="exit" transition={{ duration: 0.28, ease: "easeInOut" }}>
               <StepStyle styles={quizAnswers.styles} toggleStyle={toggleStyle} />
             </motion.div>
           )}
           {currentQuizStep === 3 && (
-            <motion.div
-              key="step-placetype"
-              custom={dir}
-              variants={slideVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-            >
+            <motion.div key="step-placetype" custom={dir} variants={slideVariants}
+              initial="enter" animate="center" exit="exit" transition={{ duration: 0.28, ease: "easeInOut" }}>
               <StepPlaceType />
             </motion.div>
           )}
           {currentQuizStep === 4 && (
-            <motion.div
-              key="step-month"
-              custom={dir}
-              variants={slideVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-            >
-              <StepMonth
-                month={quizAnswers.month}
-                setMonth={(m) => setQuizAnswer("month", m)}
-              />
+            <motion.div key="step-month" custom={dir} variants={slideVariants}
+              initial="enter" animate="center" exit="exit" transition={{ duration: 0.28, ease: "easeInOut" }}>
+              <StepMonth month={quizAnswers.month} setMonth={(m) => setQuizAnswer("month", m)} />
             </motion.div>
           )}
           {currentQuizStep === 5 && (
-            <motion.div
-              key="step-duration"
-              custom={dir}
-              variants={slideVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-            >
+            <motion.div key="step-duration" custom={dir} variants={slideVariants}
+              initial="enter" animate="center" exit="exit" transition={{ duration: 0.28, ease: "easeInOut" }}>
               <StepDuration
                 duration={quizAnswers.duration}
                 setDuration={(d) => setQuizAnswer("duration", d)}
@@ -201,13 +147,8 @@ export default function QuizPage() {
         </AnimatePresence>
       </div>
 
-      {/* CTA */}
       <motion.div layout className="mt-6">
-        <button
-          className="btn-primary"
-          disabled={!canProceed()}
-          onClick={handleNext}
-        >
+        <button className="btn-primary" disabled={!canProceed()} onClick={handleNext}>
           {currentQuizStep < TOTAL_STEPS - 1 ? "Dalej →" : "Znajdź loty ✈️"}
         </button>
       </motion.div>
@@ -215,47 +156,34 @@ export default function QuizPage() {
   );
 }
 
-// ─── Step components ──────────────────────────────────────────────────────────
-
 function StepBudget() {
   const { quizAnswers, setQuizAnswer } = useAppStore();
   return (
     <div>
       <h2 className="text-2xl font-bold mt-2">Jaki masz budżet?</h2>
       <p className="text-sm mt-2 mb-6" style={{ color: "var(--text-muted)" }}>
-        Chodzi o całkowity koszt wyjazdu (loty + hotel + jedzenie).
+        Całkowity koszt wyjazdu — loty, noclegi, jedzenie.
       </p>
       <div className="flex flex-col gap-3" role="radiogroup" aria-label="Wybierz budżet">
-        <button
-          className={`option-card ${quizAnswers.budget === "low" ? "selected" : ""}`}
-          onClick={() => setQuizAnswer("budget", "low")}
-          aria-pressed={quizAnswers.budget === "low"}
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🎒</span>
-            <div>
-              <p className="font-semibold text-sm">Backpacker</p>
-              <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                Do 1500 PLN · hostele, street food, darmowe atrakcje
-              </p>
+        {[
+          { value: "low" as const, emoji: "🎒", label: "Backpacker", desc: "Do 1500 PLN · hostele, street food, darmowe atrakcje" },
+          { value: "medium" as const, emoji: "🧳", label: "Komfortowy", desc: "1500–3000 PLN · Airbnb lub 3★ hotel, restauracje" },
+        ].map((opt) => (
+          <button
+            key={opt.value}
+            className={`option-card ${quizAnswers.budget === opt.value ? "selected" : ""}`}
+            onClick={() => setQuizAnswer("budget", opt.value)}
+            aria-pressed={quizAnswers.budget === opt.value}
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{opt.emoji}</span>
+              <div>
+                <p className="font-semibold text-sm">{opt.label}</p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
+              </div>
             </div>
-          </div>
-        </button>
-        <button
-          className={`option-card ${quizAnswers.budget === "medium" ? "selected" : ""}`}
-          onClick={() => setQuizAnswer("budget", "medium")}
-          aria-pressed={quizAnswers.budget === "medium"}
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🧳</span>
-            <div>
-              <p className="font-semibold text-sm">Komfortowy</p>
-              <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                1500–3000 PLN · airbnb / 3★ hotel, restauracje
-              </p>
-            </div>
-          </div>
-        </button>
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -277,7 +205,7 @@ function StepVibe() {
             onClick={() => setQuizAnswer("vibe", opt.value)}
             aria-pressed={quizAnswers.vibe === opt.value}
           >
-            <span className="text-xl">{opt.emoji}</span>
+            <span className="text-2xl">{opt.emoji}</span>
             <p className="font-semibold text-sm mt-2">{opt.label}</p>
             <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
           </button>
@@ -287,18 +215,12 @@ function StepVibe() {
   );
 }
 
-function StepStyle({
-  styles,
-  toggleStyle,
-}: {
-  styles: TravelStyle[];
-  toggleStyle: (s: TravelStyle) => void;
-}) {
+function StepStyle({ styles, toggleStyle }: { styles: TravelStyle[]; toggleStyle: (s: TravelStyle) => void }) {
   return (
     <div>
       <h2 className="text-2xl font-bold mt-2">Czym się interesujesz?</h2>
       <p className="text-sm mt-2 mb-6" style={{ color: "var(--text-muted)" }}>
-        Wybierz co najmniej jedno — AI dopasuje plan do Twoich gustów.
+        Wybierz co najmniej jedno.
       </p>
       <div className="grid grid-cols-2 gap-3" role="group" aria-label="Wybierz zainteresowania">
         {STYLE_OPTIONS.map((opt) => (
@@ -308,11 +230,9 @@ function StepStyle({
             onClick={() => toggleStyle(opt.value)}
             aria-pressed={styles.includes(opt.value)}
           >
-            <span className="text-xl">{opt.emoji}</span>
+            <span className="text-2xl">{opt.emoji}</span>
             <p className="font-semibold text-sm mt-2">{opt.label}</p>
-            <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-              {opt.desc}
-            </p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
           </button>
         ))}
       </div>
@@ -350,13 +270,7 @@ function StepPlaceType() {
   );
 }
 
-function StepMonth({
-  month,
-  setMonth,
-}: {
-  month: number | null;
-  setMonth: (m: number) => void;
-}) {
+function StepMonth({ month, setMonth }: { month: number | null; setMonth: (m: number) => void }) {
   return (
     <div>
       <h2 className="text-2xl font-bold mt-2">Kiedy lecisz?</h2>
@@ -380,10 +294,7 @@ function StepMonth({
 }
 
 function StepDuration({
-  duration,
-  setDuration,
-  includeBerlin,
-  setIncludeBerlin,
+  duration, setDuration, includeBerlin, setIncludeBerlin,
 }: {
   duration: TripDuration | null;
   setDuration: (d: TripDuration) => void;
@@ -404,17 +315,16 @@ function StepDuration({
             onClick={() => setDuration(opt.value)}
             aria-pressed={duration === opt.value}
           >
-            <p className="font-bold text-lg">{opt.label}</p>
-            <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-              {opt.desc}
-            </p>
+            <p className="font-bold text-xl">{opt.label}</p>
+            <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
           </button>
         ))}
       </div>
 
       {/* Berlin toggle */}
       <button
-        className="glass-card w-full mt-5 p-4 flex items-center justify-between cursor-pointer"
+        className="w-full mt-5 p-4 flex items-center justify-between cursor-pointer rounded-2xl"
+        style={{ border: "1.5px solid var(--border)", background: "#FAFAFA" }}
         onClick={() => setIncludeBerlin(!includeBerlin)}
         role="switch"
         aria-checked={includeBerlin}
@@ -429,15 +339,11 @@ function StepDuration({
           </div>
         </div>
         <div
-          className="w-12 h-6 rounded-full flex items-center transition-all duration-300 px-1"
-          style={{
-            background: includeBerlin
-              ? "linear-gradient(135deg, #f59e0b, #f97316)"
-              : "rgba(255,255,255,0.1)",
-          }}
+          className="w-12 h-6 rounded-full flex items-center transition-all duration-300 px-1 flex-shrink-0"
+          style={{ background: includeBerlin ? "var(--accent)" : "#E5E7EB" }}
         >
           <motion.div
-            className="w-4 h-4 bg-white rounded-full shadow"
+            className="w-4 h-4 bg-white rounded-full shadow-sm"
             animate={{ x: includeBerlin ? 24 : 0 }}
             transition={{ type: "spring", stiffness: 500, damping: 30 }}
           />
