@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI, SchemaType, type Schema } from "@google/generative-ai";
+
+export const maxDuration = 60;
 import { buildPlanPrompt, parsePlanResponse } from "@/lib/gemini";
 import { checkRateLimit, LIMITS } from "@/lib/rateLimit";
 import { validateQuizAnswers, validateDestination, getClientIp } from "@/lib/validate";
@@ -117,6 +119,8 @@ export async function POST(req: NextRequest) {
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema,
+        // @ts-expect-error thinkingConfig not yet in SDK types but supported by API
+        thinkingConfig: { thinkingBudget: 0 },
       },
     });
 
@@ -165,7 +169,8 @@ export async function POST(req: NextRequest) {
       credits_remaining: isPro(profile) ? "unlimited" : Math.max(0, profile.credits_remaining - 1),
     });
   } catch (err) {
-    console.error("Generate error:", err);
-    return NextResponse.json({ error: "Błąd generowania planu. Spróbuj ponownie." }, { status: 500 });
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("Generate error:", message);
+    return NextResponse.json({ error: "Błąd generowania planu. Spróbuj ponownie.", detail: message }, { status: 500 });
   }
 }

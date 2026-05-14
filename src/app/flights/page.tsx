@@ -82,6 +82,9 @@ export default function FlightsPage() {
       });
       const data = await res.json();
 
+      if (!res.ok) {
+        throw new Error(data.error ?? `HTTP ${res.status}`);
+      }
       if (data.plan) {
         setCurrentTrip({
           id: data.tripId,
@@ -94,10 +97,11 @@ export default function FlightsPage() {
       } else {
         throw new Error(data.error ?? "Nieznany błąd");
       }
-    } catch {
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Nieznany błąd";
       setIsGeneratingPlan(false);
       setSelectedId(null);
-      setGenerateError("Nie udało się wygenerować planu. Spróbuj ponownie.");
+      setGenerateError(`Nie udało się wygenerować planu: ${msg}`);
     }
   };
 
