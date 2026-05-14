@@ -4,7 +4,7 @@ const resend = new Resend(process.env.RESEND_API_KEY!);
 
 export async function sendNewsletterConfirmation(email: string, verifyUrl: string) {
   await resend.emails.send({
-    from: "Kacper Explores <hello@kacperexplores.com>",
+    from: "Kacper Explores <onboarding@resend.dev>",
     to: email,
     subject: "Potwierdź zapis — odbierz 10% na Pack",
     html: `
