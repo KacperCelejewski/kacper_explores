@@ -30,7 +30,9 @@ interface AppState {
 
 const defaultQuizAnswers: QuizAnswers = {
   budget: null,
+  vibe: null,
   styles: [],
+  placeType: null,
   month: null,
   duration: null,
   includeBerlin: true,

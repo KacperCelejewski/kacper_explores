@@ -36,7 +36,7 @@ export default function HomePage() {
           className="mt-3 text-base leading-relaxed"
           style={{ color: "var(--text-muted)" }}
         >
-          Odpowiedz na 4 pytania — znajdziemy Ci najtańszy lot
+          Odpowiedz na 6 pytań — znajdziemy Ci najtańszy lot
           i wygenerujemy kompletny plan podróży.
         </motion.p>
       </div>
@@ -99,7 +99,7 @@ export default function HomePage() {
           Zaplanuj podróż →
         </Link>
         <p className="text-center text-xs mt-3" style={{ color: "var(--text-muted)" }}>
-          Zajmuje ~2 minuty · 1 darmowy plan po rejestracji
+          Zajmuje ~3 minuty · 1 darmowy plan po rejestracji
         </p>
       </motion.div>
     </div>

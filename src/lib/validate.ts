@@ -2,6 +2,8 @@ import type { QuizAnswers, DestinationRecommendation } from "@/types";
 
 const VALID_BUDGETS = new Set(["low", "medium"]);
 const VALID_STYLES = new Set(["nature", "history", "architecture", "food", "beach", "nightlife"]);
+const VALID_VIBES = new Set(["chill", "intense", "social", "active"]);
+const VALID_PLACE_TYPES = new Set(["big_city", "charming", "beach_sun"]);
 const VALID_DURATIONS = new Set([3, 5, 7, 10]);
 
 export function validateQuizAnswers(data: unknown): data is Partial<QuizAnswers> {
@@ -9,6 +11,8 @@ export function validateQuizAnswers(data: unknown): data is Partial<QuizAnswers>
   const d = data as Record<string, unknown>;
 
   if (d.budget !== undefined && !VALID_BUDGETS.has(d.budget as string)) return false;
+  if (d.vibe !== undefined && d.vibe !== null && !VALID_VIBES.has(d.vibe as string)) return false;
+  if (d.placeType !== undefined && d.placeType !== null && !VALID_PLACE_TYPES.has(d.placeType as string)) return false;
   if (d.styles !== undefined) {
     if (!Array.isArray(d.styles)) return false;
     if (d.styles.length > 6) return false;

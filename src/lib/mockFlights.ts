@@ -1,4 +1,4 @@
-import type { DestinationRecommendation, FlightOffer } from "@/types";
+import type { DestinationRecommendation, FlightOffer, TravelVibe, PlaceType } from "@/types";
 
 const WRO: FlightOffer["origin"] = { code: "WRO", city: "Wrocław", country: "PL" };
 const BER: FlightOffer["origin"] = { code: "BER", city: "Berlin", country: "DE" };
@@ -220,10 +220,38 @@ export const MOCK_DESTINATIONS: DestinationRecommendation[] = [
   },
 ];
 
+const DESTINATION_VIBES: Record<string, TravelVibe[]> = {
+  "Lizbona":           ["chill", "social"],
+  "Barcelona":         ["social", "intense"],
+  "Ateny":             ["intense", "chill"],
+  "Rzym":              ["intense", "chill"],
+  "Porto":             ["chill", "social"],
+  "Madryt":            ["social", "intense"],
+  "Praga":             ["social", "chill"],
+  "Palma de Mallorca": ["chill", "social"],
+  "Dubrownik":         ["chill", "active"],
+  "Teneryfa":          ["chill", "active"],
+};
+
+const DESTINATION_PLACE_TYPES: Record<string, PlaceType[]> = {
+  "Lizbona":           ["charming", "beach_sun"],
+  "Barcelona":         ["big_city", "beach_sun"],
+  "Ateny":             ["big_city", "charming"],
+  "Rzym":              ["big_city", "charming"],
+  "Porto":             ["charming"],
+  "Madryt":            ["big_city"],
+  "Praga":             ["charming"],
+  "Palma de Mallorca": ["beach_sun"],
+  "Dubrownik":         ["beach_sun", "charming"],
+  "Teneryfa":          ["beach_sun"],
+};
+
 export function getRecommendations(
   styles: string[],
   budget: string,
   includeBerlin: boolean,
+  vibe: string | null = null,
+  placeType: string | null = null,
   count = 3
 ): DestinationRecommendation[] {
   const scored = MOCK_DESTINATIONS.map((dest) => {
@@ -236,7 +264,10 @@ export function getRecommendations(
       dest.flightBer.savingsVsWro > 150
         ? 1
         : 0;
-    return { dest, score: styleMatch * 2 + budgetMatch + hasBerSavings };
+    const vibeMatch = vibe && DESTINATION_VIBES[dest.city]?.includes(vibe as TravelVibe) ? 3 : 0;
+    const placeMatch = placeType && DESTINATION_PLACE_TYPES[dest.city]?.includes(placeType as PlaceType) ? 3 : 0;
+
+    return { dest, score: styleMatch * 2 + budgetMatch + hasBerSavings + vibeMatch + placeMatch };
   });
 
   return scored

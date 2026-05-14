@@ -10,6 +10,19 @@ const STYLE_LABELS: Record<string, string> = {
   nightlife: "życie nocne i rozrywka",
 };
 
+const VIBE_LABELS: Record<string, string> = {
+  chill: "relaksujący — powolne tempo, kawiarnie, dużo czasu dla siebie",
+  intense: "intensywny — jak najwięcej atrakcji, każda godzina zaplanowana",
+  social: "towarzyski — poznawanie ludzi, bary, hostelowe przygody, nocne życie",
+  active: "aktywny — piesze trasy, sport, ruch na świeżym powietrzu",
+};
+
+const PLACE_LABELS: Record<string, string> = {
+  big_city: "duże miasto (metro, muzea, energia tłumu)",
+  charming: "kameralne miejsce (małe uliczki, autentyczność, mniej turystów)",
+  beach_sun: "słońce i woda (plaże, morze, relaks na zewnątrz)",
+};
+
 export function buildPlanPrompt(
   destination: DestinationRecommendation,
   quiz: QuizAnswers
@@ -17,24 +30,46 @@ export function buildPlanPrompt(
   const monthName = quiz.month ? MONTH_NAMES[quiz.month - 1] : "nieokreślony";
   const stylesList = quiz.styles.map((s) => STYLE_LABELS[s] ?? s).join(", ");
   const budgetLabel = quiz.budget === "low" ? "niski (backpacker)" : "średni (komfortowy)";
+  const vibeLabel = quiz.vibe ? VIBE_LABELS[quiz.vibe] : null;
+  const placeLabel = quiz.placeType ? PLACE_LABELS[quiz.placeType] : null;
   const flightCost = destination.bestOffer.realCost;
+
+  const vibeInstruction = vibeLabel
+    ? `- Energia wyjazdu: ${vibeLabel}`
+    : "";
+  const placeInstruction = placeLabel
+    ? `- Preferowany typ miejsca: ${placeLabel}`
+    : "";
+
+  const vibeGuide = quiz.vibe === "chill"
+    ? "Zaplanuj spokojne tempo — ranki na kawie, popołudnia na spacerach, wieczory w lokalnych barach. Bez pośpiechu."
+    : quiz.vibe === "intense"
+    ? "Zapakuj każdy dzień po brzegi — dużo atrakcji, mało przerw, maksymalne wykorzystanie czasu."
+    : quiz.vibe === "social"
+    ? "Uwzględnij miejsca gdzie łatwo poznać ludzi — hostelowe bary, wspólne wycieczki, food markety, wieczorne bary."
+    : quiz.vibe === "active"
+    ? "Uwzględnij aktywności fizyczne — piesze trasy, rowery miejskie, pływanie, sport. Mniej muzeów, więcej ruchu."
+    : "";
 
   return `Jesteś ekspertem od budżetowych podróży solo po Europie. Stwórz SZCZEGÓŁOWY plan podróży do ${destination.city}, ${destination.country} na ${quiz.duration} dni w miesiącu ${monthName}.
 
-PREFERENCJE PODRÓŻNIKA:
+PROFIL PODRÓŻNIKA (podróż solo):
 - Budżet: ${budgetLabel}
 - Zainteresowania: ${stylesList}
+${vibeInstruction}
+${placeInstruction}
 - Czas trwania: ${quiz.duration} dni
 - Koszt lotów: ~${flightCost} PLN (w obie strony)
 
 WYMAGANIA PLANU:
 1. Plan KAŻDEGO dnia od 08:00 do 22:00 (minimum 6 aktywności na dzień)
 2. Skup się na atrakcjach pasujących do zainteresowań: ${stylesList}
-3. Tanie miejsca do jedzenia (street food, lokalne bary, bazary)
-4. Darmowe lub tanie atrakcje (priorytet!)
-5. Praktyczne wskazówki budżetowe i triki oszczędnościowe
-6. Informacje o bezpieczeństwie dla podróżujących solo
-7. Szacunkowe koszty każdej aktywności w PLN
+3. ${vibeGuide}
+4. Tanie miejsca do jedzenia (street food, lokalne bary, bazary)
+5. Darmowe lub tanie atrakcje (priorytet!)
+6. Praktyczne wskazówki budżetowe i triki oszczędnościowe
+7. Wskazówki dla podróżujących SOLO — gdzie poznać ludzi, bezpieczeństwo, najlepsze dzielnice do mieszkania
+8. Szacunkowe koszty każdej aktywności w PLN
 
 Odpowiedz WYŁĄCZNIE w formacie JSON (bez markdown, bez komentarzy):
 

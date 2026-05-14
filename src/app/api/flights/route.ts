@@ -27,8 +27,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Nieprawidłowe dane wejściowe." }, { status: 400 });
   }
 
-  const { styles = [], budget = "low", includeBerlin = true } = body;
+  const { styles = [], budget = "low", includeBerlin = true, vibe = null, placeType = null } = body;
 
-  const recommendations = getRecommendations(styles, budget ?? "low", includeBerlin, 3);
+  const recommendations = getRecommendations(styles, budget ?? "low", includeBerlin, vibe, placeType, 3);
   return NextResponse.json({ recommendations });
 }

@@ -4,10 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/lib/store";
-import type { TravelStyle, TripDuration } from "@/types";
+import type { TravelStyle, TripDuration, TravelVibe, PlaceType } from "@/types";
 import { MONTH_NAMES } from "@/lib/mockFlights";
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 6;
 
 const STYLE_OPTIONS: { value: TravelStyle; label: string; emoji: string; desc: string }[] = [
   { value: "history", label: "Historia", emoji: "🏛️", desc: "Muzea, zamki, starówki" },
@@ -16,6 +16,19 @@ const STYLE_OPTIONS: { value: TravelStyle; label: string; emoji: string; desc: s
   { value: "nature", label: "Natura", emoji: "🌿", desc: "Parki, góry, jeziora" },
   { value: "beach", label: "Plaża", emoji: "🏖️", desc: "Morze, słońce, relaks" },
   { value: "nightlife", label: "Nightlife", emoji: "🎶", desc: "Bary, kluby, koncerty" },
+];
+
+const VIBE_OPTIONS: { value: TravelVibe; emoji: string; label: string; desc: string }[] = [
+  { value: "chill", emoji: "☕", label: "Reset", desc: "Własne tempo, kawiarnie, luz" },
+  { value: "intense", emoji: "🔥", label: "Full program", desc: "Jak najwięcej, każda chwila gra" },
+  { value: "social", emoji: "🎉", label: "Towarzyski", desc: "Poznawanie ludzi, bary, imprezy" },
+  { value: "active", emoji: "🥾", label: "Aktywny", desc: "Piesze trasy, sport, przyroda" },
+];
+
+const PLACE_OPTIONS: { value: PlaceType; emoji: string; label: string; desc: string }[] = [
+  { value: "big_city", emoji: "🏙️", label: "Duże miasto", desc: "Metro, muzea, energia tłumu" },
+  { value: "charming", emoji: "🏘️", label: "Kameralne", desc: "Małe uliczki, autentyczność, spokój" },
+  { value: "beach_sun", emoji: "🏖️", label: "Słońce i woda", desc: "Plaże, morze, ciepło przede wszystkim" },
 ];
 
 const DURATION_OPTIONS: { value: TripDuration; label: string; desc: string }[] = [
@@ -47,9 +60,11 @@ export default function QuizPage() {
 
   const canProceed = () => {
     if (currentQuizStep === 0) return quizAnswers.budget !== null;
-    if (currentQuizStep === 1) return quizAnswers.styles.length > 0;
-    if (currentQuizStep === 2) return quizAnswers.month !== null;
-    if (currentQuizStep === 3) return quizAnswers.duration !== null;
+    if (currentQuizStep === 1) return quizAnswers.vibe !== null;
+    if (currentQuizStep === 2) return quizAnswers.styles.length > 0;
+    if (currentQuizStep === 3) return quizAnswers.placeType !== null;
+    if (currentQuizStep === 4) return quizAnswers.month !== null;
+    if (currentQuizStep === 5) return quizAnswers.duration !== null;
     return false;
   };
 
@@ -112,6 +127,19 @@ export default function QuizPage() {
           )}
           {currentQuizStep === 1 && (
             <motion.div
+              key="step-vibe"
+              custom={dir}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+            >
+              <StepVibe />
+            </motion.div>
+          )}
+          {currentQuizStep === 2 && (
+            <motion.div
               key="step-style"
               custom={dir}
               variants={slideVariants}
@@ -123,7 +151,20 @@ export default function QuizPage() {
               <StepStyle styles={quizAnswers.styles} toggleStyle={toggleStyle} />
             </motion.div>
           )}
-          {currentQuizStep === 2 && (
+          {currentQuizStep === 3 && (
+            <motion.div
+              key="step-placetype"
+              custom={dir}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+            >
+              <StepPlaceType />
+            </motion.div>
+          )}
+          {currentQuizStep === 4 && (
             <motion.div
               key="step-month"
               custom={dir}
@@ -139,7 +180,7 @@ export default function QuizPage() {
               />
             </motion.div>
           )}
-          {currentQuizStep === 3 && (
+          {currentQuizStep === 5 && (
             <motion.div
               key="step-duration"
               custom={dir}
@@ -220,6 +261,32 @@ function StepBudget() {
   );
 }
 
+function StepVibe() {
+  const { quizAnswers, setQuizAnswer } = useAppStore();
+  return (
+    <div>
+      <h2 className="text-2xl font-bold mt-2">Jaka energia wyjazdu?</h2>
+      <p className="text-sm mt-2 mb-6" style={{ color: "var(--text-muted)" }}>
+        Jak wyobrażasz sobie typowy dzień na miejscu.
+      </p>
+      <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Wybierz energię wyjazdu">
+        {VIBE_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            className={`option-card ${quizAnswers.vibe === opt.value ? "selected" : ""}`}
+            onClick={() => setQuizAnswer("vibe", opt.value)}
+            aria-pressed={quizAnswers.vibe === opt.value}
+          >
+            <span className="text-xl">{opt.emoji}</span>
+            <p className="font-semibold text-sm mt-2">{opt.label}</p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function StepStyle({
   styles,
   toggleStyle,
@@ -246,6 +313,36 @@ function StepStyle({
             <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
               {opt.desc}
             </p>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function StepPlaceType() {
+  const { quizAnswers, setQuizAnswer } = useAppStore();
+  return (
+    <div>
+      <h2 className="text-2xl font-bold mt-2">Jaki typ miejsca?</h2>
+      <p className="text-sm mt-2 mb-6" style={{ color: "var(--text-muted)" }}>
+        Gdzie czujesz się najlepiej.
+      </p>
+      <div className="flex flex-col gap-3" role="radiogroup" aria-label="Wybierz typ miejsca">
+        {PLACE_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            className={`option-card ${quizAnswers.placeType === opt.value ? "selected" : ""}`}
+            onClick={() => setQuizAnswer("placeType", opt.value)}
+            aria-pressed={quizAnswers.placeType === opt.value}
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{opt.emoji}</span>
+              <div>
+                <p className="font-semibold text-sm">{opt.label}</p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
+              </div>
+            </div>
           </button>
         ))}
       </div>

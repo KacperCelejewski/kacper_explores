@@ -8,11 +8,17 @@ export type TravelStyle =
   | "beach"
   | "nightlife";
 
+export type TravelVibe = "chill" | "intense" | "social" | "active";
+
+export type PlaceType = "big_city" | "charming" | "beach_sun";
+
 export type TripDuration = 3 | 5 | 7 | 10;
 
 export interface QuizAnswers {
   budget: BudgetLevel | null;
+  vibe: TravelVibe | null;
   styles: TravelStyle[];
+  placeType: PlaceType | null;
   month: number | null; // 1-12
   duration: TripDuration | null;
   includeBerlin: boolean;
