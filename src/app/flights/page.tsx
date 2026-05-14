@@ -13,6 +13,22 @@ interface UserStatus {
   is_pro?: boolean;
 }
 
+const TAG_LABELS: Record<string, string> = {
+  history: "historia",
+  food: "jedzenie",
+  architecture: "architektura",
+  beach: "plaża",
+  nightlife: "nocne życie",
+  nature: "natura",
+};
+
+const SHORT_MONTHS = ["sty","lut","mar","kwi","maj","cze","lip","sie","wrz","paź","lis","gru"];
+
+function formatShortDate(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getUTCDate()} ${SHORT_MONTHS[d.getUTCMonth()]}`;
+}
+
 export default function FlightsPage() {
   const router = useRouter();
   const { quizAnswers, selectDestination, setCurrentTrip, setIsGeneratingPlan, isGeneratingPlan } =
@@ -29,7 +45,6 @@ export default function FlightsPage() {
       router.replace("/quiz");
       return;
     }
-    // Fetch flights + user profile in parallel
     Promise.all([
       fetch("/api/flights", {
         method: "POST",
@@ -44,12 +59,10 @@ export default function FlightsPage() {
   }, [quizAnswers, router]);
 
   const handleSelect = async (dest: DestinationRecommendation) => {
-    // Gate: wymaga logowania
     if (!userStatus?.authenticated) {
       router.push(`/login?next=/flights`);
       return;
     }
-    // Gate: wymaga kredytów
     if (!userStatus?.can_generate) {
       router.push("/pricing");
       return;
@@ -109,7 +122,7 @@ export default function FlightsPage() {
     <div className="flex flex-col flex-1 px-5 pb-8">
       {/* Header */}
       <div className="pt-6 pb-2">
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-4">
           <button
             onClick={() => router.push("/quiz")}
             className="text-sm font-medium transition-opacity hover:opacity-70"
@@ -117,7 +130,6 @@ export default function FlightsPage() {
           >
             ← Zmień odpowiedzi
           </button>
-          {/* Credits badge */}
           {userStatus?.authenticated ? (
             <button
               onClick={() => router.push("/pricing")}
@@ -137,7 +149,7 @@ export default function FlightsPage() {
             >
               {userStatus.is_pro
                 ? "✨ Pro"
-                : `${userStatus.credits_remaining} plan${userStatus.credits_remaining === 1 ? "" : "y"}`}
+                : `${userStatus.credits_remaining} ${userStatus.credits_remaining === 1 ? "plan" : "plany"}`}
             </button>
           ) : (
             <button
@@ -150,8 +162,8 @@ export default function FlightsPage() {
           )}
         </div>
         <h1 className="text-2xl font-bold">Twoje rekomendacje</h1>
-        <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-          Wybierz kierunek — AI wygeneruje kompletny plan
+        <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
+          Wybierz kierunek i wygeneruj plan z AI
         </p>
       </div>
 
@@ -159,7 +171,7 @@ export default function FlightsPage() {
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-card mt-4 p-4 text-center"
+          className="glass-card mt-3 p-3 text-center"
           style={{ border: "1px solid rgba(239,68,68,0.3)" }}
         >
           <p className="text-sm text-red-400">{generateError}</p>
@@ -183,8 +195,7 @@ export default function FlightsPage() {
         </div>
       )}
 
-      {/* Cards */}
-      <div className="mt-4 flex flex-col gap-4">
+      <div className="mt-4 flex flex-col gap-3">
         {recommendations.map((dest, i) => (
           <DestinationCard
             key={dest.city}
@@ -201,11 +212,9 @@ export default function FlightsPage() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="glass-card mt-6 p-4 text-center"
+          className="glass-card mt-5 p-4 text-center"
         >
-          <p className="text-sm font-medium">
-            🤖 Gemini generuje Twój plan podróży…
-          </p>
+          <p className="text-sm font-medium">🤖 AI generuje Twój plan podróży…</p>
           <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
             Może potrwać kilkanaście sekund
           </p>
@@ -213,13 +222,6 @@ export default function FlightsPage() {
       )}
     </div>
   );
-}
-
-const SHORT_MONTHS = ["sty","lut","mar","kwi","maj","cze","lip","sie","wrz","paź","lis","gru"];
-
-function formatShortDate(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getUTCDate()} ${SHORT_MONTHS[d.getUTCMonth()]}`;
 }
 
 function DestinationCard({
@@ -241,117 +243,143 @@ function DestinationCard({
     dest.flightBer.savingsVsWro !== null &&
     dest.flightBer.savingsVsWro > 150;
 
+  const buyLabel =
+    best.airline === "Ryanair"
+      ? "Ryanair ↗"
+      : best.airline === "Wizz Air"
+      ? "Wizz Air ↗"
+      : best.airline === "easyJet"
+      ? "easyJet ↗"
+      : "Skyscanner ↗";
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.1 }}
       className="glass-card overflow-hidden"
-      style={{ opacity: isDisabled ? 0.5 : 1 }}
+      style={{ opacity: isDisabled ? 0.45 : 1, transition: "opacity 0.2s" }}
     >
-      {/* Top strip */}
+      {/* Top section */}
       <div
-        className="px-5 py-4"
+        className="px-4 pt-4 pb-3"
         style={{
           background:
             index === 0
-              ? "linear-gradient(135deg, rgba(245,158,11,0.15), rgba(249,115,22,0.15))"
+              ? "linear-gradient(135deg, rgba(245,158,11,0.12), rgba(249,115,22,0.08))"
               : "transparent",
         }}
       >
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">{dest.coverImage}</span>
+        {/* City row */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <span className="text-2xl">{dest.coverImage}</span>
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-base">{dest.city}</h3>
-                <span>{dest.countryFlag}</span>
+              <div className="flex items-center gap-1.5">
+                <h3 className="font-bold text-base leading-tight">{dest.city}</h3>
+                <span className="text-sm">{dest.countryFlag}</span>
                 {index === 0 && (
                   <span
-                    className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                    className="text-xs font-semibold px-1.5 py-0.5 rounded-full"
                     style={{ background: "rgba(245,158,11,0.2)", color: "#f59e0b" }}
                   >
                     #1
                   </span>
                 )}
               </div>
-              <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                {dest.country}
-              </p>
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>{dest.country}</p>
             </div>
           </div>
+
+          {/* Price */}
           <div className="text-right">
-            <p className="text-xl font-bold" style={{ color: "#f59e0b" }}>
+            <p className="text-xl font-bold leading-tight" style={{ color: "#f59e0b" }}>
               {best.realCost} PLN
             </p>
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-              lot w obie strony
-            </p>
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>tam i z powrotem</p>
           </div>
         </div>
 
-        <p className="text-xs mt-3 leading-relaxed" style={{ color: "var(--text-muted)" }}>
+        {/* Description — 1 line */}
+        <p
+          className="text-xs mt-2 leading-relaxed"
+          style={{
+            color: "var(--text-muted)",
+            overflow: "hidden",
+            display: "-webkit-box",
+            WebkitLineClamp: 1,
+            WebkitBoxOrient: "vertical",
+          }}
+        >
           {dest.description}
         </p>
 
         {/* Tags */}
-        <div className="flex flex-wrap gap-1.5 mt-3">
+        <div className="flex flex-wrap gap-1.5 mt-2">
           {dest.tags.slice(0, 3).map((tag) => (
             <span
               key={tag}
               className="text-xs px-2 py-0.5 rounded-full"
               style={{ background: "rgba(255,255,255,0.07)", color: "var(--text-muted)" }}
             >
-              {tag}
+              {TAG_LABELS[tag] ?? tag}
             </span>
           ))}
-        </div>
-      </div>
-
-      {/* Flight info */}
-      <div
-        className="px-5 py-3 border-t"
-        style={{ borderColor: "rgba(255,255,255,0.08)" }}
-      >
-        <div className="flex items-center justify-between">
-          <div className="text-xs" style={{ color: "var(--text-muted)" }}>
-            <span className="font-medium" style={{ color: "var(--text-primary)" }}>
-              {best.origin.code} → {best.destination.code}
-            </span>
-            {"  "}·{"  "}
-            {best.departureTime} – {best.arrivalTime}{"  "}·{"  "}
-            {best.airline}
-          </div>
           {hasBerSavings && (
             <span
-              className="text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
-              style={{ background: "rgba(124,58,237,0.2)", color: "#a78bfa" }}
+              className="text-xs px-2 py-0.5 rounded-full font-medium"
+              style={{ background: "rgba(124,58,237,0.15)", color: "#a78bfa" }}
             >
-              −{dest.flightBer!.savingsVsWro} PLN vs WRO
+              −{dest.flightBer!.savingsVsWro} PLN z Berlina
             </span>
           )}
         </div>
+      </div>
 
-        {/* Dates */}
-        {best.departureDate && best.returnDate && (
-          <div className="flex items-center gap-2 mt-2">
-            <span className="text-xs px-2 py-0.5 rounded-full font-medium"
-              style={{ background: "rgba(245,158,11,0.12)", color: "#f59e0b" }}>
-              ✈ {formatShortDate(best.departureDate)}
-            </span>
-            <span className="text-xs" style={{ color: "var(--text-muted)" }}>→</span>
-            <span className="text-xs px-2 py-0.5 rounded-full font-medium"
-              style={{ background: "rgba(245,158,11,0.12)", color: "#f59e0b" }}>
-              ✈ {formatShortDate(best.returnDate)}
-            </span>
+      {/* Flight row */}
+      <div
+        className="px-4 py-2.5 flex items-center justify-between border-t"
+        style={{ borderColor: "rgba(255,255,255,0.07)" }}
+      >
+        <div className="flex flex-col gap-0.5">
+          <div className="flex items-center gap-1.5 text-sm font-medium">
+            <span>{best.origin.code}</span>
+            <span style={{ color: "var(--text-muted)" }}>→</span>
+            <span>{best.destination.code}</span>
+            {best.departureDate && best.returnDate && (
+              <span className="text-xs font-normal" style={{ color: "#f59e0b" }}>
+                · {formatShortDate(best.departureDate)}–{formatShortDate(best.returnDate)}
+              </span>
+            )}
           </div>
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+            {best.departureTime}–{best.arrivalTime} · {best.airline}
+          </p>
+        </div>
+
+        {best.affiliateUrl && (
+          <a
+            href={best.affiliateUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="text-xs font-semibold px-3 py-1.5 rounded-full transition-opacity hover:opacity-80 whitespace-nowrap"
+            style={{
+              background: "rgba(255,255,255,0.08)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              color: "var(--text-muted)",
+              textDecoration: "none",
+            }}
+          >
+            {buyLabel}
+          </a>
         )}
       </div>
 
       {/* CTA */}
-      <div className="px-5 pb-4 pt-3 flex flex-col gap-2">
+      <div className="px-4 pb-4 pt-2.5">
         <button
-          className="btn-primary flex items-center justify-center gap-2"
+          className="btn-primary w-full flex items-center justify-center gap-2"
           disabled={isDisabled || isLoading}
           onClick={onSelect}
         >
@@ -366,29 +394,9 @@ function DestinationCard({
               Generuję plan…
             </>
           ) : (
-            <>Wybierz i wygeneruj plan</>
+            "Wygeneruj plan AI →"
           )}
         </button>
-
-        <a
-          href={best.affiliateUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-center text-xs py-2.5 rounded-2xl font-semibold transition-opacity hover:opacity-80"
-          style={{
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,255,255,0.12)",
-            color: "var(--text-muted)",
-            textDecoration: "none",
-            display: "block",
-          }}
-        >
-          {best.airline === "Ryanair"
-            ? "🟡 Kup bilet na Ryanair.com"
-            : best.airline === "Wizz Air"
-            ? "🟣 Kup bilet na WizzAir.com"
-            : "🔍 Szukaj i kup na Skyscanner"}
-        </a>
       </div>
     </motion.div>
   );
