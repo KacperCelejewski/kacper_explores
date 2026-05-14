@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { stripe } from "@/lib/stripe";
+import { sendNewsletterConfirmation } from "@/lib/email";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { getClientIp } from "@/lib/validate";
+import { randomBytes } from "crypto";
 
 const COUPON_ID = "newsletter_10pct";
 
@@ -33,6 +35,15 @@ async function ensureCoupon() {
   }
 }
 
+async function createStripePromoCode(code: string): Promise<string> {
+  const promo = await stripe.promotionCodes.create({
+    promotion: { type: "coupon", coupon: COUPON_ID },
+    code,
+    max_redemptions: 1,
+  });
+  return promo.id;
+}
+
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
   const rl = checkRateLimit(`newsletter:${ip}`, 5, 60 * 60 * 1000);
@@ -54,18 +65,30 @@ export async function POST(req: NextRequest) {
 
   const supabase = createServiceClient();
 
-  // Return existing code if already subscribed
+  // If already subscribed and verified — resend email with existing code
   const { data: existing } = await supabase
     .from("newsletter_subscribers")
-    .select("discount_code")
+    .select("discount_code, verified, verification_token")
     .eq("email", email)
     .maybeSingle();
 
   if (existing) {
-    return NextResponse.json({ code: existing.discount_code, alreadySubscribed: true });
+    if (existing.verified) {
+      // Already done — just return code directly (they own this email)
+      return NextResponse.json({ code: existing.discount_code, alreadySubscribed: true });
+    }
+    // Not yet verified — resend confirmation
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const verifyUrl = `${appUrl}/api/newsletter/verify?token=${existing.verification_token}`;
+    try {
+      await sendNewsletterConfirmation(email, verifyUrl);
+    } catch {
+      // Don't fail the request if resend is misconfigured
+    }
+    return NextResponse.json({ pending: true });
   }
 
-  // Create Stripe coupon (idempotent) + unique promo code
+  // New subscriber — create Stripe promo code + store with unverified token
   try {
     await ensureCoupon();
   } catch {
@@ -74,43 +97,41 @@ export async function POST(req: NextRequest) {
 
   const code = randomCode();
   let stripePromoId: string | null = null;
+  let finalCode = code;
 
   try {
-    const promo = await stripe.promotionCodes.create({
-      promotion: { type: "coupon", coupon: COUPON_ID },
-      code,
-      max_redemptions: 1,
-    });
-    stripePromoId = promo.id;
+    stripePromoId = await createStripePromoCode(code);
   } catch {
-    // Stripe promo code creation failed (e.g. code collision) — retry once with new code
+    // Retry with a different code on collision
     const code2 = randomCode();
     try {
-      const promo2 = await stripe.promotionCodes.create({
-        promotion: { type: "coupon", coupon: COUPON_ID },
-        code: code2,
-        max_redemptions: 1,
-      });
-      stripePromoId = promo2.id;
-      const { error } = await supabase.from("newsletter_subscribers").insert({
-        email,
-        discount_code: code2,
-        stripe_promo_code_id: stripePromoId,
-      });
-      if (error) return NextResponse.json({ error: "Błąd zapisu." }, { status: 500 });
-      return NextResponse.json({ code: code2 });
+      stripePromoId = await createStripePromoCode(code2);
+      finalCode = code2;
     } catch {
       return NextResponse.json({ error: "Nie udało się wygenerować kodu. Spróbuj ponownie." }, { status: 500 });
     }
   }
 
+  const token = randomBytes(32).toString("hex");
+
   const { error } = await supabase.from("newsletter_subscribers").insert({
     email,
-    discount_code: code,
+    discount_code: finalCode,
     stripe_promo_code_id: stripePromoId,
+    verified: false,
+    verification_token: token,
   });
 
   if (error) return NextResponse.json({ error: "Błąd zapisu." }, { status: 500 });
 
-  return NextResponse.json({ code });
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const verifyUrl = `${appUrl}/api/newsletter/verify?token=${token}`;
+
+  try {
+    await sendNewsletterConfirmation(email, verifyUrl);
+  } catch {
+    // Don't fail — user can request resend
+  }
+
+  return NextResponse.json({ pending: true });
 }
