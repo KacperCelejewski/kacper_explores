@@ -90,6 +90,18 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: "kacper-explores-store",
+      version: 2,
+      migrate: (persisted: unknown, version: number) => {
+        const s = persisted as Record<string, unknown>;
+        if (version < 2) {
+          const qa = (s.quizAnswers ?? {}) as Record<string, unknown>;
+          if (!qa.airports || !Array.isArray(qa.airports) || qa.airports.length === 0) {
+            qa.airports = ["WRO"];
+          }
+          s.quizAnswers = qa;
+        }
+        return s;
+      },
       partialize: (state) => ({
         quizAnswers: state.quizAnswers,
         currentQuizStep: state.currentQuizStep,
