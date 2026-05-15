@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/lib/store";
 import type { TravelStyle, TripDuration, TravelVibe, PlaceType, QuizAnswers } from "@/types";
@@ -99,18 +100,28 @@ const slideVariants = {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
-export default function QuizPage() {
+function QuizPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [dir, setDir] = useState(1);
   const [savedPrefs, setSavedPrefs] = useState<QuizAnswers | null>(null);
+  const autoStarted = useRef(false);
   const { quizAnswers, currentQuizStep, setQuizAnswer, toggleStyle, nextQuizStep, prevQuizStep, resetQuiz } =
     useAppStore();
 
   useEffect(() => {
     fetch("/api/profile")
       .then((r) => r.json())
-      .then((d) => { if (d.authenticated && d.quiz_preferences) setSavedPrefs(d.quiz_preferences); })
+      .then((d) => {
+        if (d.authenticated && d.quiz_preferences) setSavedPrefs(d.quiz_preferences);
+        // Auto-advance to flights after successful login redirect
+        if (d.authenticated && searchParams.get("afterLogin") === "1" && !autoStarted.current) {
+          autoStarted.current = true;
+          router.replace("/flights");
+        }
+      })
       .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleUseSaved = () => {
@@ -139,10 +150,18 @@ export default function QuizPage() {
     return false;
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     setDir(1);
-    if (currentQuizStep < TOTAL_STEPS - 1) nextQuizStep();
-    else router.push("/flights");
+    if (currentQuizStep < TOTAL_STEPS - 1) {
+      nextQuizStep();
+    } else {
+      const profile = await fetch("/api/profile").then((r) => r.json()).catch(() => ({}));
+      if (!profile.authenticated) {
+        router.push("/login?next=/quiz%3FafterLogin%3D1");
+      } else {
+        router.push("/flights");
+      }
+    }
   };
 
   const handleBack = () => {
@@ -152,7 +171,7 @@ export default function QuizPage() {
   };
 
   return (
-    <div className="flex flex-col flex-1 px-5 pb-8">
+    <div className="flex flex-col flex-1 px-5 pb-8" suppressHydrationWarning>
       {/* Top bar */}
       <div className="pt-6 pb-4">
         <div className="flex items-center justify-between mb-4">
@@ -261,6 +280,14 @@ export default function QuizPage() {
         </button>
       </motion.div>
     </div>
+  );
+}
+
+export default function QuizPage() {
+  return (
+    <Suspense>
+      <QuizPageInner />
+    </Suspense>
   );
 }
 

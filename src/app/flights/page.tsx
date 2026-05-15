@@ -35,7 +35,7 @@ const INITIAL_VISIBLE = 5;
 
 export default function FlightsPage() {
   const router = useRouter();
-  const { quizAnswers, selectDestination, setCurrentTrip, setIsGeneratingPlan, isGeneratingPlan } =
+  const { quizAnswers, selectDestination, setCurrentTrip, setIsGeneratingPlan, isGeneratingPlan, _hasHydrated } =
     useAppStore();
 
   const [allRecs, setAllRecs] = useState<DestinationRecommendation[]>([]);
@@ -47,6 +47,7 @@ export default function FlightsPage() {
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
 
   useEffect(() => {
+    if (!_hasHydrated) return;
     if (!quizAnswers.budget) {
       router.replace("/quiz");
       return;
@@ -69,7 +70,7 @@ export default function FlightsPage() {
         }).catch(() => {});
       }
     }).finally(() => setLoading(false));
-  }, [quizAnswers, router]);
+  }, [_hasHydrated, quizAnswers, router]);
 
   // Reset visible count when sort changes
   useEffect(() => { setVisibleCount(INITIAL_VISIBLE); }, [sortKey]);

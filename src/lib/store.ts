@@ -16,6 +16,9 @@ interface AppState {
   currentTrip: Trip | null;
   isGeneratingPlan: boolean;
 
+  // Hydration flag (not persisted)
+  _hasHydrated: boolean;
+
   // Actions
   setQuizAnswer: <K extends keyof QuizAnswers>(key: K, value: QuizAnswers[K]) => void;
   toggleStyle: (style: QuizAnswers["styles"][number]) => void;
@@ -26,6 +29,7 @@ interface AppState {
   selectDestination: (dest: DestinationRecommendation) => void;
   setCurrentTrip: (trip: Trip) => void;
   setIsGeneratingPlan: (val: boolean) => void;
+  setHasHydrated: (val: boolean) => void;
 }
 
 const defaultQuizAnswers: QuizAnswers = {
@@ -46,6 +50,7 @@ export const useAppStore = create<AppState>()(
       selectedDestination: null,
       currentTrip: null,
       isGeneratingPlan: false,
+      _hasHydrated: false,
 
       setQuizAnswer: (key, value) =>
         set((state) => ({
@@ -87,10 +92,15 @@ export const useAppStore = create<AppState>()(
       setCurrentTrip: (trip) => set({ currentTrip: trip }),
 
       setIsGeneratingPlan: (val) => set({ isGeneratingPlan: val }),
+
+      setHasHydrated: (val) => set({ _hasHydrated: val }),
     }),
     {
       name: "kacper-explores-store",
       version: 2,
+      onRehydrateStorage: () => (state) => {
+        if (state) state.setHasHydrated(true);
+      },
       migrate: (persisted: unknown, version: number) => {
         const s = persisted as Record<string, unknown>;
         if (version < 2) {
