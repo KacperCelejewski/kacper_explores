@@ -315,11 +315,9 @@ function DestinationCard({
     best.savingsVsWro !== null && best.savingsVsWro > 150 ? best.savingsVsWro : null;
   const hasBerSavings = !hubSavings && dest.flightBer?.savingsVsWro != null && dest.flightBer.savingsVsWro > 150;
 
-  const buyLabel =
-    best.airline === "Ryanair" ? "Ryanair ↗"
-    : best.airline === "Wizz Air" ? "Wizz Air ↗"
-    : best.airline === "easyJet" ? "easyJet ↗"
-    : "Skyscanner ↗";
+  const buyLabel = best.affiliateUrl
+    ? `Sprawdź cenę na ${best.airline === "Ryanair" || best.airline === "Wizz Air" || best.airline === "easyJet" ? best.airline : "Skyscanner"} ↗`
+    : null;
 
   return (
     <motion.div
@@ -355,9 +353,9 @@ function DestinationCard({
           </div>
           <div className="text-right">
             <p className="text-xl font-bold" style={{ color: "var(--accent)" }}>
-              {best.realCost} PLN
+              ~{best.realCost} PLN
             </p>
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>tam i z powrotem</p>
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>cena orientacyjna</p>
           </div>
         </div>
 
@@ -430,7 +428,7 @@ function DestinationCard({
           )}
         </div>
 
-        {best.affiliateUrl && (
+        {best.affiliateUrl && buyLabel && (
           <a
             href={best.affiliateUrl}
             target="_blank"
