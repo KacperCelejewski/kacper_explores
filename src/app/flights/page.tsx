@@ -203,6 +203,16 @@ export default function FlightsPage() {
         </div>
       </div>
 
+      {/* Disclaimer banner */}
+      {allRecs.length > 0 && (
+        <div className="mt-3 px-3 py-2 rounded-xl flex items-center gap-2" style={{ background: "#F8F8F8", border: "1px solid var(--border)" }}>
+          <span className="text-sm flex-shrink-0">ℹ️</span>
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+            Ceny i terminy są orientacyjne — kliknij <strong>Sprawdź cenę</strong> aby zobaczyć aktualną dostępność
+          </p>
+        </div>
+      )}
+
       {/* Sort bar */}
       {allRecs.length > 1 && (
         <div className="flex gap-2 mt-3 mb-1 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
@@ -313,7 +323,6 @@ function DestinationCard({
   // Show hub savings badge when best offer is via a hub and saves meaningfully vs WRO direct
   const hubSavings =
     best.savingsVsWro !== null && best.savingsVsWro > 150 ? best.savingsVsWro : null;
-  const hasBerSavings = !hubSavings && dest.flightBer?.savingsVsWro != null && dest.flightBer.savingsVsWro > 150;
 
   const buyLabel = best.affiliateUrl
     ? `Sprawdź cenę na ${best.airline === "Ryanair" || best.airline === "Wizz Air" || best.airline === "easyJet" ? best.airline : "Skyscanner"} ↗`
@@ -390,45 +399,30 @@ function DestinationCard({
               −{hubSavings} PLN via {best.origin.city}
             </span>
           )}
-          {hasBerSavings && (
-            <span
-              className="text-xs px-2 py-0.5 rounded-full font-medium"
-              style={{ background: "#EFF6FF", color: "#1D4ED8" }}
-            >
-              −{dest.flightBer!.savingsVsWro} PLN z Berlina
-            </span>
-          )}
         </div>
       </div>
 
       {/* Flight row */}
       <div
-        className="px-4 py-2.5 flex items-center justify-between border-t"
+        className="px-4 py-2.5 flex items-center justify-between gap-3 border-t"
         style={{ borderColor: "var(--border)" }}
       >
-        <div className="flex flex-col gap-0.5">
-          <div className="flex items-center gap-1.5 text-sm font-medium">
-            <span>{best.origin.code}</span>
-            <span style={{ color: "var(--text-muted)" }}>→</span>
-            <span>{best.destination.code}</span>
+        <div className="flex flex-col gap-0.5 min-w-0">
+          <p className="text-sm font-medium truncate">
+            {best.origin.code} → {best.destination.code}
             {best.departureDate && (
-              <span className="text-xs font-normal" style={{ color: "var(--text-muted)" }}>
-                · {new Date(best.departureDate).toLocaleDateString("pl-PL", { month: "long", year: "numeric", timeZone: "UTC" })}
+              <span className="font-normal" style={{ color: "var(--text-muted)" }}>
+                {" · "}{new Date(best.departureDate).toLocaleDateString("pl-PL", { month: "long", year: "numeric", timeZone: "UTC" })}
               </span>
             )}
-          </div>
-          {best.departureDate && (
-            <p className="text-xs" style={{ color: "var(--text-muted)", opacity: 0.6 }}>
-              przykładowy termin · sprawdź dostępność
-            </p>
-          )}
+          </p>
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-            {best.departureTime}–{best.arrivalTime} · {best.airline} · {Math.floor(best.durationMinutes / 60)}h {best.durationMinutes % 60}m
+            {best.airline} · {Math.floor(best.durationMinutes / 60)}h {best.durationMinutes % 60}m
           </p>
           {best.transitToHub && (
-            <p className="text-xs mt-0.5 font-medium" style={{ color: "#1D4ED8" }}>
+            <p className="text-xs font-medium" style={{ color: "#1D4ED8" }}>
               {best.transitToHub.mode === "bus" ? "🚌" : best.transitToHub.mode === "train" ? "🚂" : "✈️"}{" "}
-              {best.transitToHub.carrier} z Polski ~{best.transitToHub.costPln} PLN · {best.transitToHub.durationH}h dojazd
+              {best.transitToHub.carrier} ~{best.transitToHub.costPln} PLN · {best.transitToHub.durationH}h dojazd
             </p>
           )}
         </div>
@@ -439,7 +433,7 @@ function DestinationCard({
             target="_blank"
             rel="noopener noreferrer sponsored"
             onClick={(e) => e.stopPropagation()}
-            className="text-xs font-semibold px-3 py-1.5 rounded-full transition-opacity hover:opacity-70 whitespace-nowrap"
+            className="text-xs font-semibold px-3 py-1.5 rounded-full transition-opacity hover:opacity-70 whitespace-nowrap flex-shrink-0"
             style={{ background: "#F0F0F0", color: "var(--text-secondary)", textDecoration: "none" }}
           >
             {buyLabel}
