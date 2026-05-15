@@ -6,44 +6,96 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/lib/store";
 import type { TravelStyle, TripDuration, TravelVibe, PlaceType, QuizAnswers } from "@/types";
 import { MONTH_NAMES } from "@/lib/mockFlights";
-import { POLISH_AIRPORTS, HUB_AIRPORTS } from "@/lib/airports";
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 7;
+
+// ── Region definitions ────────────────────────────────────────────────────────
+
+type RegionId = "wroclaw" | "slaskie" | "krakow" | "warszawa" | "poznan" | "trojmiasto" | "inne";
+type Willingness = "local" | "poland" | "europe";
+
+const REGIONS: { id: RegionId; label: string; subLabel: string; emoji: string; local: string[] }[] = [
+  { id: "wroclaw",    label: "Wrocław",     subLabel: "Dolny Śląsk",       emoji: "🏛️", local: ["WRO"] },
+  { id: "slaskie",   label: "Katowice",    subLabel: "Śląsk / Zagłębie",  emoji: "⚙️", local: ["KTW"] },
+  { id: "krakow",    label: "Kraków",      subLabel: "Małopolska",         emoji: "👑", local: ["KRK"] },
+  { id: "warszawa",  label: "Warszawa",    subLabel: "Mazowsze",           emoji: "🏙️", local: ["WAW", "WMI"] },
+  { id: "poznan",    label: "Poznań",      subLabel: "Wielkopolska",       emoji: "🐐", local: ["POZ"] },
+  { id: "trojmiasto",label: "Trójmiasto",  subLabel: "Gdańsk / Gdynia",    emoji: "⚓", local: ["GDN"] },
+  { id: "inne",      label: "Inne miasto", subLabel: "Najbliższe lotnisko", emoji: "📍", local: ["WRO"] },
+];
+
+// Nearby Polish airports added when willingness = "poland"
+const NEARBY: Record<RegionId, string[]> = {
+  wroclaw:    ["WRO", "KTW"],
+  slaskie:    ["KTW", "KRK", "WRO"],
+  krakow:     ["KRK", "KTW"],
+  warszawa:   ["WAW", "WMI"],
+  poznan:     ["POZ", "WRO"],
+  trojmiasto: ["GDN"],
+  inne:       ["WRO", "KTW", "KRK", "WAW"],
+};
+
+const HUB_CODES = ["BER", "BUD", "VIE", "AMS", "LGW", "IST"];
+
+function airportsFor(region: RegionId, willingness: Willingness): string[] {
+  if (willingness === "local")   return REGIONS.find(r => r.id === region)!.local;
+  if (willingness === "poland")  return NEARBY[region];
+  return [...NEARBY[region], ...HUB_CODES];
+}
+
+function inferRegion(airports: string[]): RegionId {
+  if (airports.includes("GDN")) return "trojmiasto";
+  if (airports.includes("POZ") && !airports.includes("WRO")) return "poznan";
+  if ((airports.includes("WAW") || airports.includes("WMI")) && !airports.includes("KTW")) return "warszawa";
+  if (airports.includes("KRK") && !airports.includes("KTW")) return "krakow";
+  if (airports.includes("KTW") && !airports.includes("WRO")) return "slaskie";
+  return "wroclaw";
+}
+
+function inferWillingness(airports: string[]): Willingness {
+  if (airports.some(a => HUB_CODES.includes(a))) return "europe";
+  if (airports.length > 2) return "poland";
+  return "local";
+}
+
+// ── Shared ────────────────────────────────────────────────────────────────────
 
 const STYLE_OPTIONS: { value: TravelStyle; label: string; emoji: string; desc: string }[] = [
-  { value: "history", label: "Historia", emoji: "🏛️", desc: "Muzea, zamki, starówki" },
+  { value: "history",      label: "Historia",     emoji: "🏛️", desc: "Muzea, zamki, starówki" },
   { value: "architecture", label: "Architektura", emoji: "🏗️", desc: "Katedry, mosty, design" },
-  { value: "food", label: "Jedzenie", emoji: "🍜", desc: "Street food, lokalne bary" },
-  { value: "nature", label: "Natura", emoji: "🌿", desc: "Parki, góry, jeziora" },
-  { value: "beach", label: "Plaża", emoji: "🏖️", desc: "Morze, słońce, relaks" },
-  { value: "nightlife", label: "Nightlife", emoji: "🎶", desc: "Bary, kluby, koncerty" },
+  { value: "food",         label: "Jedzenie",     emoji: "🍜", desc: "Street food, lokalne bary" },
+  { value: "nature",       label: "Natura",       emoji: "🌿", desc: "Parki, góry, jeziora" },
+  { value: "beach",        label: "Plaża",        emoji: "🏖️", desc: "Morze, słońce, relaks" },
+  { value: "nightlife",    label: "Nightlife",    emoji: "🎶", desc: "Bary, kluby, koncerty" },
 ];
 
 const VIBE_OPTIONS: { value: TravelVibe; emoji: string; label: string; desc: string }[] = [
-  { value: "chill", emoji: "☕", label: "Reset", desc: "Własne tempo, kawiarnie, luz" },
+  { value: "chill",   emoji: "☕", label: "Reset",        desc: "Własne tempo, kawiarnie, luz" },
   { value: "intense", emoji: "🔥", label: "Full program", desc: "Jak najwięcej, każda chwila gra" },
-  { value: "social", emoji: "🎉", label: "Towarzyski", desc: "Poznawanie ludzi, bary, imprezy" },
-  { value: "active", emoji: "🥾", label: "Aktywny", desc: "Piesze trasy, sport, przyroda" },
+  { value: "social",  emoji: "🎉", label: "Towarzyski",   desc: "Poznawanie ludzi, bary, imprezy" },
+  { value: "active",  emoji: "🥾", label: "Aktywny",      desc: "Piesze trasy, sport, przyroda" },
 ];
 
 const PLACE_OPTIONS: { value: PlaceType; emoji: string; label: string; desc: string }[] = [
-  { value: "big_city", emoji: "🏙️", label: "Duże miasto", desc: "Metro, muzea, energia tłumu" },
-  { value: "charming", emoji: "🏘️", label: "Kameralne", desc: "Małe uliczki, autentyczność, spokój" },
-  { value: "beach_sun", emoji: "🏖️", label: "Słońce i woda", desc: "Plaże, morze, ciepło przede wszystkim" },
+  { value: "big_city",   emoji: "🏙️", label: "Duże miasto",  desc: "Metro, muzea, energia tłumu" },
+  { value: "charming",   emoji: "🏘️", label: "Kameralne",    desc: "Małe uliczki, autentyczność, spokój" },
+  { value: "beach_sun",  emoji: "🏖️", label: "Słońce i woda", desc: "Plaże, morze, ciepło przede wszystkim" },
 ];
 
 const DURATION_OPTIONS: { value: TripDuration; label: string; desc: string }[] = [
-  { value: 3, label: "3 dni", desc: "Długi weekend" },
-  { value: 5, label: "5 dni", desc: "Krótki urlop" },
-  { value: 7, label: "7 dni", desc: "Tydzień" },
-  { value: 10, label: "10 dni", desc: "Dłuższy wyjazd" },
+  { value: 3,  label: "3 dni",   desc: "Długi weekend" },
+  { value: 5,  label: "5 dni",   desc: "Krótki urlop" },
+  { value: 7,  label: "7 dni",   desc: "Tydzień" },
+  { value: 10, label: "10 dni",  desc: "Dłuższy wyjazd" },
 ];
 
 const slideVariants = {
-  enter: (dir: number) => ({ x: dir > 0 ? 60 : -60, opacity: 0 }),
+  enter:  (dir: number) => ({ x: dir > 0 ? 60 : -60, opacity: 0 }),
   center: { x: 0, opacity: 1 },
-  exit: (dir: number) => ({ x: dir > 0 ? -60 : 60, opacity: 0 }),
+  exit:   (dir: number) => ({ x: dir > 0 ? -60 : 60, opacity: 0 }),
 };
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function QuizPage() {
   const router = useRouter();
@@ -55,20 +107,18 @@ export default function QuizPage() {
   useEffect(() => {
     fetch("/api/profile")
       .then((r) => r.json())
-      .then((d) => {
-        if (d.authenticated && d.quiz_preferences) setSavedPrefs(d.quiz_preferences);
-      })
+      .then((d) => { if (d.authenticated && d.quiz_preferences) setSavedPrefs(d.quiz_preferences); })
       .catch(() => {});
   }, []);
 
   const handleUseSaved = () => {
     if (!savedPrefs) return;
     resetQuiz();
-    if (savedPrefs.budget) setQuizAnswer("budget", savedPrefs.budget);
-    if (savedPrefs.vibe) setQuizAnswer("vibe", savedPrefs.vibe);
+    if (savedPrefs.budget)   setQuizAnswer("budget",    savedPrefs.budget);
+    if (savedPrefs.vibe)     setQuizAnswer("vibe",      savedPrefs.vibe);
     if (savedPrefs.placeType) setQuizAnswer("placeType", savedPrefs.placeType);
-    if (savedPrefs.month) setQuizAnswer("month", savedPrefs.month);
-    if (savedPrefs.duration) setQuizAnswer("duration", savedPrefs.duration);
+    if (savedPrefs.month)    setQuizAnswer("month",     savedPrefs.month);
+    if (savedPrefs.duration) setQuizAnswer("duration",  savedPrefs.duration);
     if (savedPrefs.airports?.length) setQuizAnswer("airports", savedPrefs.airports);
     savedPrefs.styles.forEach((s) => toggleStyle(s));
     router.push("/flights");
@@ -83,6 +133,7 @@ export default function QuizPage() {
     if (currentQuizStep === 3) return quizAnswers.placeType !== null;
     if (currentQuizStep === 4) return quizAnswers.month !== null;
     if (currentQuizStep === 5) return quizAnswers.duration !== null;
+    if (currentQuizStep === 6) return quizAnswers.airports.length > 0;
     return false;
   };
 
@@ -124,14 +175,12 @@ export default function QuizPage() {
         </div>
       </div>
 
-      {/* Saved prefs shortcut — only on step 0 */}
+      {/* Saved prefs shortcut */}
       <AnimatePresence>
         {savedPrefs && currentQuizStep === 0 && (
           <motion.button
             key="saved-prefs"
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
+            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.25 }}
             onClick={handleUseSaved}
             className="w-full mb-4 p-4 rounded-2xl text-left transition-opacity hover:opacity-90"
@@ -139,9 +188,7 @@ export default function QuizPage() {
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>
-                  Użyj poprzednich ustawień ↗
-                </p>
+                <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>Użyj poprzednich ustawień ↗</p>
                 <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
                   Pomiń quiz — załaduj zapisane preferencje i przejdź do lotów
                 </p>
@@ -191,6 +238,13 @@ export default function QuizPage() {
               <StepDuration
                 duration={quizAnswers.duration}
                 setDuration={(d) => setQuizAnswer("duration", d)}
+              />
+            </motion.div>
+          )}
+          {currentQuizStep === 6 && (
+            <motion.div key="step-departure" custom={dir} variants={slideVariants}
+              initial="enter" animate="center" exit="exit" transition={{ duration: 0.28, ease: "easeInOut" }}>
+              <StepDeparture
                 airports={quizAnswers.airports}
                 setAirports={(v) => setQuizAnswer("airports", v)}
               />
@@ -208,6 +262,8 @@ export default function QuizPage() {
   );
 }
 
+// ── Step components ───────────────────────────────────────────────────────────
+
 function StepBudget() {
   const { quizAnswers, setQuizAnswer } = useAppStore();
   return (
@@ -218,8 +274,8 @@ function StepBudget() {
       </p>
       <div className="flex flex-col gap-3" role="radiogroup" aria-label="Wybierz budżet">
         {[
-          { value: "low" as const, emoji: "🎒", label: "Backpacker", desc: "Do 1500 PLN · hostele, street food, darmowe atrakcje" },
-          { value: "medium" as const, emoji: "🧳", label: "Komfortowy", desc: "1500–3000 PLN · Airbnb lub 3★ hotel, restauracje" },
+          { value: "low"    as const, emoji: "🎒", label: "Backpacker",  desc: "Do 1500 PLN · hostele, street food, darmowe atrakcje" },
+          { value: "medium" as const, emoji: "🧳", label: "Komfortowy",  desc: "1500–3000 PLN · Airbnb lub 3★ hotel, restauracje" },
         ].map((opt) => (
           <button
             key={opt.value}
@@ -345,23 +401,7 @@ function StepMonth({ month, setMonth }: { month: number | null; setMonth: (m: nu
   );
 }
 
-function StepDuration({
-  duration, setDuration, airports, setAirports,
-}: {
-  duration: TripDuration | null;
-  setDuration: (d: TripDuration) => void;
-  airports: string[];
-  setAirports: (v: string[]) => void;
-}) {
-  const toggleAirport = (code: string) => {
-    if (airports.includes(code)) {
-      if (airports.length === 1) return; // keep at least one
-      setAirports(airports.filter((a) => a !== code));
-    } else {
-      setAirports([...airports, code]);
-    }
-  };
-
+function StepDuration({ duration, setDuration }: { duration: TripDuration | null; setDuration: (d: TripDuration) => void }) {
   return (
     <div>
       <h2 className="text-2xl font-bold mt-2">Ile dni?</h2>
@@ -381,65 +421,107 @@ function StepDuration({
           </button>
         ))}
       </div>
+    </div>
+  );
+}
 
-      <div className="mt-6">
-        <p className="text-sm font-semibold mb-1">Skąd lecisz?</p>
-        <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>
-          Wybierz jedno lub więcej lotnisk.
-        </p>
+function StepDeparture({
+  airports, setAirports,
+}: {
+  airports: string[];
+  setAirports: (v: string[]) => void;
+}) {
+  const [regionId, setRegionId]       = useState<RegionId>(() => inferRegion(airports));
+  const [willingness, setWillingness] = useState<Willingness>(() => inferWillingness(airports));
 
-        {/* Polish airports */}
-        <div className="flex flex-wrap gap-2 mb-3" role="group" aria-label="Polskie lotniska">
-          {POLISH_AIRPORTS.map((ap) => {
-            const selected = airports.includes(ap.code);
-            return (
-              <button
-                key={ap.code}
-                onClick={() => toggleAirport(ap.code)}
-                aria-pressed={selected}
-                className="px-3 py-1.5 rounded-full text-sm font-medium transition-all"
-                style={{
-                  background: selected ? "var(--accent)" : "var(--surface)",
-                  color: selected ? "#fff" : "var(--text-primary)",
-                  border: `1.5px solid ${selected ? "var(--accent)" : "var(--border)"}`,
-                }}
-              >
-                {ap.flag} {ap.city}
-              </button>
-            );
-          })}
-        </div>
+  const select = (r: RegionId, w: Willingness) => {
+    setRegionId(r);
+    setWillingness(w);
+    setAirports(airportsFor(r, w));
+  };
 
-        {/* European hubs */}
-        <p className="text-xs font-semibold mb-2" style={{ color: "var(--text-muted)" }}>
-          🌍 Huby europejskie — taniej do Azji, USA i Afryki
-        </p>
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Huby europejskie">
-          {HUB_AIRPORTS.map((ap) => {
-            const selected = airports.includes(ap.code);
-            const modeIcon = ap.transit?.mode === "bus" ? "🚌" : ap.transit?.mode === "train" ? "🚂" : "✈️";
-            return (
-              <button
-                key={ap.code}
-                onClick={() => toggleAirport(ap.code)}
-                aria-pressed={selected}
-                className="px-3 py-1.5 rounded-full text-sm font-medium transition-all"
-                style={{
-                  background: selected ? "#1D4ED8" : "var(--surface)",
-                  color: selected ? "#fff" : "var(--text-primary)",
-                  border: `1.5px solid ${selected ? "#1D4ED8" : "var(--border)"}`,
-                }}
-              >
-                {ap.flag} {ap.city}
-                {ap.transit && (
-                  <span className="ml-1 text-xs opacity-70">
-                    {modeIcon} ~{ap.transit.costPln} PLN
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+  const WILLINGNESS_OPTIONS: { value: Willingness; emoji: string; label: string; desc: string }[] = [
+    {
+      value: "local",
+      emoji: "🏠",
+      label: "Tylko lokalnie",
+      desc: "Lotnisko najbliżej mojego miasta",
+    },
+    {
+      value: "poland",
+      emoji: "🚗",
+      label: "Mogę dojechać w Polsce",
+      desc: `Porównam też ${NEARBY[regionId].filter(c => !REGIONS.find(r => r.id === regionId)!.local.includes(c)).join(", ") || "pobliskie lotniska"} — więcej opcji`,
+    },
+    {
+      value: "europe",
+      emoji: "🌍",
+      label: "Też za granicę",
+      desc: "Berlin, Budapeszt, Wiedeń, Amsterdam, Londyn, Stambuł — taniej do Azji i USA",
+    },
+  ];
+
+  return (
+    <div>
+      <h2 className="text-2xl font-bold mt-2">Skąd startujesz?</h2>
+      <p className="text-sm mt-2 mb-5" style={{ color: "var(--text-muted)" }}>
+        Dobiorę lotniska i porównam wszystkie opcje.
+      </p>
+
+      {/* Region grid */}
+      <div className="grid grid-cols-3 gap-2 mb-6" role="radiogroup" aria-label="Wybierz miasto">
+        {REGIONS.map((r) => (
+          <button
+            key={r.id}
+            onClick={() => select(r.id, willingness)}
+            aria-pressed={regionId === r.id}
+            className="option-card text-center py-3 px-2"
+            style={regionId === r.id ? {
+              background: "var(--accent-light)",
+              border: "1.5px solid var(--accent)",
+            } : {}}
+          >
+            <span className="text-xl">{r.emoji}</span>
+            <p className="font-semibold text-xs mt-1 leading-tight">{r.label}</p>
+            <p className="text-xs mt-0.5 leading-tight" style={{ color: "var(--text-muted)", fontSize: "10px" }}>
+              {r.subLabel}
+            </p>
+          </button>
+        ))}
+      </div>
+
+      {/* Willingness */}
+      <p className="text-sm font-semibold mb-3">Jak daleko dojedziesz do lotniska?</p>
+      <div className="flex flex-col gap-2" role="radiogroup" aria-label="Gotowość do dojazdu">
+        {WILLINGNESS_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            onClick={() => select(regionId, opt.value)}
+            aria-pressed={willingness === opt.value}
+            className="option-card"
+            style={willingness === opt.value ? {
+              background: "var(--accent-light)",
+              border: "1.5px solid var(--accent)",
+            } : {}}
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-xl flex-shrink-0">{opt.emoji}</span>
+              <div className="text-left">
+                <p className="font-semibold text-sm">{opt.label}</p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
+              </div>
+              {willingness === opt.value && (
+                <span className="ml-auto text-xs font-bold flex-shrink-0" style={{ color: "var(--accent)" }}>✓</span>
+              )}
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* Summary chip */}
+      <div className="mt-4 px-3 py-2 rounded-xl text-xs" style={{ background: "#F0F0F0" }}>
+        <span style={{ color: "var(--text-muted)" }}>Będę porównywać: </span>
+        <span className="font-semibold">{airports.join(", ")}</span>
       </div>
     </div>
   );
