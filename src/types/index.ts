@@ -12,7 +12,7 @@ export type TravelVibe = "chill" | "intense" | "social" | "active";
 
 export type PlaceType = "big_city" | "charming" | "beach_sun";
 
-export type TripDuration = 3 | 5 | 7 | 10;
+export type TripDuration = number; // 2–21 dni
 
 export interface QuizAnswers {
   budget: BudgetLevel | null;

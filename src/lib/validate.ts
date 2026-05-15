@@ -4,7 +4,7 @@ const VALID_BUDGETS = new Set(["low", "medium"]);
 const VALID_STYLES = new Set(["nature", "history", "architecture", "food", "beach", "nightlife"]);
 const VALID_VIBES = new Set(["chill", "intense", "social", "active"]);
 const VALID_PLACE_TYPES = new Set(["big_city", "charming", "beach_sun"]);
-const VALID_DURATIONS = new Set([3, 5, 7, 10]);
+// Duration is now a free integer in [2, 21] (slider)
 const VALID_AIRPORTS = new Set(["WRO", "KTW", "KRK", "WAW", "WMI", "POZ", "GDN", "BER", "BUD", "VIE", "AMS", "LGW", "IST"]);
 
 export function validateQuizAnswers(data: unknown): data is Partial<QuizAnswers> {
@@ -23,7 +23,10 @@ export function validateQuizAnswers(data: unknown): data is Partial<QuizAnswers>
     const m = Number(d.month);
     if (!Number.isInteger(m) || m < 1 || m > 12) return false;
   }
-  if (d.duration !== undefined && !VALID_DURATIONS.has(d.duration as number)) return false;
+  if (d.duration !== undefined) {
+    const dur = d.duration as number;
+    if (!Number.isInteger(dur) || dur < 2 || dur > 21) return false;
+  }
   if (d.airports !== undefined) {
     if (!Array.isArray(d.airports)) return false;
     if (d.airports.length === 0 || d.airports.length > 8) return false;

@@ -82,11 +82,13 @@ const PLACE_OPTIONS: { value: PlaceType; emoji: string; label: string; desc: str
   { value: "beach_sun",  emoji: "🏖️", label: "Słońce i woda", desc: "Plaże, morze, ciepło przede wszystkim" },
 ];
 
-const DURATION_OPTIONS: { value: TripDuration; label: string; desc: string }[] = [
-  { value: 3,  label: "3 dni",   desc: "Długi weekend" },
-  { value: 5,  label: "5 dni",   desc: "Krótki urlop" },
-  { value: 7,  label: "7 dni",   desc: "Tydzień" },
-  { value: 10, label: "10 dni",  desc: "Dłuższy wyjazd" },
+const DURATION_PRESETS: { value: number; label: string; sub?: string }[] = [
+  { value: 2,  label: "Weekend",       sub: "2 dni" },
+  { value: 3,  label: "Długi weekend", sub: "3 dni" },
+  { value: 5,  label: "Krótki urlop",  sub: "5 dni" },
+  { value: 7,  label: "Tydzień",       sub: "7 dni" },
+  { value: 10, label: "10 dni" },
+  { value: 14, label: "2 tygodnie",    sub: "14 dni" },
 ];
 
 const slideVariants = {
@@ -401,57 +403,76 @@ function StepMonth({ month, setMonth }: { month: number | null; setMonth: (m: nu
   );
 }
 
-const DURATION_DETAIL: Record<number, { fullDays: number; note: string }> = {
-  3:  { fullDays: 1, note: "1 pełny dzień zwiedzania + przylot i powrót" },
-  5:  { fullDays: 3, note: "3 pełne dni + przylot i powrót" },
-  7:  { fullDays: 5, note: "5 pełnych dni + przylot i powrót" },
-  10: { fullDays: 8, note: "8 pełnych dni + przylot i powrót" },
-};
+function durationNote(d: number): string {
+  const full = d - 2;
+  if (full <= 0) return "Lot tam i z powrotem — idealny na weekend";
+  if (full === 1) return "1 pełny dzień na miejscu + przylot i powrót";
+  return `${full} pełne dni na miejscu + przylot i powrót`;
+}
 
 function StepDuration({ duration, setDuration }: { duration: TripDuration | null; setDuration: (d: TripDuration) => void }) {
+  const value = duration ?? 5;
+
+  useEffect(() => {
+    if (duration === null) setDuration(5);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div>
       <h2 className="text-2xl font-bold mt-2">Ile dni?</h2>
-      <p className="text-sm mt-2 mb-2" style={{ color: "var(--text-muted)" }}>
-        Łączny czas na miejscu — bez dnia wylotu i powrotu.
+      <p className="text-sm mt-2 mb-5" style={{ color: "var(--text-muted)" }}>
+        Łączna długość wyjazdu od wylotu do powrotu.
       </p>
-      {duration && (
-        <p className="text-xs mb-5 font-medium" style={{ color: "var(--accent)" }}>
-          ✓ {DURATION_DETAIL[duration]?.note}
-        </p>
-      )}
-      {!duration && <div className="mb-5" />}
-      <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Wybierz czas trwania">
-        {DURATION_OPTIONS.map((opt) => {
-          const selected = duration === opt.value;
+
+      {/* Preset chips */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        {DURATION_PRESETS.map((p) => {
+          const sel = value === p.value;
           return (
             <button
-              key={opt.value}
-              className={`option-card text-center ${selected ? "selected" : ""}`}
-              onClick={() => setDuration(opt.value)}
-              aria-pressed={selected}
-              style={selected ? { border: "2px solid var(--accent)", background: "var(--accent-light)" } : {}}
+              key={p.value}
+              onClick={() => setDuration(p.value)}
+              className="px-3 py-1.5 rounded-full text-sm font-medium transition-all"
+              style={sel ? {
+                background: "var(--accent)",
+                color: "#fff",
+                border: "1.5px solid var(--accent)",
+              } : {
+                background: "var(--bg-card)",
+                color: "var(--text-primary)",
+                border: "1.5px solid var(--border)",
+              }}
             >
-              <div className="relative">
-                {selected && (
-                  <span
-                    className="absolute -top-1 -right-1 text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center"
-                    style={{ background: "var(--accent)", color: "#fff" }}
-                  >
-                    ✓
-                  </span>
-                )}
-                <p className="font-bold text-2xl">{opt.label}</p>
-                <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
-                {selected && (
-                  <p className="text-xs mt-1.5 font-medium" style={{ color: "var(--accent)" }}>
-                    {DURATION_DETAIL[opt.value]?.fullDays} pełne dni
-                  </p>
-                )}
-              </div>
+              {p.label}{p.sub && <span className="ml-1 opacity-70 text-xs">{p.sub}</span>}
             </button>
           );
         })}
+      </div>
+
+      {/* Slider */}
+      <div className="mb-5">
+        <input
+          type="range"
+          min={2}
+          max={21}
+          step={1}
+          value={value}
+          onChange={(e) => setDuration(Number(e.target.value))}
+          className="w-full"
+          style={{ accentColor: "var(--accent)" }}
+          aria-label="Liczba dni"
+        />
+        <div className="flex justify-between text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+          <span>2 dni</span>
+          <span>21 dni</span>
+        </div>
+      </div>
+
+      {/* Live readout */}
+      <div className="p-4 rounded-2xl text-center" style={{ background: "var(--accent-light)", border: "1px solid rgba(255,107,53,0.2)" }}>
+        <p className="text-3xl font-bold" style={{ color: "var(--accent)" }}>{value} dni</p>
+        <p className="text-xs mt-1.5" style={{ color: "var(--text-muted)" }}>{durationNote(value)}</p>
       </div>
     </div>
   );
@@ -469,7 +490,7 @@ function QuizSummary() {
     styles.length > 0 && `${styles.length} zainteresowania`,
     placeType  && ({ big_city: "🏙️ Duże miasto", charming: "🏘️ Kameralne", beach_sun: "🏖️ Słońce i woda" }[placeType]),
     month      && `📅 ${MONTH_SHORT[month - 1]}`,
-    duration   && `⏱ ${duration} dni (${DURATION_DETAIL[duration]?.fullDays} pełne)`,
+    duration   && `⏱ ${duration} dni (${Math.max(duration - 2, 0)} pełne)`,
   ].filter(Boolean) as string[];
 
   if (items.length === 0) return null;
