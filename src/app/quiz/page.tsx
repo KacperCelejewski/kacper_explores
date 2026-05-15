@@ -401,24 +401,87 @@ function StepMonth({ month, setMonth }: { month: number | null; setMonth: (m: nu
   );
 }
 
+const DURATION_DETAIL: Record<number, { fullDays: number; note: string }> = {
+  3:  { fullDays: 1, note: "1 pełny dzień zwiedzania + przylot i powrót" },
+  5:  { fullDays: 3, note: "3 pełne dni + przylot i powrót" },
+  7:  { fullDays: 5, note: "5 pełnych dni + przylot i powrót" },
+  10: { fullDays: 8, note: "8 pełnych dni + przylot i powrót" },
+};
+
 function StepDuration({ duration, setDuration }: { duration: TripDuration | null; setDuration: (d: TripDuration) => void }) {
   return (
     <div>
       <h2 className="text-2xl font-bold mt-2">Ile dni?</h2>
-      <p className="text-sm mt-2 mb-6" style={{ color: "var(--text-muted)" }}>
-        Czas trwania wyjazdu bez podróży.
+      <p className="text-sm mt-2 mb-2" style={{ color: "var(--text-muted)" }}>
+        Łączny czas na miejscu — bez dnia wylotu i powrotu.
       </p>
+      {duration && (
+        <p className="text-xs mb-5 font-medium" style={{ color: "var(--accent)" }}>
+          ✓ {DURATION_DETAIL[duration]?.note}
+        </p>
+      )}
+      {!duration && <div className="mb-5" />}
       <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Wybierz czas trwania">
-        {DURATION_OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            className={`option-card text-center ${duration === opt.value ? "selected" : ""}`}
-            onClick={() => setDuration(opt.value)}
-            aria-pressed={duration === opt.value}
-          >
-            <p className="font-bold text-xl">{opt.label}</p>
-            <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
-          </button>
+        {DURATION_OPTIONS.map((opt) => {
+          const selected = duration === opt.value;
+          return (
+            <button
+              key={opt.value}
+              className={`option-card text-center ${selected ? "selected" : ""}`}
+              onClick={() => setDuration(opt.value)}
+              aria-pressed={selected}
+              style={selected ? { border: "2px solid var(--accent)", background: "var(--accent-light)" } : {}}
+            >
+              <div className="relative">
+                {selected && (
+                  <span
+                    className="absolute -top-1 -right-1 text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center"
+                    style={{ background: "var(--accent)", color: "#fff" }}
+                  >
+                    ✓
+                  </span>
+                )}
+                <p className="font-bold text-2xl">{opt.label}</p>
+                <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
+                {selected && (
+                  <p className="text-xs mt-1.5 font-medium" style={{ color: "var(--accent)" }}>
+                    {DURATION_DETAIL[opt.value]?.fullDays} pełne dni
+                  </p>
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+const MONTH_SHORT = ["sty","lut","mar","kwi","maj","cze","lip","sie","wrz","paź","lis","gru"];
+
+function QuizSummary() {
+  const { quizAnswers } = useAppStore();
+  const { budget, vibe, styles, placeType, month, duration } = quizAnswers;
+
+  const items = [
+    budget     && (budget === "low" ? "🎒 Backpacker" : "🧳 Komfortowy"),
+    vibe       && ({ chill: "☕ Reset", intense: "🔥 Full program", social: "🎉 Towarzyski", active: "🥾 Aktywny" }[vibe]),
+    styles.length > 0 && `${styles.length} zainteresowania`,
+    placeType  && ({ big_city: "🏙️ Duże miasto", charming: "🏘️ Kameralne", beach_sun: "🏖️ Słońce i woda" }[placeType]),
+    month      && `📅 ${MONTH_SHORT[month - 1]}`,
+    duration   && `⏱ ${duration} dni (${DURATION_DETAIL[duration]?.fullDays} pełne)`,
+  ].filter(Boolean) as string[];
+
+  if (items.length === 0) return null;
+
+  return (
+    <div className="mb-5 p-3 rounded-2xl" style={{ background: "#F8F8F8", border: "1px solid var(--border)" }}>
+      <p className="text-xs font-semibold mb-2" style={{ color: "var(--text-muted)" }}>Twoje wybory</p>
+      <div className="flex flex-wrap gap-1.5">
+        {items.map((item) => (
+          <span key={item} className="text-xs px-2 py-0.5 rounded-full" style={{ background: "#fff", border: "1px solid var(--border)" }}>
+            {item}
+          </span>
         ))}
       </div>
     </div>
@@ -464,9 +527,10 @@ function StepDeparture({
   return (
     <div>
       <h2 className="text-2xl font-bold mt-2">Skąd startujesz?</h2>
-      <p className="text-sm mt-2 mb-5" style={{ color: "var(--text-muted)" }}>
+      <p className="text-sm mt-2 mb-4" style={{ color: "var(--text-muted)" }}>
         Dobiorę lotniska i porównam wszystkie opcje.
       </p>
+      <QuizSummary />
 
       {/* Region grid */}
       <div className="grid grid-cols-3 gap-2 mb-6" role="radiogroup" aria-label="Wybierz miasto">
