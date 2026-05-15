@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description: "Praktyczne przewodniki po budżetowych podróżach solo po Europie. Jak podróżować tanio, bezpiecznie i na własnych zasadach.",
   alternates: { canonical: "https://wloczykij.me/blog" },
   openGraph: {
-    title: "Blog o podróżach solo | Kacper Explores",
+    title: "Blog o podróżach solo | Włóczykij",
     description: "Praktyczne przewodniki po budżetowych podróżach solo po Europie.",
     url: "https://wloczykij.me/blog",
   },
@@ -18,13 +18,13 @@ export const metadata: Metadata = {
 const blogSchema = {
   "@context": "https://schema.org",
   "@type": "Blog",
-  name: "Kacper Explores — Blog",
+  name: "Włóczykij — Blog",
   url: "https://wloczykij.me/blog",
   description: "Praktyczne przewodniki po budżetowych podróżach solo po Europie.",
   inLanguage: "pl",
   publisher: {
     "@type": "Organization",
-    name: "Kacper Explores",
+    name: "Włóczykij",
     url: "https://wloczykij.me",
   },
 };

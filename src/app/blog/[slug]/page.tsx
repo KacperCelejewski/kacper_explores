@@ -22,7 +22,7 @@ export async function generateMetadata(
     description: post.description,
     alternates: { canonical: `https://wloczykij.me/blog/${slug}` },
     openGraph: {
-      title: `${post.title} | Kacper Explores`,
+      title: `${post.title} | Włóczykij`,
       description: post.description,
       url: `https://wloczykij.me/blog/${slug}`,
       type: "article",
@@ -31,7 +31,7 @@ export async function generateMetadata(
     },
     twitter: {
       card: "summary_large_image",
-      title: `${post.title} | Kacper Explores`,
+      title: `${post.title} | Włóczykij`,
       description: post.description,
     },
   };
@@ -83,7 +83,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     inLanguage: "pl",
     url: `https://wloczykij.me/blog/${slug}`,
     author: { "@type": "Person", name: "Kacper", url: "https://wloczykij.me" },
-    publisher: { "@type": "Organization", name: "Kacper Explores", url: "https://wloczykij.me" },
+    publisher: { "@type": "Organization", name: "Włóczykij", url: "https://wloczykij.me" },
     keywords: post.tags.join(", "),
   };
 

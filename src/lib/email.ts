@@ -4,7 +4,7 @@ const resend = new Resend(process.env.RESEND_API_KEY!);
 
 export async function sendNewsletterConfirmation(email: string, verifyUrl: string) {
   await resend.emails.send({
-    from: "Kacper Explores <onboarding@resend.dev>",
+    from: "Włóczykij <onboarding@resend.dev>",
     to: email,
     subject: "Potwierdź zapis — odbierz 10% na Pack",
     html: `
@@ -19,7 +19,7 @@ export async function sendNewsletterConfirmation(email: string, verifyUrl: strin
         <!-- Header -->
         <tr>
           <td style="background:#FF6B35;padding:28px 32px;">
-            <p style="margin:0;color:white;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">Kacper Explores</p>
+            <p style="margin:0;color:white;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">Włóczykij</p>
             <h1 style="margin:8px 0 0;color:white;font-size:22px;font-weight:800;line-height:1.3;">
               Potwierdź zapis<br>i odbierz 10% zniżki
             </h1>
@@ -55,7 +55,7 @@ export async function sendNewsletterConfirmation(email: string, verifyUrl: strin
         <tr>
           <td style="padding:16px 32px 24px;border-top:1px solid #EBEBEB;">
             <p style="margin:0;color:#9CA3AF;font-size:11px;text-align:center;">
-              © 2026 Kacper Explores · <a href="https://kacperexplores.com" style="color:#FF6B35;text-decoration:none;">kacperexplores.com</a>
+              © 2026 Włóczykij · <a href="https://wloczykij.me" style="color:#FF6B35;text-decoration:none;">wloczykij.me</a>
             </p>
           </td>
         </tr>

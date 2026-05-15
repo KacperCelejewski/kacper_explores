@@ -8,7 +8,7 @@ export default function SiteFooter() {
     >
       <div className="flex items-center justify-between flex-wrap gap-3">
         <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-          © {new Date().getFullYear()} Kacper Explores
+          © {new Date().getFullYear()} Włóczykij
         </p>
         <div className="flex items-center gap-4">
           <Link

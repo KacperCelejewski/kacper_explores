@@ -47,7 +47,7 @@ function LoginContent() {
         {/* Header */}
         <div className="mb-8">
           <p className="text-xs font-bold tracking-widest uppercase mb-4" style={{ color: "var(--accent)" }}>
-            Kacper Explores
+            Włóczykij
           </p>
           <h1 className="text-3xl font-bold leading-tight">
             Zaloguj się,<br />żeby planować.

@@ -268,7 +268,7 @@ export default function HomeClient() {
           className="text-sm font-bold tracking-widest uppercase"
           style={{ color: "var(--accent)" }}
         >
-          Kacper Explores
+          Włóczykij
         </motion.p>
       </div>
 

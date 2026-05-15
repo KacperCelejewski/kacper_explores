@@ -123,7 +123,7 @@ export default function ProfilePage() {
           ← Wstecz
         </button>
         <p className="text-xs font-bold tracking-widest uppercase" style={{ color: "var(--accent)" }}>
-          Kacper Explores
+          Włóczykij
         </p>
       </div>
 

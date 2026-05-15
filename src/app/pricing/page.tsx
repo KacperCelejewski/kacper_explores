@@ -6,7 +6,7 @@ import SiteFooter from "../components/SiteFooter";
 const pricingSchema = {
   "@context": "https://schema.org",
   "@type": "ItemList",
-  name: "Plany cenowe — Kacper Explores",
+  name: "Plany cenowe — Włóczykij",
   itemListElement: [
     {
       "@type": "ListItem",
@@ -54,7 +54,7 @@ export const metadata: Metadata = {
     canonical: "https://wloczykij.me/pricing",
   },
   openGraph: {
-    title: "Plany cenowe | Kacper Explores",
+    title: "Plany cenowe | Włóczykij",
     description: "Zacznij za darmo — 1 plan podróży po rejestracji. Pack za 5 zł lub Pro za 19 zł/mies.",
     url: "https://wloczykij.me/pricing",
   },

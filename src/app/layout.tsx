@@ -7,8 +7,8 @@ const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 
 export const metadata: Metadata = {
   title: {
-    default: "Kacper Explores — Budżetowe podróże solo",
-    template: "%s | Kacper Explores",
+    default: "Włóczykij — Budżetowe podróże solo",
+    template: "%s | Włóczykij",
   },
   description: "Budżetowe podróże solo z Polski — AI planuje Twój wyjazd godzina po godzinie. Najtańsze loty z WRO i nie tylko. Zacznij za darmo.",
   metadataBase: new URL("https://wloczykij.me"),
@@ -19,14 +19,14 @@ export const metadata: Metadata = {
     type: "website",
     locale: "pl_PL",
     url: "https://wloczykij.me",
-    siteName: "Kacper Explores",
-    title: "Kacper Explores — Budżetowe podróże solo",
+    siteName: "Włóczykij",
+    title: "Włóczykij — Budżetowe podróże solo",
     description: "Odpowiedz na 6 pytań — AI znajdzie najtańszy lot i zaplanuje Twój wyjazd godzina po godzinie.",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Kacper Explores" }],
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Włóczykij" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Kacper Explores — Budżetowe podróże solo",
+    title: "Włóczykij — Budżetowe podróże solo",
     description: "Odpowiedz na 6 pytań — AI znajdzie najtańszy lot i zaplanuje Twój wyjazd godzina po godzinie.",
     images: ["/og-image.png"],
   },

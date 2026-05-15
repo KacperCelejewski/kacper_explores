@@ -12,7 +12,7 @@ export default function SiteNav() {
         className="text-sm font-bold tracking-wide"
         style={{ color: "var(--accent)", textDecoration: "none" }}
       >
-        Kacper Explores
+        Włóczykij
       </Link>
       <div className="flex items-center gap-4">
         <Link

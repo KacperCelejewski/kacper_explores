@@ -29,19 +29,19 @@ export async function generateMetadata(
       const title = duration && budget
         ? `${duration} dni w ${data.city} za ${budget}`
         : `Plan podróży do ${data.city}`;
-      const description = `Plan podróży do ${data.city}, ${data.country} wygenerowany przez Kacper Explores — budżetowe podróże solo z AI.`;
+      const description = `Plan podróży do ${data.city}, ${data.country} wygenerowany przez Włóczykij — budżetowe podróże solo z AI.`;
 
       return {
         title,
         description,
         openGraph: {
-          title: `${title} | Kacper Explores`,
+          title: `${title} | Włóczykij`,
           description,
           url: `https://wloczykij.me/share/${tripId}`,
         },
         twitter: {
           card: "summary_large_image",
-          title: `${title} | Kacper Explores`,
+          title: `${title} | Włóczykij`,
           description,
         },
       };
@@ -52,7 +52,7 @@ export async function generateMetadata(
 
   return {
     title: "Plan podróży",
-    description: "Plan podróży wygenerowany przez Kacper Explores — budżetowe podróże solo z AI.",
+    description: "Plan podróży wygenerowany przez Włóczykij — budżetowe podróże solo z AI.",
   };
 }
 

@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "Kacper Explores — Budżetowe podróże solo";
+export const alt = "Włóczykij — Budżetowe podróże solo";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -44,7 +44,7 @@ export default function OGImage() {
             marginBottom: 24,
           }}
         >
-          KACPER EXPLORES
+          WŁÓCZYKIJ
         </div>
 
         {/* Main headline */}
