@@ -16,6 +16,13 @@ export default function SiteNav() {
       </Link>
       <div className="flex items-center gap-4">
         <Link
+          href="/blog"
+          className="text-xs font-semibold"
+          style={{ color: "var(--text-muted)", textDecoration: "none" }}
+        >
+          Blog
+        </Link>
+        <Link
           href="/pricing"
           className="text-xs font-semibold"
           style={{ color: "var(--text-muted)", textDecoration: "none" }}

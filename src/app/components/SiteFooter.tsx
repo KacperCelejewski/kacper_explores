@@ -19,6 +19,13 @@ export default function SiteFooter() {
             Strona główna
           </Link>
           <Link
+            href="/blog"
+            className="text-xs"
+            style={{ color: "var(--text-muted)", textDecoration: "none" }}
+          >
+            Blog
+          </Link>
+          <Link
             href="/pricing"
             className="text-xs"
             style={{ color: "var(--text-muted)", textDecoration: "none" }}
