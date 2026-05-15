@@ -74,14 +74,11 @@ async function fetchCheapFlights(origin: string, month: number): Promise<Record<
 
 function formatDate(iso: string) { return iso.slice(0, 10); }
 
-function buildBuyLink(origin: string, dest: string, airlineCode: string, depIso: string, retIso: string): string {
-  const dep = formatDate(depIso);
-  const ret = formatDate(retIso);
-  const df = dep.replace(/-/g, "");
-  const rf = ret.replace(/-/g, "");
-  if (airlineCode === "FR") return `https://www.ryanair.com/en/gb/trip/flights/select?adults=1&teens=0&children=0&infants=0&dateOut=${dep}&dateIn=${ret}&isConnectedFlight=false&isReturn=true&discount=0&originIata=${origin}&destinationIata=${dest}`;
-  if (airlineCode === "W6") return `https://wizzair.com/en-gb/booking/select-flight/${origin}/${dest}/${df}/${rf}/1/0/0`;
-  return `https://www.skyscanner.pl/transport/flights/${origin.toLowerCase()}/${dest.toLowerCase()}/${df}/${rf}/?adults=1&rtn=1`;
+function buildBuyLink(origin: string, dest: string, depIso: string): string {
+  const d = new Date(depIso);
+  const yy = String(d.getUTCFullYear()).slice(2);
+  const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+  return `https://www.skyscanner.pl/transport/flights/${origin.toLowerCase()}/${dest.toLowerCase()}/${yy}${mm}/?adults=1&rtn=1`;
 }
 
 function enrichFlight(base: FlightOffer, offer: TpOffer, originCode: string): FlightOffer {
@@ -106,7 +103,7 @@ function enrichFlight(base: FlightOffer, offer: TpOffer, originCode: string): Fl
     arrivalTime: arrTime,
     departureDate: formatDate(offer.departure_at),
     returnDate: formatDate(offer.return_at),
-    affiliateUrl: buildBuyLink(originCode, base.destination.code, offer.airline, offer.departure_at, offer.return_at),
+    affiliateUrl: buildBuyLink(originCode, base.destination.code, offer.departure_at),
     isBerlinAlternative: originCode === "BER",
     savingsVsWro: null, // recalculated below
     transitToHub: ap?.transit,

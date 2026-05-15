@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
     pool ?? undefined
   );
 
-  // Inject estimated dates for mock data (no real API)
+  // Inject estimated dates + Skyscanner month URL for mock data (no real API)
   if (!pool && month) {
     const m = month as number;
     const now = new Date();
@@ -72,10 +72,22 @@ export async function POST(req: NextRequest) {
     const depDate = new Date(dep);
     depDate.setUTCDate(depDate.getUTCDate() + (durationDays ?? 6));
     const ret = depDate.toISOString().slice(0, 10);
-    recommendations = recommendations.map((rec) => ({
-      ...rec,
-      bestOffer: { ...rec.bestOffer, departureDate: dep, returnDate: ret },
-    }));
+    const yy = String(year).slice(2);
+    const mm = pad(m);
+    recommendations = recommendations.map((rec) => {
+      const offer = rec.bestOffer;
+      const origin = offer.origin.code.toLowerCase();
+      const dest = offer.destination.code.toLowerCase();
+      return {
+        ...rec,
+        bestOffer: {
+          ...offer,
+          departureDate: dep,
+          returnDate: ret,
+          affiliateUrl: `https://www.skyscanner.pl/transport/flights/${origin}/${dest}/${yy}${mm}/?adults=1&rtn=1`,
+        },
+      };
+    });
   }
 
   // Adjust return dates from real API to match user's selected duration

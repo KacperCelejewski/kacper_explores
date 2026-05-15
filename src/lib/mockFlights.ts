@@ -5,16 +5,7 @@ import type { AirportDef } from "@/lib/airports";
 
 const BER_TRANSFER_COST = 100;
 
-function airlineLink(origin: string, dest: string, airline: string): string {
-  if (airline === "Ryanair") {
-    return `https://www.ryanair.com/en/gb/trip/flights/select?adults=1&teens=0&children=0&infants=0&isConnectedFlight=false&isReturn=true&discount=0&originIata=${origin}&destinationIata=${dest}`;
-  }
-  if (airline === "Wizz Air") {
-    return `https://wizzair.com/en-gb/booking/select-flight/${origin}/${dest}////1/0/0`;
-  }
-  if (airline === "easyJet") {
-    return `https://www.easyjet.com/en/cheap-flights/${origin.toLowerCase()}/${dest.toLowerCase()}`;
-  }
+function airlineLink(origin: string, dest: string): string {
   return `https://www.skyscanner.pl/transport/flights/${origin.toLowerCase()}/${dest.toLowerCase()}/?adults=1&rtn=1`;
 }
 
@@ -48,7 +39,7 @@ function buildFlightForAirport(
       arrivalTime: e.berArr ?? e.wroArr,
       isBerlinAlternative: true,
       savingsVsWro: e.wroPrice - realCost,
-      affiliateUrl: airlineLink("BER", destIata, e.berAirline ?? e.wroAirline),
+      affiliateUrl: airlineLink("BER", destIata),
       transitToHub: airport.transit,
     };
   }
@@ -69,7 +60,7 @@ function buildFlightForAirport(
       arrivalTime: e.wroArr,
       isBerlinAlternative: false,
       savingsVsWro: e.wroPrice - realCost,
-      affiliateUrl: airlineLink(airportCode, destIata, e.wroAirline),
+      affiliateUrl: airlineLink(airportCode, destIata),
       transitToHub: airport.transit,
     };
   }
@@ -88,7 +79,7 @@ function buildFlightForAirport(
     arrivalTime: e.wroArr,
     isBerlinAlternative: false,
     savingsVsWro: null,
-    affiliateUrl: airlineLink(airportCode, destIata, e.wroAirline),
+    affiliateUrl: airlineLink(airportCode, destIata),
   };
 }
 

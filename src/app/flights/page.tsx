@@ -411,12 +411,17 @@ function DestinationCard({
             <span>{best.origin.code}</span>
             <span style={{ color: "var(--text-muted)" }}>→</span>
             <span>{best.destination.code}</span>
-            {best.departureDate && best.returnDate && (
-              <span className="text-xs font-normal" style={{ color: "var(--accent)" }}>
-                · {formatShortDate(best.departureDate)}–{formatShortDate(best.returnDate)}
+            {best.departureDate && (
+              <span className="text-xs font-normal" style={{ color: "var(--text-muted)" }}>
+                · {new Date(best.departureDate).toLocaleDateString("pl-PL", { month: "long", year: "numeric", timeZone: "UTC" })}
               </span>
             )}
           </div>
+          {best.departureDate && (
+            <p className="text-xs" style={{ color: "var(--text-muted)", opacity: 0.6 }}>
+              przykładowy termin · sprawdź dostępność
+            </p>
+          )}
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
             {best.departureTime}–{best.arrivalTime} · {best.airline} · {Math.floor(best.durationMinutes / 60)}h {best.durationMinutes % 60}m
           </p>
