@@ -33,9 +33,11 @@ export async function POST(req: NextRequest) {
     vibe = null,
     placeType = null,
     month = null,
+    duration = null,
   } = body as Record<string, unknown>;
 
   const airportCodes = airports as string[];
+  const durationDays = (duration as number | null) ?? null;
 
   let pool: DestinationRecommendation[] | undefined;
   const hasRealApi = !!process.env.TRAVELPAYOUTS_TOKEN;
@@ -60,18 +62,42 @@ export async function POST(req: NextRequest) {
     pool ?? undefined
   );
 
-  // Add estimated dates when real API not used but month is known
+  // Inject estimated dates for mock data (no real API)
   if (!pool && month) {
     const m = month as number;
     const now = new Date();
     const year = m >= now.getMonth() + 1 ? now.getFullYear() : now.getFullYear() + 1;
     const pad = (n: number) => String(n).padStart(2, "0");
     const dep = `${year}-${pad(m)}-10`;
-    const ret = `${year}-${pad(m)}-17`;
+    const depDate = new Date(dep);
+    depDate.setUTCDate(depDate.getUTCDate() + (durationDays ?? 6));
+    const ret = depDate.toISOString().slice(0, 10);
     recommendations = recommendations.map((rec) => ({
       ...rec,
       bestOffer: { ...rec.bestOffer, departureDate: dep, returnDate: ret },
     }));
+  }
+
+  // Adjust return dates from real API to match user's selected duration
+  if (pool && durationDays) {
+    recommendations = recommendations.map((rec) => {
+      const offer = rec.bestOffer;
+      if (!offer.departureDate) return rec;
+      const depDate = new Date(offer.departureDate);
+      const retDate = new Date(depDate);
+      retDate.setUTCDate(retDate.getUTCDate() + durationDays);
+      const newRet = retDate.toISOString().slice(0, 10);
+      // Patch affiliate URL: replace both YYYYMMDD and YYYY-MM-DD formats
+      let affiliateUrl = offer.affiliateUrl;
+      if (affiliateUrl && offer.returnDate) {
+        const oldCompact = offer.returnDate.replace(/-/g, "");
+        const newCompact = newRet.replace(/-/g, "");
+        affiliateUrl = affiliateUrl
+          .replaceAll(oldCompact, newCompact)
+          .replaceAll(offer.returnDate, newRet);
+      }
+      return { ...rec, bestOffer: { ...offer, returnDate: newRet, affiliateUrl } };
+    });
   }
 
   return NextResponse.json({ recommendations });
