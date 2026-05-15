@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
+import GlobalMenu from "@/app/components/GlobalMenu";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 
@@ -45,6 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <main className="app-shell">
           {children}
+          <GlobalMenu />
         </main>
         <Script
           id="tp-drive"

@@ -118,6 +118,26 @@ body {
   border-radius: 4px;
 }
 
+@media print {
+  .no-print { display: none !important; }
+
+  body { background: white; }
+
+  .app-shell {
+    max-width: 100%;
+    min-height: unset;
+  }
+
+  /* Hide nav buttons, actions row, share/save buttons */
+  button:not(.print-keep),
+  a[href^="/"] { display: none; }
+
+  .glass-card {
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
+}
+
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #EBEBEB; border-radius: 999px; }

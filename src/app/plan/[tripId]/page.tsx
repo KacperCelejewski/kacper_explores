@@ -39,6 +39,8 @@ export default function PlanPage() {
     });
   };
 
+  const handlePrint = () => window.print();
+
   // Store-first, Supabase fallback (active session required)
   useEffect(() => {
     const tripId = params?.tripId;
@@ -183,16 +185,35 @@ export default function PlanPage() {
 
       {/* Actions */}
       <div className="px-5 mt-6 flex flex-col gap-3">
-        <button
-          onClick={handleShare}
-          className="w-full py-3.5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 transition-all"
-          style={{
-            background: copied ? "#DCFCE7" : "#F0F0F0",
-            color: copied ? "#16A34A" : "var(--text-secondary)",
-          }}
+        {/* Saved indicator */}
+        <div
+          className="flex items-center justify-center gap-2 py-2.5 rounded-2xl text-sm font-semibold"
+          style={{ background: "#DCFCE7", color: "#16A34A" }}
         >
-          {copied ? "✓ Link skopiowany!" : "🔗 Udostępnij ten plan"}
-        </button>
+          <span>✓</span>
+          <span>Plan zapisany na Twoim koncie</span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={handleShare}
+            className="py-3.5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-1.5 transition-all"
+            style={{
+              background: copied ? "#DCFCE7" : "#F0F0F0",
+              color: copied ? "#16A34A" : "var(--text-secondary)",
+            }}
+          >
+            {copied ? "✓ Skopiowano!" : "🔗 Udostępnij"}
+          </button>
+          <button
+            onClick={handlePrint}
+            className="py-3.5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-1.5 transition-all hover:opacity-80"
+            style={{ background: "#F0F0F0", color: "var(--text-secondary)" }}
+          >
+            📄 Pobierz PDF
+          </button>
+        </div>
+
         <button
           className="btn-primary"
           onClick={() => { resetQuiz(); router.push("/"); }}

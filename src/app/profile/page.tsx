@@ -276,9 +276,10 @@ export default function ProfilePage() {
         {data.trips && data.trips.length > 0 ? (
           <div className="flex flex-col gap-2">
             {data.trips.map((trip) => (
-              <div
+              <button
                 key={trip.id}
-                className="flex items-center justify-between p-4 rounded-2xl"
+                onClick={() => router.push(`/plan/${trip.id}`)}
+                className="flex items-center justify-between p-4 rounded-2xl text-left transition-opacity hover:opacity-80 w-full"
                 style={{ background: "#F7F7F5", border: "1px solid var(--border)" }}
               >
                 <div>
@@ -288,10 +289,10 @@ export default function ProfilePage() {
                     {trip.quiz_answers?.duration ? ` · ${trip.quiz_answers.duration} dni` : ""}
                   </p>
                 </div>
-                <span className="text-xs font-medium" style={{ color: "var(--accent)" }}>
-                  ✓
+                <span className="text-xs font-medium flex-shrink-0 ml-2" style={{ color: "var(--accent)" }}>
+                  Otwórz →
                 </span>
-              </div>
+              </button>
             ))}
           </div>
         ) : (
