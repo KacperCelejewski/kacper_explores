@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /profile
+Disallow: /payment/
+Disallow: /login
+Disallow: /quiz
+Disallow: /flights
+Disallow: /plan/
+Disallow: /api/
+Sitemap: https://wloczykij.me/sitemap.xml

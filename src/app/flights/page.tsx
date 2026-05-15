@@ -434,7 +434,7 @@ function DestinationCard({
           <a
             href={best.affiliateUrl}
             target="_blank"
-            rel="noopener noreferrer"
+            rel="noopener noreferrer sponsored"
             onClick={(e) => e.stopPropagation()}
             className="text-xs font-semibold px-3 py-1.5 rounded-full transition-opacity hover:opacity-70 whitespace-nowrap"
             style={{ background: "#F0F0F0", color: "var(--text-secondary)", textDecoration: "none" }}

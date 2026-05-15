@@ -1,8 +1,64 @@
-"use client";
+import type { Metadata } from "next";
+import CheckoutButton from "../components/CheckoutButton";
+import SiteNav from "../components/SiteNav";
+import SiteFooter from "../components/SiteFooter";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+const pricingSchema = {
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  name: "Plany cenowe — Kacper Explores",
+  itemListElement: [
+    {
+      "@type": "ListItem",
+      position: 1,
+      item: {
+        "@type": "Product",
+        name: "Free",
+        description: "1 plan podróży po rejestracji, bez karty kredytowej.",
+        offers: { "@type": "Offer", price: "0", priceCurrency: "PLN", availability: "https://schema.org/InStock" },
+      },
+    },
+    {
+      "@type": "ListItem",
+      position: 2,
+      item: {
+        "@type": "Product",
+        name: "Pack",
+        description: "5 planów podróży AI bez wygasania.",
+        offers: { "@type": "Offer", price: "5", priceCurrency: "PLN", availability: "https://schema.org/InStock" },
+      },
+    },
+    {
+      "@type": "ListItem",
+      position: 3,
+      item: {
+        "@type": "Product",
+        name: "Pro",
+        description: "Nielimitowane plany podróży AI, historia wyjazdów, priorytetowe generowanie.",
+        offers: {
+          "@type": "Offer",
+          price: "19",
+          priceCurrency: "PLN",
+          availability: "https://schema.org/InStock",
+          priceSpecification: { "@type": "UnitPriceSpecification", price: "19", priceCurrency: "PLN", unitCode: "MON" },
+        },
+      },
+    },
+  ],
+};
+
+export const metadata: Metadata = {
+  title: "Plany cenowe",
+  description: "Zacznij za darmo — 1 plan podróży po rejestracji. Pack za 5 zł (5 planów) lub Pro za 19 zł/mies. (nielimitowane plany AI).",
+  alternates: {
+    canonical: "https://wloczykij.me/pricing",
+  },
+  openGraph: {
+    title: "Plany cenowe | Kacper Explores",
+    description: "Zacznij za darmo — 1 plan podróży po rejestracji. Pack za 5 zł lub Pro za 19 zł/mies.",
+    url: "https://wloczykij.me/pricing",
+  },
+};
 
 const PLANS = [
   {
@@ -38,58 +94,29 @@ const PLANS = [
 ];
 
 export default function PricingPage() {
-  const router = useRouter();
-  const [loading, setLoading] = useState<string | null>(null);
-  const [checkoutError, setCheckoutError] = useState<string | null>(null);
-
-  const handleCheckout = async (planKey: string) => {
-    setLoading(planKey);
-    setCheckoutError(null);
-    try {
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planKey }),
-      });
-      if (res.status === 401) { router.push(`/login?next=/pricing`); return; }
-      const data = await res.json();
-      if (data.url) window.location.href = data.url;
-      else setCheckoutError("Nie udało się uruchomić płatności. Spróbuj ponownie.");
-    } catch {
-      setCheckoutError("Błąd połączenia. Sprawdź internet i spróbuj ponownie.");
-    } finally {
-      setLoading(null);
-    }
-  };
-
   return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(pricingSchema) }}
+      />
+    <SiteNav />
     <div className="flex flex-col flex-1 px-5 pb-8">
       <div className="pt-10 pb-6">
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-          <p className="text-xs font-bold tracking-widest uppercase mb-4" style={{ color: "var(--accent)" }}>
-            Plany
-          </p>
-          <h1 className="text-3xl font-bold leading-tight">
-            Wybierz swój plan.
-          </h1>
-          <p className="text-sm mt-2 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-            Zaczynasz z 1 darmowym planem po rejestracji.
-          </p>
-        </motion.div>
+        <p className="text-xs font-bold tracking-widest uppercase mb-4" style={{ color: "var(--accent)" }}>
+          Plany
+        </p>
+        <h1 className="text-3xl font-bold leading-tight">
+          Wybierz swój plan.
+        </h1>
+        <p className="text-sm mt-2 leading-relaxed" style={{ color: "var(--text-muted)" }}>
+          Zaczynasz z 1 darmowym planem po rejestracji.
+        </p>
       </div>
-
-      {checkoutError && (
-        <div className="mb-4 p-3 rounded-2xl text-center" style={{ background: "#FEF2F2", border: "1px solid #FECACA" }}>
-          <p className="text-sm" style={{ color: "#EF4444" }}>{checkoutError}</p>
-        </div>
-      )}
 
       <div className="flex flex-col gap-4">
         {/* Free tier */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
+        <div
           className="p-5 rounded-2xl flex items-center justify-between"
           style={{ background: "#F7F7F5", border: "1px solid var(--border)" }}
         >
@@ -105,15 +132,12 @@ export default function PricingPage() {
           >
             1 plan
           </span>
-        </motion.div>
+        </div>
 
         {/* Paid plans */}
-        {PLANS.map((plan, i) => (
-          <motion.div
+        {PLANS.map((plan) => (
+          <div
             key={plan.key}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 + i * 0.08 }}
             className="rounded-2xl overflow-hidden"
             style={{
               background: "#FFFFFF",
@@ -133,7 +157,7 @@ export default function PricingPage() {
               <div className="flex items-start justify-between">
                 <div>
                   <span className="text-xl">{plan.emoji}</span>
-                  <h3 className="font-bold text-lg mt-1">{plan.name}</h3>
+                  <h2 className="font-bold text-lg mt-1">{plan.name}</h2>
                 </div>
                 <div className="text-right">
                   <p className="text-2xl font-bold" style={{ color: "var(--accent)" }}>{plan.price}</p>
@@ -155,15 +179,9 @@ export default function PricingPage() {
                 ))}
               </div>
 
-              <button
-                className="btn-primary mt-5"
-                disabled={loading === plan.key}
-                onClick={() => handleCheckout(plan.key)}
-              >
-                {loading === plan.key ? "Przekierowanie…" : plan.cta}
-              </button>
+              <CheckoutButton planKey={plan.key} cta={plan.cta} />
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
 
@@ -171,5 +189,7 @@ export default function PricingPage() {
         Płatności obsługuje Stripe · Bezpieczne i szyfrowane
       </p>
     </div>
+    <SiteFooter />
+    </>
   );
 }
