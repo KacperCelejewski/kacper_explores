@@ -1,6 +1,7 @@
 import type { QuizAnswers, DestinationRecommendation, TripPlan } from "@/types";
 import { MONTH_NAMES } from "@/lib/mockFlights";
 import { calcTripSchedule, formatScheduleForPrompt } from "@/lib/tripSchedule";
+import type { RealFlight } from "@/lib/flights/rapidapi";
 
 const STYLE_LABELS: Record<string, string> = {
   nature: "natura i przyroda",
@@ -26,7 +27,8 @@ const PLACE_LABELS: Record<string, string> = {
 
 export function buildPlanPrompt(
   destination: DestinationRecommendation,
-  quiz: QuizAnswers
+  quiz: QuizAnswers,
+  realFlight?: RealFlight | null
 ): string {
   const monthName = quiz.month ? MONTH_NAMES[quiz.month - 1] : "nieokreślony";
   const stylesList = quiz.styles.map((s) => STYLE_LABELS[s] ?? s).join(", ");
@@ -49,11 +51,16 @@ export function buildPlanPrompt(
     ? "Uwzględnij aktywności fizyczne — piesze trasy, rowery miejskie, pływanie, sport. Mniej muzeów, więcej ruchu."
     : "Zbalansowane tempo — mix atrakcji i odpoczynku.";
 
-  // Calculate real schedule based on flight times
-  const schedule = calcTripSchedule(destination.bestOffer, duration);
+  const schedule = calcTripSchedule(destination.bestOffer, duration, realFlight);
   const schedulePrompt = formatScheduleForPrompt(schedule);
 
+  const flightNote = realFlight
+    ? `DANE LOTU (${realFlight.airline}, ${realFlight.departureDate}): wylot ${realFlight.departureTime} → przylot ${realFlight.arrivalTime} (${Math.floor(realFlight.durationMinutes / 60)}h${realFlight.durationMinutes % 60}m), powrót ${realFlight.returnDate} wylot ${realFlight.returnDepartureTime} → przylot ${realFlight.returnArrivalTime}. Cena: ~${realFlight.price} PLN.`
+    : `UWAGA: Dokładne godziny lotu nieznane — użytkownik rezerwuje samodzielnie. Plan musi być elastyczny.`;
+
   return `Jesteś ekspertem od budżetowych podróży solo po Europie. Stwórz szczegółowy plan podróży do ${destination.city}, ${destination.country}.
+
+${flightNote}
 
 PROFIL PODRÓŻNIKA:
 - Budżet: ${budgetLabel}
@@ -61,10 +68,9 @@ PROFIL PODRÓŻNIKA:
 ${vibeInstruction}
 ${placeInstruction}
 - Miesiąc: ${monthName}
-- Koszt lotów: ~${flightCost} PLN (w obie strony)
+- Koszt lotów: ~${realFlight?.price ?? flightCost} PLN (w obie strony)
 
-HARMONOGRAM LOTÓW I DZIENNY PLAN:
-Poniżej masz DOKŁADNE instrukcje dla każdego z ${duration} dni. Przestrzegaj ich bezwzględnie — godziny wynikają z rzeczywistych czasów lotów.
+INSTRUKCJE DLA KAŻDEGO DNIA (${duration} dni łącznie):
 
 ${schedulePrompt}
 

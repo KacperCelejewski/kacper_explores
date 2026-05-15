@@ -110,20 +110,26 @@ export default function FlightsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ destination: dest, quizAnswers }),
       });
-      const data = await res.json();
 
-      if (!res.ok) throw new Error(data.detail ?? data.error ?? `HTTP ${res.status}`);
+      let data: Record<string, unknown> = {};
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error("Serwer zwrócił nieprawidłową odpowiedź. Spróbuj ponownie.");
+      }
+
+      if (!res.ok) throw new Error((data.error as string | undefined) ?? `HTTP ${res.status}`);
       if (data.plan) {
         setCurrentTrip({
-          id: data.tripId,
+          id: data.tripId as string,
           destination: dest,
           quizAnswers,
-          plan: data.plan,
+          plan: data.plan as import("@/types").TripPlan,
           createdAt: new Date().toISOString(),
         });
-        router.push(`/plan/${data.tripId}`);
+        router.push(`/plan/${data.tripId as string}`);
       } else {
-        throw new Error(data.error ?? "Nieznany błąd");
+        throw new Error((data.error as string | undefined) ?? "Nieznany błąd");
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Nieznany błąd";

@@ -3,6 +3,7 @@ import { GoogleGenerativeAI, SchemaType, type Schema } from "@google/generative-
 
 export const maxDuration = 60;
 import { buildPlanPrompt, parsePlanResponse, validateAndFixPlan } from "@/lib/gemini";
+import { searchCheapestFlight } from "@/lib/flights/rapidapi";
 import { checkRateLimit, LIMITS } from "@/lib/rateLimit";
 import { validateQuizAnswers, validateDestination, getClientIp } from "@/lib/validate";
 import { getUserProfile, canGenerate, isPro } from "@/lib/userProfile";
@@ -114,10 +115,20 @@ export async function POST(req: NextRequest) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const prompt = buildPlanPrompt(
-      destination as DestinationRecommendation,
-      quizAnswers as QuizAnswers
-    );
+    const dest = destination as DestinationRecommendation;
+    const quiz = quizAnswers as QuizAnswers;
+
+    // Fetch real flight times on-demand (cached 12h per route+month)
+    const realFlight = quiz.month
+      ? await searchCheapestFlight(
+          dest.bestOffer.origin.code,
+          dest.bestOffer.destination.code,
+          quiz.month,
+          quiz.duration ?? 3
+        ).catch(() => null)
+      : null;
+
+    const prompt = buildPlanPrompt(dest, quiz, realFlight);
 
     // Model fallback chain: best quality first, lighter models as quota backup
     const MODELS = [
@@ -132,7 +143,7 @@ export async function POST(req: NextRequest) {
       return msg.includes("429") || msg.toLowerCase().includes("quota") || msg.includes("Too Many Requests");
     }
 
-    let text = "";
+    let plan = null;
     let lastErr: unknown;
     for (const { name, thinking } of MODELS) {
       try {
@@ -146,21 +157,18 @@ export async function POST(req: NextRequest) {
           },
         });
         const result = await m.generateContent(prompt);
-        text = result.response.text();
+        const text = result.response.text();
+        const rawPlan = parsePlanResponse(text); // throws SyntaxError if non-JSON
+        plan = validateAndFixPlan(rawPlan, (quizAnswers as QuizAnswers).duration ?? 3);
         break;
       } catch (err) {
         lastErr = err;
-        if (isQuotaError(err)) continue; // try next model
-        throw err; // non-quota error → bubble up immediately
+        if (isQuotaError(err)) { continue; }
+        if (err instanceof SyntaxError) { continue; } // Gemini returned non-JSON → try next model
+        throw err;
       }
     }
-    if (!text) throw lastErr;
-
-    const dest = destination as DestinationRecommendation;
-    const quiz = quizAnswers as QuizAnswers;
-
-    const rawPlan = parsePlanResponse(text);
-    const plan = validateAndFixPlan(rawPlan, quiz.duration ?? 3);
+    if (!plan) throw lastErr;
     const tripId = `${dest.city.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`;
 
     // 5. Dekrementuj kredyty (tylko jeśli nie Pro unlimited)
