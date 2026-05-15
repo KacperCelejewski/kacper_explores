@@ -60,6 +60,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
 
   useEffect(() => {
     fetch("/api/profile")
@@ -83,6 +84,19 @@ export default function ProfilePage() {
     setQuizAnswer("includeBerlin", p.includeBerlin);
     p.styles.forEach((s) => toggleStyle(s));
     router.push("/flights");
+  };
+
+  const handleBillingPortal = async () => {
+    setPortalLoading(true);
+    try {
+      const res = await fetch("/api/billing-portal", { method: "POST" });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+    } catch {
+      // silently fail — user stays on profile
+    } finally {
+      setPortalLoading(false);
+    }
   };
 
   const handleSaveAgain = async () => {
@@ -291,12 +305,22 @@ export default function ProfilePage() {
 
       {/* Actions */}
       <div className="mt-6 flex flex-col gap-3">
-        <button
-          onClick={() => router.push("/pricing")}
-          className="btn-primary"
-        >
-          {data.is_pro ? "✦ Zarządzaj subskrypcją Pro" : "Kup więcej planów →"}
-        </button>
+        {data.is_pro ? (
+          <button
+            onClick={handleBillingPortal}
+            disabled={portalLoading}
+            className="btn-primary"
+          >
+            {portalLoading ? "Przekierowuję…" : "✦ Zarządzaj subskrypcją Pro →"}
+          </button>
+        ) : (
+          <button
+            onClick={() => router.push("/pricing")}
+            className="btn-primary"
+          >
+            Kup więcej planów →
+          </button>
+        )}
         <button
           onClick={handleSaveAgain}
           disabled={saving}
