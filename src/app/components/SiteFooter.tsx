@@ -42,6 +42,20 @@ export default function SiteFooter() {
             Cennik
           </Link>
           <Link
+            href="/regulamin"
+            className="text-xs"
+            style={{ color: "var(--text-muted)", textDecoration: "none" }}
+          >
+            Regulamin
+          </Link>
+          <Link
+            href="/privacy"
+            className="text-xs"
+            style={{ color: "var(--text-muted)", textDecoration: "none" }}
+          >
+            Prywatność
+          </Link>
+          <Link
             href="/quiz"
             className="text-xs font-semibold"
             style={{ color: "var(--accent)", textDecoration: "none" }}
