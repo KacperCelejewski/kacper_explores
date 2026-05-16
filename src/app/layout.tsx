@@ -3,6 +3,7 @@ import { Geist, Cormorant_Garamond } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import GlobalMenu from "@/app/components/GlobalMenu";
+import CookieBanner from "@/app/components/CookieBanner";
 
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-body" });
@@ -56,14 +57,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main id="main-content" className="app-shell">
           {children}
           <GlobalMenu />
+          <CookieBanner />
         </main>
-        <Script
-          id="tp-drive"
-          strategy="lazyOnload"
-          dangerouslySetInnerHTML={{
-            __html: `(function(){var s=document.createElement("script");s.async=1;s.src="https://emrldco.com/NTI4ODcz.js?t=528873";document.head.appendChild(s);})();`,
-          }}
-        />
         <Script
           id="sw-register"
           strategy="lazyOnload"
