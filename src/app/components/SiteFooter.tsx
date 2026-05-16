@@ -9,7 +9,7 @@ export default function SiteFooter() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-            © {new Date().getFullYear()} Włóczykij · Kacper Celejewski
+            © {new Date().getFullYear()} Włóczykij
           </p>
           <a
             href="mailto:hej@wloczykij.me"

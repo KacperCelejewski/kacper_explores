@@ -116,7 +116,7 @@ export default function PrivacyPage() {
         <div className="flex flex-col">
           <Section title="1. Administrator danych">
             <P>
-              Administratorem Twoich danych osobowych jest Kacper Celejewski,
+              Administratorem Twoich danych osobowych jest Włóczykij,
               prowadzący serwis <strong>Włóczykij</strong> dostępny pod adresem{" "}
               <strong>wloczykij.me</strong>.
             </P>

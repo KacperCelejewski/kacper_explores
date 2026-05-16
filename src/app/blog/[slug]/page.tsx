@@ -99,7 +99,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     datePublished: post.date,
     inLanguage: "pl",
     url: `https://wloczykij.me/blog/${slug}`,
-    author: { "@type": "Person", name: "Kacper Celejewski", url: "https://wloczykij.me" },
+    author: { "@type": "Person", name: "Włóczykij", url: "https://wloczykij.me" },
     publisher: { "@type": "Organization", name: "Włóczykij", url: "https://wloczykij.me" },
     keywords: post.tags.join(", "),
   };
@@ -166,7 +166,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             </div>
             <div>
               <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>
-                Kacper Celejewski
+                Włóczykij
               </p>
               <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                 Założyciel Włóczykij · solo traveler od 6 lat
