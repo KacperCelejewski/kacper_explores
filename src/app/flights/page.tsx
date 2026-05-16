@@ -24,13 +24,6 @@ const TAG_LABELS: Record<string, string> = {
   nature: "natura",
 };
 
-const SHORT_MONTHS = ["sty","lut","mar","kwi","maj","cze","lip","sie","wrz","paź","lis","gru"];
-
-function formatShortDate(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getUTCDate()} ${SHORT_MONTHS[d.getUTCMonth()]}`;
-}
-
 const INITIAL_VISIBLE = 5;
 
 export default function FlightsPage() {
@@ -73,6 +66,7 @@ export default function FlightsPage() {
   }, [_hasHydrated, quizAnswers, router]);
 
   // Reset visible count when sort changes
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setVisibleCount(INITIAL_VISIBLE); }, [sortKey]);
 
   const sorted = useMemo(() => {

@@ -1,5 +1,6 @@
 import type { DestinationRecommendation, FlightOffer } from "@/types";
 import { MOCK_DESTINATIONS } from "@/lib/mockFlights";
+import { buildSkyscannerUrl } from "./search-url";
 import { CATALOG } from "@/lib/destinations/catalog";
 import { AIRPORT_BY_CODE, DEFAULT_AIRPORTS } from "@/lib/airports";
 
@@ -75,10 +76,7 @@ async function fetchCheapFlights(origin: string, month: number): Promise<Record<
 function formatDate(iso: string) { return iso.slice(0, 10); }
 
 function buildBuyLink(origin: string, dest: string, depIso: string): string {
-  const d = new Date(depIso);
-  const yy = String(d.getUTCFullYear()).slice(2);
-  const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
-  return `https://www.skyscanner.pl/transport/flights/${origin.toLowerCase()}/${dest.toLowerCase()}/${yy}${mm}/?adults=1&rtn=1`;
+  return buildSkyscannerUrl(origin, dest, depIso);
 }
 
 function enrichFlight(base: FlightOffer, offer: TpOffer, originCode: string): FlightOffer {
@@ -132,7 +130,7 @@ export async function getRealRecommendations(
   // Use WRO prices as the canonical IATA source (or first available origin)
   const canonicalPrices = pricesByOrigin["WRO"] ?? Object.values(pricesByOrigin)[0];
 
-  for (const [iata, _wroOffer] of Object.entries(canonicalPrices)) {
+  for (const [iata] of Object.entries(canonicalPrices)) {
     const mockDest = DEST_BY_IATA.get(iata);
     if (!mockDest) continue;
 

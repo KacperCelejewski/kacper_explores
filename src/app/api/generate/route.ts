@@ -64,22 +64,22 @@ const responseSchema: Schema = {
 };
 
 export async function POST(req: NextRequest) {
-  // 1. IP rate limit (ostatnia linia obrony przed botami)
+  // 1. Auth — wymagane logowanie
+  const profile = await getUserProfile();
+  if (!profile) {
+    return NextResponse.json(
+      { error: "Musisz być zalogowany aby generować plany.", code: "UNAUTHENTICATED" },
+      { status: 401 }
+    );
+  }
+
+  // 2. IP rate limit per authenticated user (po auth, żeby anonimowi nie zużywali slotów)
   const ip = getClientIp(req);
   const rl = checkRateLimit(`generate:${ip}`, LIMITS.generate.limit, LIMITS.generate.windowMs);
   if (!rl.allowed) {
     return NextResponse.json(
       { error: `Zbyt wiele requestów. Spróbuj ponownie za ${rl.resetInSeconds}s.` },
       { status: 429, headers: { "Retry-After": String(rl.resetInSeconds) } }
-    );
-  }
-
-  // 2. Auth — wymagane logowanie
-  const profile = await getUserProfile();
-  if (!profile) {
-    return NextResponse.json(
-      { error: "Musisz być zalogowany aby generować plany.", code: "UNAUTHENTICATED" },
-      { status: 401 }
     );
   }
 

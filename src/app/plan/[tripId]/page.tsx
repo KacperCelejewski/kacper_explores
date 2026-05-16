@@ -47,6 +47,7 @@ export default function PlanPage() {
     if (!tripId) { router.replace("/"); return; }
     if (currentTrip?.id === tripId && currentTrip.plan) return;
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     fetch(`/api/trips/${tripId}`)
       .then((r) => {

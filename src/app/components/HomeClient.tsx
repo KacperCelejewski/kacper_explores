@@ -29,6 +29,7 @@ function NewsletterSection() {
     const status = searchParams.get("newsletter");
     const returnedCode = searchParams.get("code");
     if (status === "verified" && returnedCode) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCode(returnedCode);
       setState("success");
       router.replace("/", { scroll: false });

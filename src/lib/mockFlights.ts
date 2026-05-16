@@ -2,12 +2,7 @@ import type { DestinationRecommendation, FlightOffer } from "@/types";
 import { CATALOG, type CatalogEntry } from "@/lib/destinations/catalog";
 import { AIRPORTS, AIRPORT_BY_CODE, DEFAULT_AIRPORTS } from "@/lib/airports";
 import type { AirportDef } from "@/lib/airports";
-
-const BER_TRANSFER_COST = 100;
-
-function airlineLink(origin: string, dest: string): string {
-  return `https://www.skyscanner.pl/transport/flights/${origin.toLowerCase()}/${dest.toLowerCase()}/?adults=1&rtn=1`;
-}
+import { buildSkyscannerUrl } from "@/lib/flights/search-url";
 
 function buildFlightForAirport(
   e: CatalogEntry,
@@ -39,7 +34,7 @@ function buildFlightForAirport(
       arrivalTime: e.berArr ?? e.wroArr,
       isBerlinAlternative: true,
       savingsVsWro: e.wroPrice - realCost,
-      affiliateUrl: airlineLink("BER", destIata),
+      affiliateUrl: buildSkyscannerUrl("BER", destIata),
       transitToHub: airport.transit,
     };
   }
@@ -60,7 +55,7 @@ function buildFlightForAirport(
       arrivalTime: e.wroArr,
       isBerlinAlternative: false,
       savingsVsWro: e.wroPrice - realCost,
-      affiliateUrl: airlineLink(airportCode, destIata),
+      affiliateUrl: buildSkyscannerUrl(airportCode, destIata),
       transitToHub: airport.transit,
     };
   }
@@ -79,7 +74,7 @@ function buildFlightForAirport(
     arrivalTime: e.wroArr,
     isBerlinAlternative: false,
     savingsVsWro: null,
-    affiliateUrl: airlineLink(airportCode, destIata),
+    affiliateUrl: buildSkyscannerUrl(airportCode, destIata),
   };
 }
 

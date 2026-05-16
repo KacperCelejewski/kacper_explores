@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getRecommendations } from "@/lib/mockFlights";
 import { getRealRecommendations } from "@/lib/flights/travelpayouts";
+import { buildSkyscannerUrl } from "@/lib/flights/search-url";
 import { checkRateLimit, LIMITS } from "@/lib/rateLimit";
 import { validateQuizAnswers, getClientIp } from "@/lib/validate";
 import type { DestinationRecommendation } from "@/types";
@@ -72,19 +73,15 @@ export async function POST(req: NextRequest) {
     const depDate = new Date(dep);
     depDate.setUTCDate(depDate.getUTCDate() + (durationDays ?? 6));
     const ret = depDate.toISOString().slice(0, 10);
-    const yy = String(year).slice(2);
-    const mm = pad(m);
     recommendations = recommendations.map((rec) => {
       const offer = rec.bestOffer;
-      const origin = offer.origin.code.toLowerCase();
-      const dest = offer.destination.code.toLowerCase();
       return {
         ...rec,
         bestOffer: {
           ...offer,
           departureDate: dep,
           returnDate: ret,
-          affiliateUrl: `https://www.skyscanner.pl/transport/flights/${origin}/${dest}/${yy}${mm}/?adults=1&rtn=1`,
+          affiliateUrl: buildSkyscannerUrl(offer.origin.code, offer.destination.code, dep),
         },
       };
     });
