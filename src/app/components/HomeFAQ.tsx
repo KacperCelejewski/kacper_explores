@@ -27,23 +27,29 @@ const FAQS = [
 
 export default function HomeFAQ() {
   return (
-    <section className="mt-10 px-5">
+    <section className="mt-10 px-5" aria-labelledby="faq-heading">
       <p className="text-xs font-bold tracking-widest uppercase mb-4" style={{ color: "var(--accent)" }}>
         FAQ
       </p>
-      <h2 className="text-xl font-bold mb-5 leading-snug">
+      <h2 id="faq-heading" className="text-xl font-bold mb-5 leading-snug">
         Często zadawane pytania
       </h2>
       <div className="flex flex-col gap-3">
         {FAQS.map(({ q, a }) => (
-          <div
+          <details
             key={q}
             className="p-4 rounded-2xl"
             style={{ background: "#F7F7F5", border: "1px solid var(--border)" }}
           >
-            <p className="text-sm font-semibold leading-snug">{q}</p>
+            <summary
+              className="text-sm font-semibold leading-snug cursor-pointer list-none flex items-center justify-between gap-2"
+              style={{ userSelect: "none" }}
+            >
+              <span>{q}</span>
+              <span aria-hidden="true" className="flex-shrink-0 text-xs" style={{ color: "var(--text-muted)" }}>▾</span>
+            </summary>
             <p className="text-xs mt-2 leading-relaxed" style={{ color: "var(--text-muted)" }}>{a}</p>
-          </div>
+          </details>
         ))}
       </div>
     </section>

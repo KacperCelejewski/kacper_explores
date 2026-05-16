@@ -207,7 +207,14 @@ function QuizPageInner() {
             {currentQuizStep + 1} / {TOTAL_STEPS}
           </span>
         </div>
-        <div className="progress-bar">
+        <div
+          className="progress-bar"
+          role="progressbar"
+          aria-valuenow={currentQuizStep + 1}
+          aria-valuemin={1}
+          aria-valuemax={TOTAL_STEPS}
+          aria-label={`Postęp quizu: krok ${currentQuizStep + 1} z ${TOTAL_STEPS}`}
+        >
           <motion.div
             className="progress-fill"
             initial={false}

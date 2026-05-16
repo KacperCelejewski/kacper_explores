@@ -22,6 +22,14 @@ const ACTIVITY_BORDER: Record<string, string> = {
   accommodation: "rgba(59,130,246,0.25)",
 };
 
+const ACTIVITY_LABELS: Record<string, string> = {
+  attraction: "Atrakcja",
+  food: "Jedzenie",
+  transport: "Transport",
+  tip: "Wskazówka",
+  accommodation: "Nocleg",
+};
+
 export default function PlanPage() {
   const router = useRouter();
   const params = useParams<{ tripId: string }>();
@@ -71,11 +79,12 @@ export default function PlanPage() {
 
   if (loading || !currentTrip?.plan) {
     return (
-      <div className="flex flex-col flex-1 items-center justify-center gap-4">
+      <div className="flex flex-col flex-1 items-center justify-center gap-4" aria-busy="true" aria-label="Ładowanie planu podróży">
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
           className="text-3xl"
+          aria-hidden="true"
         >
           ✈️
         </motion.div>
@@ -164,11 +173,25 @@ export default function PlanPage() {
         <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: "var(--text-muted)" }}>
           Plan dzienny
         </p>
-        <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+        <div
+          role="tablist"
+          aria-label="Dni podróży"
+          className="flex gap-2 overflow-x-auto pb-1"
+          style={{ scrollbarWidth: "none" }}
+        >
           {plan.days.map((day, i) => (
             <button
               key={day.day}
+              role="tab"
+              id={`tab-day-${i}`}
+              aria-selected={activeDay === i}
+              aria-controls={`tabpanel-day-${i}`}
+              tabIndex={activeDay === i ? 0 : -1}
               onClick={() => setActiveDay(i)}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowRight") setActiveDay((prev) => Math.min(prev + 1, plan.days.length - 1));
+                if (e.key === "ArrowLeft")  setActiveDay((prev) => Math.max(prev - 1, 0));
+              }}
               className="flex-shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200"
               style={{
                 background: activeDay === i ? "var(--accent)" : "#F0F0F0",
@@ -182,7 +205,15 @@ export default function PlanPage() {
       </div>
 
       {/* Active day */}
-      {plan.days[activeDay] && <DayPlanView day={plan.days[activeDay]} city={plan.city} />}
+      {plan.days[activeDay] && (
+        <div
+          role="tabpanel"
+          id={`tabpanel-day-${activeDay}`}
+          aria-labelledby={`tab-day-${activeDay}`}
+        >
+          <DayPlanView day={plan.days[activeDay]} city={plan.city} />
+        </div>
+      )}
 
       {/* Actions */}
       <div className="px-5 mt-6 flex flex-col gap-3">
@@ -229,7 +260,7 @@ export default function PlanPage() {
 function BudgetItem({ label, value, emoji }: { label: string; value: string; emoji: string }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="text-base">{emoji}</span>
+      <span className="text-base" aria-hidden="true">{emoji}</span>
       <div>
         <p className="text-xs" style={{ color: "var(--text-muted)" }}>{label}</p>
         <p className="text-sm font-semibold">{value}</p>
@@ -311,7 +342,7 @@ function ActivityCard({ activity, index }: { activity: DayActivity; index: numbe
       className="flex gap-3 relative"
     >
       <div className="flex-shrink-0 w-11 text-center relative z-10">
-        <span className="text-lg">{activity.emoji}</span>
+        <span className="text-lg" aria-hidden="true">{activity.emoji}</span>
         <p className="text-xs mt-0.5 font-mono" style={{ color: "var(--text-muted)" }}>
           {activity.time}
         </p>
@@ -322,7 +353,15 @@ function ActivityCard({ activity, index }: { activity: DayActivity; index: numbe
         style={{ background: bg, border: `1px solid ${border}` }}
       >
         <div className="flex items-start justify-between gap-2">
-          <p className="text-sm font-semibold leading-tight">{activity.title}</p>
+          <div>
+            <p className="text-sm font-semibold leading-tight">{activity.title}</p>
+            <span
+              className="inline-block text-xs mt-0.5 px-1.5 py-0.5 rounded-md font-medium"
+              style={{ background: "rgba(0,0,0,0.06)", color: "var(--text-secondary)" }}
+            >
+              {ACTIVITY_LABELS[activity.type] ?? activity.type}
+            </span>
+          </div>
           <span
             className="flex-shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
             style={{
@@ -345,7 +384,7 @@ function ActivityCard({ activity, index }: { activity: DayActivity; index: numbe
         {activity.location && (
           <div className="flex items-center justify-between mt-1.5">
             <p className="text-xs font-medium" style={{ color: "var(--accent)" }}>
-              📍 {activity.location}
+              <span aria-hidden="true">📍 </span>{activity.location}
             </p>
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activity.location)}`}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -38,6 +38,8 @@ export default function GlobalMenu() {
   const [email, setEmail] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
+  const fabRef = useRef<HTMLButtonElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
@@ -48,21 +50,64 @@ export default function GlobalMenu() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Focus first element in sheet when opened
+  useEffect(() => {
+    if (!open) return;
+    const timer = setTimeout(() => {
+      const focusable = sheetRef.current?.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      focusable?.[0]?.focus();
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [open]);
+
+  // Escape key + focus trap
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { close(); return; }
+      if (e.key !== "Tab" || !sheetRef.current) return;
+      const focusable = Array.from(
+        sheetRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      );
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first?.focus();
+      } else if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last?.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [open]);
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    setOpen(false);
+    close();
     router.push("/");
     router.refresh();
   };
 
-  const close = () => setOpen(false);
+  const close = () => {
+    setOpen(false);
+    setTimeout(() => fabRef.current?.focus(), 50);
+  };
 
   return (
     <>
       {/* FAB */}
       <button
+        ref={fabRef}
         onClick={() => setOpen(true)}
         aria-label="Otwórz menu"
+        aria-haspopup="dialog"
+        aria-expanded={open}
         className="no-print fixed z-50 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-transform active:scale-95"
         style={{
           bottom: "1.5rem",
@@ -88,14 +133,18 @@ export default function GlobalMenu() {
 
             {/* Bottom sheet */}
             <motion.div
+              ref={sheetRef}
               key="sheet"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Menu nawigacji"
               initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 32, stiffness: 320 }}
               className="no-print fixed bottom-0 left-1/2 -translate-x-1/2 w-full z-50 rounded-t-3xl"
               style={{ maxWidth: 448, background: "var(--bg-primary)", borderTop: "1px solid var(--border)" }}
             >
-              {/* Drag handle */}
-              <div className="flex justify-center pt-3 pb-1">
+              {/* Drag handle (decorative) */}
+              <div className="flex justify-center pt-3 pb-1" aria-hidden="true">
                 <div className="w-10 h-1 rounded-full" style={{ background: "var(--border)" }} />
               </div>
 

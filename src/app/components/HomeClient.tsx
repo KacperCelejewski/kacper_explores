@@ -223,7 +223,11 @@ function NewsletterSection() {
         {(state === "idle" || state === "loading" || state === "error") && (
           <motion.div key="form" initial={{ opacity: 1 }} exit={{ opacity: 0 }} className="mt-5">
             <div className="flex gap-2">
+              <label htmlFor="newsletter-email" className="sr-only">
+                Adres email do newslettera
+              </label>
               <input
+                id="newsletter-email"
                 type="email"
                 value={email}
                 onChange={(e) => {
@@ -232,10 +236,12 @@ function NewsletterSection() {
                 }}
                 onKeyDown={(e) => e.key === "Enter" && state !== "loading" && handleSubscribe()}
                 placeholder="twoj@email.com"
+                aria-describedby={state === "error" ? "newsletter-error" : undefined}
+                aria-invalid={state === "error" ? "true" : undefined}
                 className="flex-1 px-4 py-3 rounded-2xl text-sm outline-none transition-all"
                 style={{
                   background: "#F7F7F5",
-                  border: `1.5px solid ${state === "error" ? "#EF4444" : "var(--border)"}`,
+                  border: `1.5px solid ${state === "error" ? "var(--error)" : "var(--border)"}`,
                   color: "var(--text-primary)",
                 }}
                 onFocus={(e) => { if (state !== "error") e.target.style.borderColor = "var(--accent)"; }}
@@ -244,14 +250,19 @@ function NewsletterSection() {
               <button
                 onClick={handleSubscribe}
                 disabled={state === "loading" || !email.trim()}
+                aria-busy={state === "loading"}
                 className="px-5 py-3 rounded-2xl text-sm font-semibold transition-opacity disabled:opacity-50"
                 style={{ background: "var(--accent)", color: "white", whiteSpace: "nowrap" }}
               >
-                {state === "loading" ? "…" : "Zapisz się"}
+                {state === "loading" ? (
+                  <><span aria-hidden="true">…</span><span className="sr-only">Wysyłanie…</span></>
+                ) : "Zapisz się"}
               </button>
             </div>
             {state === "error" && (
-              <p className="text-xs mt-2" style={{ color: "#EF4444" }}>{errorMsg}</p>
+              <p id="newsletter-error" role="alert" className="text-xs mt-2" style={{ color: "var(--error)" }}>
+                {errorMsg}
+              </p>
             )}
           </motion.div>
         )}
@@ -365,7 +376,7 @@ export default function HomeClient() {
         transition={{ duration: 0.4, delay: 0.75 }}
         className="mt-8"
       >
-        <Suspense>
+        <Suspense fallback={<div aria-busy="true" aria-label="Ładowanie sekcji newslettera…" />}>
           <NewsletterSection />
         </Suspense>
       </motion.div>

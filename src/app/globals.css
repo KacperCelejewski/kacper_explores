@@ -10,12 +10,44 @@
   --text-muted: #7A5C44;
   --border: #CFC0A4;
   --green: #2D5A27;
+  --error: #B91C1C;
 }
 
 @theme inline {
   --color-background: var(--bg-primary);
   --color-foreground: var(--text-primary);
   --font-sans: var(--font-body), system-ui, sans-serif;
+}
+
+/* Skip-to-content link — visible only on focus */
+.skip-link {
+  position: absolute;
+  top: -9999px;
+  left: 0;
+  z-index: 10000;
+  padding: 12px 24px;
+  background: var(--accent);
+  color: white;
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+  border-radius: 0 0 8px 0;
+}
+.skip-link:focus {
+  top: 0;
+}
+
+/* Screen-reader-only utility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 * { box-sizing: border-box; }

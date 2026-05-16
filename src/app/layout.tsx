@@ -50,7 +50,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="pl" className={`${geist.variable} ${cormorant.variable}`}>
       <body>
-        <main className="app-shell">
+        <a href="#main-content" className="skip-link">Przejdź do treści</a>
+        <main id="main-content" className="app-shell">
           {children}
           <GlobalMenu />
         </main>
