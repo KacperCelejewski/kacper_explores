@@ -31,13 +31,13 @@ export const metadata: Metadata = {
     siteName: "Włóczykij",
     title: "Włóczykij — Budżetowe podróże solo",
     description: "Odpowiedz na 6 pytań — AI znajdzie najtańszy lot i zaplanuje Twój wyjazd godzina po godzinie.",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Włóczykij" }],
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Włóczykij — Budżetowe podróże solo po Europie" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Włóczykij — Budżetowe podróże solo",
     description: "Odpowiedz na 6 pytań — AI znajdzie najtańszy lot i zaplanuje Twój wyjazd godzina po godzinie.",
-    images: ["/og-image.png"],
+    images: ["/opengraph-image"],
   },
 };
 

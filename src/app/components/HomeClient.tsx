@@ -339,8 +339,15 @@ export default function HomeClient() {
         className="mt-8 flex items-center gap-2"
       >
         <div className="flex gap-1">
-          {["🇵🇹", "🇪🇸", "🇬🇷", "🇮🇹", "🇭🇷", "🇨🇿"].map((flag) => (
-            <span key={flag} className="text-xl">{flag}</span>
+          {[
+            { flag: "🇵🇹", label: "Portugalia" },
+            { flag: "🇪🇸", label: "Hiszpania" },
+            { flag: "🇬🇷", label: "Grecja" },
+            { flag: "🇮🇹", label: "Włochy" },
+            { flag: "🇭🇷", label: "Chorwacja" },
+            { flag: "🇨🇿", label: "Czechy" },
+          ].map(({ flag, label }) => (
+            <span key={flag} className="text-xl" role="img" aria-label={label}>{flag}</span>
           ))}
         </div>
         <span className="text-xs" style={{ color: "var(--text-muted)" }}>i więcej</span>

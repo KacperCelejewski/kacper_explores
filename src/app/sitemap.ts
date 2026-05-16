@@ -14,19 +14,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
       url: "https://wloczykij.me",
-      lastModified: new Date(),
+      lastModified: new Date("2025-05-10"),
       changeFrequency: "weekly",
       priority: 1,
     },
     {
       url: "https://wloczykij.me/pricing",
-      lastModified: new Date(),
+      lastModified: new Date("2025-05-10"),
       changeFrequency: "monthly",
       priority: 0.8,
     },
     {
       url: "https://wloczykij.me/blog",
-      lastModified: new Date(),
+      lastModified: new Date("2025-05-10"),
       changeFrequency: "weekly",
       priority: 0.9,
     },

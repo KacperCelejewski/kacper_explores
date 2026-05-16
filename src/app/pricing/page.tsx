@@ -107,7 +107,7 @@ export default function PricingPage() {
           Plany
         </p>
         <h1 className="text-3xl font-bold leading-tight">
-          Wybierz swój plan.
+          Planer podróży solo — wybierz swój plan
         </h1>
         <p className="text-sm mt-2 leading-relaxed" style={{ color: "var(--text-muted)" }}>
           Zaczynasz z 1 darmowym planem po rejestracji.

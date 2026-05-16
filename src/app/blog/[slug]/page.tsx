@@ -99,7 +99,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     datePublished: post.date,
     inLanguage: "pl",
     url: `https://wloczykij.me/blog/${slug}`,
-    author: { "@type": "Person", name: "Kacper", url: "https://wloczykij.me" },
+    author: { "@type": "Person", name: "Kacper Celejewski", url: "https://wloczykij.me" },
     publisher: { "@type": "Organization", name: "Włóczykij", url: "https://wloczykij.me" },
     keywords: post.tags.join(", "),
   };
@@ -155,6 +155,24 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
               ))}
             </div>
           )}
+
+          <div className="flex items-center gap-3 mt-5 pt-4" style={{ borderTop: "1px solid var(--border)" }}>
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold"
+              style={{ background: "var(--accent)", color: "white" }}
+              aria-hidden="true"
+            >
+              K
+            </div>
+            <div>
+              <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>
+                Kacper Celejewski
+              </p>
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                Założyciel Włóczykij · solo traveler od 6 lat
+              </p>
+            </div>
+          </div>
         </header>
 
         <div className="h-px mb-6" style={{ background: "var(--border)" }} />
