@@ -99,9 +99,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Nieprawidłowy format żądania." }, { status: 400 });
   }
 
-  const { destination, quizAnswers } = body as {
+  const { destination, quizAnswers, selectedFlight } = body as {
     destination: unknown;
     quizAnswers: unknown;
+    selectedFlight?: import("@/lib/flights/rapidapi").RealFlight | null;
   };
 
   if (!validateDestination(destination) || !validateQuizAnswers(quizAnswers)) {
@@ -118,15 +119,18 @@ export async function POST(req: NextRequest) {
     const dest = destination as DestinationRecommendation;
     const quiz = quizAnswers as QuizAnswers;
 
-    // Fetch real flight times on-demand (cached 12h per route+month)
-    const realFlight = quiz.month
-      ? await searchCheapestFlight(
-          dest.bestOffer.origin.code,
-          dest.bestOffer.destination.code,
-          quiz.month,
-          quiz.duration ?? 3
-        ).catch(() => null)
-      : null;
+    // Use user-selected flight if provided; otherwise fetch cheapest from RapidAPI
+    const realFlight: import("@/lib/flights/rapidapi").RealFlight | null =
+      selectedFlight !== undefined
+        ? (selectedFlight ?? null)
+        : quiz.month
+        ? await searchCheapestFlight(
+            dest.bestOffer.origin.code,
+            dest.bestOffer.destination.code,
+            quiz.month,
+            quiz.duration ?? 3
+          ).catch(() => null)
+        : null;
 
     const prompt = buildPlanPrompt(dest, quiz, realFlight);
 

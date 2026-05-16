@@ -57,6 +57,7 @@ export function checkRateLimit(key: string, limit: number, windowMs: number): Ra
 }
 
 export const LIMITS = {
-  generate: { limit: 3, windowMs: 60 * 60 * 1000 },  // 3/hour per IP
-  flights:  { limit: 30, windowMs: 60 * 60 * 1000 }, // 30/hour per IP
+  generate:     { limit: 3,  windowMs: 60 * 60 * 1000 }, // 3/hour per IP
+  flights:      { limit: 30, windowMs: 60 * 60 * 1000 }, // 30/hour per IP (Travelpayouts)
+  realFlights:  { limit: 5,  windowMs: 60 * 60 * 1000 }, // 5/hour per IP (RapidAPI — expensive)
 };

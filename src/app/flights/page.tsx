@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/lib/store";
 import type { DestinationRecommendation } from "@/types";
+import type { RealFlight } from "@/lib/flights/rapidapi";
 
 interface UserStatus {
   authenticated: boolean;
@@ -38,6 +39,11 @@ export default function FlightsPage() {
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("best_match");
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
+  const [flightModal, setFlightModal] = useState<{
+    dest: DestinationRecommendation;
+    flights: RealFlight[];
+    loading: boolean;
+  } | null>(null);
 
   useEffect(() => {
     if (!_hasHydrated) return;
@@ -92,9 +98,32 @@ export default function FlightsPage() {
       return;
     }
 
+    setGenerateError(null);
+    setFlightModal({ dest, flights: [], loading: true });
+
+    // Fetch real flights in background while modal opens
+    if (quizAnswers.month) {
+      const origin = dest.bestOffer.origin.code;
+      const destination = dest.bestOffer.destination.code;
+      fetch(
+        `/api/real-flights?origin=${origin}&dest=${destination}&month=${quizAnswers.month}&duration=${quizAnswers.duration ?? 3}`
+      )
+        .then((r) => r.json())
+        .then((data: { flights?: RealFlight[] }) => {
+          setFlightModal((prev) => prev ? { ...prev, flights: data.flights ?? [], loading: false } : null);
+        })
+        .catch(() => {
+          setFlightModal((prev) => prev ? { ...prev, flights: [], loading: false } : null);
+        });
+    } else {
+      setFlightModal((prev) => prev ? { ...prev, loading: false } : null);
+    }
+  };
+
+  const handleGenerate = async (dest: DestinationRecommendation, selectedFlight: RealFlight | null) => {
+    setFlightModal(null);
     const id = dest.city;
     setSelectedId(id);
-    setGenerateError(null);
     selectDestination(dest);
     setIsGeneratingPlan(true);
 
@@ -102,7 +131,7 @@ export default function FlightsPage() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ destination: dest, quizAnswers }),
+        body: JSON.stringify({ destination: dest, quizAnswers, selectedFlight }),
       });
 
       let data: Record<string, unknown> = {};
@@ -306,6 +335,18 @@ export default function FlightsPage() {
           </p>
         </motion.div>
       )}
+
+      <AnimatePresence>
+        {flightModal && (
+          <FlightSelectModal
+            dest={flightModal.dest}
+            flights={flightModal.flights}
+            loading={flightModal.loading}
+            onConfirm={(flight) => handleGenerate(flightModal.dest, flight)}
+            onClose={() => setFlightModal(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -462,6 +503,148 @@ function DestinationCard({
           )}
         </button>
       </div>
+    </motion.div>
+  );
+}
+
+function FlightSelectModal({
+  dest,
+  flights,
+  loading,
+  onConfirm,
+  onClose,
+}: {
+  dest: DestinationRecommendation;
+  flights: RealFlight[];
+  loading: boolean;
+  onConfirm: (flight: RealFlight | null) => void;
+  onClose: () => void;
+}) {
+  const [selected, setSelected] = useState<number | "skip" | null>(null);
+
+  const formatDate = (iso: string) =>
+    new Date(iso).toLocaleDateString("pl-PL", { day: "numeric", month: "short", timeZone: "UTC" });
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-end justify-center"
+      style={{ background: "rgba(0,0,0,0.5)" }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <motion.div
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={{ type: "spring", damping: 28, stiffness: 300 }}
+        className="w-full max-w-lg rounded-t-3xl overflow-hidden"
+        style={{ background: "var(--background)", maxHeight: "85vh", overflowY: "auto" }}
+      >
+        <div className="px-5 pt-5 pb-2">
+          <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: "var(--border)" }} />
+          <h2 className="text-lg font-bold">Wybierz lot do {dest.city}</h2>
+          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+            Plan AI zostanie dopasowany do godzin Twojego lotu
+          </p>
+        </div>
+
+        <div className="px-5 pb-5 flex flex-col gap-3 mt-3">
+          {loading && (
+            <div className="flex items-center justify-center gap-2 py-8">
+              <motion.span
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
+                className="text-2xl"
+              >
+                ✈️
+              </motion.span>
+              <p className="text-sm" style={{ color: "var(--text-muted)" }}>Szukamy lotów…</p>
+            </div>
+          )}
+
+          {!loading && flights.length === 0 && (
+            <div
+              className="p-4 rounded-2xl text-center"
+              style={{ background: "#F8F8F8", border: "1px solid var(--border)" }}
+            >
+              <p className="text-sm font-medium">Brak dostępnych lotów w tej chwili</p>
+              <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+                Plan zostanie wygenerowany z typowymi godzinami lotów budżetowych
+              </p>
+            </div>
+          )}
+
+          {!loading && flights.map((f, i) => (
+            <button
+              key={i}
+              onClick={() => setSelected(i)}
+              className="w-full text-left p-4 rounded-2xl transition-all"
+              style={{
+                background: selected === i ? "var(--accent-light)" : "#F8F8F8",
+                border: `2px solid ${selected === i ? "var(--accent)" : "transparent"}`,
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-bold">{f.airline}</p>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                    {formatDate(f.departureDate)} · {f.departureTime} → {f.arrivalTime}
+                  </p>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                    Powrót {formatDate(f.returnDate)} · wylot {f.returnDepartureTime}
+                  </p>
+                </div>
+                <div className="text-right flex-shrink-0 ml-3">
+                  <p className="text-base font-bold" style={{ color: "var(--accent)" }}>
+                    ~{Math.round(f.price)} PLN
+                  </p>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                    {Math.floor(f.durationMinutes / 60)}h {f.durationMinutes % 60}m
+                  </p>
+                </div>
+              </div>
+              {selected === i && (
+                <p className="text-xs font-semibold mt-2" style={{ color: "var(--accent)" }}>
+                  ✓ Wybrany — plan dopasowany do tych godzin
+                </p>
+              )}
+            </button>
+          ))}
+
+          {!loading && (
+            <button
+              onClick={() => setSelected("skip")}
+              className="w-full text-left p-3 rounded-2xl transition-all"
+              style={{
+                background: selected === "skip" ? "#F0F0F0" : "transparent",
+                border: `2px solid ${selected === "skip" ? "var(--border)" : "var(--border)"}`,
+              }}
+            >
+              <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
+                Nie wiem jeszcze — pomiń wybór
+              </p>
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                Plan z typowymi godzinami budżetowych lotów z Polski
+              </p>
+            </button>
+          )}
+
+          {!loading && (
+            <button
+              className="btn-primary mt-1"
+              disabled={selected === null}
+              onClick={() => {
+                if (selected === null) return;
+                onConfirm(selected === "skip" ? null : flights[selected] ?? null);
+              }}
+            >
+              Wygeneruj plan AI →
+            </button>
+          )}
+        </div>
+      </motion.div>
     </motion.div>
   );
 }
