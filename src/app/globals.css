@@ -169,6 +169,7 @@ h1, h2, h3 {
 
 @media print {
   .no-print { display: none !important; }
+  .print-block { display: block !important; }
 
   body { background: white; }
   body::before { display: none; }
@@ -185,6 +186,10 @@ h1, h2, h3 {
     box-shadow: none;
     border: 1px solid #ddd;
   }
+
+  /* Plan page — show all day panels */
+  [data-print-day] { display: block !important; page-break-inside: avoid; margin-bottom: 24px; }
+  [data-day-tabs] { display: none !important; }
 }
 
 ::-webkit-scrollbar { width: 4px; }

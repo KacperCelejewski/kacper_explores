@@ -4,6 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 import GlobalMenu from "@/app/components/GlobalMenu";
 
+
 const geist = Geist({ subsets: ["latin"], variable: "--font-body" });
 const cormorant = Cormorant_Garamond({
   subsets: ["latin", "latin-ext"],
@@ -13,6 +14,7 @@ const cormorant = Cormorant_Garamond({
 });
 
 export const metadata: Metadata = {
+  manifest: "/manifest.webmanifest",
   title: {
     default: "Włóczykij — Budżetowe podróże solo",
     template: "%s | Włóczykij",
@@ -60,6 +62,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           strategy="lazyOnload"
           dangerouslySetInnerHTML={{
             __html: `(function(){var s=document.createElement("script");s.async=1;s.src="https://emrldco.com/NTI4ODcz.js?t=528873";document.head.appendChild(s);})();`,
+          }}
+        />
+        <Script
+          id="sw-register"
+          strategy="lazyOnload"
+          dangerouslySetInnerHTML={{
+            __html: `if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{})}`,
           }}
         />
       </body>
