@@ -361,9 +361,9 @@ function DestinationCard({
           </div>
           <div className="text-right">
             <p className="text-xl font-bold" style={{ color: "var(--accent)" }}>
-              ~{best.realCost} PLN
+              🎯 ~{best.realCost} PLN
             </p>
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>cena orientacyjna</p>
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>loty tu bywają w tej cenie — warto monitorować</p>
           </div>
         </div>
 
