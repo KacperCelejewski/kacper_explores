@@ -4,6 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 import GlobalMenu from "@/app/components/GlobalMenu";
 import CookieBanner from "@/app/components/CookieBanner";
+import NewsletterPopup from "@/app/components/NewsletterPopup";
 
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-body" });
@@ -58,6 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
           <GlobalMenu />
           <CookieBanner />
+          <NewsletterPopup />
         </main>
         <Script
           id="sw-register"
