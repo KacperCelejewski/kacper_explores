@@ -1,20 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --bg-primary: #FFFFFF;
-  --bg-surface: #F7F7F5;
-  --accent: #FF6B35;
-  --accent-light: #FFF3EE;
-  --text-primary: #1A1A1A;
-  --text-secondary: #4B5563;
-  --text-muted: #9CA3AF;
-  --border: #EBEBEB;
+  --bg-primary: #F5EFE0;
+  --bg-surface: #EDE8D8;
+  --accent: #C4622D;
+  --accent-light: #F0DFD0;
+  --text-primary: #1C1008;
+  --text-secondary: #3D2B1F;
+  --text-muted: #7A5C44;
+  --border: #CFC0A4;
+  --green: #2D5A27;
 }
 
 @theme inline {
   --color-background: var(--bg-primary);
   --color-foreground: var(--text-primary);
-  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-sans: var(--font-body), system-ui, sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -28,6 +29,22 @@ body {
   overflow-x: hidden;
 }
 
+/* Paper grain overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-heading), Georgia, serif;
+}
+
 .app-shell {
   max-width: 448px;
   margin: 0 auto;
@@ -37,10 +54,10 @@ body {
 }
 
 .glass-card {
-  background: #FFFFFF;
+  background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: 20px;
-  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 8px rgba(28, 16, 8, 0.06);
 }
 
 .gradient-text {
@@ -79,20 +96,20 @@ body {
 
 .progress-bar {
   height: 3px;
-  background: #EBEBEB;
+  background: var(--border);
   border-radius: 999px;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  background: var(--accent);
+  background: var(--green);
   border-radius: 999px;
   transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .option-card {
-  background: #FFFFFF;
+  background: var(--bg-surface);
   border: 1.5px solid var(--border);
   border-radius: 16px;
   padding: 16px;
@@ -122,13 +139,13 @@ body {
   .no-print { display: none !important; }
 
   body { background: white; }
+  body::before { display: none; }
 
   .app-shell {
     max-width: 100%;
     min-height: unset;
   }
 
-  /* Hide nav buttons, actions row, share/save buttons */
   button:not(.print-keep),
   a[href^="/"] { display: none; }
 
@@ -140,4 +157,4 @@ body {
 
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #EBEBEB; border-radius: 999px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }

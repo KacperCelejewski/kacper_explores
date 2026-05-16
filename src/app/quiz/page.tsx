@@ -7,6 +7,28 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/lib/store";
 import type { TravelStyle, TripDuration, TravelVibe, PlaceType, QuizAnswers } from "@/types";
 import { MONTH_NAMES } from "@/lib/mockFlights";
+import {
+  IconBackpack,
+  IconSuitcase,
+  IconSun,
+  IconLightning,
+  IconPeople,
+  IconMountain,
+  IconArch,
+  IconBuilding,
+  IconFork,
+  IconLeaf,
+  IconWave,
+  IconMoon,
+  IconCity,
+  IconHouseSmall,
+  IconSunWave,
+  IconPin,
+  IconCar,
+  IconGlobe,
+} from "@/app/components/Icons";
+
+type IconFC = React.FC<{ size?: number }>;
 
 const TOTAL_STEPS = 7;
 
@@ -15,14 +37,14 @@ const TOTAL_STEPS = 7;
 type RegionId = "wroclaw" | "slaskie" | "krakow" | "warszawa" | "poznan" | "trojmiasto" | "inne";
 type Willingness = "local" | "poland" | "europe";
 
-const REGIONS: { id: RegionId; label: string; subLabel: string; emoji: string; local: string[] }[] = [
-  { id: "wroclaw",    label: "Wrocław",     subLabel: "Dolny Śląsk",       emoji: "🏛️", local: ["WRO"] },
-  { id: "slaskie",   label: "Katowice",    subLabel: "Śląsk / Zagłębie",  emoji: "⚙️", local: ["KTW"] },
-  { id: "krakow",    label: "Kraków",      subLabel: "Małopolska",         emoji: "👑", local: ["KRK"] },
-  { id: "warszawa",  label: "Warszawa",    subLabel: "Mazowsze",           emoji: "🏙️", local: ["WAW", "WMI"] },
-  { id: "poznan",    label: "Poznań",      subLabel: "Wielkopolska",       emoji: "🐐", local: ["POZ"] },
-  { id: "trojmiasto",label: "Trójmiasto",  subLabel: "Gdańsk / Gdynia",    emoji: "⚓", local: ["GDN"] },
-  { id: "inne",      label: "Inne miasto", subLabel: "Najbliższe lotnisko", emoji: "📍", local: ["WRO"] },
+const REGIONS: { id: RegionId; label: string; subLabel: string; code: string; local: string[] }[] = [
+  { id: "wroclaw",    label: "Wrocław",     subLabel: "Dolny Śląsk",       code: "WRO", local: ["WRO"] },
+  { id: "slaskie",   label: "Katowice",    subLabel: "Śląsk / Zagłębie",  code: "KTW", local: ["KTW"] },
+  { id: "krakow",    label: "Kraków",      subLabel: "Małopolska",         code: "KRK", local: ["KRK"] },
+  { id: "warszawa",  label: "Warszawa",    subLabel: "Mazowsze",           code: "WAW", local: ["WAW", "WMI"] },
+  { id: "poznan",    label: "Poznań",      subLabel: "Wielkopolska",       code: "POZ", local: ["POZ"] },
+  { id: "trojmiasto",label: "Trójmiasto",  subLabel: "Gdańsk / Gdynia",    code: "GDN", local: ["GDN"] },
+  { id: "inne",      label: "Inne miasto", subLabel: "Najbliższe lotnisko", code: "...", local: ["WRO"] },
 ];
 
 // Nearby Polish airports added when willingness = "poland"
@@ -61,26 +83,26 @@ function inferWillingness(airports: string[]): Willingness {
 
 // ── Shared ────────────────────────────────────────────────────────────────────
 
-const STYLE_OPTIONS: { value: TravelStyle; label: string; emoji: string; desc: string }[] = [
-  { value: "history",      label: "Historia",     emoji: "🏛️", desc: "Muzea, zamki, starówki" },
-  { value: "architecture", label: "Architektura", emoji: "🏗️", desc: "Katedry, mosty, design" },
-  { value: "food",         label: "Jedzenie",     emoji: "🍜", desc: "Street food, lokalne bary" },
-  { value: "nature",       label: "Natura",       emoji: "🌿", desc: "Parki, góry, jeziora" },
-  { value: "beach",        label: "Plaża",        emoji: "🏖️", desc: "Morze, słońce, relaks" },
-  { value: "nightlife",    label: "Nightlife",    emoji: "🎶", desc: "Bary, kluby, koncerty" },
+const STYLE_OPTIONS: { value: TravelStyle; label: string; Icon: IconFC; desc: string }[] = [
+  { value: "history",      label: "Historia",     Icon: IconArch,     desc: "Muzea, zamki, starówki" },
+  { value: "architecture", label: "Architektura", Icon: IconBuilding, desc: "Katedry, mosty, design" },
+  { value: "food",         label: "Jedzenie",     Icon: IconFork,     desc: "Street food, lokalne bary" },
+  { value: "nature",       label: "Natura",       Icon: IconLeaf,     desc: "Parki, góry, jeziora" },
+  { value: "beach",        label: "Plaża",        Icon: IconWave,     desc: "Morze, słońce, relaks" },
+  { value: "nightlife",    label: "Nightlife",    Icon: IconMoon,     desc: "Bary, kluby, koncerty" },
 ];
 
-const VIBE_OPTIONS: { value: TravelVibe; emoji: string; label: string; desc: string }[] = [
-  { value: "chill",   emoji: "☕", label: "Reset",        desc: "Własne tempo, kawiarnie, luz" },
-  { value: "intense", emoji: "🔥", label: "Full program", desc: "Jak najwięcej, każda chwila gra" },
-  { value: "social",  emoji: "🎉", label: "Towarzyski",   desc: "Poznawanie ludzi, bary, imprezy" },
-  { value: "active",  emoji: "🥾", label: "Aktywny",      desc: "Piesze trasy, sport, przyroda" },
+const VIBE_OPTIONS: { value: TravelVibe; Icon: IconFC; label: string; desc: string }[] = [
+  { value: "chill",   Icon: IconSun,       label: "Reset",        desc: "Własne tempo, kawiarnie, luz" },
+  { value: "intense", Icon: IconLightning, label: "Full program", desc: "Jak najwięcej, każda chwila gra" },
+  { value: "social",  Icon: IconPeople,    label: "Towarzyski",   desc: "Poznawanie ludzi, bary, imprezy" },
+  { value: "active",  Icon: IconMountain,  label: "Aktywny",      desc: "Piesze trasy, sport, przyroda" },
 ];
 
-const PLACE_OPTIONS: { value: PlaceType; emoji: string; label: string; desc: string }[] = [
-  { value: "big_city",   emoji: "🏙️", label: "Duże miasto",  desc: "Metro, muzea, energia tłumu" },
-  { value: "charming",   emoji: "🏘️", label: "Kameralne",    desc: "Małe uliczki, autentyczność, spokój" },
-  { value: "beach_sun",  emoji: "🏖️", label: "Słońce i woda", desc: "Plaże, morze, ciepło przede wszystkim" },
+const PLACE_OPTIONS: { value: PlaceType; Icon: IconFC; label: string; desc: string }[] = [
+  { value: "big_city",   Icon: IconCity,       label: "Duże miasto",   desc: "Metro, muzea, energia tłumu" },
+  { value: "charming",   Icon: IconHouseSmall, label: "Kameralne",     desc: "Małe uliczki, autentyczność, spokój" },
+  { value: "beach_sun",  Icon: IconSunWave,    label: "Słońce i woda", desc: "Plaże, morze, ciepło przede wszystkim" },
 ];
 
 const DURATION_PRESETS: { value: number; label: string; sub?: string }[] = [
@@ -114,7 +136,6 @@ function QuizPageInner() {
       .then((r) => r.json())
       .then((d) => {
         if (d.authenticated && d.quiz_preferences) setSavedPrefs(d.quiz_preferences);
-        // Auto-advance to flights after successful login redirect
         if (d.authenticated && searchParams.get("afterLogin") === "1" && !autoStarted.current) {
           autoStarted.current = true;
           router.replace("/flights");
@@ -205,7 +226,7 @@ function QuizPageInner() {
             transition={{ duration: 0.25 }}
             onClick={handleUseSaved}
             className="w-full mb-4 p-4 rounded-2xl text-left transition-opacity hover:opacity-90"
-            style={{ background: "var(--accent-light)", border: "1px solid rgba(255,107,53,0.25)" }}
+            style={{ background: "var(--accent-light)", border: "1px solid rgba(196,98,45,0.25)" }}
           >
             <div className="flex items-center justify-between">
               <div>
@@ -214,7 +235,7 @@ function QuizPageInner() {
                   Pomiń quiz — załaduj zapisane preferencje i przejdź do lotów
                 </p>
               </div>
-              <span className="text-xl ml-3">✦</span>
+              <span className="text-xl ml-3" style={{ color: "var(--accent)" }}>✦</span>
             </div>
           </motion.button>
         )}
@@ -276,7 +297,7 @@ function QuizPageInner() {
 
       <motion.div layout className="mt-6">
         <button className="btn-primary" disabled={!canProceed()} onClick={handleNext}>
-          {currentQuizStep < TOTAL_STEPS - 1 ? "Dalej →" : "Znajdź loty ✈️"}
+          {currentQuizStep < TOTAL_STEPS - 1 ? "Dalej →" : "Znajdź loty →"}
         </button>
       </motion.div>
     </div>
@@ -295,6 +316,12 @@ export default function QuizPage() {
 
 function StepBudget() {
   const { quizAnswers, setQuizAnswer } = useAppStore();
+
+  const opts: { value: "low" | "medium"; Icon: IconFC; label: string; desc: string }[] = [
+    { value: "low",    Icon: IconBackpack,  label: "Backpacker",  desc: "Do 1500 PLN · hostele, street food, darmowe atrakcje" },
+    { value: "medium", Icon: IconSuitcase,  label: "Komfortowy",  desc: "1500–3000 PLN · Airbnb lub 3★ hotel, restauracje" },
+  ];
+
   return (
     <div>
       <h2 className="text-2xl font-bold mt-2">Jaki masz budżet?</h2>
@@ -302,10 +329,7 @@ function StepBudget() {
         Całkowity koszt wyjazdu — loty, noclegi, jedzenie.
       </p>
       <div className="flex flex-col gap-3" role="radiogroup" aria-label="Wybierz budżet">
-        {[
-          { value: "low"    as const, emoji: "🎒", label: "Backpacker",  desc: "Do 1500 PLN · hostele, street food, darmowe atrakcje" },
-          { value: "medium" as const, emoji: "🧳", label: "Komfortowy",  desc: "1500–3000 PLN · Airbnb lub 3★ hotel, restauracje" },
-        ].map((opt) => (
+        {opts.map((opt) => (
           <button
             key={opt.value}
             className={`option-card ${quizAnswers.budget === opt.value ? "selected" : ""}`}
@@ -313,7 +337,9 @@ function StepBudget() {
             aria-pressed={quizAnswers.budget === opt.value}
           >
             <div className="flex items-center gap-3">
-              <span className="text-2xl">{opt.emoji}</span>
+              <span style={{ color: quizAnswers.budget === opt.value ? "var(--accent)" : "var(--text-muted)" }}>
+                <opt.Icon size={24} />
+              </span>
               <div>
                 <p className="font-semibold text-sm">{opt.label}</p>
                 <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
@@ -342,7 +368,9 @@ function StepVibe() {
             onClick={() => setQuizAnswer("vibe", opt.value)}
             aria-pressed={quizAnswers.vibe === opt.value}
           >
-            <span className="text-2xl">{opt.emoji}</span>
+            <span style={{ color: quizAnswers.vibe === opt.value ? "var(--accent)" : "var(--text-muted)" }}>
+              <opt.Icon size={24} />
+            </span>
             <p className="font-semibold text-sm mt-2">{opt.label}</p>
             <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
           </button>
@@ -367,7 +395,9 @@ function StepStyle({ styles, toggleStyle }: { styles: TravelStyle[]; toggleStyle
             onClick={() => toggleStyle(opt.value)}
             aria-pressed={styles.includes(opt.value)}
           >
-            <span className="text-2xl">{opt.emoji}</span>
+            <span style={{ color: styles.includes(opt.value) ? "var(--accent)" : "var(--text-muted)" }}>
+              <opt.Icon size={24} />
+            </span>
             <p className="font-semibold text-sm mt-2">{opt.label}</p>
             <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
           </button>
@@ -394,7 +424,9 @@ function StepPlaceType() {
             aria-pressed={quizAnswers.placeType === opt.value}
           >
             <div className="flex items-center gap-3">
-              <span className="text-2xl">{opt.emoji}</span>
+              <span style={{ color: quizAnswers.placeType === opt.value ? "var(--accent)" : "var(--text-muted)" }}>
+                <opt.Icon size={24} />
+              </span>
               <div>
                 <p className="font-semibold text-sm">{opt.label}</p>
                 <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
@@ -466,7 +498,7 @@ function StepDuration({ duration, setDuration }: { duration: TripDuration | null
                 color: "#fff",
                 border: "1.5px solid var(--accent)",
               } : {
-                background: "var(--bg-card)",
+                background: "var(--bg-surface)",
                 color: "var(--text-primary)",
                 border: "1.5px solid var(--border)",
               }}
@@ -497,7 +529,7 @@ function StepDuration({ duration, setDuration }: { duration: TripDuration | null
       </div>
 
       {/* Live readout */}
-      <div className="p-4 rounded-2xl text-center" style={{ background: "var(--accent-light)", border: "1px solid rgba(255,107,53,0.2)" }}>
+      <div className="p-4 rounded-2xl text-center" style={{ background: "var(--accent-light)", border: "1px solid rgba(196,98,45,0.2)" }}>
         <p className="text-3xl font-bold" style={{ color: "var(--accent)" }}>{value} dni</p>
         <p className="text-xs mt-1.5" style={{ color: "var(--text-muted)" }}>{durationNote(value)}</p>
       </div>
@@ -512,22 +544,22 @@ function QuizSummary() {
   const { budget, vibe, styles, placeType, month, duration } = quizAnswers;
 
   const items = [
-    budget     && (budget === "low" ? "🎒 Backpacker" : "🧳 Komfortowy"),
-    vibe       && ({ chill: "☕ Reset", intense: "🔥 Full program", social: "🎉 Towarzyski", active: "🥾 Aktywny" }[vibe]),
+    budget     && (budget === "low" ? "Backpacker" : "Komfortowy"),
+    vibe       && ({ chill: "Reset", intense: "Full program", social: "Towarzyski", active: "Aktywny" }[vibe]),
     styles.length > 0 && `${styles.length} zainteresowania`,
-    placeType  && ({ big_city: "🏙️ Duże miasto", charming: "🏘️ Kameralne", beach_sun: "🏖️ Słońce i woda" }[placeType]),
-    month      && `📅 ${MONTH_SHORT[month - 1]}`,
-    duration   && `⏱ ${duration} dni (${Math.max(duration - 2, 0)} pełne)`,
+    placeType  && ({ big_city: "Duże miasto", charming: "Kameralne", beach_sun: "Słońce i woda" }[placeType]),
+    month      && MONTH_SHORT[month - 1],
+    duration   && `${duration} dni`,
   ].filter(Boolean) as string[];
 
   if (items.length === 0) return null;
 
   return (
-    <div className="mb-5 p-3 rounded-2xl" style={{ background: "#F8F8F8", border: "1px solid var(--border)" }}>
+    <div className="mb-5 p-3 rounded-2xl" style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}>
       <p className="text-xs font-semibold mb-2" style={{ color: "var(--text-muted)" }}>Twoje wybory</p>
       <div className="flex flex-wrap gap-1.5">
         {items.map((item) => (
-          <span key={item} className="text-xs px-2 py-0.5 rounded-full" style={{ background: "#fff", border: "1px solid var(--border)" }}>
+          <span key={item} className="text-xs px-2 py-0.5 rounded-full" style={{ background: "var(--bg-primary)", border: "1px solid var(--border)" }}>
             {item}
           </span>
         ))}
@@ -551,22 +583,22 @@ function StepDeparture({
     setAirports(airportsFor(r, w));
   };
 
-  const WILLINGNESS_OPTIONS: { value: Willingness; emoji: string; label: string; desc: string }[] = [
+  const WILLINGNESS_OPTIONS: { value: Willingness; Icon: IconFC; label: string; desc: string }[] = [
     {
       value: "local",
-      emoji: "🏠",
+      Icon: IconPin,
       label: "Tylko lokalnie",
       desc: "Lotnisko najbliżej mojego miasta",
     },
     {
       value: "poland",
-      emoji: "🚗",
+      Icon: IconCar,
       label: "Mogę dojechać w Polsce",
       desc: `Porównam też ${NEARBY[regionId].filter(c => !REGIONS.find(r => r.id === regionId)!.local.includes(c)).join(", ") || "pobliskie lotniska"} — więcej opcji`,
     },
     {
       value: "europe",
-      emoji: "🌍",
+      Icon: IconGlobe,
       label: "Też za granicę",
       desc: "Berlin, Budapeszt, Wiedeń, Amsterdam, Londyn, Stambuł — taniej do Azji i USA",
     },
@@ -593,7 +625,12 @@ function StepDeparture({
               border: "1.5px solid var(--accent)",
             } : {}}
           >
-            <span className="text-xl">{r.emoji}</span>
+            <p
+              className="font-bold text-xs tracking-widest"
+              style={{ color: regionId === r.id ? "var(--accent)" : "var(--text-muted)", fontFamily: "var(--font-heading), Georgia, serif", fontSize: "11px" }}
+            >
+              {r.code}
+            </p>
             <p className="font-semibold text-xs mt-1 leading-tight">{r.label}</p>
             <p className="text-xs mt-0.5 leading-tight" style={{ color: "var(--text-muted)", fontSize: "10px" }}>
               {r.subLabel}
@@ -617,7 +654,9 @@ function StepDeparture({
             } : {}}
           >
             <div className="flex items-center gap-3">
-              <span className="text-xl flex-shrink-0">{opt.emoji}</span>
+              <span className="flex-shrink-0" style={{ color: willingness === opt.value ? "var(--accent)" : "var(--text-muted)" }}>
+                <opt.Icon size={20} />
+              </span>
               <div className="text-left">
                 <p className="font-semibold text-sm">{opt.label}</p>
                 <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
@@ -631,7 +670,7 @@ function StepDeparture({
       </div>
 
       {/* Summary chip */}
-      <div className="mt-4 px-3 py-2 rounded-xl text-xs" style={{ background: "#F0F0F0" }}>
+      <div className="mt-4 px-3 py-2 rounded-xl text-xs" style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}>
         <span style={{ color: "var(--text-muted)" }}>Będę porównywać: </span>
         <span className="font-semibold">{airports.join(", ")}</span>
       </div>

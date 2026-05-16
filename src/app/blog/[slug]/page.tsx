@@ -5,6 +5,23 @@ import { MDXRemote } from "next-mdx-remote/rsc";
 import { getAllPosts, getPost } from "@/lib/blog";
 import SiteNav from "../../components/SiteNav";
 import SiteFooter from "../../components/SiteFooter";
+import {
+  IconCompass,
+  IconGlobe,
+  IconCoin,
+  IconPlane,
+  IconMountain,
+} from "@/app/components/Icons";
+
+type IconFC = React.FC<{ size?: number }>;
+
+const COVER_ICONS: Record<string, IconFC> = {
+  compass: IconCompass,
+  globe: IconGlobe,
+  coin: IconCoin,
+  plane: IconPlane,
+  mountain: IconMountain,
+};
 
 export async function generateStaticParams() {
   return getAllPosts().map((p) => ({ slug: p.slug }));
@@ -109,10 +126,10 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         {/* Header */}
         <header className="pt-4 pb-6">
           <div
-            className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl mb-5"
-            style={{ background: "var(--accent-light)" }}
+            className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5"
+            style={{ background: "var(--accent-light)", color: "var(--accent)" }}
           >
-            {post.coverEmoji}
+            {(() => { const Icon = COVER_ICONS[post.coverIcon] ?? IconPlane; return <Icon size={28} />; })()}
           </div>
           <h1 className="text-3xl font-bold leading-tight">{post.title}</h1>
           <p className="text-sm mt-3 leading-relaxed" style={{ color: "var(--text-muted)" }}>

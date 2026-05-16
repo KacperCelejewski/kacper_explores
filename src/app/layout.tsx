@@ -1,10 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
+import { Geist, Cormorant_Garamond } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import GlobalMenu from "@/app/components/GlobalMenu";
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
+const geist = Geist({ subsets: ["latin"], variable: "--font-body" });
+const cormorant = Cormorant_Garamond({
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
+  variable: "--font-heading",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -35,14 +41,14 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#FFFFFF" },
-    { media: "(prefers-color-scheme: dark)", color: "#1A1A1A" },
+    { media: "(prefers-color-scheme: light)", color: "#F5EFE0" },
+    { media: "(prefers-color-scheme: dark)", color: "#1C1008" },
   ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pl" className={geist.variable}>
+    <html lang="pl" className={`${geist.variable} ${cormorant.variable}`}>
       <body>
         <main className="app-shell">
           {children}

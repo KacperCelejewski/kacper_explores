@@ -3,6 +3,23 @@ import Link from "next/link";
 import { getAllPosts } from "@/lib/blog";
 import SiteNav from "../components/SiteNav";
 import SiteFooter from "../components/SiteFooter";
+import {
+  IconCompass,
+  IconGlobe,
+  IconCoin,
+  IconPlane,
+  IconMountain,
+} from "@/app/components/Icons";
+
+type IconFC = React.FC<{ size?: number }>;
+
+const COVER_ICONS: Record<string, IconFC> = {
+  compass: IconCompass,
+  globe: IconGlobe,
+  coin: IconCoin,
+  plane: IconPlane,
+  mountain: IconMountain,
+};
 
 export const metadata: Metadata = {
   title: "Blog o podróżach solo",
@@ -65,10 +82,10 @@ export default function BlogPage() {
               >
                 <div className="flex items-start gap-4">
                   <div
-                    className="flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center text-2xl"
-                    style={{ background: "var(--accent-light)" }}
+                    className="flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center"
+                    style={{ background: "var(--accent-light)", color: "var(--accent)" }}
                   >
-                    {post.coverEmoji}
+                    {(() => { const Icon = COVER_ICONS[post.coverIcon] ?? IconPlane; return <Icon size={22} />; })()}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h2 className="text-base font-bold leading-snug" style={{ color: "var(--text-primary)" }}>
@@ -91,7 +108,7 @@ export default function BlogPage() {
           ))}
         </div>
 
-        <div className="mt-10 p-5 rounded-2xl text-center" style={{ background: "var(--accent-light)", border: "1px solid rgba(255,107,53,0.2)" }}>
+        <div className="mt-10 p-5 rounded-2xl text-center" style={{ background: "var(--accent-light)", border: "1px solid rgba(196,98,45,0.2)" }}>
           <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>Gotowy na swoją podróż?</p>
           <p className="text-xs mt-1 mb-4" style={{ color: "var(--text-muted)" }}>
             AI znajdzie najtańszy lot i ułoży plan godzina po godzinie

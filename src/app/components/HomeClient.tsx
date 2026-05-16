@@ -5,11 +5,14 @@ import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { IconPlane, IconClock, IconCoin } from "@/app/components/Icons";
 
-const features = [
-  { emoji: "✈️", label: "Najtańsze loty", desc: "Sprawdzamy WRO i BER — wybieramy co się opłaca" },
-  { emoji: "🤖", label: "Plan AI godzina po godzinie", desc: "Gemini układa Twój dzień od śniadania po kolację" },
-  { emoji: "💸", label: "Zero przepłacania", desc: "Street food, darmowe atrakcje, triki budżetowe" },
+type IconFC = React.FC<{ size?: number }>;
+
+const features: { Icon: IconFC; label: string; desc: string }[] = [
+  { Icon: IconPlane, label: "Najtańsze loty", desc: "Sprawdzamy WRO i BER — wybieramy co się opłaca" },
+  { Icon: IconClock, label: "Plan AI godzina po godzinie", desc: "Gemini układa Twój dzień od śniadania po kolację" },
+  { Icon: IconCoin, label: "Zero przepłacania", desc: "Street food, darmowe atrakcje, triki budżetowe" },
 ];
 
 type NewsletterState = "idle" | "loading" | "pending" | "success" | "error" | "expired" | "invalid";
@@ -302,10 +305,10 @@ export default function HomeClient() {
             className="flex items-start gap-4"
           >
             <div
-              className="flex-shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center text-lg"
-              style={{ background: "var(--accent-light)" }}
+              className="flex-shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center"
+              style={{ background: "var(--accent-light)", color: "var(--accent)" }}
             >
-              {f.emoji}
+              <f.Icon size={20} />
             </div>
             <div className="pt-1">
               <p className="text-sm font-semibold">{f.label}</p>

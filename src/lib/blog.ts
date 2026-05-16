@@ -9,7 +9,7 @@ export interface PostMeta {
   title: string;
   description: string;
   date: string;
-  coverEmoji: string;
+  coverIcon: string;
   tags: string[];
   readingTime: number;
 }
@@ -31,7 +31,7 @@ export function getAllPosts(): PostMeta[] {
         title: data.title ?? "",
         description: data.description ?? "",
         date: data.date ?? "",
-        coverEmoji: data.coverEmoji ?? "✈️",
+        coverIcon: data.coverIcon ?? "plane",
         tags: data.tags ?? [],
         readingTime: data.readingTime ?? 5,
       } as PostMeta;
@@ -51,7 +51,7 @@ export function getPost(slug: string): Post | null {
     title: data.title ?? "",
     description: data.description ?? "",
     date: data.date ?? "",
-    coverEmoji: data.coverEmoji ?? "✈️",
+    coverIcon: data.coverIcon ?? "plane",
     tags: data.tags ?? [],
     readingTime: data.readingTime ?? 5,
     content,

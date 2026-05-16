@@ -5,9 +5,18 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
+import {
+  IconHome,
+  IconCompass,
+  IconPerson,
+  IconTag,
+  IconBook,
+} from "@/app/components/Icons";
 
-function MenuItem({ href, emoji, label, onClick }: {
-  href: string; emoji: string; label: string; onClick: () => void;
+type IconComponent = React.FC<{ size?: number }>;
+
+function MenuItem({ href, Icon, label, onClick }: {
+  href: string; Icon: IconComponent; label: string; onClick: () => void;
 }) {
   return (
     <Link
@@ -16,7 +25,9 @@ function MenuItem({ href, emoji, label, onClick }: {
       className="flex items-center gap-3 py-3.5 border-b text-sm font-medium transition-opacity hover:opacity-70"
       style={{ borderColor: "var(--border)", color: "var(--text-primary)", textDecoration: "none" }}
     >
-      <span className="text-lg w-7 text-center flex-shrink-0">{emoji}</span>
+      <span className="w-7 flex-shrink-0 flex items-center justify-center" style={{ color: "var(--text-muted)" }}>
+        <Icon size={18} />
+      </span>
       {label}
     </Link>
   );
@@ -48,7 +59,7 @@ export default function GlobalMenu() {
 
   return (
     <>
-      {/* FAB — always visible, no-print */}
+      {/* FAB */}
       <button
         onClick={() => setOpen(true)}
         aria-label="Otwórz menu"
@@ -56,15 +67,11 @@ export default function GlobalMenu() {
         style={{
           bottom: "1.5rem",
           right: "max(1.25rem, calc(50vw - 224px + 1.25rem))",
-          background: "var(--accent)",
+          background: "var(--green)",
           color: "white",
         }}
       >
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-          <rect x="1" y="3" width="16" height="2" rx="1" fill="currentColor" />
-          <rect x="1" y="8" width="16" height="2" rx="1" fill="currentColor" />
-          <rect x="1" y="13" width="16" height="2" rx="1" fill="currentColor" />
-        </svg>
+        <IconCompass size={20} />
       </button>
 
       <AnimatePresence>
@@ -94,7 +101,7 @@ export default function GlobalMenu() {
 
               {/* User chip */}
               {email && (
-                <div className="mx-5 mt-3 mb-2 px-4 py-3 rounded-2xl flex items-center gap-3" style={{ background: "var(--accent-light)", border: "1px solid rgba(255,107,53,0.2)" }}>
+                <div className="mx-5 mt-3 mb-2 px-4 py-3 rounded-2xl flex items-center gap-3" style={{ background: "var(--accent-light)", border: "1px solid rgba(196,98,45,0.2)" }}>
                   <span className="w-8 h-8 rounded-xl flex items-center justify-center text-sm font-bold text-white flex-shrink-0" style={{ background: "var(--accent)" }}>
                     {email.slice(0, 1).toUpperCase()}
                   </span>
@@ -104,11 +111,11 @@ export default function GlobalMenu() {
 
               {/* Nav links */}
               <nav className="px-5 mt-2">
-                <MenuItem href="/"        emoji="🏠" label="Strona główna"  onClick={close} />
-                <MenuItem href="/quiz"    emoji="✈️" label="Planuj wyjazd"  onClick={close} />
-                {email && <MenuItem href="/profile" emoji="👤" label="Moje konto" onClick={close} />}
-                <MenuItem href="/pricing" emoji="💳" label="Cennik"         onClick={close} />
-                <MenuItem href="/blog"    emoji="📖" label="Blog"           onClick={close} />
+                <MenuItem href="/"        Icon={IconHome}    label="Strona główna"  onClick={close} />
+                <MenuItem href="/quiz"    Icon={IconCompass} label="Planuj wyjazd"  onClick={close} />
+                {email && <MenuItem href="/profile" Icon={IconPerson} label="Moje konto" onClick={close} />}
+                <MenuItem href="/pricing" Icon={IconTag}     label="Cennik"         onClick={close} />
+                <MenuItem href="/blog"    Icon={IconBook}    label="Blog"           onClick={close} />
               </nav>
 
               {/* Auth action */}
@@ -117,7 +124,7 @@ export default function GlobalMenu() {
                   <button
                     onClick={handleSignOut}
                     className="w-full text-sm font-semibold py-3 rounded-2xl transition-opacity hover:opacity-70"
-                    style={{ background: "#F0F0F0", color: "var(--text-secondary)" }}
+                    style={{ background: "var(--bg-surface)", color: "var(--text-secondary)", border: "1px solid var(--border)" }}
                   >
                     Wyloguj się
                   </button>
