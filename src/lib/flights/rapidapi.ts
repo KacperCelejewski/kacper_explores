@@ -1,4 +1,3 @@
-import { SKY_IDS } from "./sky-ids";
 import { createClient } from "@supabase/supabase-js";
 
 export interface RealFlight {
@@ -13,21 +12,22 @@ export interface RealFlight {
   durationMinutes: number;
 }
 
-interface RapidLeg {
-  departure: string;
-  arrival: string;
-  durationInMinutes: number;
-  carriers: { marketing: Array<{ name: string }> };
+interface KiwiLeg {
+  departure_at?: string;
+  arrival_at?: string;
+  duration?: number;
+  airlines?: string[];
+  airline?: string;
 }
 
-interface RapidItinerary {
-  price: { raw: number };
-  legs: RapidLeg[];
+interface KiwiItinerary {
+  price?: number;
+  outbound?: KiwiLeg;
+  inbound?: KiwiLeg;
 }
 
-interface RapidResponse {
-  status: boolean;
-  data?: { itineraries?: RapidItinerary[] };
+interface KiwiResponse {
+  data?: KiwiItinerary[];
 }
 
 // ── Global daily cap ──────────────────────────────────────────────────────────
@@ -185,10 +185,6 @@ export async function searchFlightOptions(
   const token = process.env.RAPIDAPI_KEY;
   if (!token) return [];
 
-  const origin = SKY_IDS[originCode];
-  const dest = SKY_IDS[destCode];
-  if (!origin || !dest) return [];
-
   const { depart, ret } = pickDates(month, duration);
   const cacheKey = `${originCode}-${destCode}-${depart.slice(0, 7)}`;
 
@@ -215,43 +211,61 @@ export async function searchFlightOptions(
   }
 
   try {
-    const url = new URL("https://flights-sky.p.rapidapi.com/flights/search-roundtrip");
-    url.searchParams.set("fromEntityId", origin.entityId);
-    url.searchParams.set("toEntityId", dest.entityId);
-    url.searchParams.set("departDate", depart);
-    url.searchParams.set("returnDate", ret);
-    url.searchParams.set("adults", "1");
+    const url = new URL("https://kiwi-com-cheap-flights.p.rapidapi.com/round-trip");
+    url.searchParams.set("source", `Airport:${originCode}`);
+    url.searchParams.set("destination", `Airport:${destCode}`);
     url.searchParams.set("currency", "PLN");
-    url.searchParams.set("locale", "pl-PL");
+    url.searchParams.set("locale", "pl");
+    url.searchParams.set("adults", "1");
+    url.searchParams.set("children", "0");
+    url.searchParams.set("infants", "0");
+    url.searchParams.set("handbags", "1");
+    url.searchParams.set("holdbags", "0");
+    url.searchParams.set("cabinClass", "ECONOMY");
+    url.searchParams.set("sortBy", "PRICE");
+    url.searchParams.set("sortOrder", "ASCENDING");
+    url.searchParams.set("applyMixedClasses", "true");
+    url.searchParams.set("allowReturnFromDifferentCity", "false");
+    url.searchParams.set("enableSelfTransfer", "true");
+    url.searchParams.set("transportTypes", "FLIGHT");
+    url.searchParams.set("contentProviders", "FRESH,KIWI");
+    url.searchParams.set("outbound", "MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY,SATURDAY,SUNDAY");
+    url.searchParams.set("limit", "10");
 
     const res = await fetch(url.toString(), {
       headers: {
-        "X-RapidAPI-Key": token,
-        "X-RapidAPI-Host": "flights-sky.p.rapidapi.com",
+        "Content-Type": "application/json",
+        "x-rapidapi-host": "kiwi-com-cheap-flights.p.rapidapi.com",
+        "x-rapidapi-key": token,
       },
     });
 
     if (!res.ok) return [];
 
-    const json = (await res.json()) as RapidResponse;
-    const itineraries = json.data?.itineraries ?? [];
+    const json = (await res.json()) as KiwiResponse;
+    const itineraries = json.data ?? [];
 
     // Store all results in cache (up to 5), serve sliced on read
     const results: RealFlight[] = [];
-    for (const itinerary of itineraries.slice(0, 5)) {
-      if (itinerary.legs.length < 2) continue;
-      const outbound = itinerary.legs[0];
-      const inbound = itinerary.legs[1];
+    for (const item of itineraries.slice(0, 5)) {
+      const out = item.outbound;
+      const inb = item.inbound;
+      if (!out?.departure_at || !out?.arrival_at || !inb?.departure_at || !inb?.arrival_at) continue;
+      if (!item.price) continue;
+
+      const airline =
+        out.airlines?.[0] ?? out.airline ?? inb.airlines?.[0] ?? inb.airline ?? "Linie lotnicze";
+
       results.push({
-        price: itinerary.price.raw,
-        airline: outbound.carriers.marketing[0]?.name ?? "Linie lotnicze",
-        departureDate: outbound.departure.slice(0, 10),
-        departureTime: hhmm(outbound.departure),
-        arrivalTime: hhmm(outbound.arrival),
-        returnDate: inbound.departure.slice(0, 10),
-        returnDepartureTime: hhmm(inbound.departure),
-        returnArrivalTime: hhmm(inbound.arrival),
-        durationMinutes: outbound.durationInMinutes,
+        price: item.price,
+        airline,
+        departureDate: out.departure_at.slice(0, 10),
+        departureTime: hhmm(out.departure_at),
+        arrivalTime: hhmm(out.arrival_at),
+        returnDate: inb.departure_at.slice(0, 10),
+        returnDepartureTime: hhmm(inb.departure_at),
+        returnArrivalTime: hhmm(inb.arrival_at),
+        durationMinutes: out.duration ?? 0,
       });
     }
 
