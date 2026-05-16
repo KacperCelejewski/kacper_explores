@@ -294,10 +294,10 @@ export default function CookiesPage() {
             <P>
               Pytania dotyczące plików cookie kieruj na:{" "}
               <a
-                href="mailto:kontakt@wloczykij.me"
+                href="mailto:hej@wloczykij.me"
                 style={{ color: "var(--accent)" }}
               >
-                kontakt@wloczykij.me
+                hej@wloczykij.me
               </a>
             </P>
           </Section>

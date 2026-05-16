@@ -7,9 +7,18 @@ export default function SiteFooter() {
       style={{ borderColor: "var(--border)" }}
     >
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-          © {new Date().getFullYear()} Włóczykij
-        </p>
+        <div>
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+            © {new Date().getFullYear()} Włóczykij · Kacper Celejewski
+          </p>
+          <a
+            href="mailto:hej@wloczykij.me"
+            className="text-xs"
+            style={{ color: "var(--text-muted)", textDecoration: "none" }}
+          >
+            hej@wloczykij.me
+          </a>
+        </div>
         <div className="flex items-center gap-4">
           <Link
             href="/"
