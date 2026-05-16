@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
           ...offer,
           departureDate: dep,
           returnDate: ret,
-          affiliateUrl: buildSkyscannerUrl(offer.origin.code, offer.destination.code, dep),
+          affiliateUrl: buildSkyscannerUrl(offer.origin.code, offer.destination.code, dep, ret),
         },
       };
     });
@@ -96,13 +96,16 @@ export async function POST(req: NextRequest) {
       const retDate = new Date(depDate);
       retDate.setUTCDate(retDate.getUTCDate() + durationDays);
       const newRet = retDate.toISOString().slice(0, 10);
-      // Patch affiliate URL: replace both YYYYMMDD and YYYY-MM-DD formats
+      // Patch affiliate URL: replace YYMMDD, YYYYMMDD, and YYYY-MM-DD formats
       let affiliateUrl = offer.affiliateUrl;
       if (affiliateUrl && offer.returnDate) {
-        const oldCompact = offer.returnDate.replace(/-/g, "");
-        const newCompact = newRet.replace(/-/g, "");
+        const oldFull = offer.returnDate.replace(/-/g, "");          // 20260615
+        const oldShort = oldFull.slice(2);                           // 260615
+        const newFull = newRet.replace(/-/g, "");                    // 20260617
+        const newShort = newFull.slice(2);                           // 260617
         affiliateUrl = affiliateUrl
-          .replaceAll(oldCompact, newCompact)
+          .replaceAll(oldShort, newShort)
+          .replaceAll(oldFull, newFull)
           .replaceAll(offer.returnDate, newRet);
       }
       return { ...rec, bestOffer: { ...offer, returnDate: newRet, affiliateUrl } };

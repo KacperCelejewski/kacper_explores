@@ -325,9 +325,7 @@ function DestinationCard({
   const hubSavings =
     best.savingsVsWro !== null && best.savingsVsWro > 150 ? best.savingsVsWro : null;
 
-  const buyLabel = best.affiliateUrl
-    ? `Sprawdź cenę na ${best.airline === "Ryanair" || best.airline === "Wizz Air" || best.airline === "easyJet" ? best.airline : "Skyscanner"} ↗`
-    : null;
+  const buyLabel = best.affiliateUrl ? "Sprawdź na Skyscanner ↗" : null;
 
   return (
     <motion.div

@@ -75,8 +75,8 @@ async function fetchCheapFlights(origin: string, month: number): Promise<Record<
 
 function formatDate(iso: string) { return iso.slice(0, 10); }
 
-function buildBuyLink(origin: string, dest: string, depIso: string): string {
-  return buildSkyscannerUrl(origin, dest, depIso);
+function buildBuyLink(origin: string, dest: string, depIso: string, retIso?: string): string {
+  return buildSkyscannerUrl(origin, dest, depIso, retIso ?? null);
 }
 
 function enrichFlight(base: FlightOffer, offer: TpOffer, originCode: string): FlightOffer {
@@ -101,7 +101,7 @@ function enrichFlight(base: FlightOffer, offer: TpOffer, originCode: string): Fl
     arrivalTime: arrTime,
     departureDate: formatDate(offer.departure_at),
     returnDate: formatDate(offer.return_at),
-    affiliateUrl: buildBuyLink(originCode, base.destination.code, offer.departure_at),
+    affiliateUrl: buildBuyLink(originCode, base.destination.code, offer.departure_at, offer.return_at),
     isBerlinAlternative: originCode === "BER",
     savingsVsWro: null, // recalculated below
     transitToHub: ap?.transit,
