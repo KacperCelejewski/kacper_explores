@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Cormorant_Garamond } from "next/font/google";
 import Script from "next/script";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import GlobalMenu from "@/app/components/GlobalMenu";
 
@@ -57,6 +58,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
           <GlobalMenu />
         </main>
+        <SpeedInsights />
         <Script
           id="tp-drive"
           strategy="lazyOnload"
