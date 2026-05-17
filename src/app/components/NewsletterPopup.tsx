@@ -112,8 +112,9 @@ function NewsletterPopupInner() {
           style={{
             position: "fixed",
             bottom: 80,
-            left: "50%",
-            transform: "translateX(-50%)",
+            left: 0,
+            right: 0,
+            margin: "0 auto",
             width: "calc(100% - 32px)",
             maxWidth: 480,
             zIndex: 99,
