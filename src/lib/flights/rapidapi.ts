@@ -12,15 +12,38 @@ export interface RealFlight {
   durationMinutes: number;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type KiwiRaw = Record<string, any>;
+// ── Response types ────────────────────────────────────────────────────────────
 
-interface KiwiResponse {
-  itineraries?: KiwiRaw[];
+interface KiwiSegment {
+  source: { localTime: string };
+  destination: { localTime: string };
+  carrier?: { name?: string };
 }
 
-function legTimes(leg: KiwiRaw): { dep: string; arr: string; airline: string } | null {
-  const segs: KiwiRaw[] = leg?.sectorSegments ?? [];
+interface KiwiSectorSegment {
+  segment: KiwiSegment;
+}
+
+interface KiwiLeg {
+  sectorSegments: KiwiSectorSegment[];
+  duration?: number; // seconds
+}
+
+interface KiwiItinerary {
+  price: { amount: string | number };
+  outbound: KiwiLeg;
+  inbound?: KiwiLeg;
+}
+
+interface KiwiResponse {
+  status: boolean;
+  data: { itineraries: KiwiItinerary[] };
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function legTimes(leg: KiwiLeg): { dep: string; arr: string; airline: string } | null {
+  const segs = leg?.sectorSegments ?? [];
   if (!segs.length) return null;
   const first = segs[0].segment;
   const last = segs[segs.length - 1].segment;
@@ -31,9 +54,30 @@ function legTimes(leg: KiwiRaw): { dep: string; arr: string; airline: string } |
   return { dep, arr, airline };
 }
 
+function localHHMM(isoStr: string): string {
+  // localTime is already local — just extract HH:MM
+  const m = isoStr.match(/T(\d{2}:\d{2})/);
+  return m ? m[1] : "00:00";
+}
+
+function dateOnly(isoStr: string): string {
+  return isoStr.slice(0, 10);
+}
+
+/** Pick a plausible mid-month departure date for a given month, then add `duration` days for return */
+function pickDates(month: number, duration: number): { departDate: string; returnDate: string } {
+  const now = new Date();
+  const year = month >= now.getMonth() + 1 ? now.getFullYear() : now.getFullYear() + 1;
+  const depart = new Date(Date.UTC(year, month - 1, 15));
+  const ret = new Date(depart.getTime() + duration * 24 * 60 * 60 * 1000);
+  const fmt = (d: Date) =>
+    `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+  return { departDate: fmt(depart), returnDate: fmt(ret) };
+}
+
 // ── Global daily cap ──────────────────────────────────────────────────────────
 export const DAILY_CAP = 400;
-const ALERT_THRESHOLD = 0.8; // send alert email at 80% of cap
+const ALERT_THRESHOLD = 0.8;
 
 let dailyCallCount = 0;
 let dailyResetAt = startOfNextDay();
@@ -53,7 +97,6 @@ function canCallApi(): boolean {
   if (dailyCallCount >= DAILY_CAP) return false;
   dailyCallCount++;
 
-  // Fire-and-forget alert at threshold crossing
   if (dailyCallCount === Math.floor(DAILY_CAP * ALERT_THRESHOLD)) {
     void fireAlertIfNeeded(dailyCallCount);
   }
@@ -65,7 +108,6 @@ async function fireAlertIfNeeded(count: number): Promise<void> {
   const sb = getSupabase();
   if (!sb) return;
   try {
-    // Check if we already sent an alert today
     const today = new Date().toISOString().slice(0, 10);
     const { data } = await sb
       .from("api_alert_log")
@@ -74,11 +116,10 @@ async function fireAlertIfNeeded(count: number): Promise<void> {
       .limit(1)
       .single();
 
-    if (data) return; // already alerted today
+    if (data) return;
 
     await sb.from("api_alert_log").insert({ threshold: Math.round((count / DAILY_CAP) * 100) });
 
-    // Dynamic import to avoid circular deps
     const { sendApiAlert } = await import("@/lib/email");
     await sendApiAlert(count, DAILY_CAP);
   } catch {
@@ -121,7 +162,7 @@ async function writeSupabaseCache(cacheKey: string, flights: RealFlight[]): Prom
   try {
     await sb.from("flight_cache").upsert({ cache_key: cacheKey, flights, expires_at: expiresAt });
   } catch {
-    // Non-critical — cache write failure doesn't break the feature
+    // Non-critical
   }
 }
 
@@ -133,22 +174,6 @@ async function cleanExpiredSupabaseCache(): Promise<void> {
   } catch {
     // Non-critical
   }
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function pickDates(month: number, duration: number): { depart: string; ret: string } {
-  const now = new Date();
-  const year = month >= now.getMonth() + 1 ? now.getFullYear() : now.getFullYear() + 1;
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const depart = `${year}-${pad(month)}-15`;
-  const retDate = new Date(depart);
-  retDate.setUTCDate(retDate.getUTCDate() + duration);
-  return { depart, ret: retDate.toISOString().slice(0, 10) };
-}
-
-function hhmm(isoTimestamp: string): string {
-  return isoTimestamp.slice(11, 16);
 }
 
 // ── Usage logging ─────────────────────────────────────────────────────────────
@@ -173,7 +198,7 @@ async function logUsage(
 
 /**
  * Returns up to `maxResults` cheapest roundtrip flights for a route+month.
- * Cache hierarchy: L1 in-memory (per instance) → L2 Supabase (shared) → RapidAPI.
+ * Cache hierarchy: L1 in-memory (per instance) → L2 Supabase (shared) → flights-scraper-real-time.
  * Falls back gracefully: if API unavailable or cap exceeded, returns [].
  */
 export async function searchFlightOptions(
@@ -183,11 +208,11 @@ export async function searchFlightOptions(
   duration: number,
   maxResults = 3
 ): Promise<RealFlight[]> {
-  const token = process.env.RAPIDAPI_KEY;
-  if (!token) return [];
+  const apiKey = process.env.RAPIDAPI_KEY;
+  if (!apiKey) return [];
 
-  const { depart, ret } = pickDates(month, duration);
-  const cacheKey = `${originCode}-${destCode}-${depart.slice(0, 7)}`;
+  const { departDate, returnDate } = pickDates(month, duration);
+  const cacheKey = `fsr-${originCode}-${destCode}-${departDate}-${returnDate}`;
 
   // L1: in-memory
   const mem = memCache.get(cacheKey);
@@ -204,86 +229,72 @@ export async function searchFlightOptions(
     return cached.slice(0, maxResults);
   }
 
-  // Guard: daily cap
-  if (!canCallApi()) {
-    console.warn(`[RapidAPI] Daily cap (${DAILY_CAP}) reached — skipping API call`);
-    void logUsage(cacheKey, originCode, destCode, month, false);
-    return [];
-  }
+  if (!canCallApi()) return [];
 
   try {
-    const url = new URL("https://kiwi-com-cheap-flights.p.rapidapi.com/round-trip");
-    url.searchParams.set("source", `Airport:${originCode}`);
-    url.searchParams.set("destination", `Airport:${destCode}`);
-    url.searchParams.set("currency", "PLN");
-    url.searchParams.set("locale", "pl");
+    const url = new URL("https://flights-scraper-real-time.p.rapidapi.com/flights/search-return");
+    url.searchParams.set("originSkyId", originCode);
+    url.searchParams.set("destinationSkyId", destCode);
+    url.searchParams.set("departDate", departDate);
+    url.searchParams.set("returnDate", returnDate);
     url.searchParams.set("adults", "1");
-    url.searchParams.set("children", "0");
-    url.searchParams.set("infants", "0");
-    url.searchParams.set("handbags", "1");
-    url.searchParams.set("holdbags", "0");
-    url.searchParams.set("cabinClass", "ECONOMY");
-    url.searchParams.set("sortBy", "PRICE");
-    url.searchParams.set("sortOrder", "ASCENDING");
-    url.searchParams.set("applyMixedClasses", "true");
-    url.searchParams.set("allowReturnFromDifferentCity", "false");
-    url.searchParams.set("enableSelfTransfer", "true");
-    url.searchParams.set("transportTypes", "FLIGHT");
-    url.searchParams.set("contentProviders", "FRESH,KIWI");
-    url.searchParams.set("outbound", "MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY,SATURDAY,SUNDAY");
-    url.searchParams.set("limit", "10");
+    url.searchParams.set("currency", "PLN");
 
     const res = await fetch(url.toString(), {
       headers: {
-        "Content-Type": "application/json",
-        "x-rapidapi-host": "kiwi-com-cheap-flights.p.rapidapi.com",
-        "x-rapidapi-key": token,
+        "x-rapidapi-host": "flights-scraper-real-time.p.rapidapi.com",
+        "x-rapidapi-key": apiKey,
       },
     });
 
     if (!res.ok) {
-      const errBody = await res.text().catch(() => "");
-      console.error(`[Kiwi] HTTP ${res.status} ${originCode}→${destCode} body: ${errBody.slice(0, 300)}`);
+      console.error(`[flights-scraper] HTTP ${res.status} ${originCode}→${destCode}`);
       return [];
     }
 
     const json = (await res.json()) as KiwiResponse;
-    const itineraries = json.itineraries ?? [];
+    if (!json.status) return [];
 
-    // Store all results in cache (up to 5), serve sliced on read
+    const itineraries = json.data?.itineraries ?? [];
     const results: RealFlight[] = [];
-    for (const item of itineraries.slice(0, 5)) {
-      const out = legTimes(item.outbound);
-      const inb = legTimes(item.inbound);
-      if (!out || !inb) continue;
 
-      const price = Number(item.price?.amount ?? item.priceEur?.amount ?? 0);
+    for (const it of itineraries.slice(0, 10)) {
+      if (!it.outbound || !it.price) continue;
+
+      const out = legTimes(it.outbound);
+      const inb = it.inbound ? legTimes(it.inbound) : null;
+      if (!out) continue;
+
+      const price = Math.round(Number(it.price.amount));
       if (!price) continue;
+
+      const durMinutes = it.outbound.duration ? Math.round(it.outbound.duration / 60) : 120;
 
       results.push({
         price,
         airline: out.airline,
-        departureDate: out.dep.slice(0, 10),
-        departureTime: hhmm(out.dep),
-        arrivalTime: hhmm(out.arr),
-        returnDate: inb.dep.slice(0, 10),
-        returnDepartureTime: hhmm(inb.dep),
-        returnArrivalTime: hhmm(inb.arr),
-        durationMinutes: Math.round((item.outbound?.duration ?? 0) / 60),
+        departureDate: dateOnly(out.dep),
+        departureTime: localHHMM(out.dep),
+        arrivalTime: localHHMM(out.arr),
+        returnDate: inb ? dateOnly(inb.dep) : returnDate,
+        returnDepartureTime: inb ? localHHMM(inb.dep) : "00:00",
+        returnArrivalTime: inb ? localHHMM(inb.arr) : "00:00",
+        durationMinutes: durMinutes,
       });
     }
 
-    // Write to both cache layers only when we have results
+    results.sort((a, b) => a.price - b.price);
+
     if (results.length > 0) {
       memCache.set(cacheKey, { data: results, expiresAt: Date.now() + CACHE_TTL });
       void writeSupabaseCache(cacheKey, results);
     }
     void logUsage(cacheKey, originCode, destCode, month, false);
-    // Opportunistically clean expired rows (1% chance to avoid overhead)
     if (Math.random() < 0.01) void cleanExpiredSupabaseCache();
 
     return results.slice(0, maxResults);
-  } catch {
+  } catch (err) {
+    console.error("[flights-scraper] error:", err);
     return [];
   }
 }
