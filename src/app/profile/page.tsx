@@ -189,7 +189,7 @@ export default function ProfilePage() {
             ✦ Zostań Pro — nielimitowane plany →
           </p>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-            19 PLN/miesiąc · anuluj kiedy chcesz
+            19,99 PLN/mies. lub 149,99 PLN/rok · anuluj kiedy chcesz
           </p>
         </motion.button>
       )}

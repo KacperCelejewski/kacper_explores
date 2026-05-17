@@ -80,11 +80,11 @@ export default function ReguaminPage() {
             <Li><strong>Konto darmowe</strong> — 1 plan podróży AI po rejestracji, bez opłat.</Li>
             <Li>
               <strong>Pack (5 planów)</strong> — jednorazowy zakup 5 planów podróży AI za{" "}
-              <strong>5 PLN</strong>. Plany nie wygasają.
+              <strong>14,99 PLN</strong>. Plany nie wygasają.
             </Li>
             <Li>
-              <strong>Subskrypcja Pro</strong> — miesięczna subskrypcja za <strong>19 PLN/miesiąc</strong>{" "}
-              dająca dostęp do nielimitowanych planów podróży AI oraz dodatkowych funkcji.
+              <strong>Subskrypcja Pro</strong> — miesięczna subskrypcja za <strong>19,99 PLN/miesiąc</strong>{" "}
+              lub roczna za <strong>149,99 PLN/rok</strong>, dająca dostęp do nielimitowanych planów podróży AI oraz dodatkowych funkcji.
             </Li>
           </ul>
           <P>
