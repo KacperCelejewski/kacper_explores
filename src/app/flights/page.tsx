@@ -572,7 +572,7 @@ function FlightSelectModal({
         exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 28, stiffness: 300 }}
         className="w-full max-w-lg rounded-t-3xl"
-        style={{ background: "var(--background)", maxHeight: "88vh", overflowY: "auto" }}
+        style={{ background: "var(--bg-primary)", maxHeight: "88vh", overflowY: "auto" }}
         role="dialog"
         aria-modal="true"
         aria-label={`Wybór lotu do ${dest.city}`}
