@@ -223,21 +223,35 @@ export async function searchFlightOptions(
     url.searchParams.set("sortBy", "best");
     url.searchParams.set("currency", "PLN");
 
-    const res = await fetch(url.toString(), {
-      headers: {
-        "x-rapidapi-host": "sky-scrapper.p.rapidapi.com",
-        "x-rapidapi-key": apiKey,
-      },
-      cache: "no-store",
-    });
+    const skyFetch = () =>
+      fetch(url.toString(), {
+        headers: {
+          "x-rapidapi-host": "sky-scrapper.p.rapidapi.com",
+          "x-rapidapi-key": apiKey,
+        },
+        cache: "no-store",
+      });
 
+    let res = await skyFetch();
     if (!res.ok) {
       console.error(`[sky-scrapper] HTTP ${res.status} ${originCode}→${destCode}`);
       return { flights: [], reason: `http_${res.status}` };
     }
 
-    const json = (await res.json()) as SkyResponse;
-    console.log(`[sky-scrapper] ${originCode}→${destCode} status:${json.status} itineraries:${json.data?.itineraries?.length ?? 0} context:${json.data?.context?.status}`);
+    let json = (await res.json()) as SkyResponse;
+    console.log(`[sky-scrapper] attempt1 ${originCode}→${destCode} status:${json.status} itineraries:${json.data?.itineraries?.length ?? 0} context:${json.data?.context?.status}`);
+
+    // Sky Scrapper always needs two calls — first builds the session, second returns results
+    if (!json.status || !json.data?.itineraries?.length) {
+      await new Promise((r) => setTimeout(r, 1500));
+      res = await skyFetch();
+      if (!res.ok) {
+        console.error(`[sky-scrapper] retry HTTP ${res.status} ${originCode}→${destCode}`);
+        return { flights: [], reason: `http_${res.status}` };
+      }
+      json = (await res.json()) as SkyResponse;
+      console.log(`[sky-scrapper] attempt2 ${originCode}→${destCode} status:${json.status} itineraries:${json.data?.itineraries?.length ?? 0} context:${json.data?.context?.status}`);
+    }
 
     if (!json.status || !json.data?.itineraries?.length) {
       console.warn(`[sky-scrapper] no itineraries ${originCode}→${destCode} status:${json.status} context:${json.data?.context?.status} body:${JSON.stringify(json).slice(0, 300)}`);
