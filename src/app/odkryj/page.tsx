@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { useEffect, useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import SiteNav from "@/app/components/SiteNav";
+import { CONTINENTS, getContinent, type Continent } from "@/lib/continents";
 
 interface GalleryTrip {
   id: string;
@@ -24,6 +24,8 @@ function formatDate(iso: string) {
 export default function OdkryjPage() {
   const [trips, setTrips] = useState<GalleryTrip[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeContinent, setActiveContinent] = useState<Continent | null>(null);
+  const [activeCountry, setActiveCountry] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/gallery")
@@ -31,6 +33,49 @@ export default function OdkryjPage() {
       .then((d) => setTrips(d.trips ?? []))
       .finally(() => setLoading(false));
   }, []);
+
+  // continents that actually have trips
+  const availableContinents = useMemo(() => {
+    const set = new Set<Continent>();
+    trips.forEach((t) => {
+      const c = getContinent(t.country);
+      if (c) set.add(c);
+    });
+    return CONTINENTS.filter((c) => set.has(c));
+  }, [trips]);
+
+  // countries within selected continent
+  const countriesInContinent = useMemo(() => {
+    if (!activeContinent) return [];
+    const set = new Set<string>();
+    trips.forEach((t) => {
+      if (getContinent(t.country) === activeContinent) set.add(t.country);
+    });
+    return Array.from(set).sort();
+  }, [trips, activeContinent]);
+
+  const filtered = useMemo(() => {
+    if (!activeContinent) return trips;
+    return trips.filter((t) => {
+      if (getContinent(t.country) !== activeContinent) return false;
+      if (activeCountry && t.country !== activeCountry) return false;
+      return true;
+    });
+  }, [trips, activeContinent, activeCountry]);
+
+  function selectContinent(c: Continent) {
+    if (activeContinent === c) {
+      setActiveContinent(null);
+      setActiveCountry(null);
+    } else {
+      setActiveContinent(c);
+      setActiveCountry(null);
+    }
+  }
+
+  function selectCountry(country: string) {
+    setActiveCountry(activeCountry === country ? null : country);
+  }
 
   return (
     <div className="flex flex-col flex-1">
@@ -41,10 +86,67 @@ export default function OdkryjPage() {
             Odkryj
           </p>
           <h1 className="text-2xl font-bold mb-1">Plany innych podróżników</h1>
-          <p className="text-sm mb-6" style={{ color: "var(--text-muted)" }}>
+          <p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>
             Przeglądaj trasy wygenerowane przez społeczność Włóczykij
           </p>
         </motion.div>
+
+        {/* Continent filter */}
+        {!loading && availableContinents.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.08 }}
+            className="mb-3"
+          >
+            <div className="flex flex-wrap gap-2">
+              {availableContinents.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => selectContinent(c)}
+                  className="text-xs font-semibold px-3 py-1.5 rounded-full transition-all"
+                  style={{
+                    background: activeContinent === c ? "var(--accent)" : "var(--glass-bg, rgba(255,255,255,0.07))",
+                    color: activeContinent === c ? "#fff" : "var(--text-muted)",
+                    border: `1px solid ${activeContinent === c ? "var(--accent)" : "var(--border-color, rgba(255,255,255,0.12))"}`,
+                  }}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Country filter (shown when continent selected) */}
+        <AnimatePresence>
+          {activeContinent && countriesInContinent.length > 1 && (
+            <motion.div
+              key="country-filter"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mb-4 overflow-hidden"
+            >
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {countriesInContinent.map((country) => (
+                  <button
+                    key={country}
+                    onClick={() => selectCountry(country)}
+                    className="text-xs px-2.5 py-1 rounded-full transition-all"
+                    style={{
+                      background: activeCountry === country ? "var(--accent-muted, rgba(var(--accent-rgb),0.2))" : "transparent",
+                      color: activeCountry === country ? "var(--accent)" : "var(--text-muted)",
+                      border: `1px solid ${activeCountry === country ? "var(--accent)" : "var(--border-color, rgba(255,255,255,0.1))"}`,
+                    }}
+                  >
+                    {country}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {loading ? (
           <div className="flex justify-center py-16">
@@ -53,6 +155,23 @@ export default function OdkryjPage() {
               style={{ borderColor: "var(--accent)", borderTopColor: "transparent" }}
             />
           </div>
+        ) : filtered.length === 0 && trips.length > 0 ? (
+          <motion.div
+            key="no-results"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-12"
+          >
+            <p className="text-3xl mb-3">🔍</p>
+            <p className="text-sm font-medium">Brak planów dla tego regionu</p>
+            <button
+              onClick={() => { setActiveContinent(null); setActiveCountry(null); }}
+              className="text-xs mt-3 font-semibold"
+              style={{ color: "var(--accent)" }}
+            >
+              Pokaż wszystkie →
+            </button>
+          </motion.div>
         ) : trips.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-4xl mb-4">🗺️</p>
@@ -66,20 +185,15 @@ export default function OdkryjPage() {
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {trips.map((trip, i) => (
+            {filtered.map((trip, i) => (
               <motion.div
                 key={trip.id}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.04 }}
               >
-                <Link
-                  href={`/share/${trip.id}`}
-                  style={{ textDecoration: "none" }}
-                >
-                  <div
-                    className="glass-card p-4 flex items-center gap-4 transition-opacity hover:opacity-80"
-                  >
+                <Link href={`/share/${trip.id}`} style={{ textDecoration: "none" }}>
+                  <div className="glass-card p-4 flex items-center gap-4 transition-opacity hover:opacity-80">
                     <span className="text-3xl flex-shrink-0">
                       {trip.destination_data?.coverImage ?? "🗺️"}
                     </span>
