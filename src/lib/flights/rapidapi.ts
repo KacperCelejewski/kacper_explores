@@ -46,7 +46,8 @@ interface SkyResponse {
   status: boolean;
   data: {
     itineraries: SkyItinerary[];
-    context?: { status: string; totalResults: number };
+    context?: { status: string; totalResults: number; sessionId?: string };
+    sessionId?: string;
   };
 }
 
@@ -216,20 +217,43 @@ export async function searchFlightOptions(
     url.searchParams.set("sortBy", "best");
     url.searchParams.set("currency", "PLN");
 
-    const res = await fetch(url.toString(), {
-      headers: {
-        "x-rapidapi-host": "sky-scrapper.p.rapidapi.com",
-        "x-rapidapi-key": apiKey,
-      },
-    });
+    const rapidHeaders = {
+      "x-rapidapi-host": "sky-scrapper.p.rapidapi.com",
+      "x-rapidapi-key": apiKey,
+    };
+
+    const res = await fetch(url.toString(), { headers: rapidHeaders });
 
     if (!res.ok) {
       console.error(`[sky-scrapper] HTTP ${res.status} ${originCode}→${destCode}`);
       return [];
     }
 
-    const json = (await res.json()) as SkyResponse;
+    let json = (await res.json()) as SkyResponse;
     console.log(`[sky-scrapper] ${originCode}→${destCode} status:${json.status} itineraries:${json.data?.itineraries?.length ?? 0} context:${json.data?.context?.status}`);
+
+    // If context is "incomplete" (search still running), poll once with the session ID
+    if (
+      json.status &&
+      json.data?.context?.status === "incomplete" &&
+      !json.data?.itineraries?.length
+    ) {
+      const sessionId = json.data?.context?.sessionId ?? json.data?.sessionId;
+      if (sessionId && canCallApi()) {
+        await new Promise((r) => setTimeout(r, 2000));
+        const pollUrl = new URL("https://sky-scrapper.p.rapidapi.com/api/v1/flights/searchFlights");
+        pollUrl.searchParams.set("sessionId", sessionId);
+        const pollRes = await fetch(pollUrl.toString(), { headers: rapidHeaders });
+        if (pollRes.ok) {
+          const pollJson = (await pollRes.json()) as SkyResponse;
+          console.log(`[sky-scrapper] poll ${originCode}→${destCode} status:${pollJson.status} itineraries:${pollJson.data?.itineraries?.length ?? 0}`);
+          if (pollJson.status && pollJson.data?.itineraries?.length) {
+            json = pollJson;
+          }
+        }
+      }
+    }
+
     if (!json.status || !json.data?.itineraries?.length) return [];
 
     const results: RealFlight[] = [];

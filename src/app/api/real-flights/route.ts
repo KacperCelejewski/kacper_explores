@@ -28,9 +28,10 @@ export async function GET(req: NextRequest) {
   }
 
   if (!process.env.RAPIDAPI_KEY) {
-    return NextResponse.json({ flights: [] });
+    console.warn("[real-flights] RAPIDAPI_KEY not set — returning empty");
+    return NextResponse.json({ flights: [], reason: "no_api_key" });
   }
 
   const flights = await searchFlightOptions(origin, dest, month, duration, 3);
-  return NextResponse.json({ flights });
+  return NextResponse.json({ flights, count: flights.length });
 }
