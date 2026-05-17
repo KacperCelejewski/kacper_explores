@@ -213,10 +213,8 @@ export async function searchFlightOptions(
     url.searchParams.set("returnDate", returnDate);
     url.searchParams.set("cabinClass", "economy");
     url.searchParams.set("adults", "1");
-    url.searchParams.set("sortBy", "cheapest_first");
+    url.searchParams.set("sortBy", "best");
     url.searchParams.set("currency", "PLN");
-    url.searchParams.set("market", "PL");
-    url.searchParams.set("countryCode", "PL");
 
     const res = await fetch(url.toString(), {
       headers: {
@@ -231,6 +229,7 @@ export async function searchFlightOptions(
     }
 
     const json = (await res.json()) as SkyResponse;
+    console.log(`[sky-scrapper] ${originCode}→${destCode} status:${json.status} itineraries:${json.data?.itineraries?.length ?? 0} context:${json.data?.context?.status}`);
     if (!json.status || !json.data?.itineraries?.length) return [];
 
     const results: RealFlight[] = [];
