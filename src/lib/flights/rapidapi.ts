@@ -228,6 +228,7 @@ export async function searchFlightOptions(
         "x-rapidapi-host": "sky-scrapper.p.rapidapi.com",
         "x-rapidapi-key": apiKey,
       },
+      cache: "no-store",
     });
 
     if (!res.ok) {
