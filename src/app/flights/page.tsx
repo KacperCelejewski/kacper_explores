@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/lib/store";
@@ -547,13 +548,16 @@ function FlightSelectModal({
   onClose: () => void;
 }) {
   const [selected, setSelected] = useState<number | "skip" | null>(null);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const noFlights = !loading && flights.length === 0;
   const effectiveSelected = noFlights ? "skip" : selected;
 
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString("pl-PL", { day: "numeric", month: "short", timeZone: "UTC" });
 
-  return (
+  const content = (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -764,4 +768,7 @@ function FlightSelectModal({
       </motion.div>
     </motion.div>
   );
+
+  if (!mounted) return null;
+  return createPortal(content, document.body);
 }
