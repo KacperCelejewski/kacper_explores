@@ -625,13 +625,13 @@ function FlightSelectModal({
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold">{f.airline}</p>
                     <p className="text-xs mt-1 font-medium">
-                      {f.departureTime} → {f.arrivalTime}
+                      ✈️ {formatDate(f.departureDate)} · {f.departureTime} → {f.arrivalTime}
                       <span className="font-normal ml-1" style={{ color: "var(--text-muted)" }}>
                         ({Math.floor(f.durationMinutes / 60)}h {f.durationMinutes % 60}m)
                       </span>
                     </p>
                     <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                      Powrót {formatDate(f.returnDate)} · wylot {f.returnDepartureTime}
+                      🔙 Powrót {formatDate(f.returnDate)} · wylot {f.returnDepartureTime}
                     </p>
                   </div>
                   <div className="text-right flex-shrink-0 ml-3">
