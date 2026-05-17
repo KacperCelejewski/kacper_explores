@@ -3,8 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import SiteNav from "@/app/components/SiteNav";
 import { CONTINENTS, getContinent, type Continent } from "@/lib/continents";
+import { getCityPhotoUrl } from "@/lib/cityPhotos";
 
 interface GalleryTrip {
   id: string;
@@ -201,9 +203,15 @@ export default function OdkryjPage() {
               >
                 <Link href={`/share/${trip.id}`} style={{ textDecoration: "none" }}>
                   <div className="glass-card p-4 flex items-center gap-4 transition-opacity hover:opacity-80">
-                    <span className="text-3xl flex-shrink-0">
-                      {trip.destination_data?.coverImage ?? "🗺️"}
-                    </span>
+                    <div className="relative flex-shrink-0 rounded-xl overflow-hidden" style={{ width: 56, height: 56 }}>
+                      <Image
+                        src={getCityPhotoUrl(trip.city, 120)}
+                        alt={trip.city}
+                        fill
+                        sizes="56px"
+                        className="object-cover"
+                      />
+                    </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-base leading-tight">
                         {trip.city} {trip.destination_data?.countryFlag ?? ""}

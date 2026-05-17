@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { IconPlane, IconClock, IconCoin } from "@/app/components/Icons";
+import { getCityPhotoUrl, FEATURED_DESTINATIONS } from "@/lib/cityPhotos";
 
 type IconFC = React.FC<{ size?: number }>;
 
@@ -77,21 +79,44 @@ export default function HomeClient() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4, delay: 0.55 }}
-        className="mt-8 flex items-center gap-2"
+        className="mt-8"
       >
-        <div className="flex gap-1">
-          {[
-            { flag: "🇵🇹", label: "Portugalia" },
-            { flag: "🇪🇸", label: "Hiszpania" },
-            { flag: "🇬🇷", label: "Grecja" },
-            { flag: "🇮🇹", label: "Włochy" },
-            { flag: "🇭🇷", label: "Chorwacja" },
-            { flag: "🇨🇿", label: "Czechy" },
-          ].map(({ flag, label }) => (
-            <span key={flag} className="text-xl" role="img" aria-label={label}>{flag}</span>
+        <p className="text-xs font-semibold mb-3" style={{ color: "var(--text-muted)" }}>
+          Popularne kierunki
+        </p>
+        <div
+          className="flex gap-3 overflow-x-auto pb-2"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
+          {FEATURED_DESTINATIONS.map((dest, i) => (
+            <motion.div
+              key={dest.city}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: 0.55 + i * 0.06 }}
+              className="relative flex-shrink-0 rounded-2xl overflow-hidden"
+              style={{ width: 120, height: 160 }}
+            >
+              <Image
+                src={getCityPhotoUrl(dest.city, 240)}
+                alt={dest.city}
+                fill
+                sizes="120px"
+                className="object-cover"
+              />
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.1) 55%, transparent 100%)",
+                }}
+              />
+              <div className="absolute bottom-0 left-0 right-0 p-2.5">
+                <p className="text-white text-xs font-bold leading-tight">{dest.city}</p>
+                <p className="text-white/70 text-[10px] leading-tight mt-0.5">{dest.flag} {dest.country}</p>
+              </div>
+            </motion.div>
           ))}
         </div>
-        <span className="text-xs" style={{ color: "var(--text-muted)" }}>i więcej</span>
       </motion.div>
 
       <div className="mt-8 h-px" style={{ background: "var(--border)" }} />

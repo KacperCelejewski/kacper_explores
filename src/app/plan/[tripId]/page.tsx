@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 import { useAppStore } from "@/lib/store";
 import { downloadICS } from "@/lib/ics";
 import ChatPanel from "@/app/components/ChatPanel";
 import BudgetTracker from "@/app/components/BudgetTracker";
 import type { DayPlan, DayActivity, TripPlan, DestinationRecommendation } from "@/types";
+import { getCityPhotoUrl } from "@/lib/cityPhotos";
 
 function buildBookingUrl(city: string, country: string, checkin?: string, checkout?: string): string {
   const params = new URLSearchParams({ ss: `${city}, ${country}`, group_adults: "1", no_rooms: "1" });
@@ -243,35 +245,60 @@ export default function PlanPage() {
 
   return (
     <div className="flex flex-col flex-1 pb-8">
-      {/* Header */}
-      <div className="px-5 pt-6 pb-4">
-        <button
-          onClick={() => router.push("/flights")}
-          className="text-sm mb-5 block transition-opacity hover:opacity-60 no-print"
-          style={{ color: "var(--text-muted)" }}
-        >
-          ← Zmień kierunek
-        </button>
+      {/* Hero photo */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+        className="relative w-full overflow-hidden no-print"
+        style={{ height: 220 }}
+      >
+        <Image
+          src={getCityPhotoUrl(plan.city, 800)}
+          alt={plan.city}
+          fill
+          sizes="100vw"
+          priority
+          className="object-cover"
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            background: "linear-gradient(to bottom, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.05) 40%, rgba(0,0,0,0.55) 100%)",
+          }}
+        />
+        <div className="absolute top-4 left-5">
+          <button
+            onClick={() => router.push("/flights")}
+            className="text-sm transition-opacity hover:opacity-70 no-print"
+            style={{ color: "rgba(255,255,255,0.9)" }}
+          >
+            ← Zmień kierunek
+          </button>
+        </div>
+        <div className="absolute bottom-5 left-5 right-5">
+          <h1 className="text-2xl font-bold text-white leading-tight">
+            {plan.city} {dest?.countryFlag ?? ""}
+          </h1>
+          <p className="text-sm mt-0.5" style={{ color: "rgba(255,255,255,0.75)" }}>
+            {plan.duration} dni · {plan.country}
+          </p>
+        </div>
+      </motion.div>
 
+      {/* Header */}
+      <div className="px-5 pt-4 pb-4">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           className="glass-card p-5"
         >
-          <div className="flex items-center gap-3">
-            <span className="text-4xl">{dest?.coverImage ?? "🗺️"}</span>
-            <div>
-              <h1 className="text-xl font-bold">
-                {plan.city} {dest?.countryFlag ?? ""}
-              </h1>
-              <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
-                {plan.duration} dni · {plan.country}
-              </p>
-            </div>
+          <div className="sr-only">
+            <h1>{plan.city} {dest?.countryFlag ?? ""} — {plan.duration} dni · {plan.country}</h1>
           </div>
 
           {/* Budget breakdown */}
-          <div className="mt-4 pt-4 border-t grid grid-cols-2 gap-3" style={{ borderColor: "var(--border)" }}>
+          <div className="grid grid-cols-2 gap-3">
             <BudgetItem label="Loty" value={plan.budgetBreakdown.flights} emoji="✈️" />
             <BudgetItem label="Nocleg" value={plan.budgetBreakdown.accommodation} emoji="🛏️" />
             <BudgetItem label="Jedzenie" value={plan.budgetBreakdown.food} emoji="🍽️" />
