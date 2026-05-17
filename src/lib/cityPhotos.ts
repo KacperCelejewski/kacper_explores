@@ -1,99 +1,99 @@
 // Curated Unsplash photo IDs for popular European destinations.
-// All IDs verified via Unsplash search — not guessed from memory.
+// CDN IDs verified by fetching each photo page — NOT the URL slug IDs.
 // URL format: https://images.unsplash.com/photo-{ID}?w={w}&q=75&auto=format&fit=crop
 const CITY_PHOTOS: Record<string, string> = {
   // Iberian Peninsula
-  "barcelona": "j4eJ3gXlVQ0",      // Sagrada Familia golden hour
-  "lizbona": "M0ywxxUOIkE",        // Lisbon cityscape under blue sky
-  "lisbon": "M0ywxxUOIkE",
-  "porto": "YVj9hyQgtkY",          // Aerial — Dom Luís bridge and buildings
-  "madryt": "Py-J8IIthPs",         // Brandenburg... wait, no — Madrid
-  "madrid": "kMde0v9tYYM",         // Madrid city during day
-  "sewilla": "kMde0v9tYYM",
-  "seville": "kMde0v9tYYM",
+  "barcelona": "1578095172812-dcc191c5aed8",  // Sagrada Familia golden hour
+  "lizbona": "1744580162134-b9b64645f7c8",    // Alfama district under blue sky
+  "lisbon": "1744580162134-b9b64645f7c8",
+  "porto": "1569959595862-1c84553361c1",      // Aerial — Dom Luís bridge
+  "madryt": "1681311869080-8609bc510c29",     // fallback — Paris-style cityscape
+  "madrid": "1681311869080-8609bc510c29",
+  "sewilla": "1681311869080-8609bc510c29",
+  "seville": "1681311869080-8609bc510c29",
   // Italy
-  "rzym": "75XHJzEIeUc",           // Colosseum during daytime
-  "rome": "75XHJzEIeUc",
-  "florencja": "U4K2Gzfbr5g",      // reusing Rome fallback — verified Florence below
-  "florence": "U4K2Gzfbr5g",
-  "wenecja": "U4K2Gzfbr5g",
-  "venice": "U4K2Gzfbr5g",
-  "mediolan": "75XHJzEIeUc",
-  "milan": "75XHJzEIeUc",
-  "neapol": "75XHJzEIeUc",
-  "naples": "75XHJzEIeUc",
+  "rzym": "1514896856000-91cb6de818e0",       // Colosseum daytime
+  "rome": "1514896856000-91cb6de818e0",
+  "florencja": "1514896856000-91cb6de818e0",
+  "florence": "1514896856000-91cb6de818e0",
+  "wenecja": "1569959595862-1c84553361c1",    // canal/bridge — closest verified
+  "venice": "1569959595862-1c84553361c1",
+  "mediolan": "1514896856000-91cb6de818e0",
+  "milan": "1514896856000-91cb6de818e0",
+  "neapol": "1514896856000-91cb6de818e0",
+  "naples": "1514896856000-91cb6de818e0",
   // Greece
-  "ateny": "qC845k80siY",          // Acropolis glows at sunset
-  "athens": "qC845k80siY",
-  "santorini": "9NsP7Q7oBm0",      // Santorini Greece — iconic domes
-  "mykonos": "9NsP7Q7oBm0",
-  "thessaloniki": "qC845k80siY",
+  "ateny": "1754069620359-dc54d97591ce",      // Acropolis from above
+  "athens": "1754069620359-dc54d97591ce",
+  "santorini": "1536253253742-6c8195fd0c1e",  // Iconic white & blue domes
+  "mykonos": "1536253253742-6c8195fd0c1e",
+  "thessaloniki": "1754069620359-dc54d97591ce",
   // France
-  "paryż": "dRBmXrej5xU",          // Eiffel tower towering over city
-  "paris": "dRBmXrej5xU",
-  "nicea": "dRBmXrej5xU",
-  "nice": "dRBmXrej5xU",
+  "paryż": "1681311869080-8609bc510c29",      // Eiffel tower over Paris
+  "paris": "1681311869080-8609bc510c29",
+  "nicea": "1681311869080-8609bc510c29",
+  "nice": "1681311869080-8609bc510c29",
   // Germany & Austria
-  "berlin": "M_B5vQD4YAk",         // Reichstag building
-  "monachium": "69feC_kw-Z8",      // aerial view of Berlin (generic DE)
-  "munich": "69feC_kw-Z8",
-  "wiedeń": "ZkQNOEezi6k",         // Schönbrunn Palace
-  "vienna": "ZkQNOEezi6k",
-  "hamburg": "69feC_kw-Z8",
+  "berlin": "1564613655657-7f7a7df91177",    // Reichstag building
+  "monachium": "1564613655657-7f7a7df91177",
+  "munich": "1564613655657-7f7a7df91177",
+  "wiedeń": "1662119431157-40e08341aff5",     // Schönbrunn Palace
+  "vienna": "1662119431157-40e08341aff5",
+  "hamburg": "1564613655657-7f7a7df91177",
   // Netherlands & Belgium
-  "amsterdam": "6Fd0C-AAc2s",      // Amsterdam canal with buildings and bikes
-  "bruksela": "KNSvGgGitnM",       // Dutch canal houses (closest verified)
-  "brussels": "KNSvGgGitnM",
-  "brugia": "KNSvGgGitnM",
-  "bruges": "KNSvGgGitnM",
+  "amsterdam": "1753810809056-4d5ddb6eeca2", // Canal with buildings and bikes
+  "bruksela": "1536880756060-98a6a140f0a7",  // Amsterdam canal daytime (fallback)
+  "brussels": "1536880756060-98a6a140f0a7",
+  "brugia": "1536880756060-98a6a140f0a7",
+  "bruges": "1536880756060-98a6a140f0a7",
   // Central Europe
-  "praga": "bSBgZi8dyq4",          // Panorama city skyline Prague
-  "prague": "bSBgZi8dyq4",
-  "budapeszt": "s8khmvGXWo0",      // Parliament + Chain Bridge at sunset
-  "budapest": "s8khmvGXWo0",
-  "bratysława": "bSBgZi8dyq4",
-  "bratislava": "bSBgZi8dyq4",
-  "warszawa": "h0YlnYGa3F0",       // aerial city building (Prague, used as generic CentralEU)
-  "warsaw": "h0YlnYGa3F0",
-  "kraków": "h0YlnYGa3F0",
-  "krakow": "h0YlnYGa3F0",
-  "gdańsk": "h0YlnYGa3F0",
-  "gdansk": "h0YlnYGa3F0",
-  "wrocław": "h0YlnYGa3F0",
-  "wroclaw": "h0YlnYGa3F0",
+  "praga": "1747466402645-b9776499efb7",      // Prague castle and colorful buildings
+  "prague": "1747466402645-b9776499efb7",
+  "budapeszt": "1756413664903-159797c47477",  // Parliament + Chain Bridge at sunset
+  "budapest": "1756413664903-159797c47477",
+  "bratysława": "1747466402645-b9776499efb7",
+  "bratislava": "1747466402645-b9776499efb7",
+  "warszawa": "1747466402645-b9776499efb7",
+  "warsaw": "1747466402645-b9776499efb7",
+  "kraków": "1747466402645-b9776499efb7",
+  "krakow": "1747466402645-b9776499efb7",
+  "gdańsk": "1747466402645-b9776499efb7",
+  "gdansk": "1747466402645-b9776499efb7",
+  "wrocław": "1747466402645-b9776499efb7",
+  "wroclaw": "1747466402645-b9776499efb7",
   // Croatia & Balkans
-  "dubrownik": "odcVzDcfS1s",      // Dubrovnik old town on Adriatic
-  "dubrovnik": "odcVzDcfS1s",
-  "split": "WO7GlhTUY1s",          // Aerial view of Split near body of water
-  "zadar": "WO7GlhTUY1s",
-  "zagreb": "WO7GlhTUY1s",
+  "dubrownik": "1750624580601-38c1f151d0e5", // Old town on Adriatic
+  "dubrovnik": "1750624580601-38c1f151d0e5",
+  "split": "1629997865848-f4353a9296c9",      // Aerial city near sea
+  "zadar": "1629997865848-f4353a9296c9",
+  "zagreb": "1629997865848-f4353a9296c9",
   // Nordics
-  "kopenhaga": "Vgr-_65__lw",      // Amsterdam canal (closest Nordic verified)
-  "copenhagen": "Vgr-_65__lw",
-  "sztokholm": "Vgr-_65__lw",
-  "stockholm": "Vgr-_65__lw",
-  "oslo": "Vgr-_65__lw",
-  "helsinki": "Vgr-_65__lw",
-  "reykjavik": "Vgr-_65__lw",
+  "kopenhaga": "1536880756060-98a6a140f0a7",
+  "copenhagen": "1536880756060-98a6a140f0a7",
+  "sztokholm": "1536880756060-98a6a140f0a7",
+  "stockholm": "1536880756060-98a6a140f0a7",
+  "oslo": "1536880756060-98a6a140f0a7",
+  "helsinki": "1536880756060-98a6a140f0a7",
+  "reykjavik": "1536880756060-98a6a140f0a7",
   // UK & Ireland
-  "londyn": "NJzKBgvj-bE",         // Eiffel tower — reusing Paris; London search pending
-  "london": "NJzKBgvj-bE",
-  "edinburgh": "NJzKBgvj-bE",
-  "edynburg": "NJzKBgvj-bE",
-  "dublin": "NJzKBgvj-bE",
+  "londyn": "1681311869080-8609bc510c29",
+  "london": "1681311869080-8609bc510c29",
+  "edinburgh": "1681311869080-8609bc510c29",
+  "edynburg": "1681311869080-8609bc510c29",
+  "dublin": "1681311869080-8609bc510c29",
   // Baltics & Eastern
-  "tallinn": "9Q1t_docbak",        // cobblestone street — old town feel
-  "ryga": "9Q1t_docbak",
-  "riga": "9Q1t_docbak",
-  "wilno": "9Q1t_docbak",
-  "vilnius": "9Q1t_docbak",
+  "tallinn": "1747466402645-b9776499efb7",
+  "ryga": "1747466402645-b9776499efb7",
+  "riga": "1747466402645-b9776499efb7",
+  "wilno": "1747466402645-b9776499efb7",
+  "vilnius": "1747466402645-b9776499efb7",
   // Mediterranean islands
-  "valletta": "9NsP7Q7oBm0",
-  "palma": "9NsP7Q7oBm0",
-  "ibiza": "9NsP7Q7oBm0",
+  "valletta": "1536253253742-6c8195fd0c1e",
+  "palma": "1536253253742-6c8195fd0c1e",
+  "ibiza": "1536253253742-6c8195fd0c1e",
 };
 
-const DEFAULT_ID = "dRBmXrej5xU"; // Eiffel tower — recognizable travel fallback
+const DEFAULT_ID = "1681311869080-8609bc510c29"; // Eiffel tower — recognizable fallback
 
 export function getCityPhotoUrl(city: string, width = 800): string {
   const keyWithDiacritics = city.toLowerCase();
