@@ -12,22 +12,33 @@ export interface RealFlight {
   durationMinutes: number;
 }
 
-interface KiwiLeg {
-  departure_at?: string;
-  arrival_at?: string;
-  duration?: number;
-  airlines?: string[];
-  airline?: string;
-}
-
-interface KiwiItinerary {
-  price?: number;
-  outbound?: KiwiLeg;
-  inbound?: KiwiLeg;
-}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type KiwiRaw = Record<string, any>;
 
 interface KiwiResponse {
-  data?: KiwiItinerary[];
+  data?: KiwiRaw[];
+}
+
+function parseTimestamp(leg: KiwiRaw, field: string): string | undefined {
+  // Try combined timestamp fields first, then separate date+time
+  const combined = leg[field] ?? leg[field.replace("_at", "")] ?? leg[field.replace("_at", "Date")];
+  if (combined && typeof combined === "string") return combined;
+  const dateField = leg[`${field.split("_")[0]}Date`];
+  const timeField = leg[`${field.split("_")[0]}Time`];
+  if (dateField && timeField) return `${dateField}T${timeField}`;
+  return undefined;
+}
+
+function pickAirline(out: KiwiRaw, inb: KiwiRaw, top: KiwiRaw): string {
+  return (
+    top.airline ??
+    top.airlines?.[0] ??
+    out.airline ??
+    out.airlines?.[0] ??
+    inb.airline ??
+    inb.airlines?.[0] ??
+    "Linie lotnicze"
+  );
 }
 
 // ── Global daily cap ──────────────────────────────────────────────────────────
@@ -240,32 +251,46 @@ export async function searchFlightOptions(
       },
     });
 
-    if (!res.ok) return [];
+    if (!res.ok) {
+      console.error(`[Kiwi] HTTP ${res.status} — ${originCode}→${destCode}`);
+      return [];
+    }
 
     const json = (await res.json()) as KiwiResponse;
     const itineraries = json.data ?? [];
 
+    if (process.env.NODE_ENV !== "production" && itineraries.length > 0) {
+      console.log("[Kiwi] sample item keys:", Object.keys(itineraries[0]));
+      const outSample = itineraries[0].outbound ?? itineraries[0].legs?.[0];
+      if (outSample) console.log("[Kiwi] outbound keys:", Object.keys(outSample));
+    }
+
     // Store all results in cache (up to 5), serve sliced on read
     const results: RealFlight[] = [];
     for (const item of itineraries.slice(0, 5)) {
-      const out = item.outbound;
-      const inb = item.inbound;
-      if (!out?.departure_at || !out?.arrival_at || !inb?.departure_at || !inb?.arrival_at) continue;
-      if (!item.price) continue;
+      const out: KiwiRaw = item.outbound ?? item.legs?.[0] ?? {};
+      const inb: KiwiRaw = item.inbound ?? item.legs?.[1] ?? {};
 
-      const airline =
-        out.airlines?.[0] ?? out.airline ?? inb.airlines?.[0] ?? inb.airline ?? "Linie lotnicze";
+      const depAt = parseTimestamp(out, "departure_at");
+      const arrAt = parseTimestamp(out, "arrival_at");
+      const retDepAt = parseTimestamp(inb, "departure_at");
+      const retArrAt = parseTimestamp(inb, "arrival_at");
+
+      if (!depAt || !arrAt || !retDepAt || !retArrAt) continue;
+
+      const price = item.price ?? item.priceEur ?? item.priceUsd;
+      if (!price) continue;
 
       results.push({
-        price: item.price,
-        airline,
-        departureDate: out.departure_at.slice(0, 10),
-        departureTime: hhmm(out.departure_at),
-        arrivalTime: hhmm(out.arrival_at),
-        returnDate: inb.departure_at.slice(0, 10),
-        returnDepartureTime: hhmm(inb.departure_at),
-        returnArrivalTime: hhmm(inb.arrival_at),
-        durationMinutes: out.duration ?? 0,
+        price,
+        airline: pickAirline(out, inb, item),
+        departureDate: depAt.slice(0, 10),
+        departureTime: hhmm(depAt),
+        arrivalTime: hhmm(arrAt),
+        returnDate: retDepAt.slice(0, 10),
+        returnDepartureTime: hhmm(retDepAt),
+        returnArrivalTime: hhmm(retArrAt),
+        durationMinutes: out.duration ?? out.durationInMinutes ?? out.durationMin ?? 0,
       });
     }
 
