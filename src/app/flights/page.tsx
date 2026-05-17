@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/lib/store";
 import type { DestinationRecommendation } from "@/types";
 import type { RealFlight } from "@/lib/flights/rapidapi";
+import { CONTINENTS, getContinent, type Continent } from "@/lib/continents";
 
 interface UserStatus {
   authenticated: boolean;
@@ -38,6 +39,7 @@ export default function FlightsPage() {
   const [userStatus, setUserStatus] = useState<UserStatus | null>(null);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("best_match");
+  const [activeContinent, setActiveContinent] = useState<Continent | null>(null);
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
   const [flightModal, setFlightModal] = useState<{
     dest: DestinationRecommendation;
@@ -71,19 +73,24 @@ export default function FlightsPage() {
     }).finally(() => setLoading(false));
   }, [_hasHydrated, quizAnswers, router]);
 
-  // Reset visible count when sort changes
+  // Reset visible count when sort or continent filter changes
   // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { setVisibleCount(INITIAL_VISIBLE); }, [sortKey]);
+  useEffect(() => { setVisibleCount(INITIAL_VISIBLE); }, [sortKey, activeContinent]);
+
+  const continentsWithRecs = useMemo(() => {
+    const set = new Set<Continent>();
+    allRecs.forEach((r) => { const c = getContinent(r.country); if (c) set.add(c); });
+    return set;
+  }, [allRecs]);
 
   const sorted = useMemo(() => {
-    if (sortKey === "cheapest") {
-      return [...allRecs].sort((a, b) => a.bestOffer.realCost - b.bestOffer.realCost);
-    }
-    if (sortKey === "flight_time") {
-      return [...allRecs].sort((a, b) => a.bestOffer.durationMinutes - b.bestOffer.durationMinutes);
-    }
-    return allRecs; // best_match = original API order
-  }, [allRecs, sortKey]);
+    const base = activeContinent
+      ? allRecs.filter((r) => getContinent(r.country) === activeContinent)
+      : allRecs;
+    if (sortKey === "cheapest") return [...base].sort((a, b) => a.bestOffer.realCost - b.bestOffer.realCost);
+    if (sortKey === "flight_time") return [...base].sort((a, b) => a.bestOffer.durationMinutes - b.bestOffer.durationMinutes);
+    return base;
+  }, [allRecs, sortKey, activeContinent]);
 
   const visible = sorted.slice(0, visibleCount);
   const hasMore = visibleCount < sorted.length;
@@ -227,7 +234,7 @@ export default function FlightsPage() {
           <div>
             <h1 className="text-2xl font-bold">Twoje destynacje</h1>
             <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
-              {allRecs.length} kierunków · wybierz i wygeneruj plan z AI
+              {activeContinent ? `${sorted.length} z ${allRecs.length}` : allRecs.length} kierunków · wybierz i wygeneruj plan z AI
             </p>
           </div>
         </div>
@@ -240,6 +247,25 @@ export default function FlightsPage() {
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
             Ceny i terminy są orientacyjne — kliknij <strong>Sprawdź cenę</strong> aby zobaczyć aktualną dostępność
           </p>
+        </div>
+      )}
+
+      {/* Continent filter */}
+      {allRecs.length > 0 && continentsWithRecs.size > 1 && (
+        <div className="flex gap-2 mt-3 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+          {CONTINENTS.filter((c) => continentsWithRecs.has(c)).map((c) => (
+            <button
+              key={c}
+              onClick={() => setActiveContinent(activeContinent === c ? null : c)}
+              className="flex-shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200"
+              style={{
+                background: activeContinent === c ? "var(--accent)" : "#F0F0F0",
+                color: activeContinent === c ? "white" : "var(--text-secondary)",
+              }}
+            >
+              {c}
+            </button>
+          ))}
         </div>
       )}
 
