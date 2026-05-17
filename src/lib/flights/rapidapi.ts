@@ -240,17 +240,19 @@ export async function searchFlightOptions(
     let json = (await res.json()) as SkyResponse;
     console.log(`[sky-scrapper] ${originCode}→${destCode} status:${json.status} itineraries:${json.data?.itineraries?.length ?? 0} context:${json.data?.context?.status}`);
 
-    // Sky Scrapper returns "incomplete" on first call — retry the same request after 3s
-    if (json.status && json.data?.context?.status === "incomplete" && !json.data?.itineraries?.length) {
-      if (canCallApi()) {
-        await new Promise((r) => setTimeout(r, 3000));
-        const retryRes = await fetch(url.toString(), { headers: rapidHeaders });
-        if (retryRes.ok) {
-          const retryJson = (await retryRes.json()) as SkyResponse;
-          console.log(`[sky-scrapper] retry ${originCode}→${destCode} status:${retryJson.status} itineraries:${retryJson.data?.itineraries?.length ?? 0}`);
-          if (retryJson.status && retryJson.data?.itineraries?.length) {
-            json = retryJson;
-          }
+    // Sky Scrapper often needs a retry — first response is "incomplete" or status:false
+    const needsRetry =
+      (json.status && json.data?.context?.status === "incomplete" && !json.data?.itineraries?.length) ||
+      (!json.status && !json.data?.itineraries?.length);
+
+    if (needsRetry && canCallApi()) {
+      await new Promise((r) => setTimeout(r, 3000));
+      const retryRes = await fetch(url.toString(), { headers: rapidHeaders });
+      if (retryRes.ok) {
+        const retryJson = (await retryRes.json()) as SkyResponse;
+        console.log(`[sky-scrapper] retry ${originCode}→${destCode} status:${retryJson.status} itineraries:${retryJson.data?.itineraries?.length ?? 0}`);
+        if (retryJson.status && retryJson.data?.itineraries?.length) {
+          json = retryJson;
         }
       }
     }
