@@ -222,6 +222,9 @@ export async function searchFlightOptions(
     url.searchParams.set("adults", "1");
     url.searchParams.set("sortBy", "best");
     url.searchParams.set("currency", "PLN");
+    url.searchParams.set("market", "PL");
+    url.searchParams.set("locale", "pl-PL");
+    url.searchParams.set("countryCode", "PL");
 
     const rapidHeaders = {
       "x-rapidapi-host": "sky-scrapper.p.rapidapi.com",
