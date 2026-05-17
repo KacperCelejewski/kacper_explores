@@ -191,14 +191,14 @@ export async function searchFlightOptions(
 
   // L1: in-memory
   const mem = memCache.get(cacheKey);
-  if (mem && mem.expiresAt > Date.now()) {
+  if (mem && mem.expiresAt > Date.now() && mem.data.length > 0) {
     void logUsage(cacheKey, originCode, destCode, month, true);
     return mem.data.slice(0, maxResults);
   }
 
   // L2: Supabase
   const cached = await readSupabaseCache(cacheKey);
-  if (cached) {
+  if (cached && cached.length > 0) {
     memCache.set(cacheKey, { data: cached, expiresAt: Date.now() + CACHE_TTL });
     void logUsage(cacheKey, originCode, destCode, month, true);
     return cached.slice(0, maxResults);
@@ -273,9 +273,11 @@ export async function searchFlightOptions(
       });
     }
 
-    // Write to both cache layers (fire-and-forget for Supabase)
-    memCache.set(cacheKey, { data: results, expiresAt: Date.now() + CACHE_TTL });
-    void writeSupabaseCache(cacheKey, results);
+    // Write to both cache layers only when we have results
+    if (results.length > 0) {
+      memCache.set(cacheKey, { data: results, expiresAt: Date.now() + CACHE_TTL });
+      void writeSupabaseCache(cacheKey, results);
+    }
     void logUsage(cacheKey, originCode, destCode, month, false);
     // Opportunistically clean expired rows (1% chance to avoid overhead)
     if (Math.random() < 0.01) void cleanExpiredSupabaseCache();
