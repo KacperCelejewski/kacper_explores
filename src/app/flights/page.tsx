@@ -172,17 +172,16 @@ export default function FlightsPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col flex-1 items-center justify-center gap-4 px-5">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-          className="text-4xl"
-        >
-          ✈️
-        </motion.div>
-        <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-          Szukamy najlepszych lotów…
-        </p>
+      <div className="flex flex-col flex-1 items-center justify-center gap-6 px-8">
+        <StepProgress
+          steps={[
+            "Sprawdzamy Twoje preferencje…",
+            "Szukamy najtańszych lotów…",
+            "Dopasowujemy kierunki…",
+            "Sortujemy wyniki…",
+          ]}
+          intervalMs={1800}
+        />
       </div>
     );
   }
@@ -351,15 +350,22 @@ export default function FlightsPage() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="mt-5 p-4 rounded-2xl text-center"
+          className="mt-5 p-5 rounded-2xl"
           style={{ background: "var(--accent-light)", border: "1px solid rgba(255,107,53,0.2)" }}
         >
-          <p className="text-sm font-semibold" style={{ color: "var(--accent)" }}>
-            AI generuje Twój plan podróży…
-          </p>
-          <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-            Może potrwać kilkanaście sekund
-          </p>
+          <StepProgress
+            steps={[
+              "Analizujemy kierunek i preferencje…",
+              "Szukamy lokalnych atrakcji i restauracji…",
+              "Układamy plan godzina po godzinie…",
+              "Dobieramy budżetowe opcje i triki…",
+              "Ostatnie szlify — prawie gotowe!",
+            ]}
+            intervalMs={4500}
+            accentColor="var(--accent)"
+            barColor="rgba(255,107,53,0.25)"
+            barFillColor="var(--accent)"
+          />
         </motion.div>
       )}
 
@@ -601,9 +607,15 @@ function FlightSelectModal({
 
         {/* Loading */}
         {loading && (
-          <div className="flex items-center justify-center gap-3 py-12">
-            <span className="text-2xl animate-spin" style={{ display: "inline-block" }}>✈️</span>
-            <p className="text-sm font-medium" style={{ color: "var(--text-muted)" }}>Szukamy lotów…</p>
+          <div className="px-5 py-10">
+            <StepProgress
+              steps={[
+                "Sprawdzamy dostępność lotów…",
+                "Pobieramy aktualne ceny…",
+                "Sortujemy wyniki…",
+              ]}
+              intervalMs={1600}
+            />
           </div>
         )}
 
@@ -758,4 +770,60 @@ function FlightSelectModal({
 
   if (!mounted) return null;
   return createPortal(content, document.body);
+}
+
+function StepProgress({
+  steps,
+  intervalMs = 2000,
+  accentColor = "var(--accent)",
+  barColor = "rgba(0,0,0,0.08)",
+  barFillColor = "var(--accent)",
+}: {
+  steps: string[];
+  intervalMs?: number;
+  accentColor?: string;
+  barColor?: string;
+  barFillColor?: string;
+}) {
+  const [step, setStep] = useState(0);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    setProgress(0);
+    const tick = 50;
+    const increment = (tick / intervalMs) * 100;
+    const timer = setInterval(() => {
+      setProgress((p) => {
+        if (p >= 100) {
+          setStep((s) => Math.min(s + 1, steps.length - 1));
+          return 0;
+        }
+        return p + increment;
+      });
+    }, tick);
+    return () => clearInterval(timer);
+  }, [intervalMs, steps.length]);
+
+  const currentStep = Math.min(step, steps.length - 1);
+
+  return (
+    <div className="w-full">
+      <p className="text-sm font-semibold mb-3 text-center" style={{ color: accentColor }}>
+        {steps[currentStep]}
+      </p>
+      <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: barColor }}>
+        <div
+          className="h-full rounded-full transition-none"
+          style={{
+            width: currentStep === steps.length - 1 ? "100%" : `${progress}%`,
+            background: barFillColor,
+            transition: "width 50ms linear",
+          }}
+        />
+      </div>
+      <p className="text-xs text-center mt-2" style={{ color: "var(--text-muted)" }}>
+        Krok {currentStep + 1} z {steps.length}
+      </p>
+    </div>
+  );
 }
