@@ -69,7 +69,7 @@ function pickDates(month: number, duration: number): { departDate: string; retur
   const now = new Date();
   const year = month >= now.getMonth() + 1 ? now.getFullYear() : now.getFullYear() + 1;
   const depart = new Date(Date.UTC(year, month - 1, 15));
-  const ret = new Date(depart.getTime() + duration * 24 * 60 * 60 * 1000);
+  const ret = new Date(depart.getTime() + (duration - 1) * 24 * 60 * 60 * 1000);
   const fmt = (d: Date) =>
     `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
   return { departDate: fmt(depart), returnDate: fmt(ret) };

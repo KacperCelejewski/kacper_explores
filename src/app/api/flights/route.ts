@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
     const pad = (n: number) => String(n).padStart(2, "0");
     const dep = `${year}-${pad(m)}-15`;
     const depDate = new Date(dep);
-    depDate.setUTCDate(depDate.getUTCDate() + (durationDays ?? 6));
+    depDate.setUTCDate(depDate.getUTCDate() + (durationDays ?? 6) - 1);
     const ret = depDate.toISOString().slice(0, 10);
     recommendations = recommendations.map((rec) => {
       const offer = rec.bestOffer;
