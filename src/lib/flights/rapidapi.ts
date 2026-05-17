@@ -226,6 +226,8 @@ export async function searchFlightOptions(
     const rapidHeaders = {
       "x-rapidapi-host": "sky-scrapper.p.rapidapi.com",
       "x-rapidapi-key": apiKey,
+      "User-Agent": "curl/8.7.1",
+      "Accept": "*/*",
     };
 
     const res = await fetch(url.toString(), { headers: rapidHeaders, cache: "no-store" });
