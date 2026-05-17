@@ -46,6 +46,7 @@ export default function FlightsPage() {
     dest: DestinationRecommendation;
     flights: RealFlight[];
     loading: boolean;
+    isSynthetic: boolean;
   } | null>(null);
 
   useEffect(() => {
@@ -107,7 +108,7 @@ export default function FlightsPage() {
     }
 
     setGenerateError(null);
-    setFlightModal({ dest, flights: [], loading: true });
+    setFlightModal({ dest, flights: [], loading: true, isSynthetic: false });
 
     // Fetch real flights in background while modal opens
     if (quizAnswers.month) {
@@ -118,13 +119,16 @@ export default function FlightsPage() {
       )
         .then((r) => r.json())
         .then((data: { flights?: RealFlight[] }) => {
-          setFlightModal((prev) => prev ? { ...prev, flights: data.flights ?? [], loading: false } : null);
+          const real = data.flights ?? [];
+          const isSynthetic = real.length === 0;
+          const flights = isSynthetic ? syntheticFlight(dest) : real;
+          setFlightModal((prev) => prev ? { ...prev, flights, loading: false, isSynthetic } : null);
         })
         .catch(() => {
-          setFlightModal((prev) => prev ? { ...prev, flights: [], loading: false } : null);
+          setFlightModal((prev) => prev ? { ...prev, flights: syntheticFlight(dest), loading: false, isSynthetic: true } : null);
         });
     } else {
-      setFlightModal((prev) => prev ? { ...prev, loading: false } : null);
+      setFlightModal((prev) => prev ? { ...prev, flights: syntheticFlight(dest), loading: false, isSynthetic: true } : null);
     }
   };
 
@@ -375,6 +379,7 @@ export default function FlightsPage() {
             dest={flightModal.dest}
             flights={flightModal.flights}
             loading={flightModal.loading}
+            isSynthetic={flightModal.isSynthetic}
             onConfirm={(flight) => handleGenerate(flightModal.dest, flight)}
             onClose={() => setFlightModal(null)}
           />
@@ -382,6 +387,21 @@ export default function FlightsPage() {
       </AnimatePresence>
     </div>
   );
+}
+
+function syntheticFlight(dest: DestinationRecommendation): RealFlight[] {
+  const o = dest.bestOffer;
+  return [{
+    price: Math.round(o.realCost > 0 ? o.realCost : o.price),
+    airline: o.airline || "Linie lotnicze",
+    departureDate: o.departureDate ?? "",
+    departureTime: o.departureTime ?? "06:30",
+    arrivalTime: o.arrivalTime ?? "09:30",
+    returnDate: o.returnDate ?? "",
+    returnDepartureTime: "14:00",
+    returnArrivalTime: "17:00",
+    durationMinutes: o.durationMinutes > 0 ? o.durationMinutes : 120,
+  }];
 }
 
 function DestinationCard({
@@ -544,12 +564,14 @@ function FlightSelectModal({
   dest,
   flights,
   loading,
+  isSynthetic,
   onConfirm,
   onClose,
 }: {
   dest: DestinationRecommendation;
   flights: RealFlight[];
   loading: boolean;
+  isSynthetic: boolean;
   onConfirm: (flight: RealFlight | null) => void;
   onClose: () => void;
 }) {
@@ -637,6 +659,16 @@ function FlightSelectModal({
                   Sprawdź loty na Skyscanner ↗
                 </a>
               )}
+            </p>
+          </div>
+        )}
+
+        {/* Synthetic estimate notice */}
+        {!loading && flights.length > 0 && isSynthetic && (
+          <div className="mx-5 mb-3 px-3 py-2 rounded-xl flex items-center gap-2" style={{ background: "#FFF7ED", border: "1px solid #FED7AA" }}>
+            <span className="text-sm flex-shrink-0">📊</span>
+            <p className="text-xs" style={{ color: "#92400E" }}>
+              Brak danych z API — pokazujemy <strong>szacunkową cenę</strong> z naszej bazy. Sprawdź aktualną na Skyscanner.
             </p>
           </div>
         )}
