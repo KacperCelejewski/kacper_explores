@@ -233,8 +233,10 @@ export async function searchFlightOptions(
 
     const res = await fetch(url.toString(), { headers: rapidHeaders });
 
+    const quota = `limit=${res.headers.get("x-ratelimit-requests-limit")} remaining=${res.headers.get("x-ratelimit-requests-remaining")}`;
+    console.log(`[sky-scrapper] HTTP ${res.status} ${originCode}→${destCode} quota:[${quota}]`);
+
     if (!res.ok) {
-      console.error(`[sky-scrapper] HTTP ${res.status} ${originCode}→${destCode}`);
       return { flights: [], reason: `http_${res.status}` };
     }
 
