@@ -240,21 +240,16 @@ export async function searchFlightOptions(
     let json = (await res.json()) as SkyResponse;
     console.log(`[sky-scrapper] ${originCode}→${destCode} status:${json.status} itineraries:${json.data?.itineraries?.length ?? 0} context:${json.data?.context?.status}`);
 
-    // Sky Scrapper often needs a retry — first response is "incomplete" or status:false
-    const needsRetry =
-      (json.status && json.data?.context?.status === "incomplete" && !json.data?.itineraries?.length) ||
-      (!json.status && !json.data?.itineraries?.length);
-
-    if (needsRetry && canCallApi()) {
-      await new Promise((r) => setTimeout(r, 3000));
+    // Sky Scrapper needs up to 3 attempts: first call often returns status:false or
+    // incomplete with 0 itineraries — keep retrying until we get real results.
+    for (let attempt = 1; attempt <= 2 && !json.data?.itineraries?.length; attempt++) {
+      if (!canCallApi()) break;
+      await new Promise((r) => setTimeout(r, 2500));
       const retryRes = await fetch(url.toString(), { headers: rapidHeaders, cache: "no-store" });
-      if (retryRes.ok) {
-        const retryJson = (await retryRes.json()) as SkyResponse;
-        console.log(`[sky-scrapper] retry ${originCode}→${destCode} status:${retryJson.status} itineraries:${retryJson.data?.itineraries?.length ?? 0}`);
-        if (retryJson.status && retryJson.data?.itineraries?.length) {
-          json = retryJson;
-        }
-      }
+      if (!retryRes.ok) break;
+      const retryJson = (await retryRes.json()) as SkyResponse;
+      console.log(`[sky-scrapper] attempt ${attempt + 1} ${originCode}→${destCode} status:${retryJson.status} itineraries:${retryJson.data?.itineraries?.length ?? 0} ctx:${retryJson.data?.context?.status}`);
+      json = retryJson;
     }
 
     if (!json.status || !json.data?.itineraries?.length) {
