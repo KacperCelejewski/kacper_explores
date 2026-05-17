@@ -223,36 +223,20 @@ export async function searchFlightOptions(
     url.searchParams.set("sortBy", "best");
     url.searchParams.set("currency", "PLN");
 
-    const rapidHeaders = {
-      "x-rapidapi-host": "sky-scrapper.p.rapidapi.com",
-      "x-rapidapi-key": apiKey,
-      "User-Agent": "curl/8.7.1",
-      "Accept": "*/*",
-    };
-
-    const res = await fetch(url.toString(), { headers: rapidHeaders, cache: "no-store" });
-
-    const quota = `limit=${res.headers.get("x-ratelimit-requests-limit")} remaining=${res.headers.get("x-ratelimit-requests-remaining")}`;
-    console.log(`[sky-scrapper] HTTP ${res.status} ${originCode}(skyId:${originSky.skyId} entity:${originSky.entityId})→${destCode}(skyId:${destSky.skyId} entity:${destSky.entityId}) date:${departDate}→${returnDate} quota:[${quota}]`);
+    const res = await fetch(url.toString(), {
+      headers: {
+        "x-rapidapi-host": "sky-scrapper.p.rapidapi.com",
+        "x-rapidapi-key": apiKey,
+      },
+    });
 
     if (!res.ok) {
+      console.error(`[sky-scrapper] HTTP ${res.status} ${originCode}→${destCode}`);
       return { flights: [], reason: `http_${res.status}` };
     }
 
-    let json = (await res.json()) as SkyResponse;
+    const json = (await res.json()) as SkyResponse;
     console.log(`[sky-scrapper] ${originCode}→${destCode} status:${json.status} itineraries:${json.data?.itineraries?.length ?? 0} context:${json.data?.context?.status}`);
-
-    // Sky Scrapper needs up to 3 attempts: first call often returns status:false or
-    // incomplete with 0 itineraries — keep retrying until we get real results.
-    for (let attempt = 1; attempt <= 2 && !json.data?.itineraries?.length; attempt++) {
-      if (!canCallApi()) break;
-      await new Promise((r) => setTimeout(r, 2500));
-      const retryRes = await fetch(url.toString(), { headers: rapidHeaders, cache: "no-store" });
-      if (!retryRes.ok) break;
-      const retryJson = (await retryRes.json()) as SkyResponse;
-      console.log(`[sky-scrapper] attempt ${attempt + 1} ${originCode}→${destCode} status:${retryJson.status} itineraries:${retryJson.data?.itineraries?.length ?? 0} ctx:${retryJson.data?.context?.status}`);
-      json = retryJson;
-    }
 
     if (!json.status || !json.data?.itineraries?.length) {
       console.warn(`[sky-scrapper] no itineraries ${originCode}→${destCode} status:${json.status} context:${json.data?.context?.status} body:${JSON.stringify(json).slice(0, 300)}`);
