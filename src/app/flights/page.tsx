@@ -217,7 +217,7 @@ export default function FlightsPage() {
             >
               {userStatus.is_pro
                 ? "✦ Pro"
-                : `${userStatus.credits_remaining} ${userStatus.credits_remaining === 1 ? "plan" : userStatus.credits_remaining <= 4 ? "plany" : "planów"}`}
+                : `${userStatus.credits_remaining ?? 0} ${(userStatus.credits_remaining ?? 0) === 1 ? "plan" : (userStatus.credits_remaining ?? 0) <= 4 ? "plany" : "planów"}`}
             </button>
           ) : (
             <button
