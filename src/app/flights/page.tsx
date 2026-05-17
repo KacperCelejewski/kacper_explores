@@ -558,21 +558,14 @@ function FlightSelectModal({
     new Date(iso).toLocaleDateString("pl-PL", { day: "numeric", month: "short", timeZone: "UTC" });
 
   const content = (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-end justify-center"
-      style={{ background: "rgba(0,0,0,0.6)" }}
+    <div
+      className="fixed inset-0 flex items-end justify-center"
+      style={{ background: "rgba(0,0,0,0.65)", zIndex: 9999 }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <motion.div
-        initial={{ y: "100%" }}
-        animate={{ y: 0 }}
-        exit={{ y: "100%" }}
-        transition={{ type: "spring", damping: 28, stiffness: 300 }}
+      <div
         className="w-full max-w-lg rounded-t-3xl"
-        style={{ background: "var(--bg-primary)", maxHeight: "88vh", overflowY: "auto" }}
+        style={{ background: "#F5EFE0", maxHeight: "88vh", overflowY: "auto" }}
         role="dialog"
         aria-modal="true"
         aria-label={`Wybór lotu do ${dest.city}`}
@@ -609,13 +602,7 @@ function FlightSelectModal({
         {/* Loading */}
         {loading && (
           <div className="flex items-center justify-center gap-3 py-12">
-            <motion.span
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
-              className="text-2xl"
-            >
-              ✈️
-            </motion.span>
+            <span className="text-2xl animate-spin" style={{ display: "inline-block" }}>✈️</span>
             <p className="text-sm font-medium" style={{ color: "var(--text-muted)" }}>Szukamy lotów…</p>
           </div>
         )}
@@ -765,8 +752,8 @@ function FlightSelectModal({
             </button>
           </div>
         )}
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 
   if (!mounted) return null;
