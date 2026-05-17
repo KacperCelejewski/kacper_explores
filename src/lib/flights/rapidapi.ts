@@ -228,7 +228,7 @@ export async function searchFlightOptions(
       "x-rapidapi-key": apiKey,
     };
 
-    const res = await fetch(url.toString(), { headers: rapidHeaders });
+    const res = await fetch(url.toString(), { headers: rapidHeaders, cache: "no-store" });
 
     const quota = `limit=${res.headers.get("x-ratelimit-requests-limit")} remaining=${res.headers.get("x-ratelimit-requests-remaining")}`;
     console.log(`[sky-scrapper] HTTP ${res.status} ${originCode}(skyId:${originSky.skyId} entity:${originSky.entityId})→${destCode}(skyId:${destSky.skyId} entity:${destSky.entityId}) date:${departDate}→${returnDate} quota:[${quota}]`);
@@ -247,7 +247,7 @@ export async function searchFlightOptions(
 
     if (needsRetry && canCallApi()) {
       await new Promise((r) => setTimeout(r, 3000));
-      const retryRes = await fetch(url.toString(), { headers: rapidHeaders });
+      const retryRes = await fetch(url.toString(), { headers: rapidHeaders, cache: "no-store" });
       if (retryRes.ok) {
         const retryJson = (await retryRes.json()) as SkyResponse;
         console.log(`[sky-scrapper] retry ${originCode}→${destCode} status:${retryJson.status} itineraries:${retryJson.data?.itineraries?.length ?? 0}`);
