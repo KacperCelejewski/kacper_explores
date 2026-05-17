@@ -34,14 +34,14 @@ export default function OdkryjPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  // continents that actually have trips
-  const availableContinents = useMemo(() => {
+  // continents that have at least one trip (for graying out)
+  const continentsWithTrips = useMemo(() => {
     const set = new Set<Continent>();
     trips.forEach((t) => {
       const c = getContinent(t.country);
       if (c) set.add(c);
     });
-    return CONTINENTS.filter((c) => set.has(c));
+    return set;
   }, [trips]);
 
   // countries within selected continent
@@ -92,7 +92,7 @@ export default function OdkryjPage() {
         </motion.div>
 
         {/* Continent filter */}
-        {!loading && availableContinents.length > 0 && (
+        {!loading && (
           <motion.div
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
@@ -100,20 +100,27 @@ export default function OdkryjPage() {
             className="mb-3"
           >
             <div className="flex flex-wrap gap-2">
-              {availableContinents.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => selectContinent(c)}
-                  className="text-xs font-semibold px-3 py-1.5 rounded-full transition-all"
-                  style={{
-                    background: activeContinent === c ? "var(--accent)" : "var(--glass-bg, rgba(255,255,255,0.07))",
-                    color: activeContinent === c ? "#fff" : "var(--text-muted)",
-                    border: `1px solid ${activeContinent === c ? "var(--accent)" : "var(--border-color, rgba(255,255,255,0.12))"}`,
-                  }}
-                >
-                  {c}
-                </button>
-              ))}
+              {CONTINENTS.map((c) => {
+                const hasTrips = continentsWithTrips.has(c);
+                const isActive = activeContinent === c;
+                return (
+                  <button
+                    key={c}
+                    onClick={() => hasTrips && selectContinent(c)}
+                    disabled={!hasTrips}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-full transition-all"
+                    style={{
+                      background: isActive ? "var(--accent)" : "var(--glass-bg, rgba(255,255,255,0.07))",
+                      color: isActive ? "#fff" : hasTrips ? "var(--text-muted)" : "var(--text-muted)",
+                      border: `1px solid ${isActive ? "var(--accent)" : "var(--border-color, rgba(255,255,255,0.12))"}`,
+                      opacity: hasTrips ? 1 : 0.35,
+                      cursor: hasTrips ? "pointer" : "default",
+                    }}
+                  >
+                    {c}
+                  </button>
+                );
+              })}
             </div>
           </motion.div>
         )}
