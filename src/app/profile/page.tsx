@@ -188,7 +188,7 @@ export default function ProfilePage() {
                 className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
                 style={{ background: "#F0F0F0", color: "var(--text-secondary)" }}
               >
-                {data.credits_remaining} {data.credits_remaining === 1 ? "plan" : data.credits_remaining <= 4 ? "plany" : "planów"} pozostało
+                {data.credits_remaining ?? 0} {(data.credits_remaining ?? 0) === 1 ? "plan" : (data.credits_remaining ?? 0) <= 4 ? "plany" : "planów"} pozostało
               </span>
             )}
           </div>
