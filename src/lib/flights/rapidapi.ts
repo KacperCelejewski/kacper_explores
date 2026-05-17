@@ -253,6 +253,8 @@ export async function searchFlightOptions(
     }
 
     const json = (await res.json()) as KiwiResponse;
+    const firstIt = json.data?.itineraries?.[0];
+    console.log(`[flights-scraper] ${originCode}→${destCode} req:${departDate}→${returnDate} got:`, firstIt?.outbound?.sectorSegments?.[0]?.segment?.source?.localTime, "price:", firstIt?.price?.amount);
     if (!json.status) return [];
 
     const itineraries = json.data?.itineraries ?? [];
