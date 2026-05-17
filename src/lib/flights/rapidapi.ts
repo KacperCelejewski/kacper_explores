@@ -277,8 +277,8 @@ export async function searchFlightOptions(
         departureTime: localHHMM(out.dep),
         arrivalTime: localHHMM(out.arr),
         returnDate: inb ? dateOnly(inb.dep) : returnDate,
-        returnDepartureTime: inb ? localHHMM(inb.dep) : "00:00",
-        returnArrivalTime: inb ? localHHMM(inb.arr) : "00:00",
+        returnDepartureTime: inb ? localHHMM(inb.dep) : "08:00",
+        returnArrivalTime: inb ? localHHMM(inb.arr) : "11:00",
         durationMinutes: durMinutes,
       });
     }

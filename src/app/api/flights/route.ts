@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     const now = new Date();
     const year = m >= now.getMonth() + 1 ? now.getFullYear() : now.getFullYear() + 1;
     const pad = (n: number) => String(n).padStart(2, "0");
-    const dep = `${year}-${pad(m)}-10`;
+    const dep = `${year}-${pad(m)}-15`;
     const depDate = new Date(dep);
     depDate.setUTCDate(depDate.getUTCDate() + (durationDays ?? 6));
     const ret = depDate.toISOString().slice(0, 10);

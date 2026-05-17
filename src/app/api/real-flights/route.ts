@@ -23,6 +23,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Brakujące parametry: origin, dest, month, duration" }, { status: 400 });
   }
 
+  if (month < 1 || month > 12 || duration < 1 || duration > 60) {
+    return NextResponse.json({ error: "Nieprawidłowe wartości month lub duration" }, { status: 400 });
+  }
+
   if (!process.env.RAPIDAPI_KEY) {
     return NextResponse.json({ flights: [] });
   }
