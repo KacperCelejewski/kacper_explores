@@ -548,11 +548,10 @@ function FlightSelectModal({
 }) {
   const [selected, setSelected] = useState<number | "skip" | null>(null);
   const noFlights = !loading && flights.length === 0;
+  const effectiveSelected = noFlights ? "skip" : selected;
 
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString("pl-PL", { day: "numeric", month: "short", timeZone: "UTC" });
-
-  const effectiveSelected = noFlights ? "skip" : selected;
 
   return (
     <motion.div
@@ -560,7 +559,7 @@ function FlightSelectModal({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex items-end justify-center"
-      style={{ background: "rgba(0,0,0,0.5)" }}
+      style={{ background: "rgba(0,0,0,0.6)" }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <motion.div
@@ -568,174 +567,200 @@ function FlightSelectModal({
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 28, stiffness: 300 }}
-        className="w-full max-w-lg rounded-t-3xl overflow-hidden"
-        style={{ background: "var(--background)", maxHeight: "85vh", overflowY: "auto" }}
+        className="w-full max-w-lg rounded-t-3xl"
+        style={{ background: "var(--background)", maxHeight: "88vh", overflowY: "auto" }}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Wybór lotu do ${dest.city}`}
       >
+        {/* Drag handle */}
+        <div className="pt-3 pb-1 flex justify-center">
+          <div className="w-10 h-1 rounded-full" style={{ background: "var(--border)" }} />
+        </div>
+
         {/* Header */}
-        <div className="px-5 pt-5 pb-3">
-          <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: "var(--border)" }} />
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <h2 className="text-lg font-bold">Loty do {dest.city}</h2>
-              <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                {dest.bestOffer.origin.code} → {dest.bestOffer.destination.code} · {formatDate(dest.bestOffer.departureDate ?? "")}
-              </p>
-            </div>
-            {dest.bestOffer.affiliateUrl && (
-              <a
-                href={dest.bestOffer.affiliateUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs font-semibold px-3 py-1.5 rounded-full flex-shrink-0"
-                style={{ background: "var(--accent-light)", color: "var(--accent)" }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                Skyscanner ↗
-              </a>
-            )}
+        <div className="px-5 pt-3 pb-4 flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-bold leading-tight">Loty do {dest.city}</h2>
+            <p className="text-xs mt-1 font-medium" style={{ color: "var(--text-muted)" }}>
+              {dest.bestOffer.origin.code} → {dest.bestOffer.destination.code} · {formatDate(dest.bestOffer.departureDate ?? "")}
+            </p>
           </div>
+          {dest.bestOffer.affiliateUrl && (
+            <a
+              href={dest.bestOffer.affiliateUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-semibold px-3 py-1.5 rounded-full flex-shrink-0 mt-0.5"
+              style={{ background: "var(--accent-light)", color: "var(--accent)" }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              Skyscanner ↗
+            </a>
+          )}
         </div>
 
-        <div className="px-5 pb-6 flex flex-col gap-3">
-          {/* Loading */}
-          {loading && (
-            <div className="flex items-center justify-center gap-2 py-10">
-              <motion.span
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
-                className="text-2xl"
-              >
-                ✈️
-              </motion.span>
-              <p className="text-sm" style={{ color: "var(--text-muted)" }}>Szukamy lotów…</p>
-            </div>
-          )}
+        <div className="h-px mx-5" style={{ background: "var(--border)" }} />
 
-          {/* No flights state */}
-          {noFlights && (
-            <div className="py-2 text-center">
-              <p className="text-sm font-medium">Brak danych dla tej trasy</p>
-              <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-                Plan zostanie wygenerowany z typowymi godzinami lotów budżetowych
-              </p>
+        {/* Loading */}
+        {loading && (
+          <div className="flex items-center justify-center gap-3 py-12">
+            <motion.span
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
+              className="text-2xl"
+            >
+              ✈️
+            </motion.span>
+            <p className="text-sm font-medium" style={{ color: "var(--text-muted)" }}>Szukamy lotów…</p>
+          </div>
+        )}
+
+        {/* No flights */}
+        {noFlights && (
+          <div className="px-5 py-8 text-center">
+            <p className="text-3xl mb-3">🔍</p>
+            <p className="text-sm font-semibold">Brak danych lotów dla tej trasy</p>
+            <p className="text-xs mt-1 leading-relaxed" style={{ color: "var(--text-muted)" }}>
+              Plan wygenerujemy z typowymi godzinami lotów budżetowych.{" "}
               {dest.bestOffer.affiliateUrl && (
                 <a
                   href={dest.bestOffer.affiliateUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block mt-3 text-xs font-semibold px-4 py-2 rounded-full"
-                  style={{ background: "var(--accent-light)", color: "var(--accent)" }}
+                  className="font-semibold underline"
+                  style={{ color: "var(--accent)" }}
                 >
-                  Szukaj lotów na Skyscanner ↗
+                  Sprawdź loty na Skyscanner ↗
                 </a>
               )}
-            </div>
-          )}
+            </p>
+          </div>
+        )}
 
-          {/* Flight list */}
-          {!loading && flights.map((f, i) => (
-            <div
-              key={i}
-              className="rounded-2xl overflow-hidden"
-              style={{
-                border: `2px solid ${selected === i ? "var(--accent)" : "var(--border)"}`,
-                background: selected === i ? "var(--accent-light)" : "#F8F8F8",
-              }}
-            >
-              <button
-                onClick={() => setSelected(i)}
-                className="w-full text-left p-4"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold">{f.airline}</p>
-                    <p className="text-xs mt-1 font-medium">
-                      ✈️ {formatDate(f.departureDate)} · {f.departureTime} → {f.arrivalTime}
-                      <span className="font-normal ml-1" style={{ color: "var(--text-muted)" }}>
-                        ({Math.floor(f.durationMinutes / 60)}h {f.durationMinutes % 60}m)
-                      </span>
-                    </p>
-                    <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                      🔙 Powrót {formatDate(f.returnDate)} · wylot {f.returnDepartureTime}
-                    </p>
-                  </div>
-                  <div className="text-right flex-shrink-0 ml-3">
-                    <p className="text-base font-bold" style={{ color: "var(--accent)" }}>
-                      ~{Math.round(f.price)} PLN
-                    </p>
-                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>w obie strony</p>
-                  </div>
+        {/* Flight list — radio group */}
+        {!loading && flights.length > 0 && (
+          <div role="radiogroup" aria-label="Wybierz lot">
+            {flights.map((f, i) => {
+              const isSelected = selected === i;
+              return (
+                <div key={i}>
+                  <button
+                    role="radio"
+                    aria-checked={isSelected}
+                    onClick={() => setSelected(i)}
+                    className="w-full text-left px-5 py-4 transition-colors"
+                    style={{ background: isSelected ? "var(--accent-light)" : "transparent" }}
+                  >
+                    <div className="flex items-start gap-3">
+                      {/* Radio indicator */}
+                      <div
+                        className="mt-0.5 w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center border-2 transition-colors"
+                        style={{
+                          borderColor: isSelected ? "var(--accent)" : "var(--border)",
+                          background: isSelected ? "var(--accent)" : "transparent",
+                        }}
+                      >
+                        {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-sm font-bold">{f.airline}</p>
+                          <div className="text-right flex-shrink-0">
+                            <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>
+                              ~{Math.round(f.price)} PLN
+                            </p>
+                            <p className="text-xs" style={{ color: "var(--text-muted)" }}>tam i z powrotem</p>
+                          </div>
+                        </div>
+                        <p className="text-xs mt-1" style={{ color: "var(--text-secondary)" }}>
+                          ✈️ {formatDate(f.departureDate)} · {f.departureTime}–{f.arrivalTime}
+                          <span style={{ color: "var(--text-muted)" }}>
+                            {" "}({Math.floor(f.durationMinutes / 60)}h {f.durationMinutes % 60}m)
+                          </span>
+                        </p>
+                        <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                          Powrót {formatDate(f.returnDate)} · wylot {f.returnDepartureTime}
+                        </p>
+                        {dest.bestOffer.affiliateUrl && (
+                          <a
+                            href={dest.bestOffer.affiliateUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-block mt-1.5 text-xs font-semibold"
+                            style={{ color: "var(--accent)" }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            Kup na Skyscanner ↗
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                  <div className="h-px mx-5" style={{ background: "var(--border)" }} />
                 </div>
-                {selected === i && (
-                  <p className="text-xs font-semibold mt-2" style={{ color: "var(--accent)" }}>
-                    ✓ Wybrany — plan AI dopasowany do tych godzin
-                  </p>
-                )}
-              </button>
-              {dest.bestOffer.affiliateUrl && (
-                <a
-                  href={dest.bestOffer.affiliateUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-1 py-2 text-xs font-semibold transition-opacity"
-                  style={{
-                    borderTop: "1px solid var(--border)",
-                    color: "var(--accent)",
-                    background: selected === i ? "rgba(255,107,53,0.08)" : "rgba(0,0,0,0.03)",
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  Kup bilet na Skyscanner ↗
-                </a>
-              )}
-            </div>
-          ))}
+              );
+            })}
 
-          {/* Skip option — only shown when flights exist */}
-          {!loading && flights.length > 0 && (
+            {/* Skip option */}
             <button
+              role="radio"
+              aria-checked={selected === "skip"}
               onClick={() => setSelected("skip")}
-              className="w-full text-left p-3 rounded-2xl transition-all"
-              style={{
-                background: selected === "skip" ? "#F0F0F0" : "transparent",
-                border: `2px solid ${selected === "skip" ? "var(--border)" : "var(--border)"}`,
+              className="w-full text-left px-5 py-4 transition-colors"
+              style={{ background: selected === "skip" ? "#F5F5F3" : "transparent" }}
+            >
+              <div className="flex items-start gap-3">
+                <div
+                  className="mt-0.5 w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center border-2 transition-colors"
+                  style={{
+                    borderColor: selected === "skip" ? "var(--text-secondary)" : "var(--border)",
+                    background: selected === "skip" ? "var(--text-secondary)" : "transparent",
+                  }}
+                >
+                  {selected === "skip" && <div className="w-2 h-2 rounded-full bg-white" />}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold" style={{ color: "var(--text-secondary)" }}>
+                    Nie wiem jeszcze
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                    Wygeneruj plan, godziny uzupełnisz po zakupie biletu
+                  </p>
+                </div>
+              </div>
+            </button>
+          </div>
+        )}
+
+        {/* CTA footer */}
+        {!loading && (
+          <div className="px-5 pt-3 pb-6">
+            <div className="h-px mb-4" style={{ background: "var(--border)" }} />
+            {effectiveSelected === null && (
+              <p className="text-xs text-center mb-3" style={{ color: "var(--text-muted)" }}>
+                Wybierz opcję powyżej aby kontynuować
+              </p>
+            )}
+            {!noFlights && effectiveSelected !== null && (
+              <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>
+                ℹ️ Ceny orientacyjne — po zakupie biletu plan AI dopasuje godziny
+              </p>
+            )}
+            <button
+              className="btn-primary"
+              disabled={effectiveSelected === null}
+              onClick={() => {
+                if (effectiveSelected === null) return;
+                onConfirm(effectiveSelected === "skip" ? null : flights[effectiveSelected as number] ?? null);
               }}
             >
-              <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
-                Nie wiem jeszcze — pomiń wybór lotu
-              </p>
-              <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                Wygeneruj plan, a godziny uzupełnisz po zakupie biletu
-              </p>
+              Wygeneruj plan AI →
             </button>
-          )}
-
-          {/* CTA */}
-          {!loading && (
-            <div className="mt-1">
-              {effectiveSelected === null && (
-                <p className="text-xs text-center mb-2" style={{ color: "var(--text-muted)" }}>
-                  Wybierz lot lub „Nie wiem jeszcze" aby kontynuować
-                </p>
-              )}
-              {!noFlights && (
-                <p className="text-xs mb-2" style={{ color: "var(--text-muted)" }}>
-                  ℹ️ Ceny orientacyjne — kup bilet na Skyscanner, plan dopasuje godziny
-                </p>
-              )}
-              <button
-                className="btn-primary"
-                disabled={effectiveSelected === null}
-                onClick={() => {
-                  if (effectiveSelected === null) return;
-                  onConfirm(effectiveSelected === "skip" ? null : flights[effectiveSelected as number] ?? null);
-                }}
-              >
-                Wygeneruj plan AI →
-              </button>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </motion.div>
     </motion.div>
   );
