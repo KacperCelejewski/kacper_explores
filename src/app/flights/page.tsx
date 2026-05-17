@@ -217,7 +217,7 @@ export default function FlightsPage() {
             >
               {userStatus.is_pro
                 ? "✦ Pro"
-                : `${userStatus.credits_remaining} ${userStatus.credits_remaining === 1 ? "plan" : "plany"}`}
+                : `${userStatus.credits_remaining} ${userStatus.credits_remaining === 1 ? "plan" : userStatus.credits_remaining <= 4 ? "plany" : "planów"}`}
             </button>
           ) : (
             <button
@@ -547,9 +547,12 @@ function FlightSelectModal({
   onClose: () => void;
 }) {
   const [selected, setSelected] = useState<number | "skip" | null>(null);
+  const noFlights = !loading && flights.length === 0;
 
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString("pl-PL", { day: "numeric", month: "short", timeZone: "UTC" });
+
+  const effectiveSelected = noFlights ? "skip" : selected;
 
   return (
     <motion.div
@@ -568,7 +571,8 @@ function FlightSelectModal({
         className="w-full max-w-lg rounded-t-3xl overflow-hidden"
         style={{ background: "var(--background)", maxHeight: "85vh", overflowY: "auto" }}
       >
-        <div className="px-5 pt-5 pb-2">
+        {/* Header */}
+        <div className="px-5 pt-5 pb-3">
           <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: "var(--border)" }} />
           <div className="flex items-start justify-between gap-2">
             <div>
@@ -590,16 +594,12 @@ function FlightSelectModal({
               </a>
             )}
           </div>
-          <div className="mt-2 px-2 py-1.5 rounded-xl inline-flex items-center gap-1.5" style={{ background: "#F8F8F8" }}>
-            <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-              ℹ️ Ceny i godziny typowe dla tej trasy — kup bilet na Skyscanner, plan dopasujemy do Twoich godzin
-            </span>
-          </div>
         </div>
 
-        <div className="px-5 pb-5 flex flex-col gap-3 mt-3">
+        <div className="px-5 pb-6 flex flex-col gap-3">
+          {/* Loading */}
           {loading && (
-            <div className="flex items-center justify-center gap-2 py-8">
+            <div className="flex items-center justify-center gap-2 py-10">
               <motion.span
                 animate={{ rotate: 360 }}
                 transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
@@ -611,11 +611,9 @@ function FlightSelectModal({
             </div>
           )}
 
-          {!loading && flights.length === 0 && (
-            <div
-              className="p-4 rounded-2xl text-center"
-              style={{ background: "#F8F8F8", border: "1px solid var(--border)" }}
-            >
+          {/* No flights state */}
+          {noFlights && (
+            <div className="py-2 text-center">
               <p className="text-sm font-medium">Brak danych dla tej trasy</p>
               <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
                 Plan zostanie wygenerowany z typowymi godzinami lotów budżetowych
@@ -626,7 +624,7 @@ function FlightSelectModal({
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-block mt-3 text-xs font-semibold px-4 py-2 rounded-full"
-                  style={{ background: "var(--accent)", color: "white" }}
+                  style={{ background: "var(--accent-light)", color: "var(--accent)" }}
                 >
                   Szukaj lotów na Skyscanner ↗
                 </a>
@@ -634,12 +632,13 @@ function FlightSelectModal({
             </div>
           )}
 
+          {/* Flight list */}
           {!loading && flights.map((f, i) => (
             <div
               key={i}
               className="rounded-2xl overflow-hidden"
               style={{
-                border: `2px solid ${selected === i ? "var(--accent)" : "transparent"}`,
+                border: `2px solid ${selected === i ? "var(--accent)" : "var(--border)"}`,
                 background: selected === i ? "var(--accent-light)" : "#F8F8F8",
               }}
             >
@@ -692,7 +691,8 @@ function FlightSelectModal({
             </div>
           ))}
 
-          {!loading && (
+          {/* Skip option — only shown when flights exist */}
+          {!loading && flights.length > 0 && (
             <button
               onClick={() => setSelected("skip")}
               className="w-full text-left p-3 rounded-2xl transition-all"
@@ -710,17 +710,30 @@ function FlightSelectModal({
             </button>
           )}
 
+          {/* CTA */}
           {!loading && (
-            <button
-              className="btn-primary mt-1"
-              disabled={selected === null}
-              onClick={() => {
-                if (selected === null) return;
-                onConfirm(selected === "skip" ? null : flights[selected] ?? null);
-              }}
-            >
-              Wygeneruj plan AI →
-            </button>
+            <div className="mt-1">
+              {effectiveSelected === null && (
+                <p className="text-xs text-center mb-2" style={{ color: "var(--text-muted)" }}>
+                  Wybierz lot lub „Nie wiem jeszcze" aby kontynuować
+                </p>
+              )}
+              {!noFlights && (
+                <p className="text-xs mb-2" style={{ color: "var(--text-muted)" }}>
+                  ℹ️ Ceny orientacyjne — kup bilet na Skyscanner, plan dopasuje godziny
+                </p>
+              )}
+              <button
+                className="btn-primary"
+                disabled={effectiveSelected === null}
+                onClick={() => {
+                  if (effectiveSelected === null) return;
+                  onConfirm(effectiveSelected === "skip" ? null : flights[effectiveSelected as number] ?? null);
+                }}
+              >
+                Wygeneruj plan AI →
+              </button>
+            </div>
           )}
         </div>
       </motion.div>

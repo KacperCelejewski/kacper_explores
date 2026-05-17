@@ -32,6 +32,13 @@ export async function POST(req: NextRequest) {
   if (!tripId || !Array.isArray(messages) || messages.length === 0) {
     return NextResponse.json({ error: "Brak wymaganych pól." }, { status: 400 });
   }
+  if (messages.length > 50) {
+    return NextResponse.json({ error: "Historia rozmowy jest zbyt długa." }, { status: 400 });
+  }
+  const lastText = messages[messages.length - 1]?.parts?.[0]?.text ?? "";
+  if (lastText.length > 2000) {
+    return NextResponse.json({ error: "Wiadomość jest zbyt długa (max 2000 znaków)." }, { status: 400 });
+  }
 
   const { data: trip } = await supabase
     .from("trips")

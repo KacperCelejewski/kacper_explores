@@ -90,8 +90,17 @@ export default function PlanPage() {
   // Swap activity state — keyed by "dayIndex-activityIndex"
   const [swapLoading, setSwapLoading] = useState<Record<string, boolean>>({});
 
+  // Transient error banner for regen/swap failures
+  const [actionError, setActionError] = useState<string | null>(null);
+
   const handleShare = () => {
     if (!currentTrip?.id) return;
+    if (!isPublic) {
+      // Plan must be public before sharing — nudge user to toggle below
+      setCopied(true);
+      setTimeout(() => setCopied(false), 3000);
+      return;
+    }
     const url = `${window.location.origin}/share/${currentTrip.id}`;
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true);
@@ -140,6 +149,11 @@ export default function PlanPage() {
     });
   };
 
+  const showActionError = (msg: string) => {
+    setActionError(msg);
+    setTimeout(() => setActionError(null), 5000);
+  };
+
   const handleSwapActivity = async (dayIndex: number, activityIndex: number) => {
     if (!currentTrip?.id) return;
     const key = `${dayIndex}-${activityIndex}`;
@@ -154,7 +168,7 @@ export default function PlanPage() {
       if (!res.ok) throw new Error(data.error ?? "Błąd zamiany");
       updateTripActivity(dayIndex, activityIndex, data.activity);
     } catch {
-      // silently fail — user can retry
+      showActionError("Nie udało się zamienić aktywności. Spróbuj ponownie.");
     } finally {
       setSwapLoading((prev) => ({ ...prev, [key]: false }));
     }
@@ -173,7 +187,7 @@ export default function PlanPage() {
       if (!res.ok) throw new Error(data.error ?? "Błąd regeneracji");
       updateTripDay(dayIndex, data.day);
     } catch {
-      // silently fail — user can retry
+      showActionError("Nie udało się wygenerować nowego planu dnia. Spróbuj ponownie.");
     } finally {
       setRegenLoading((prev) => ({ ...prev, [dayIndex]: false }));
     }
@@ -195,6 +209,7 @@ export default function PlanPage() {
       })
       .then((data) => {
         if (!data) return;
+        setIsPublic(data.is_public ?? false);
         setCurrentTrip({
           id: data.id,
           destination: data.destination,
@@ -341,6 +356,29 @@ export default function PlanPage() {
           </div>
         </div>
       )}
+
+      {/* Action error banner */}
+      <AnimatePresence>
+        {actionError && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="mx-5 mb-3 px-4 py-3 rounded-2xl flex items-center justify-between gap-3 no-print"
+            style={{ background: "#FEF2F2", border: "1px solid #FECACA" }}
+          >
+            <p className="text-sm" style={{ color: "#DC2626" }}>{actionError}</p>
+            <button
+              onClick={() => setActionError(null)}
+              className="flex-shrink-0 text-xs font-bold transition-opacity hover:opacity-70"
+              style={{ color: "#DC2626" }}
+              aria-label="Zamknij"
+            >
+              ✕
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Day tabs — hidden in print */}
       <div className="px-5 mb-4 no-print" data-day-tabs>
@@ -514,11 +552,11 @@ export default function PlanPage() {
             onClick={handleShare}
             className="py-3 rounded-2xl text-xs font-semibold flex items-center justify-center gap-1 transition-all"
             style={{
-              background: copied ? "#DCFCE7" : "#F0F0F0",
-              color: copied ? "#16A34A" : "var(--text-secondary)",
+              background: copied && !isPublic ? "#FEF3C7" : copied ? "#DCFCE7" : "#F0F0F0",
+              color: copied && !isPublic ? "#92400E" : copied ? "#16A34A" : "var(--text-secondary)",
             }}
           >
-            {copied ? "✓ Skopiowano!" : "🔗 Udostępnij"}
+            {copied && !isPublic ? "↓ Najpierw udostępnij plan" : copied ? "✓ Skopiowano!" : "🔗 Udostępnij"}
           </button>
           <button
             onClick={handlePrint}

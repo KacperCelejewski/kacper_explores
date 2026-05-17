@@ -61,6 +61,8 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [deleteStep, setDeleteStep] = useState<"idle" | "confirm">("idle");
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetch("/api/profile")
@@ -81,7 +83,6 @@ export default function ProfilePage() {
     if (p.placeType) setQuizAnswer("placeType", p.placeType);
     if (p.month) setQuizAnswer("month", p.month);
     if (p.duration) setQuizAnswer("duration", p.duration);
-    setQuizAnswer("includeBerlin", p.includeBerlin);
     p.styles.forEach((s) => toggleStyle(s));
     router.push("/flights");
   };
@@ -96,6 +97,25 @@ export default function ProfilePage() {
       // silently fail — user stays on profile
     } finally {
       setPortalLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      const res = await fetch("/api/profile", { method: "DELETE" });
+      if (!res.ok) {
+        const d = await res.json();
+        throw new Error(d.error ?? "Błąd usuwania konta");
+      }
+      // Sign out locally and redirect
+      const { createClient } = await import("@/lib/supabase/client");
+      await createClient().auth.signOut();
+      router.replace("/");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Błąd usuwania konta. Spróbuj ponownie.");
+      setDeleting(false);
+      setDeleteStep("idle");
     }
   };
 
@@ -168,7 +188,7 @@ export default function ProfilePage() {
                 className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
                 style={{ background: "#F0F0F0", color: "var(--text-secondary)" }}
               >
-                {data.credits_remaining} {data.credits_remaining === 1 ? "plan" : "plany"} pozostało
+                {data.credits_remaining} {data.credits_remaining === 1 ? "plan" : data.credits_remaining <= 4 ? "plany" : "planów"} pozostało
               </span>
             )}
           </div>
@@ -231,7 +251,6 @@ export default function ProfilePage() {
               {prefs.styles.map((s) => (
                 <Chip key={s} label={TAG_LABELS[s] ?? s} />
               ))}
-              {prefs.includeBerlin && <Chip label="🇩🇪 z Berlina" />}
             </div>
 
             <button
@@ -330,6 +349,51 @@ export default function ProfilePage() {
         >
           {saved ? "✓ Zapisano!" : saving ? "Zapisuję…" : "Zapisz obecne ustawienia quizu"}
         </button>
+      </div>
+
+      {/* Account deletion */}
+      <div className="mt-8 h-px" style={{ background: "var(--border)" }} />
+      <div className="mt-6 pb-2">
+        <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: "var(--text-muted)" }}>
+          Strefa niebezpieczna
+        </p>
+        {deleteStep === "idle" ? (
+          <button
+            onClick={() => setDeleteStep("confirm")}
+            className="text-sm font-semibold py-3 px-4 rounded-2xl transition-opacity hover:opacity-70 w-full"
+            style={{ background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA" }}
+          >
+            Usuń konto i wszystkie dane
+          </button>
+        ) : (
+          <div className="p-4 rounded-2xl" style={{ background: "#FEF2F2", border: "1px solid #FECACA" }}>
+            <p className="text-sm font-bold mb-1" style={{ color: "#DC2626" }}>
+              Czy na pewno chcesz usunąć konto?
+            </p>
+            <p className="text-xs mb-4" style={{ color: "#991B1B" }}>
+              Zostaną trwale usunięte: Twoje konto, wszystkie wygenerowane plany podróży i historia płatności.
+              Tej operacji nie można cofnąć.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleting}
+                className="flex-1 text-sm font-bold py-2.5 rounded-xl transition-opacity hover:opacity-80 disabled:opacity-40"
+                style={{ background: "#DC2626", color: "white" }}
+              >
+                {deleting ? "Usuwam…" : "Tak, usuń konto"}
+              </button>
+              <button
+                onClick={() => setDeleteStep("idle")}
+                disabled={deleting}
+                className="flex-1 text-sm font-semibold py-2.5 rounded-xl transition-opacity hover:opacity-80"
+                style={{ background: "#F0F0F0", color: "var(--text-secondary)" }}
+              >
+                Anuluj
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

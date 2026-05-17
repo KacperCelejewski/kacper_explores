@@ -24,6 +24,7 @@ export async function GET(
     .from("trips")
     .select("id, city, country, ai_plan_json, destination_data")
     .eq("id", tripId)
+    .eq("is_public", true)
     .maybeSingle();
 
   if (error || !data) {

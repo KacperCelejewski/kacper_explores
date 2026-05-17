@@ -20,6 +20,7 @@ export async function generateMetadata(
       .from("trips")
       .select("city, country, ai_plan_json")
       .eq("id", tripId)
+      .eq("is_public", true)
       .maybeSingle();
 
     if (data?.city) {

@@ -16,7 +16,7 @@ export async function GET(
 
   const { data, error } = await supabase
     .from("trips")
-    .select("id, city, country, ai_plan_json, destination_data, flight_data, quiz_answers")
+    .select("id, city, country, ai_plan_json, destination_data, flight_data, quiz_answers, is_public")
     .eq("id", tripId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -32,6 +32,7 @@ export async function GET(
     plan: data.ai_plan_json,
     destination: data.destination_data,
     quizAnswers: data.quiz_answers,
+    is_public: data.is_public ?? false,
   });
 }
 

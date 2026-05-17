@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { getUserProfile, canGenerate, isPro } from "@/lib/userProfile";
 import { createClient } from "@/lib/supabase/server";
 import { validateQuizAnswers } from "@/lib/validate";
@@ -53,6 +54,27 @@ export async function PATCH(req: NextRequest) {
     .update({ quiz_preferences, updated_at: new Date().toISOString() })
     .eq("id", user.id);
 
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  return NextResponse.json({ ok: true });
+}
+
+export async function DELETE() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Delete user-owned data (trips cascade-delete related rows via FK)
+  await supabase.from("trips").delete().eq("user_id", user.id);
+  await supabase.from("payments").delete().eq("user_id", user.id);
+  await supabase.from("user_profiles").delete().eq("id", user.id);
+
+  // Delete the auth user — requires service role
+  const admin = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+  const { error } = await admin.auth.admin.deleteUser(user.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({ ok: true });

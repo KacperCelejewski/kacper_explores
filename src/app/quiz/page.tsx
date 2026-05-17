@@ -44,7 +44,7 @@ const REGIONS: { id: RegionId; label: string; subLabel: string; code: string; lo
   { id: "warszawa",  label: "Warszawa",    subLabel: "Mazowsze",           code: "WAW", local: ["WAW", "WMI"] },
   { id: "poznan",    label: "Poznań",      subLabel: "Wielkopolska",       code: "POZ", local: ["POZ"] },
   { id: "trojmiasto",label: "Trójmiasto",  subLabel: "Gdańsk / Gdynia",    code: "GDN", local: ["GDN"] },
-  { id: "inne",      label: "Inne miasto", subLabel: "Najbliższe lotnisko", code: "...", local: ["WRO"] },
+  { id: "inne",      label: "Inne miasto", subLabel: "Najbliższe lotnisko", code: "—", local: ["WRO"] },
 ];
 
 // Nearby Polish airports added when willingness = "poland"
@@ -553,7 +553,7 @@ function QuizSummary() {
   const items = [
     budget     && (budget === "low" ? "Backpacker" : "Komfortowy"),
     vibe       && ({ chill: "Reset", intense: "Full program", social: "Towarzyski", active: "Aktywny" }[vibe]),
-    styles.length > 0 && `${styles.length} zainteresowania`,
+    styles.length > 0 && `${styles.length} ${styles.length === 1 ? "zainteresowanie" : styles.length <= 4 ? "zainteresowania" : "zainteresowań"}`,
     placeType  && ({ big_city: "Duże miasto", charming: "Kameralne", beach_sun: "Słońce i woda" }[placeType]),
     month      && MONTH_SHORT[month - 1],
     duration   && `${duration} dni`,

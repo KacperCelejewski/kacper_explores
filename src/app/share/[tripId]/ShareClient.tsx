@@ -44,14 +44,18 @@ export default function ShareClient() {
   const router = useRouter();
   const [trip, setTrip] = useState<SharedTrip | null>(null);
   const [loading, setLoading] = useState(true);
+  const [notPublic, setNotPublic] = useState(false);
   const [activeDay, setActiveDay] = useState(0);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     fetch(`/api/share/${params.tripId}`)
-      .then((r) => r.json())
+      .then((r) => {
+        if (r.status === 404) { setNotPublic(true); return null; }
+        return r.json();
+      })
       .then((data) => {
-        if (data.error) { router.replace("/"); return; }
+        if (!data) return;
         setTrip(data);
       })
       .catch(() => router.replace("/"))
@@ -70,6 +74,26 @@ export default function ShareClient() {
       <div className="flex flex-col flex-1 items-center justify-center gap-4">
         <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }} className="text-3xl">✈️</motion.div>
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>Ładowanie planu…</p>
+      </div>
+    );
+  }
+
+  if (notPublic) {
+    return (
+      <div className="flex flex-col flex-1 items-center justify-center px-5 text-center gap-4">
+        <span className="text-4xl">🔒</span>
+        <h1 className="text-xl font-bold">Plan prywatny</h1>
+        <p className="text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>
+          Właściciel nie udostępnił tego planu publicznie.<br />
+          Poproś go o włączenie opcji &ldquo;Udostępnij w galerii&rdquo;.
+        </p>
+        <Link
+          href="/"
+          className="btn-primary"
+          style={{ display: "block", textAlign: "center", textDecoration: "none", fontSize: "0.875rem", marginTop: "0.5rem" }}
+        >
+          Wygeneruj własny plan →
+        </Link>
       </div>
     );
   }

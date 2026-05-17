@@ -72,7 +72,7 @@ function pickDates(month: number, duration: number): { departDate: string; retur
 }
 
 // ── Global daily cap ──────────────────────────────────────────────────────────
-export const DAILY_CAP = 400;
+export const DAILY_CAP = 10600;
 const ALERT_THRESHOLD = 0.8;
 
 let dailyCallCount = 0;
