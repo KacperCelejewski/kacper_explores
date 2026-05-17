@@ -13,6 +13,45 @@ export interface RealFlight {
   durationMinutes: number;
 }
 
+// ── Dynamic airport entity resolution ────────────────────────────────────────
+// Sky Scrapper entity IDs can go stale; resolve them live and cache in-process.
+
+interface SkyEntry { skyId: string; entityId: string }
+const resolvedAirports = new Map<string, SkyEntry>();
+
+async function resolveAirport(
+  code: string,
+  apiKey: string,
+): Promise<SkyEntry | null> {
+  if (resolvedAirports.has(code)) return resolvedAirports.get(code)!;
+
+  try {
+    const url = new URL("https://sky-scrapper.p.rapidapi.com/api/v1/flights/searchAirport");
+    url.searchParams.set("query", code);
+    url.searchParams.set("locale", "en-US");
+    const res = await fetch(url.toString(), {
+      headers: { "x-rapidapi-host": "sky-scrapper.p.rapidapi.com", "x-rapidapi-key": apiKey },
+    });
+    if (!res.ok) return null;
+    const json = await res.json() as { status: boolean; data?: { skyId?: string; entityId?: string; navigation?: { relevantFlightParams?: { skyId?: string; entityId?: string } } }[] };
+    if (!json.status || !json.data?.length) return null;
+
+    for (const item of json.data) {
+      const skyId = item.navigation?.relevantFlightParams?.skyId ?? item.skyId;
+      const entityId = item.navigation?.relevantFlightParams?.entityId ?? item.entityId;
+      if (skyId && entityId) {
+        const entry: SkyEntry = { skyId, entityId };
+        resolvedAirports.set(code, entry);
+        console.log(`[sky-scrapper] resolved ${code} → skyId:${skyId} entityId:${entityId}`);
+        return entry;
+      }
+    }
+  } catch (err) {
+    console.warn(`[sky-scrapper] resolveAirport(${code}) error:`, err);
+  }
+  return null;
+}
+
 // ── Sky Scrapper response types ───────────────────────────────────────────────
 
 interface SkyCarrier {
@@ -180,11 +219,14 @@ export async function searchFlightOptions(
   const apiKey = process.env.RAPIDAPI_KEY;
   if (!apiKey) return { flights: [], reason: "no_api_key" };
 
-  const originSky = SKY_IDS[originCode];
-  const destSky = SKY_IDS[destCode];
+  // Prefer dynamic resolution (fresh entityIds); fall back to static map
+  const [originSky, destSky] = await Promise.all([
+    resolveAirport(originCode, apiKey).then(r => r ?? SKY_IDS[originCode] ?? null),
+    resolveAirport(destCode, apiKey).then(r => r ?? SKY_IDS[destCode] ?? null),
+  ]);
   if (!originSky || !destSky) {
-    console.warn(`[sky-scrapper] unknown code: origin=${originCode} (${originSky ? "ok" : "missing"}) dest=${destCode} (${destSky ? "ok" : "missing"})`);
-    return { flights: [], reason: `unknown_code:${!originSky ? originCode : ""}${!originSky && !destSky ? "+" : ""}${!destSky ? destCode : ""}` };
+    console.warn(`[sky-scrapper] unresolved: origin=${originCode}(${originSky ? "ok" : "missing"}) dest=${destCode}(${destSky ? "ok" : "missing"})`);
+    return { flights: [], reason: `unknown_code:${!originSky ? originCode : ""}${!destSky ? "+"+destCode : ""}` };
   }
 
   const { departDate, returnDate } = pickDates(month, duration);
