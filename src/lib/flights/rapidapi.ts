@@ -252,17 +252,22 @@ export async function searchFlightOptions(
     });
 
     if (!res.ok) {
-      console.error(`[Kiwi] HTTP ${res.status} — ${originCode}→${destCode}`);
+      const errBody = await res.text().catch(() => "");
+      console.error(`[Kiwi] HTTP ${res.status} ${originCode}→${destCode} body: ${errBody.slice(0, 300)}`);
       return [];
     }
 
-    const json = (await res.json()) as KiwiResponse;
+    const rawText = await res.text();
+    const json = JSON.parse(rawText) as KiwiResponse;
     const itineraries = json.data ?? [];
 
-    if (process.env.NODE_ENV !== "production" && itineraries.length > 0) {
-      console.log("[Kiwi] sample item keys:", Object.keys(itineraries[0]));
+    console.log(`[Kiwi] ${originCode}→${destCode} status=ok items=${itineraries.length} topKeys=${Object.keys(json).join(",")}`);
+    if (itineraries.length > 0) {
+      console.log("[Kiwi] item[0] keys:", Object.keys(itineraries[0]).join(","));
       const outSample = itineraries[0].outbound ?? itineraries[0].legs?.[0];
-      if (outSample) console.log("[Kiwi] outbound keys:", Object.keys(outSample));
+      if (outSample) console.log("[Kiwi] outbound keys:", Object.keys(outSample).join(","));
+    } else {
+      console.log("[Kiwi] raw snippet:", rawText.slice(0, 500));
     }
 
     // Store all results in cache (up to 5), serve sliced on read
