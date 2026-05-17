@@ -240,23 +240,16 @@ export async function searchFlightOptions(
     let json = (await res.json()) as SkyResponse;
     console.log(`[sky-scrapper] ${originCode}→${destCode} status:${json.status} itineraries:${json.data?.itineraries?.length ?? 0} context:${json.data?.context?.status}`);
 
-    // If context is "incomplete" (search still running), poll once with the session ID
-    if (
-      json.status &&
-      json.data?.context?.status === "incomplete" &&
-      !json.data?.itineraries?.length
-    ) {
-      const sessionId = json.data?.context?.sessionId ?? json.data?.sessionId;
-      if (sessionId && canCallApi()) {
-        await new Promise((r) => setTimeout(r, 2000));
-        const pollUrl = new URL("https://sky-scrapper.p.rapidapi.com/api/v1/flights/searchFlights");
-        pollUrl.searchParams.set("sessionId", sessionId);
-        const pollRes = await fetch(pollUrl.toString(), { headers: rapidHeaders });
-        if (pollRes.ok) {
-          const pollJson = (await pollRes.json()) as SkyResponse;
-          console.log(`[sky-scrapper] poll ${originCode}→${destCode} status:${pollJson.status} itineraries:${pollJson.data?.itineraries?.length ?? 0}`);
-          if (pollJson.status && pollJson.data?.itineraries?.length) {
-            json = pollJson;
+    // Sky Scrapper returns "incomplete" on first call — retry the same request after 3s
+    if (json.status && json.data?.context?.status === "incomplete" && !json.data?.itineraries?.length) {
+      if (canCallApi()) {
+        await new Promise((r) => setTimeout(r, 3000));
+        const retryRes = await fetch(url.toString(), { headers: rapidHeaders });
+        if (retryRes.ok) {
+          const retryJson = (await retryRes.json()) as SkyResponse;
+          console.log(`[sky-scrapper] retry ${originCode}→${destCode} status:${retryJson.status} itineraries:${retryJson.data?.itineraries?.length ?? 0}`);
+          if (retryJson.status && retryJson.data?.itineraries?.length) {
+            json = retryJson;
           }
         }
       }
