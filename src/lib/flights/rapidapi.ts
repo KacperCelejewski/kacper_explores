@@ -16,29 +16,19 @@ export interface RealFlight {
 type KiwiRaw = Record<string, any>;
 
 interface KiwiResponse {
-  data?: KiwiRaw[];
+  itineraries?: KiwiRaw[];
 }
 
-function parseTimestamp(leg: KiwiRaw, field: string): string | undefined {
-  // Try combined timestamp fields first, then separate date+time
-  const combined = leg[field] ?? leg[field.replace("_at", "")] ?? leg[field.replace("_at", "Date")];
-  if (combined && typeof combined === "string") return combined;
-  const dateField = leg[`${field.split("_")[0]}Date`];
-  const timeField = leg[`${field.split("_")[0]}Time`];
-  if (dateField && timeField) return `${dateField}T${timeField}`;
-  return undefined;
-}
-
-function pickAirline(out: KiwiRaw, inb: KiwiRaw, top: KiwiRaw): string {
-  return (
-    top.airline ??
-    top.airlines?.[0] ??
-    out.airline ??
-    out.airlines?.[0] ??
-    inb.airline ??
-    inb.airlines?.[0] ??
-    "Linie lotnicze"
-  );
+function legTimes(leg: KiwiRaw): { dep: string; arr: string; airline: string } | null {
+  const segs: KiwiRaw[] = leg?.sectorSegments ?? [];
+  if (!segs.length) return null;
+  const first = segs[0].segment;
+  const last = segs[segs.length - 1].segment;
+  const dep: string = first?.source?.localTime;
+  const arr: string = last?.destination?.localTime;
+  if (!dep || !arr) return null;
+  const airline: string = first?.carrier?.name ?? "Linie lotnicze";
+  return { dep, arr, airline };
 }
 
 // ── Global daily cap ──────────────────────────────────────────────────────────
@@ -257,45 +247,29 @@ export async function searchFlightOptions(
       return [];
     }
 
-    const rawText = await res.text();
-    const json = JSON.parse(rawText) as KiwiResponse;
-    const itineraries = json.data ?? [];
-
-    console.log(`[Kiwi] ${originCode}→${destCode} status=ok items=${itineraries.length} topKeys=${Object.keys(json).join(",")}`);
-    if (itineraries.length > 0) {
-      console.log("[Kiwi] item[0] keys:", Object.keys(itineraries[0]).join(","));
-      const outSample = itineraries[0].outbound ?? itineraries[0].legs?.[0];
-      if (outSample) console.log("[Kiwi] outbound keys:", Object.keys(outSample).join(","));
-    } else {
-      console.log("[Kiwi] raw snippet:", rawText.slice(0, 500));
-    }
+    const json = (await res.json()) as KiwiResponse;
+    const itineraries = json.itineraries ?? [];
 
     // Store all results in cache (up to 5), serve sliced on read
     const results: RealFlight[] = [];
     for (const item of itineraries.slice(0, 5)) {
-      const out: KiwiRaw = item.outbound ?? item.legs?.[0] ?? {};
-      const inb: KiwiRaw = item.inbound ?? item.legs?.[1] ?? {};
+      const out = legTimes(item.outbound);
+      const inb = legTimes(item.inbound);
+      if (!out || !inb) continue;
 
-      const depAt = parseTimestamp(out, "departure_at");
-      const arrAt = parseTimestamp(out, "arrival_at");
-      const retDepAt = parseTimestamp(inb, "departure_at");
-      const retArrAt = parseTimestamp(inb, "arrival_at");
-
-      if (!depAt || !arrAt || !retDepAt || !retArrAt) continue;
-
-      const price = item.price ?? item.priceEur ?? item.priceUsd;
+      const price = Number(item.price?.amount ?? item.priceEur?.amount ?? 0);
       if (!price) continue;
 
       results.push({
         price,
-        airline: pickAirline(out, inb, item),
-        departureDate: depAt.slice(0, 10),
-        departureTime: hhmm(depAt),
-        arrivalTime: hhmm(arrAt),
-        returnDate: retDepAt.slice(0, 10),
-        returnDepartureTime: hhmm(retDepAt),
-        returnArrivalTime: hhmm(retArrAt),
-        durationMinutes: out.duration ?? out.durationInMinutes ?? out.durationMin ?? 0,
+        airline: out.airline,
+        departureDate: out.dep.slice(0, 10),
+        departureTime: hhmm(out.dep),
+        arrivalTime: hhmm(out.arr),
+        returnDate: inb.dep.slice(0, 10),
+        returnDepartureTime: hhmm(inb.dep),
+        returnArrivalTime: hhmm(inb.arr),
+        durationMinutes: Math.round((item.outbound?.duration ?? 0) / 60),
       });
     }
 
