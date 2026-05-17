@@ -50,15 +50,24 @@ export async function POST(req: NextRequest) {
     });
 
     if (planKey === "pack_5") {
-      // Add credits
       await supabase.rpc("add_credits", {
         p_user_id: userId,
         p_credits: plan.credits,
       });
     } else if (planKey === "pro_monthly") {
-      // Activate Pro subscription (expires 35 days from now for safety margin)
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 35);
+      await supabase
+        .from("user_profiles")
+        .update({
+          subscription_tier: "pro",
+          subscription_expires_at: expiresAt.toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", userId);
+    } else if (planKey === "pro_yearly") {
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 370);
       await supabase
         .from("user_profiles")
         .update({
@@ -75,15 +84,23 @@ export async function POST(req: NextRequest) {
     const invoice = event.data.object as Stripe.Invoice;
     const customerId = invoice.customer as string;
 
+    if (invoice.billing_reason !== "subscription_cycle") {
+      return NextResponse.json({ ok: true });
+    }
+
     const { data: profile } = await supabase
       .from("user_profiles")
       .select("id")
       .eq("stripe_customer_id", customerId)
       .single();
 
-    if (profile && invoice.billing_reason === "subscription_cycle") {
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 35);
+    if (profile) {
+      // Use Stripe's period end + 5-day buffer — works for both monthly and yearly
+      const periodEnd = invoice.lines?.data?.[0]?.period?.end;
+      const expiresAt = periodEnd
+        ? new Date((periodEnd + 5 * 86400) * 1000)
+        : (() => { const d = new Date(); d.setDate(d.getDate() + 35); return d; })();
+
       await supabase
         .from("user_profiles")
         .update({

@@ -53,7 +53,7 @@ interface PackingCategory {
 export default function PlanPage() {
   const router = useRouter();
   const params = useParams<{ tripId: string }>();
-  const { currentTrip, setCurrentTrip, updateTripDay, resetQuiz } = useAppStore();
+  const { currentTrip, setCurrentTrip, updateTripDay, updateTripActivity, resetQuiz } = useAppStore();
   const [activeDay, setActiveDay] = useState(0);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -86,6 +86,9 @@ export default function PlanPage() {
 
   // Regenerate day state — keyed by day index
   const [regenLoading, setRegenLoading] = useState<Record<number, boolean>>({});
+
+  // Swap activity state — keyed by "dayIndex-activityIndex"
+  const [swapLoading, setSwapLoading] = useState<Record<string, boolean>>({});
 
   const handleShare = () => {
     if (!currentTrip?.id) return;
@@ -135,6 +138,26 @@ export default function PlanPage() {
       next.has(key) ? next.delete(key) : next.add(key);
       return next;
     });
+  };
+
+  const handleSwapActivity = async (dayIndex: number, activityIndex: number) => {
+    if (!currentTrip?.id) return;
+    const key = `${dayIndex}-${activityIndex}`;
+    setSwapLoading((prev) => ({ ...prev, [key]: true }));
+    try {
+      const res = await fetch("/api/swap-activity", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tripId: currentTrip.id, dayIndex, activityIndex }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Błąd zamiany");
+      updateTripActivity(dayIndex, activityIndex, data.activity);
+    } catch {
+      // silently fail — user can retry
+    } finally {
+      setSwapLoading((prev) => ({ ...prev, [key]: false }));
+    }
   };
 
   const handleRegenerateDay = async (dayIndex: number) => {
@@ -372,6 +395,8 @@ export default function PlanPage() {
             tripId={currentTrip.id}
             regenLoading={!!regenLoading[i]}
             onRegenerate={handleRegenerateDay}
+            swapLoading={swapLoading}
+            onSwapActivity={handleSwapActivity}
           />
         </div>
       ))}
@@ -579,6 +604,8 @@ function DayPlanView({
   tripId,
   regenLoading,
   onRegenerate,
+  swapLoading,
+  onSwapActivity,
 }: {
   day: DayPlan;
   city: string;
@@ -586,6 +613,8 @@ function DayPlanView({
   tripId: string;
   regenLoading: boolean;
   onRegenerate: (i: number) => void;
+  swapLoading: Record<string, boolean>;
+  onSwapActivity: (dayIndex: number, activityIndex: number) => void;
 }) {
   const mapsUrl = buildMapsRouteUrl(day.activities, city);
 
@@ -644,7 +673,13 @@ function DayPlanView({
         />
         <div className="flex flex-col gap-3">
           {day.activities.map((activity, i) => (
-            <ActivityCard key={i} activity={activity} index={i} />
+            <ActivityCard
+              key={i}
+              activity={activity}
+              index={i}
+              swapping={!!swapLoading[`${dayIndex}-${i}`]}
+              onSwap={() => onSwapActivity(dayIndex, i)}
+            />
           ))}
         </div>
       </div>
@@ -652,7 +687,17 @@ function DayPlanView({
   );
 }
 
-function ActivityCard({ activity, index }: { activity: DayActivity; index: number }) {
+function ActivityCard({
+  activity,
+  index,
+  swapping,
+  onSwap,
+}: {
+  activity: DayActivity;
+  index: number;
+  swapping: boolean;
+  onSwap: () => void;
+}) {
   const bg = ACTIVITY_COLORS[activity.type] ?? ACTIVITY_COLORS.transport;
   const border = ACTIVITY_BORDER[activity.type] ?? ACTIVITY_BORDER.transport;
 
@@ -675,7 +720,7 @@ function ActivityCard({ activity, index }: { activity: DayActivity; index: numbe
         style={{ background: bg, border: `1px solid ${border}` }}
       >
         <div className="flex items-start justify-between gap-2">
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold leading-tight">{activity.title}</p>
             <span
               className="inline-block text-xs mt-0.5 px-1.5 py-0.5 rounded-md font-medium"
@@ -684,21 +729,34 @@ function ActivityCard({ activity, index }: { activity: DayActivity; index: numbe
               {ACTIVITY_LABELS[activity.type] ?? activity.type}
             </span>
           </div>
-          <span
-            className="flex-shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
-            style={{
-              background:
-                activity.cost === "Free" || activity.cost === "Bezpłatnie"
-                  ? "rgba(34,197,94,0.12)"
-                  : "#F0F0F0",
-              color:
-                activity.cost === "Free" || activity.cost === "Bezpłatnie"
-                  ? "#16A34A"
-                  : "var(--text-muted)",
-            }}
-          >
-            {activity.cost}
-          </span>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <button
+              onClick={onSwap}
+              disabled={swapping}
+              title="Zamień na inną aktywność"
+              className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full transition-opacity hover:opacity-70 disabled:opacity-40 no-print"
+              style={{ background: "rgba(0,0,0,0.06)", color: "var(--text-secondary)" }}
+            >
+              {swapping ? (
+                <span className="w-3 h-3 rounded-full border border-t-transparent animate-spin inline-block" style={{ borderColor: "var(--text-secondary)", borderTopColor: "transparent" }} />
+              ) : "↻"}
+            </button>
+            <span
+              className="text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
+              style={{
+                background:
+                  activity.cost === "Free" || activity.cost === "Bezpłatnie"
+                    ? "rgba(34,197,94,0.12)"
+                    : "#F0F0F0",
+                color:
+                  activity.cost === "Free" || activity.cost === "Bezpłatnie"
+                    ? "#16A34A"
+                    : "var(--text-muted)",
+              }}
+            >
+              {activity.cost}
+            </span>
+          </div>
         </div>
         <p className="text-xs mt-1.5 leading-relaxed" style={{ color: "var(--text-muted)" }}>
           {activity.description}

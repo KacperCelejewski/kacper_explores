@@ -9,14 +9,21 @@ export const PLANS = {
     priceId: process.env.STRIPE_PRICE_PACK_5!,
     credits: 5,
     label: "Pack 5 planów",
-    price: "5 PLN",
+    price: "15 PLN",
     type: "payment" as const,
   },
   pro_monthly: {
     priceId: process.env.STRIPE_PRICE_PRO_MONTHLY!,
-    credits: 0, // unlimited via subscription
+    credits: 0,
     label: "Pro — unlimited",
     price: "19 PLN/mies",
+    type: "subscription" as const,
+  },
+  pro_yearly: {
+    priceId: process.env.STRIPE_PRICE_PRO_YEARLY!,
+    credits: 0,
+    label: "Pro Roczny — unlimited",
+    price: "149 PLN/rok",
     type: "subscription" as const,
   },
 } as const;

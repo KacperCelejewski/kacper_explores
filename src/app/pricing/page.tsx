@@ -64,8 +64,9 @@ const PLANS = [
   {
     key: "pack_5",
     name: "Pack",
-    price: "5 PLN",
+    price: "14,99 PLN",
     period: "jednorazowo",
+    badge: null,
     features: [
       "5 planów podróży",
       "Pełny itinerary godzina po godzinie",
@@ -77,10 +78,11 @@ const PLANS = [
     emoji: "🎒",
   },
   {
-    key: "pro_monthly",
-    name: "Pro",
-    price: "19 PLN",
-    period: "miesięcznie",
+    key: "pro_yearly",
+    name: "Pro Roczny",
+    price: "149,99 PLN",
+    period: "rocznie",
+    badge: "Oszczędzasz 79 PLN/rok",
     features: [
       "Nielimitowane plany podróży",
       "Historia wszystkich wyjazdów",
@@ -88,6 +90,22 @@ const PLANS = [
       "Dostęp do nowych funkcji",
     ],
     highlight: true,
+    cta: "Zostań Pro →",
+    emoji: "✦",
+  },
+  {
+    key: "pro_monthly",
+    name: "Pro Miesięczny",
+    price: "19,99 PLN",
+    period: "miesięcznie",
+    badge: null,
+    features: [
+      "Nielimitowane plany podróży",
+      "Historia wszystkich wyjazdów",
+      "Priorytetowe generowanie",
+      "Dostęp do nowych funkcji",
+    ],
+    highlight: false,
     cta: "Zostań Pro →",
     emoji: "✦",
   },
@@ -147,10 +165,15 @@ export default function PricingPage() {
           >
             {plan.highlight && (
               <div
-                className="px-5 py-2 text-xs font-bold text-center tracking-wider uppercase"
+                className="px-5 py-2 text-xs font-bold text-center tracking-wider uppercase flex items-center justify-center gap-3"
                 style={{ background: "var(--accent)", color: "white" }}
               >
-                Najlepszy wybór
+                <span>Najlepszy wybór</span>
+                {plan.badge && (
+                  <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: "rgba(255,255,255,0.25)" }}>
+                    {plan.badge}
+                  </span>
+                )}
               </div>
             )}
             <div className="p-5">

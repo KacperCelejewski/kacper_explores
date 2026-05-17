@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { QuizAnswers, DestinationRecommendation, Trip, DayPlan } from "@/types";
+import type { QuizAnswers, DestinationRecommendation, Trip, DayPlan, DayActivity } from "@/types";
 
 interface AppState {
   // Quiz
@@ -29,6 +29,7 @@ interface AppState {
   selectDestination: (dest: DestinationRecommendation) => void;
   setCurrentTrip: (trip: Trip) => void;
   updateTripDay: (dayIndex: number, day: DayPlan) => void;
+  updateTripActivity: (dayIndex: number, activityIndex: number, activity: DayActivity) => void;
   setIsGeneratingPlan: (val: boolean) => void;
   setHasHydrated: (val: boolean) => void;
 }
@@ -97,6 +98,23 @@ export const useAppStore = create<AppState>()(
           if (!state.currentTrip?.plan) return {};
           const days = [...state.currentTrip.plan.days];
           days[dayIndex] = day;
+          return {
+            currentTrip: {
+              ...state.currentTrip,
+              plan: { ...state.currentTrip.plan, days },
+            },
+          };
+        }),
+
+      updateTripActivity: (dayIndex, activityIndex, activity) =>
+        set((state) => {
+          if (!state.currentTrip?.plan) return {};
+          const days = [...state.currentTrip.plan.days];
+          const day = days[dayIndex];
+          if (!day) return {};
+          const activities = [...day.activities];
+          activities[activityIndex] = activity;
+          days[dayIndex] = { ...day, activities };
           return {
             currentTrip: {
               ...state.currentTrip,
