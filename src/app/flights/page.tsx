@@ -118,7 +118,8 @@ export default function FlightsPage() {
         `/api/real-flights?origin=${origin}&dest=${destination}&month=${quizAnswers.month}&duration=${quizAnswers.duration ?? 3}`
       )
         .then((r) => r.json())
-        .then((data: { flights?: RealFlight[] }) => {
+        .then((data: { flights?: RealFlight[]; reason?: string }) => {
+          if (data.reason) console.log(`[real-flights] empty reason: ${data.reason}`);
           const real = data.flights ?? [];
           const isSynthetic = real.length === 0;
           const flights = isSynthetic ? syntheticFlight(dest) : real;

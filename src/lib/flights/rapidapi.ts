@@ -176,13 +176,16 @@ export async function searchFlightOptions(
   month: number,
   duration: number,
   maxResults = 3
-): Promise<RealFlight[]> {
+): Promise<{ flights: RealFlight[]; reason?: string }> {
   const apiKey = process.env.RAPIDAPI_KEY;
-  if (!apiKey) return [];
+  if (!apiKey) return { flights: [], reason: "no_api_key" };
 
   const originSky = SKY_IDS[originCode];
   const destSky = SKY_IDS[destCode];
-  if (!originSky || !destSky) return [];
+  if (!originSky || !destSky) {
+    console.warn(`[sky-scrapper] unknown code: origin=${originCode} (${originSky ? "ok" : "missing"}) dest=${destCode} (${destSky ? "ok" : "missing"})`);
+    return { flights: [], reason: `unknown_code:${!originSky ? originCode : ""}${!originSky && !destSky ? "+" : ""}${!destSky ? destCode : ""}` };
+  }
 
   const { departDate, returnDate } = pickDates(month, duration);
   const cacheKey = `sky-${originCode}-${destCode}-${departDate}-${returnDate}`;
@@ -191,7 +194,7 @@ export async function searchFlightOptions(
   const mem = memCache.get(cacheKey);
   if (mem && mem.expiresAt > Date.now() && mem.data.length > 0) {
     void logUsage(cacheKey, originCode, destCode, month, true);
-    return mem.data.slice(0, maxResults);
+    return { flights: mem.data.slice(0, maxResults) };
   }
 
   // L2
@@ -199,10 +202,13 @@ export async function searchFlightOptions(
   if (cached && cached.length > 0) {
     memCache.set(cacheKey, { data: cached, expiresAt: Date.now() + CACHE_TTL });
     void logUsage(cacheKey, originCode, destCode, month, true);
-    return cached.slice(0, maxResults);
+    return { flights: cached.slice(0, maxResults) };
   }
 
-  if (!canCallApi()) return [];
+  if (!canCallApi()) {
+    console.warn(`[sky-scrapper] daily cap reached (${dailyCallCount}/${DAILY_CAP})`);
+    return { flights: [], reason: "daily_cap" };
+  }
 
   try {
     const url = new URL("https://sky-scrapper.p.rapidapi.com/api/v1/flights/searchFlights");
@@ -226,7 +232,7 @@ export async function searchFlightOptions(
 
     if (!res.ok) {
       console.error(`[sky-scrapper] HTTP ${res.status} ${originCode}→${destCode}`);
-      return [];
+      return { flights: [], reason: `http_${res.status}` };
     }
 
     let json = (await res.json()) as SkyResponse;
@@ -254,7 +260,10 @@ export async function searchFlightOptions(
       }
     }
 
-    if (!json.status || !json.data?.itineraries?.length) return [];
+    if (!json.status || !json.data?.itineraries?.length) {
+      console.warn(`[sky-scrapper] no itineraries ${originCode}→${destCode} status:${json.status} context:${json.data?.context?.status}`);
+      return { flights: [], reason: json.status ? "no_itineraries" : "api_status_false" };
+    }
 
     const results: RealFlight[] = [];
 
@@ -291,10 +300,10 @@ export async function searchFlightOptions(
     void logUsage(cacheKey, originCode, destCode, month, false);
     if (Math.random() < 0.01) void cleanExpiredSupabaseCache();
 
-    return results.slice(0, maxResults);
+    return { flights: results.slice(0, maxResults) };
   } catch (err) {
     console.error("[sky-scrapper] error:", err);
-    return [];
+    return { flights: [], reason: "exception" };
   }
 }
 
@@ -304,6 +313,6 @@ export async function searchCheapestFlight(
   month: number,
   duration: number
 ): Promise<RealFlight | null> {
-  const results = await searchFlightOptions(originCode, destCode, month, duration, 1);
-  return results[0] ?? null;
+  const { flights } = await searchFlightOptions(originCode, destCode, month, duration, 1);
+  return flights[0] ?? null;
 }

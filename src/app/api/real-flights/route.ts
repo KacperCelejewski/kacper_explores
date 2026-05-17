@@ -32,6 +32,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ flights: [], reason: "no_api_key" });
   }
 
-  const flights = await searchFlightOptions(origin, dest, month, duration, 3);
-  return NextResponse.json({ flights, count: flights.length });
+  const result = await searchFlightOptions(origin, dest, month, duration, 3);
+  return NextResponse.json({ flights: result.flights, count: result.flights.length, reason: result.reason });
 }
