@@ -261,7 +261,7 @@ export async function searchFlightOptions(
     }
 
     if (!json.status || !json.data?.itineraries?.length) {
-      console.warn(`[sky-scrapper] no itineraries ${originCode}→${destCode} status:${json.status} context:${json.data?.context?.status}`);
+      console.warn(`[sky-scrapper] no itineraries ${originCode}→${destCode} status:${json.status} context:${json.data?.context?.status} body:${JSON.stringify(json).slice(0, 300)}`);
       return { flights: [], reason: json.status ? "no_itineraries" : "api_status_false" };
     }
 
