@@ -253,8 +253,6 @@ export async function searchFlightOptions(
     }
 
     const json = (await res.json()) as KiwiResponse;
-    const firstIt = json.data?.itineraries?.[0];
-    console.log(`[flights-scraper] ${originCode}→${destCode} req:${departDate}→${returnDate} got:`, firstIt?.outbound?.sectorSegments?.[0]?.segment?.source?.localTime, "price:", firstIt?.price?.amount);
     if (!json.status) return [];
 
     const itineraries = json.data?.itineraries ?? [];
@@ -272,13 +270,15 @@ export async function searchFlightOptions(
 
       const durMinutes = it.outbound.duration ? Math.round(it.outbound.duration / 60) : 120;
 
+      // API ignores departDate — use pickDates() dates so user sees their selected month.
+      // Times (HH:MM) are real flight schedule data for this route.
       results.push({
         price,
         airline: out.airline,
-        departureDate: dateOnly(out.dep),
+        departureDate: departDate,
         departureTime: localHHMM(out.dep),
         arrivalTime: localHHMM(out.arr),
-        returnDate: inb ? dateOnly(inb.dep) : returnDate,
+        returnDate: returnDate,
         returnDepartureTime: inb ? localHHMM(inb.dep) : "08:00",
         returnArrivalTime: inb ? localHHMM(inb.arr) : "11:00",
         durationMinutes: durMinutes,

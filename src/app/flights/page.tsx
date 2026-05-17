@@ -544,10 +544,31 @@ function FlightSelectModal({
       >
         <div className="px-5 pt-5 pb-2">
           <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: "var(--border)" }} />
-          <h2 className="text-lg font-bold">Wybierz lot do {dest.city}</h2>
-          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-            Plan AI zostanie dopasowany do godzin Twojego lotu
-          </p>
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <h2 className="text-lg font-bold">Loty do {dest.city}</h2>
+              <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                {dest.bestOffer.origin.code} → {dest.bestOffer.destination.code} · {formatDate(dest.bestOffer.departureDate ?? "")}
+              </p>
+            </div>
+            {dest.bestOffer.affiliateUrl && (
+              <a
+                href={dest.bestOffer.affiliateUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-semibold px-3 py-1.5 rounded-full flex-shrink-0"
+                style={{ background: "var(--accent-light)", color: "var(--accent)" }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                Skyscanner ↗
+              </a>
+            )}
+          </div>
+          <div className="mt-2 px-2 py-1.5 rounded-xl inline-flex items-center gap-1.5" style={{ background: "#F8F8F8" }}>
+            <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+              ℹ️ Ceny i godziny typowe dla tej trasy — kup bilet na Skyscanner, plan dopasujemy do Twoich godzin
+            </span>
+          </div>
         </div>
 
         <div className="px-5 pb-5 flex flex-col gap-3 mt-3">
@@ -569,48 +590,80 @@ function FlightSelectModal({
               className="p-4 rounded-2xl text-center"
               style={{ background: "#F8F8F8", border: "1px solid var(--border)" }}
             >
-              <p className="text-sm font-medium">Brak dostępnych lotów w tej chwili</p>
+              <p className="text-sm font-medium">Brak danych dla tej trasy</p>
               <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
                 Plan zostanie wygenerowany z typowymi godzinami lotów budżetowych
               </p>
+              {dest.bestOffer.affiliateUrl && (
+                <a
+                  href={dest.bestOffer.affiliateUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block mt-3 text-xs font-semibold px-4 py-2 rounded-full"
+                  style={{ background: "var(--accent)", color: "white" }}
+                >
+                  Szukaj lotów na Skyscanner ↗
+                </a>
+              )}
             </div>
           )}
 
           {!loading && flights.map((f, i) => (
-            <button
+            <div
               key={i}
-              onClick={() => setSelected(i)}
-              className="w-full text-left p-4 rounded-2xl transition-all"
+              className="rounded-2xl overflow-hidden"
               style={{
-                background: selected === i ? "var(--accent-light)" : "#F8F8F8",
                 border: `2px solid ${selected === i ? "var(--accent)" : "transparent"}`,
+                background: selected === i ? "var(--accent-light)" : "#F8F8F8",
               }}
             >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-bold">{f.airline}</p>
-                  <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                    {formatDate(f.departureDate)} · {f.departureTime} → {f.arrivalTime}
-                  </p>
-                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                    Powrót {formatDate(f.returnDate)} · wylot {f.returnDepartureTime}
-                  </p>
+              <button
+                onClick={() => setSelected(i)}
+                className="w-full text-left p-4"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold">{f.airline}</p>
+                    <p className="text-xs mt-1 font-medium">
+                      {f.departureTime} → {f.arrivalTime}
+                      <span className="font-normal ml-1" style={{ color: "var(--text-muted)" }}>
+                        ({Math.floor(f.durationMinutes / 60)}h {f.durationMinutes % 60}m)
+                      </span>
+                    </p>
+                    <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                      Powrót {formatDate(f.returnDate)} · wylot {f.returnDepartureTime}
+                    </p>
+                  </div>
+                  <div className="text-right flex-shrink-0 ml-3">
+                    <p className="text-base font-bold" style={{ color: "var(--accent)" }}>
+                      ~{Math.round(f.price)} PLN
+                    </p>
+                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>w obie strony</p>
+                  </div>
                 </div>
-                <div className="text-right flex-shrink-0 ml-3">
-                  <p className="text-base font-bold" style={{ color: "var(--accent)" }}>
-                    ~{Math.round(f.price)} PLN
+                {selected === i && (
+                  <p className="text-xs font-semibold mt-2" style={{ color: "var(--accent)" }}>
+                    ✓ Wybrany — plan AI dopasowany do tych godzin
                   </p>
-                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                    {Math.floor(f.durationMinutes / 60)}h {f.durationMinutes % 60}m
-                  </p>
-                </div>
-              </div>
-              {selected === i && (
-                <p className="text-xs font-semibold mt-2" style={{ color: "var(--accent)" }}>
-                  ✓ Wybrany — plan dopasowany do tych godzin
-                </p>
+                )}
+              </button>
+              {dest.bestOffer.affiliateUrl && (
+                <a
+                  href={dest.bestOffer.affiliateUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-1 py-2 text-xs font-semibold transition-opacity"
+                  style={{
+                    borderTop: "1px solid var(--border)",
+                    color: "var(--accent)",
+                    background: selected === i ? "rgba(255,107,53,0.08)" : "rgba(0,0,0,0.03)",
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Kup bilet na Skyscanner ↗
+                </a>
               )}
-            </button>
+            </div>
           ))}
 
           {!loading && (
@@ -623,10 +676,10 @@ function FlightSelectModal({
               }}
             >
               <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
-                Nie wiem jeszcze — pomiń wybór
+                Nie wiem jeszcze — pomiń wybór lotu
               </p>
               <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                Plan z typowymi godzinami budżetowych lotów z Polski
+                Wygeneruj plan, a godziny uzupełnisz po zakupie biletu
               </p>
             </button>
           )}
