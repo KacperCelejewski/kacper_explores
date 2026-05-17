@@ -205,7 +205,7 @@ export default function OdkryjPage() {
                   <div className="glass-card p-4 flex items-center gap-4 transition-opacity hover:opacity-80">
                     <div className="relative flex-shrink-0 rounded-xl overflow-hidden" style={{ width: 56, height: 56 }}>
                       <Image
-                        src={getCityPhotoUrl(trip.city, 120)}
+                        src={getCityPhotoUrl(trip.city, 300)}
                         alt={trip.city}
                         fill
                         sizes="56px"

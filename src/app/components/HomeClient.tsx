@@ -98,7 +98,7 @@ export default function HomeClient() {
               style={{ width: 120, height: 160 }}
             >
               <Image
-                src={getCityPhotoUrl(dest.city, 240)}
+                src={getCityPhotoUrl(dest.city, 640)}
                 alt={dest.city}
                 fill
                 sizes="120px"

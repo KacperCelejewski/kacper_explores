@@ -254,7 +254,7 @@ export default function PlanPage() {
         style={{ height: 220 }}
       >
         <Image
-          src={getCityPhotoUrl(plan.city, 800)}
+          src={getCityPhotoUrl(plan.city, 1600)}
           alt={plan.city}
           fill
           sizes="100vw"
