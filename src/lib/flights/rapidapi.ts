@@ -236,7 +236,7 @@ async function fetchForDate(
 
   // Sky Scrapper always needs two calls — first builds the session, second returns results
   if (!json.status || !json.data?.itineraries?.length) {
-    await new Promise((r) => setTimeout(r, 1500));
+    await new Promise((r) => setTimeout(r, 1000));
     if (!canCallApi()) return null;
     res = await skyFetch();
     if (!res.ok) {
@@ -298,41 +298,43 @@ export async function searchFlightOptions(
     return { flights: [], reason: `unknown_code:${!originSky ? originCode : ""}${!destSky ? "+"+destCode : ""}` };
   }
 
-  const candidates = candidateDates(month, duration);
-  const allResults: RealFlight[] = [];
+  const candidates = candidateDates(month, duration).slice(0, 3);
 
-  for (const { departDate, returnDate } of candidates.slice(0, 3)) {
-    const cacheKey = `sky-${originCode}-${destCode}-${departDate}-${returnDate}`;
+  const perCandidate = await Promise.all(
+    candidates.map(async ({ departDate, returnDate }) => {
+      const cacheKey = `sky-${originCode}-${destCode}-${departDate}-${returnDate}`;
 
-    // L1
-    const mem = memCache.get(cacheKey);
-    if (mem && mem.expiresAt > Date.now() && mem.data.length > 0) {
-      void logUsage(cacheKey, originCode, destCode, month, true);
-      allResults.push(...mem.data);
-      continue;
-    }
-
-    // L2
-    const cached = await readSupabaseCache(cacheKey);
-    if (cached && cached.length > 0) {
-      memCache.set(cacheKey, { data: cached, expiresAt: Date.now() + CACHE_TTL });
-      void logUsage(cacheKey, originCode, destCode, month, true);
-      allResults.push(...cached);
-      continue;
-    }
-
-    try {
-      const results = await fetchForDate(originSky, destSky, departDate, returnDate, originCode, destCode, apiKey);
-      if (results && results.length > 0) {
-        memCache.set(cacheKey, { data: results, expiresAt: Date.now() + CACHE_TTL });
-        void writeSupabaseCache(cacheKey, results);
-        void logUsage(cacheKey, originCode, destCode, month, false);
-        allResults.push(...results);
+      // L1
+      const mem = memCache.get(cacheKey);
+      if (mem && mem.expiresAt > Date.now() && mem.data.length > 0) {
+        void logUsage(cacheKey, originCode, destCode, month, true);
+        return mem.data;
       }
-    } catch (err) {
-      console.error("[sky-scrapper] error:", err);
-    }
-  }
+
+      // L2
+      const cached = await readSupabaseCache(cacheKey);
+      if (cached && cached.length > 0) {
+        memCache.set(cacheKey, { data: cached, expiresAt: Date.now() + CACHE_TTL });
+        void logUsage(cacheKey, originCode, destCode, month, true);
+        return cached;
+      }
+
+      try {
+        const results = await fetchForDate(originSky, destSky, departDate, returnDate, originCode, destCode, apiKey);
+        if (results && results.length > 0) {
+          memCache.set(cacheKey, { data: results, expiresAt: Date.now() + CACHE_TTL });
+          void writeSupabaseCache(cacheKey, results);
+          void logUsage(cacheKey, originCode, destCode, month, false);
+          return results;
+        }
+      } catch (err) {
+        console.error("[sky-scrapper] error:", err);
+      }
+      return null;
+    })
+  );
+
+  const allResults: RealFlight[] = perCandidate.flatMap((r) => r ?? []);
 
   if (Math.random() < 0.01) void cleanExpiredSupabaseCache();
 
