@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import type { EmailOtpType } from "@supabase/supabase-js";
+import { sendWhatsApp } from "@/lib/whatsapp";
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
@@ -33,6 +34,15 @@ export async function GET(req: NextRequest) {
       await supabase.auth.exchangeCodeForSession(code);
     } else if (token_hash && type) {
       await supabase.auth.verifyOtp({ token_hash, type });
+    }
+
+    // Notify on new registration (created_at within last 60s)
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user?.created_at) {
+      const ageSeconds = (Date.now() - new Date(user.created_at).getTime()) / 1000;
+      if (ageSeconds < 60) {
+        void sendWhatsApp(`🎉 Nowy użytkownik!\n${user.email}`);
+      }
     }
 
     return response;
