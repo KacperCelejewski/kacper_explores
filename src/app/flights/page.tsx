@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -42,6 +42,9 @@ export default function FlightsPage() {
   const [sortKey, setSortKey] = useState<SortKey>("best_match");
   const [activeContinent, setActiveContinent] = useState<Continent | null>(null);
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
+  const [realPrices, setRealPrices] = useState<Record<string, number | null>>({});
+  const fetchedCities = useRef(new Set<string>());
+
   const [flightModal, setFlightModal] = useState<{
     dest: DestinationRecommendation;
     flights: RealFlight[];
@@ -79,6 +82,27 @@ export default function FlightsPage() {
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setVisibleCount(INITIAL_VISIBLE); }, [sortKey, activeContinent]);
 
+  // Pre-fetch real prices for top 5 destinations in the background
+  useEffect(() => {
+    if (!quizAnswers.month || allRecs.length === 0) return;
+    allRecs.slice(0, 5).forEach((dest) => {
+      const key = dest.city;
+      if (fetchedCities.current.has(key)) return;
+      fetchedCities.current.add(key);
+      fetch(
+        `/api/real-flights?origin=${dest.bestOffer.origin.code}&dest=${dest.bestOffer.destination.code}&month=${quizAnswers.month}&duration=${quizAnswers.duration ?? 3}`
+      )
+        .then((r) => r.json())
+        .then((data: { flights?: RealFlight[] }) => {
+          const cheapest = data.flights?.[0];
+          setRealPrices((prev) => ({ ...prev, [key]: cheapest ? cheapest.price : null }));
+        })
+        .catch(() => {
+          setRealPrices((prev) => ({ ...prev, [key]: null }));
+        });
+    });
+  }, [allRecs, quizAnswers.month, quizAnswers.duration]);
+
   const continentsWithRecs = useMemo(() => {
     const set = new Set<Continent>();
     allRecs.forEach((r) => { const c = getContinent(r.country); if (c) set.add(c); });
@@ -89,10 +113,14 @@ export default function FlightsPage() {
     const base = activeContinent
       ? allRecs.filter((r) => getContinent(r.country) === activeContinent)
       : allRecs;
-    if (sortKey === "cheapest") return [...base].sort((a, b) => a.bestOffer.realCost - b.bestOffer.realCost);
+    if (sortKey === "cheapest") return [...base].sort((a, b) => {
+      const priceA = realPrices[a.city] ?? a.bestOffer.realCost;
+      const priceB = realPrices[b.city] ?? b.bestOffer.realCost;
+      return priceA - priceB;
+    });
     if (sortKey === "flight_time") return [...base].sort((a, b) => a.bestOffer.durationMinutes - b.bestOffer.durationMinutes);
     return base;
-  }, [allRecs, sortKey, activeContinent]);
+  }, [allRecs, sortKey, activeContinent, realPrices]);
 
   const visible = sorted.slice(0, visibleCount);
   const hasMore = visibleCount < sorted.length;
@@ -352,6 +380,8 @@ export default function FlightsPage() {
             isLoading={isGeneratingPlan && selectedId === dest.city}
             isDisabled={isGeneratingPlan && selectedId !== dest.city}
             onSelect={() => handleSelect(dest)}
+            realPrice={realPrices[dest.city]}
+            priceLoading={fetchedCities.current.has(dest.city) && !(dest.city in realPrices)}
           />
         ))}
       </div>
@@ -421,7 +451,7 @@ function syntheticFlight(dest: DestinationRecommendation): RealFlight[] {
 }
 
 function DestinationCard({
-  dest, index, isTop, isLoading, isDisabled, onSelect,
+  dest, index, isTop, isLoading, isDisabled, onSelect, realPrice, priceLoading,
 }: {
   dest: DestinationRecommendation;
   index: number;
@@ -429,6 +459,8 @@ function DestinationCard({
   isLoading: boolean;
   isDisabled: boolean;
   onSelect: () => void;
+  realPrice?: number | null;
+  priceLoading?: boolean;
 }) {
   const best = dest.bestOffer;
   // Show hub savings badge when best offer is via a hub and saves meaningfully vs WRO direct
@@ -470,10 +502,22 @@ function DestinationCard({
             </div>
           </div>
           <div className="text-right">
-            <p className="text-xl font-bold" style={{ color: "var(--accent)" }}>
-              ~{best.realCost} PLN
-            </p>
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>cena orientacyjna</p>
+            {priceLoading ? (
+              <>
+                <p className="text-xl font-bold" style={{ color: "var(--accent)" }}>~{best.realCost} PLN</p>
+                <p className="text-xs" style={{ color: "var(--text-muted)" }}>sprawdzam ceny…</p>
+              </>
+            ) : realPrice != null ? (
+              <>
+                <p className="text-xl font-bold" style={{ color: "var(--accent)" }}>{realPrice} PLN</p>
+                <p className="text-xs font-medium" style={{ color: "#16A34A" }}>✓ aktualna cena</p>
+              </>
+            ) : (
+              <>
+                <p className="text-xl font-bold" style={{ color: "var(--accent)" }}>~{best.realCost} PLN</p>
+                <p className="text-xs" style={{ color: "var(--text-muted)" }}>cena orientacyjna</p>
+              </>
+            )}
           </div>
         </div>
 
