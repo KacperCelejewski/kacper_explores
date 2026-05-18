@@ -147,25 +147,40 @@ export default function FlightsPage() {
         body: JSON.stringify({ destination: dest, quizAnswers, selectedFlight }),
       });
 
-      let data: Record<string, unknown> = {};
-      try {
-        data = await res.json();
-      } catch {
-        throw new Error("Serwer zwrócił nieprawidłową odpowiedź. Spróbuj ponownie.");
+      if (!res.ok || !res.body) {
+        let msg = `HTTP ${res.status}`;
+        try { const j = await res.json(); msg = j.error ?? msg; } catch { /* ignore */ }
+        throw new Error(msg);
       }
 
-      if (!res.ok) throw new Error((data.error as string | undefined) ?? `HTTP ${res.status}`);
-      if (data.plan) {
-        setCurrentTrip({
-          id: data.tripId as string,
-          destination: dest,
-          quizAnswers,
-          plan: data.plan as import("@/types").TripPlan,
-          createdAt: new Date().toISOString(),
-        });
-        router.push(`/plan/${data.tripId as string}`);
-      } else {
-        throw new Error((data.error as string | undefined) ?? "Nieznany błąd");
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+      let navigated = false;
+
+      while (!navigated) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split("\n");
+        buf = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          let msg: Record<string, unknown>;
+          try { msg = JSON.parse(line); } catch { continue; }
+          if (msg.error) throw new Error(msg.error as string);
+          if (msg.done) {
+            setCurrentTrip({
+              id: msg.tripId as string,
+              destination: dest,
+              quizAnswers,
+              plan: msg.plan as import("@/types").TripPlan,
+              createdAt: new Date().toISOString(),
+            });
+            router.push(`/plan/${msg.tripId as string}`);
+            navigated = true;
+          }
+        }
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Nieznany błąd";
