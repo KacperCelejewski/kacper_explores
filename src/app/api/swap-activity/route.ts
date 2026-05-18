@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI, SchemaType, type Schema } from "@google/generative-ai";
 import { createClient } from "@/lib/supabase/server";
+import { logGeminiCall } from "@/lib/geminiLog";
 import type { DayActivity, TripPlan } from "@/types";
 
 export const maxDuration = 30;
@@ -101,11 +102,22 @@ Wymagania:
         },
       });
       const result = await model.generateContent(prompt);
+      void logGeminiCall({
+        endpoint: "swap-activity",
+        model: name,
+        success: true,
+        input_tokens: result.response.usageMetadata?.promptTokenCount,
+        output_tokens: result.response.usageMetadata?.candidatesTokenCount,
+      });
       newActivity = JSON.parse(result.response.text()) as DayActivity;
       break;
     } catch (err) {
       lastErr = err;
-      if (isQuotaError(err)) continue;
+      if (isQuotaError(err)) {
+        void logGeminiCall({ endpoint: "swap-activity", model: name, success: false, error_code: "quota" });
+        continue;
+      }
+      void logGeminiCall({ endpoint: "swap-activity", model: name, success: false, error_code: "error" });
       throw err;
     }
   }

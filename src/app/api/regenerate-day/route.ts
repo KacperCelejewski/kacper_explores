@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI, SchemaType, type Schema } from "@google/generative-ai";
 import { createClient } from "@/lib/supabase/server";
+import { logGeminiCall } from "@/lib/geminiLog";
 import type { DayPlan, TripPlan } from "@/types";
 
 export const maxDuration = 45;
@@ -104,11 +105,22 @@ Zachowaj pole "day": ${existingDay.day} i "date": "${existingDay.date}" bez zmia
         },
       });
       const result = await model.generateContent(prompt);
+      void logGeminiCall({
+        endpoint: "regenerate-day",
+        model: name,
+        success: true,
+        input_tokens: result.response.usageMetadata?.promptTokenCount,
+        output_tokens: result.response.usageMetadata?.candidatesTokenCount,
+      });
       newDay = JSON.parse(result.response.text()) as DayPlan;
       break;
     } catch (err) {
       lastErr = err;
-      if (isQuotaError(err)) continue;
+      if (isQuotaError(err)) {
+        void logGeminiCall({ endpoint: "regenerate-day", model: name, success: false, error_code: "quota" });
+        continue;
+      }
+      void logGeminiCall({ endpoint: "regenerate-day", model: name, success: false, error_code: "error" });
       throw err;
     }
   }

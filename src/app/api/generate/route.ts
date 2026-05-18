@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI, SchemaType, type Schema } from "@google/generative-ai";
+import { logGeminiCall } from "@/lib/geminiLog";
 
 export const maxDuration = 60;
 import { buildPlanPrompt, parsePlanResponse, validateAndFixPlan } from "@/lib/gemini";
@@ -156,6 +157,7 @@ export async function POST(req: NextRequest) {
 
         let plan = null;
         let lastErr: unknown;
+        let usedModel = MODELS[0].name;
         for (const { name, thinking } of MODELS) {
           try {
             const m = genAI.getGenerativeModel({
@@ -168,18 +170,33 @@ export async function POST(req: NextRequest) {
               },
             });
             const result = await m.generateContent(prompt);
+            usedModel = name;
+            void logGeminiCall({
+              endpoint: "generate",
+              model: name,
+              success: true,
+              input_tokens: result.response.usageMetadata?.promptTokenCount,
+              output_tokens: result.response.usageMetadata?.candidatesTokenCount,
+            });
             const text = result.response.text();
             const rawPlan = parsePlanResponse(text);
             plan = validateAndFixPlan(rawPlan, quiz.duration ?? 3);
             break;
           } catch (err) {
             lastErr = err;
-            if (isQuotaError(err)) { continue; }
+            if (isQuotaError(err)) {
+              void logGeminiCall({ endpoint: "generate", model: name, success: false, error_code: "quota" });
+              continue;
+            }
             if (err instanceof SyntaxError) { continue; }
+            void logGeminiCall({ endpoint: "generate", model: name, success: false, error_code: "parse_error" });
             throw err;
           }
         }
-        if (!plan) throw lastErr;
+        if (!plan) {
+          void logGeminiCall({ endpoint: "generate", model: usedModel, success: false, error_code: "all_models_failed" });
+          throw lastErr;
+        }
 
         const tripId = `${(destination as DestinationRecommendation).city.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`;
 

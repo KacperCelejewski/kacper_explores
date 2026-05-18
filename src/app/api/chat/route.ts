@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createClient } from "@/lib/supabase/server";
+import { logGeminiCall } from "@/lib/geminiLog";
 import { checkRateLimit, LIMITS } from "@/lib/rateLimit";
 import { getClientIp } from "@/lib/validate";
 import type { TripPlan } from "@/types";
@@ -98,11 +99,19 @@ Bazuj na planie, ale możesz uzupełniać szczegółami. Nie wychodzisz poza tem
 
     const chat = model.startChat({ history });
     const result = await chat.sendMessage(lastMessage.parts[0].text);
+    void logGeminiCall({
+      endpoint: "chat",
+      model: "gemini-2.5-flash",
+      success: true,
+      input_tokens: result.response.usageMetadata?.promptTokenCount,
+      output_tokens: result.response.usageMetadata?.candidatesTokenCount,
+    });
     const text = result.response.text();
 
     return NextResponse.json({ text });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
+    void logGeminiCall({ endpoint: "chat", model: "gemini-2.5-flash", success: false, error_code: msg.includes("429") ? "quota" : "error" });
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

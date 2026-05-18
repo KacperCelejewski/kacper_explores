@@ -1,6 +1,16 @@
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { DAILY_CAP } from "@/lib/flights/rapidapi";
 
+interface GeminiRow {
+  called_at: string;
+  endpoint: string;
+  model: string;
+  success: boolean;
+  error_code: string | null;
+  input_tokens: number | null;
+  output_tokens: number | null;
+}
+
 function getServiceClient() {
   return createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -39,7 +49,7 @@ async function getStats() {
   const sevenDaysAgo = new Date(todayStart);
   sevenDaysAgo.setUTCDate(sevenDaysAgo.getUTCDate() - 6);
 
-  const [usageRes, cacheRes, alertRes] = await Promise.all([
+  const [usageRes, cacheRes, alertRes, geminiRes] = await Promise.all([
     sb
       .from("api_usage_log")
       .select("called_at,cache_key,origin,dest,month,hit")
@@ -55,11 +65,18 @@ async function getStats() {
       .select("sent_at,threshold")
       .order("sent_at", { ascending: false })
       .limit(5),
+    sb
+      .from("gemini_usage_log")
+      .select("called_at,endpoint,model,success,error_code,input_tokens,output_tokens")
+      .gte("called_at", sevenDaysAgo.toISOString())
+      .order("called_at", { ascending: false })
+      .limit(500),
   ]);
 
   const rows: UsageRow[] = usageRes.data ?? [];
   const cacheRows: CacheRow[] = cacheRes.data ?? [];
   const alertRows = alertRes.data ?? [];
+  const geminiRows: GeminiRow[] = geminiRes.data ?? [];
 
   // Today's stats
   const todayRows = rows.filter((r) => r.called_at >= todayStart.toISOString());
@@ -89,6 +106,39 @@ async function getStats() {
 
   const maxDayTotal = Math.max(...dayStats.map((d) => d.total), 1);
 
+  // Gemini stats
+  const geminiToday = geminiRows.filter((r) => r.called_at >= todayStart.toISOString());
+  const geminiTodayTotal = geminiToday.length;
+  const geminiTodayErrors = geminiToday.filter((r) => !r.success).length;
+  const geminiTodayTokensIn = geminiToday.reduce((s, r) => s + (r.input_tokens ?? 0), 0);
+  const geminiTodayTokensOut = geminiToday.reduce((s, r) => s + (r.output_tokens ?? 0), 0);
+  const geminiQuotaErrors = geminiToday.filter((r) => r.error_code === "quota").length;
+
+  const endpointCounts: Record<string, number> = {};
+  const modelCounts: Record<string, number> = {};
+  for (const r of geminiToday) {
+    endpointCounts[r.endpoint] = (endpointCounts[r.endpoint] ?? 0) + 1;
+    if (r.success) modelCounts[r.model] = (modelCounts[r.model] ?? 0) + 1;
+  }
+
+  // Gemini 7-day breakdown
+  const geminiDayStats: { date: string; total: number; errors: number }[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(todayStart);
+    d.setUTCDate(d.getUTCDate() - i);
+    const nextD = new Date(d);
+    nextD.setUTCDate(nextD.getUTCDate() + 1);
+    const dayRows = geminiRows.filter(
+      (r) => r.called_at >= d.toISOString() && r.called_at < nextD.toISOString()
+    );
+    geminiDayStats.push({
+      date: d.toISOString().slice(0, 10),
+      total: dayRows.length,
+      errors: dayRows.filter((r) => !r.success).length,
+    });
+  }
+  const geminiMaxDay = Math.max(...geminiDayStats.map((d) => d.total), 1);
+
   return {
     todayMisses,
     todayHits,
@@ -100,6 +150,16 @@ async function getStats() {
     cacheRows,
     recentCalls: rows.slice(0, 20),
     alertRows,
+    geminiTodayTotal,
+    geminiTodayErrors,
+    geminiTodayTokensIn,
+    geminiTodayTokensOut,
+    geminiQuotaErrors,
+    endpointCounts,
+    modelCounts,
+    geminiDayStats,
+    geminiMaxDay,
+    geminiRecentCalls: geminiRows.slice(0, 20),
   };
 }
 
@@ -276,6 +336,124 @@ export default async function AdminPage() {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* ── Gemini AI Monitor ── */}
+      <div style={{ marginTop: 40, marginBottom: 8 }}>
+        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#E5E5E5" }}>Gemini AI Monitor</h2>
+        <p style={{ margin: "2px 0 20px", fontSize: 12, color: "#555" }}>Dziś · {stats.geminiTodayTotal} wywołań</p>
+      </div>
+
+      {/* Gemini quota warning */}
+      {stats.geminiQuotaErrors > 0 && (
+        <div style={{ background: "#450a0a", border: "1px solid #7f1d1d", borderRadius: 12, padding: "14px 20px", marginBottom: 20, display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ fontSize: 18 }}>🚨</span>
+          <p style={{ margin: 0, color: "#FCA5A5", fontSize: 13 }}>
+            Dzisiaj wystąpiło <strong>{stats.geminiQuotaErrors}</strong> błędów quota — prawdopodobnie limit AI Studio. Przejdź na Google Cloud.
+          </p>
+        </div>
+      )}
+
+      {/* Gemini top stats */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16, marginBottom: 24 }}>
+        <Stat label="Wywołania dziś" value={stats.geminiTodayTotal} sub="wszystkie endpointy" />
+        <Stat label="Błędy dziś" value={stats.geminiTodayErrors} sub={stats.geminiTodayTotal > 0 ? `${Math.round((stats.geminiTodayErrors / stats.geminiTodayTotal) * 100)}% error rate` : "—"} />
+        <Stat label="Tokeny wejście" value={stats.geminiTodayTokensIn.toLocaleString("pl-PL")} sub="prompt tokens" />
+        <Stat label="Tokeny wyjście" value={stats.geminiTodayTokensOut.toLocaleString("pl-PL")} sub="output tokens" />
+      </div>
+
+      {/* Gemini 7-day chart + breakdown */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
+
+        {/* 7-day bar chart */}
+        <div style={{ background: "#1A1A1A", border: "1px solid #2A2A2A", borderRadius: 12, padding: "20px 24px" }}>
+          <p style={{ margin: "0 0 20px", fontSize: 11, color: "#666", textTransform: "uppercase", letterSpacing: 2 }}>Ostatnie 7 dni</p>
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 8, height: 80 }}>
+            {stats.geminiDayStats.map((d) => {
+              const heightPct = Math.round((d.total / stats.geminiMaxDay) * 100);
+              const isToday = d.date === new Date().toISOString().slice(0, 10);
+              return (
+                <div key={d.date} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, height: "100%" }}>
+                  <div style={{ flex: 1, display: "flex", alignItems: "flex-end", width: "100%" }}>
+                    <div
+                      title={`${d.date}: ${d.total} wywołań, ${d.errors} błędów`}
+                      style={{
+                        width: "100%",
+                        height: `${Math.max(heightPct, d.total > 0 ? 4 : 0)}%`,
+                        background: d.errors > 0 ? "#F59E0B" : "#6366F1",
+                        borderRadius: "4px 4px 0 0",
+                        opacity: isToday ? 1 : 0.45,
+                      }}
+                    />
+                  </div>
+                  <span style={{ fontSize: 9, color: isToday ? "#E5E5E5" : "#555" }}>{d.date.slice(5)}</span>
+                </div>
+              );
+            })}
+          </div>
+          <p style={{ margin: "12px 0 0", fontSize: 10, color: "#444" }}>fiolet = OK · żółty = dzień z błędami</p>
+        </div>
+
+        {/* Endpoint + model breakdown */}
+        <div style={{ background: "#1A1A1A", border: "1px solid #2A2A2A", borderRadius: 12, padding: "20px 24px" }}>
+          <p style={{ margin: "0 0 14px", fontSize: 11, color: "#666", textTransform: "uppercase", letterSpacing: 2 }}>Endpointy dziś</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 16 }}>
+            {Object.entries(stats.endpointCounts).length === 0 && (
+              <p style={{ margin: 0, color: "#555", fontSize: 12 }}>Brak danych</p>
+            )}
+            {Object.entries(stats.endpointCounts).sort((a, b) => b[1] - a[1]).map(([ep, count]) => (
+              <div key={ep} style={{ display: "flex", justifyContent: "space-between", padding: "5px 10px", background: "#111", borderRadius: 6 }}>
+                <span style={{ fontSize: 12, color: "#CCC", fontFamily: "monospace" }}>{ep}</span>
+                <span style={{ fontSize: 12, color: "#6366F1", fontWeight: 700 }}>{count}</span>
+              </div>
+            ))}
+          </div>
+          <p style={{ margin: "0 0 10px", fontSize: 11, color: "#666", textTransform: "uppercase", letterSpacing: 2 }}>Modele (sukcesy)</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+            {Object.entries(stats.modelCounts).length === 0 && (
+              <p style={{ margin: 0, color: "#555", fontSize: 12 }}>Brak danych</p>
+            )}
+            {Object.entries(stats.modelCounts).sort((a, b) => b[1] - a[1]).map(([model, count]) => (
+              <div key={model} style={{ display: "flex", justifyContent: "space-between", padding: "5px 10px", background: "#111", borderRadius: 6 }}>
+                <span style={{ fontSize: 11, color: "#CCC", fontFamily: "monospace" }}>{model}</span>
+                <span style={{ fontSize: 12, color: "#22C55E", fontWeight: 700 }}>{count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Gemini recent calls */}
+      <div style={{ background: "#1A1A1A", border: "1px solid #2A2A2A", borderRadius: 12, padding: "20px 24px", marginBottom: 32 }}>
+        <p style={{ margin: "0 0 16px", fontSize: 11, color: "#666", textTransform: "uppercase", letterSpacing: 2 }}>
+          Ostatnie wywołania Gemini
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 5, maxHeight: 300, overflowY: "auto" }}>
+          {stats.geminiRecentCalls.length === 0 && (
+            <p style={{ margin: 0, color: "#555", fontSize: 12 }}>Brak danych</p>
+          )}
+          {stats.geminiRecentCalls.map((r, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 8px", background: "#111", borderRadius: 6 }}>
+              <span style={{
+                fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, flexShrink: 0,
+                background: r.success ? "#052e16" : "#450a0a",
+                color: r.success ? "#22C55E" : "#EF4444",
+              }}>
+                {r.success ? "OK" : r.error_code ?? "ERR"}
+              </span>
+              <span style={{ fontSize: 11, color: "#888", fontFamily: "monospace", flexShrink: 0, width: 100 }}>{r.endpoint}</span>
+              <span style={{ fontSize: 10, color: "#CCC", fontFamily: "monospace", flex: 1 }}>{r.model}</span>
+              {r.input_tokens != null && (
+                <span style={{ fontSize: 10, color: "#555" }}>
+                  {r.input_tokens}↑ {r.output_tokens}↓
+                </span>
+              )}
+              <span style={{ fontSize: 10, color: "#444", flexShrink: 0 }}>
+                {new Date(r.called_at).toLocaleTimeString("pl-PL", { timeZone: "UTC", hour: "2-digit", minute: "2-digit" })}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
 

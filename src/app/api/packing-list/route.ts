@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI, SchemaType, type Schema } from "@google/generative-ai";
 import { createClient } from "@/lib/supabase/server";
+import { logGeminiCall } from "@/lib/geminiLog";
 import type { QuizAnswers } from "@/types";
 
 export const maxDuration = 30;
@@ -69,10 +70,18 @@ Zwróć JSON z kategoriami: Dokumenty, Ubrania, Elektronika, Toaleta, Apteczka, 
     });
 
     const result = await model.generateContent(prompt);
+    void logGeminiCall({
+      endpoint: "packing-list",
+      model: "gemini-2.5-flash",
+      success: true,
+      input_tokens: result.response.usageMetadata?.promptTokenCount,
+      output_tokens: result.response.usageMetadata?.candidatesTokenCount,
+    });
     const data = JSON.parse(result.response.text());
     return NextResponse.json(data);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
+    void logGeminiCall({ endpoint: "packing-list", model: "gemini-2.5-flash", success: false, error_code: msg.includes("429") ? "quota" : "error" });
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
