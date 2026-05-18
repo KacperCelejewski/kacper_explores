@@ -52,6 +52,9 @@ export default function FlightsPage() {
     isSynthetic: boolean;
   } | null>(null);
 
+  const [upgradeModal, setUpgradeModal] = useState(false);
+  const [loginModal, setLoginModal] = useState<DestinationRecommendation | null>(null);
+
   useEffect(() => {
     if (!_hasHydrated) return;
     if (!quizAnswers.budget) {
@@ -127,11 +130,11 @@ export default function FlightsPage() {
 
   const handleSelect = async (dest: DestinationRecommendation) => {
     if (!userStatus?.authenticated) {
-      router.push(`/login?next=/flights`);
+      setLoginModal(dest);
       return;
     }
     if (!userStatus?.can_generate) {
-      router.push("/pricing");
+      setUpgradeModal(true);
       return;
     }
 
@@ -483,6 +486,21 @@ export default function FlightsPage() {
             isSynthetic={flightModal.isSynthetic}
             onConfirm={(flight) => handleGenerate(flightModal.dest, flight)}
             onClose={() => setFlightModal(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {upgradeModal && (
+          <UpgradeModal onClose={() => setUpgradeModal(false)} />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {loginModal && (
+          <LoginPromptModal
+            dest={loginModal}
+            onClose={() => setLoginModal(null)}
           />
         )}
       </AnimatePresence>
@@ -977,4 +995,177 @@ function StepProgress({
       </p>
     </div>
   );
+}
+
+function UpgradeModal({ onClose }: { onClose: () => void }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
+  const content = (
+    <div
+      className="fixed inset-0 flex items-end justify-center"
+      style={{ background: "rgba(0,0,0,0.65)", zIndex: 9999 }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <motion.div
+        initial={{ y: 60, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 60, opacity: 0 }}
+        transition={{ type: "spring", damping: 28, stiffness: 280 }}
+        className="w-full max-w-lg rounded-t-3xl px-5 pb-8 pt-5"
+        style={{ background: "#F5EFE0" }}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Ulepsz plan"
+      >
+        <div className="flex justify-center mb-4">
+          <div className="w-10 h-1 rounded-full" style={{ background: "var(--border)" }} />
+        </div>
+
+        <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{ color: "var(--accent)" }}>
+          Włóczykij Pro
+        </p>
+        <h2 className="text-2xl font-bold leading-tight mb-1">
+          Wykorzystałeś wszystkie plany
+        </h2>
+        <p className="text-sm mb-6 leading-relaxed" style={{ color: "var(--text-muted)" }}>
+          Kup Pack jednorazowo albo odblokuj nielimitowane plany z Pro — i wróć do planowania.
+        </p>
+
+        <div className="flex flex-col gap-3 mb-5">
+          {/* Pack option */}
+          <a
+            href="/pricing"
+            className="block p-4 rounded-2xl"
+            style={{ background: "#FFFFFF", border: "1.5px solid var(--border)", textDecoration: "none" }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-bold text-sm">🎒 Pack</p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                  5 kompletnych planów · bez wygasania
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="font-bold text-base" style={{ color: "var(--accent)" }}>14,99 PLN</p>
+                <p className="text-xs" style={{ color: "var(--text-muted)" }}>jednorazowo</p>
+              </div>
+            </div>
+          </a>
+
+          {/* Pro option */}
+          <a
+            href="/pricing"
+            className="block p-4 rounded-2xl"
+            style={{
+              background: "var(--accent)",
+              textDecoration: "none",
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-bold text-sm text-white">✦ Pro Roczny</p>
+                <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.75)" }}>
+                  Nielimitowane plany · historia wyjazdów · PDF
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="font-bold text-base text-white">149,99 PLN</p>
+                <p className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>12,50 PLN/mies.</p>
+              </div>
+            </div>
+            <div
+              className="mt-2 px-2 py-0.5 rounded-full text-xs font-bold inline-block"
+              style={{ background: "rgba(255,255,255,0.25)", color: "white" }}
+            >
+              🌟 Najlepszy wybór
+            </div>
+          </a>
+        </div>
+
+        <button
+          onClick={onClose}
+          className="w-full py-3 text-sm font-semibold rounded-2xl"
+          style={{ background: "transparent", color: "var(--text-muted)", border: "1.5px solid var(--border)" }}
+        >
+          Może później
+        </button>
+      </motion.div>
+    </div>
+  );
+
+  if (!mounted) return null;
+  return createPortal(content, document.body);
+}
+
+function LoginPromptModal({
+  dest,
+  onClose,
+}: {
+  dest: DestinationRecommendation;
+  onClose: () => void;
+}) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
+  const content = (
+    <div
+      className="fixed inset-0 flex items-end justify-center"
+      style={{ background: "rgba(0,0,0,0.65)", zIndex: 9999 }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <motion.div
+        initial={{ y: 60, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 60, opacity: 0 }}
+        transition={{ type: "spring", damping: 28, stiffness: 280 }}
+        className="w-full max-w-lg rounded-t-3xl px-5 pb-8 pt-5"
+        style={{ background: "#F5EFE0" }}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Zaloguj się"
+      >
+        <div className="flex justify-center mb-4">
+          <div className="w-10 h-1 rounded-full" style={{ background: "var(--border)" }} />
+        </div>
+
+        <div
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-3"
+          style={{ background: "var(--accent-light)", color: "var(--accent)" }}
+        >
+          ✈️ {dest.city}, {dest.country}
+        </div>
+
+        <h2 className="text-2xl font-bold leading-tight mb-1">
+          Zaloguj się,<br />żeby wygenerować plan
+        </h2>
+        <p className="text-sm mb-6 leading-relaxed" style={{ color: "var(--text-muted)" }}>
+          Rejestracja zajmuje 10 sekund. Dostaniesz 5 kompletnych planów za darmo — bez karty.
+        </p>
+
+        <a
+          href="/login?next=/flights"
+          className="btn-primary"
+          style={{ display: "block", textAlign: "center", textDecoration: "none" }}
+        >
+          Zaloguj się przez Google →
+        </a>
+
+        <a
+          href="/login?next=/flights"
+          className="block text-center mt-3 text-sm font-semibold"
+          style={{ color: "var(--text-muted)", textDecoration: "none" }}
+        >
+          lub przez email (magic link)
+        </a>
+
+        <p className="text-xs text-center mt-4" style={{ color: "var(--text-muted)" }}>
+          ✓ Bez karty · ✓ 5 planów za darmo · ✓ 10 sekund
+        </p>
+      </motion.div>
+    </div>
+  );
+
+  if (!mounted) return null;
+  return createPortal(content, document.body);
 }

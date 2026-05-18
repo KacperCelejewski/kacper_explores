@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import CheckoutButton from "../components/CheckoutButton";
 import SiteNav from "../components/SiteNav";
 import SiteFooter from "../components/SiteFooter";
+import PriceAlertSignup from "../components/PriceAlertSignup";
 
 const pricingSchema = {
   "@context": "https://schema.org",
@@ -227,6 +228,8 @@ export default function PricingPage() {
           </p>
         </div>
       </div>
+
+      <PriceAlertSignup />
 
       <p className="text-xs text-center mt-5" style={{ color: "var(--text-muted)" }}>
         Płatności obsługuje Stripe · Bezpieczne i szyfrowane

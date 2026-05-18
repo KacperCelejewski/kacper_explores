@@ -60,6 +60,8 @@ export default function PlanPage() {
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
   const [userCredits, setUserCredits] = useState<{ credits: number; isPro: boolean } | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfGate, setPdfGate] = useState(false);
 
   // is_public toggle
   const [isPublic, setIsPublic] = useState(false);
@@ -112,6 +114,37 @@ export default function PlanPage() {
   };
 
   const handlePrint = () => window.print();
+
+  const handlePDF = async () => {
+    if (!userCredits?.isPro) {
+      setPdfGate(true);
+      return;
+    }
+    if (!currentTrip?.plan) return;
+    setPdfLoading(true);
+    try {
+      const { default: jsPDF } = await import("jspdf");
+      const { default: html2canvas } = await import("html2canvas");
+      const planEl = document.getElementById("plan-print-area");
+      if (!planEl) { window.print(); return; }
+      const canvas = await html2canvas(planEl, { scale: 2, useCORS: true, backgroundColor: "#F5EFE0" });
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const imgW = 210;
+      const imgH = (canvas.height * imgW) / canvas.width;
+      let y = 0;
+      const pageH = 297;
+      while (y < imgH) {
+        if (y > 0) pdf.addPage();
+        pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", 0, -y, imgW, imgH);
+        y += pageH;
+      }
+      pdf.save(`wloczykij-${currentTrip.plan.city.toLowerCase().replace(/\s+/g, "-")}.pdf`);
+    } catch {
+      window.print();
+    } finally {
+      setPdfLoading(false);
+    }
+  };
 
   const handleICS = () => {
     if (!currentTrip?.plan) return;
@@ -256,7 +289,7 @@ export default function PlanPage() {
   const dest = destination as DestinationRecommendation | null;
 
   return (
-    <div className="flex flex-col flex-1 pb-8">
+    <div className="flex flex-col flex-1 pb-8" id="plan-print-area">
       {/* Hero photo */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -632,11 +665,15 @@ export default function PlanPage() {
             {copied && !isPublic ? "↓ Najpierw udostępnij plan" : copied ? "✓ Skopiowano!" : "🔗 Udostępnij"}
           </button>
           <button
-            onClick={handlePrint}
-            className="py-3 rounded-2xl text-xs font-semibold flex items-center justify-center gap-1 transition-all hover:opacity-80"
-            style={{ background: "#F0F0F0", color: "var(--text-secondary)" }}
+            onClick={handlePDF}
+            disabled={pdfLoading}
+            className="py-3 rounded-2xl text-xs font-semibold flex items-center justify-center gap-1 transition-all hover:opacity-80 relative"
+            style={{
+              background: userCredits?.isPro ? "#F0F0F0" : "var(--accent-light)",
+              color: userCredits?.isPro ? "var(--text-secondary)" : "var(--accent)",
+            }}
           >
-            📄 PDF
+            {pdfLoading ? "…" : userCredits?.isPro ? "📄 PDF" : "🔒 PDF Pro"}
           </button>
           <button
             onClick={handleICS}
@@ -676,6 +713,82 @@ export default function PlanPage() {
           Zaplanuj nową podróż →
         </button>
       </div>
+
+      {/* PDF Pro gate modal */}
+      <AnimatePresence>
+        {pdfGate && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 flex items-end justify-center no-print"
+            style={{ background: "rgba(0,0,0,0.65)", zIndex: 9999 }}
+            onClick={(e) => { if (e.target === e.currentTarget) setPdfGate(false); }}
+          >
+            <motion.div
+              initial={{ y: 60, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 60, opacity: 0 }}
+              transition={{ type: "spring", damping: 28, stiffness: 280 }}
+              className="w-full max-w-lg rounded-t-3xl px-5 pb-8 pt-5"
+              style={{ background: "#F5EFE0" }}
+            >
+              <div className="flex justify-center mb-4">
+                <div className="w-10 h-1 rounded-full" style={{ background: "var(--border)" }} />
+              </div>
+              <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{ color: "var(--accent)" }}>
+                Funkcja Pro
+              </p>
+              <h2 className="text-2xl font-bold leading-tight mb-1">
+                Eksport PDF<br />wymaga Pro
+              </h2>
+              <p className="text-sm mb-6 leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                Zapisz swój plan jako gotowy PDF — idealny do druku i offline. Dostępny dla użytkowników Pro.
+              </p>
+              <div className="flex flex-col gap-3 mb-4">
+                <a
+                  href="/pricing"
+                  className="block p-4 rounded-2xl"
+                  style={{ background: "var(--accent)", textDecoration: "none" }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-sm text-white">✦ Pro Roczny</p>
+                      <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.75)" }}>
+                        PDF · nielimitowane plany · historia wyjazdów
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-base text-white">149,99 PLN</p>
+                      <p className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>12,50 PLN/mies.</p>
+                    </div>
+                  </div>
+                </a>
+                <a
+                  href="/pricing"
+                  className="block p-4 rounded-2xl"
+                  style={{ background: "#FFFFFF", border: "1.5px solid var(--border)", textDecoration: "none" }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-sm">🎒 Pack</p>
+                      <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>5 planów bez wygasania</p>
+                    </div>
+                    <p className="font-bold text-sm" style={{ color: "var(--accent)" }}>14,99 PLN</p>
+                  </div>
+                </a>
+              </div>
+              <button
+                onClick={() => setPdfGate(false)}
+                className="w-full py-3 text-sm font-semibold rounded-2xl"
+                style={{ background: "transparent", color: "var(--text-muted)", border: "1.5px solid var(--border)" }}
+              >
+                Może później
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Floating chat panel */}
       {currentTrip && (
