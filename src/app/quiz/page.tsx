@@ -30,7 +30,7 @@ import {
 
 type IconFC = React.FC<{ size?: number }>;
 
-const TOTAL_STEPS = 7;
+const TOTAL_STEPS = 5;
 
 // ── Region definitions ────────────────────────────────────────────────────────
 
@@ -163,11 +163,9 @@ function QuizPageInner() {
   const canProceed = () => {
     if (currentQuizStep === 0) return quizAnswers.budget !== null;
     if (currentQuizStep === 1) return quizAnswers.vibe !== null;
-    if (currentQuizStep === 2) return quizAnswers.styles.length > 0;
-    if (currentQuizStep === 3) return quizAnswers.placeType !== null;
-    if (currentQuizStep === 4) return quizAnswers.month !== null;
-    if (currentQuizStep === 5) return quizAnswers.duration !== null;
-    if (currentQuizStep === 6) return quizAnswers.airports.length > 0;
+    if (currentQuizStep === 2) return true; // styles are optional
+    if (currentQuizStep === 3) return quizAnswers.month !== null; // duration has default
+    if (currentQuizStep === 4) return quizAnswers.airports.length > 0;
     return false;
   };
 
@@ -270,27 +268,17 @@ function QuizPageInner() {
             </motion.div>
           )}
           {currentQuizStep === 3 && (
-            <motion.div key="step-placetype" custom={dir} variants={slideVariants}
+            <motion.div key="step-when" custom={dir} variants={slideVariants}
               initial="enter" animate="center" exit="exit" transition={{ duration: 0.28, ease: "easeInOut" }}>
-              <StepPlaceType />
-            </motion.div>
-          )}
-          {currentQuizStep === 4 && (
-            <motion.div key="step-month" custom={dir} variants={slideVariants}
-              initial="enter" animate="center" exit="exit" transition={{ duration: 0.28, ease: "easeInOut" }}>
-              <StepMonth month={quizAnswers.month} setMonth={(m) => setQuizAnswer("month", m)} />
-            </motion.div>
-          )}
-          {currentQuizStep === 5 && (
-            <motion.div key="step-duration" custom={dir} variants={slideVariants}
-              initial="enter" animate="center" exit="exit" transition={{ duration: 0.28, ease: "easeInOut" }}>
-              <StepDuration
+              <StepWhen
+                month={quizAnswers.month}
+                setMonth={(m) => setQuizAnswer("month", m)}
                 duration={quizAnswers.duration}
                 setDuration={(d) => setQuizAnswer("duration", d)}
               />
             </motion.div>
           )}
-          {currentQuizStep === 6 && (
+          {currentQuizStep === 4 && (
             <motion.div key="step-departure" custom={dir} variants={slideVariants}
               initial="enter" animate="center" exit="exit" transition={{ duration: 0.28, ease: "easeInOut" }}>
               <StepDeparture
@@ -392,7 +380,7 @@ function StepStyle({ styles, toggleStyle }: { styles: TravelStyle[]; toggleStyle
     <div>
       <h2 className="text-2xl font-bold mt-2">Czym się interesujesz?</h2>
       <p className="text-sm mt-2 mb-6" style={{ color: "var(--text-muted)" }}>
-        Wybierz co najmniej jedno.
+        Opcjonalne — AI lepiej dopasuje kierunki.
       </p>
       <div className="grid grid-cols-2 gap-3" role="group" aria-label="Wybierz zainteresowania">
         {STYLE_OPTIONS.map((opt) => (
@@ -446,29 +434,6 @@ function StepPlaceType() {
   );
 }
 
-function StepMonth({ month, setMonth }: { month: number | null; setMonth: (m: number) => void }) {
-  return (
-    <div>
-      <h2 className="text-2xl font-bold mt-2">Kiedy lecisz?</h2>
-      <p className="text-sm mt-2 mb-6" style={{ color: "var(--text-muted)" }}>
-        Miesiąc wyjazdu — AI uwzględni pogodę i sezon.
-      </p>
-      <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Wybierz miesiąc">
-        {MONTH_NAMES.map((name, i) => (
-          <button
-            key={name}
-            className={`option-card text-center py-3 ${month === i + 1 ? "selected" : ""}`}
-            onClick={() => setMonth(i + 1)}
-            aria-pressed={month === i + 1}
-          >
-            <p className="font-semibold text-sm">{name}</p>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function durationNote(d: number): string {
   const full = d - 2;
   if (full <= 0) return "Lot tam i z powrotem — idealny na weekend";
@@ -476,7 +441,14 @@ function durationNote(d: number): string {
   return `${full} pełne dni na miejscu + przylot i powrót`;
 }
 
-function StepDuration({ duration, setDuration }: { duration: TripDuration | null; setDuration: (d: TripDuration) => void }) {
+function StepWhen({
+  month, setMonth, duration, setDuration,
+}: {
+  month: number | null;
+  setMonth: (m: number) => void;
+  duration: TripDuration | null;
+  setDuration: (d: TripDuration) => void;
+}) {
   const value = duration ?? 5;
 
   useEffect(() => {
@@ -486,13 +458,29 @@ function StepDuration({ duration, setDuration }: { duration: TripDuration | null
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mt-2">Ile dni?</h2>
+      <h2 className="text-2xl font-bold mt-2">Kiedy i jak długo?</h2>
       <p className="text-sm mt-2 mb-5" style={{ color: "var(--text-muted)" }}>
-        Łączna długość wyjazdu od wylotu do powrotu.
+        AI uwzględni pogodę, sezon i okazje cenowe.
       </p>
 
-      {/* Preset chips */}
-      <div className="flex flex-wrap gap-2 mb-6">
+      {/* Month grid */}
+      <p className="text-xs font-semibold mb-2" style={{ color: "var(--text-muted)" }}>Miesiąc wyjazdu</p>
+      <div className="grid grid-cols-4 gap-2 mb-6" role="radiogroup" aria-label="Wybierz miesiąc">
+        {MONTH_NAMES.map((name, i) => (
+          <button
+            key={name}
+            className={`option-card text-center py-2.5 ${month === i + 1 ? "selected" : ""}`}
+            onClick={() => setMonth(i + 1)}
+            aria-pressed={month === i + 1}
+          >
+            <p className="font-semibold text-xs">{name}</p>
+          </button>
+        ))}
+      </div>
+
+      {/* Duration presets */}
+      <p className="text-xs font-semibold mb-2" style={{ color: "var(--text-muted)" }}>Długość wyjazdu</p>
+      <div className="flex flex-wrap gap-2 mb-4">
         {DURATION_PRESETS.map((p) => {
           const sel = value === p.value;
           return (
@@ -517,7 +505,7 @@ function StepDuration({ duration, setDuration }: { duration: TripDuration | null
       </div>
 
       {/* Slider */}
-      <div className="mb-5">
+      <div className="mb-4">
         <input
           type="range"
           min={2}
@@ -536,9 +524,9 @@ function StepDuration({ duration, setDuration }: { duration: TripDuration | null
       </div>
 
       {/* Live readout */}
-      <div className="p-4 rounded-2xl text-center" style={{ background: "var(--accent-light)", border: "1px solid rgba(196,98,45,0.2)" }}>
-        <p className="text-3xl font-bold" style={{ color: "var(--accent)" }}>{value} dni</p>
-        <p className="text-xs mt-1.5" style={{ color: "var(--text-muted)" }}>{durationNote(value)}</p>
+      <div className="p-3 rounded-2xl text-center" style={{ background: "var(--accent-light)", border: "1px solid rgba(196,98,45,0.2)" }}>
+        <p className="text-2xl font-bold" style={{ color: "var(--accent)" }}>{value} dni</p>
+        <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{durationNote(value)}</p>
       </div>
     </div>
   );

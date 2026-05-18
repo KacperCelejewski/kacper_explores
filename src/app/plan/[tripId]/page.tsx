@@ -59,6 +59,7 @@ export default function PlanPage() {
   const [activeDay, setActiveDay] = useState(0);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [userCredits, setUserCredits] = useState<{ credits: number; isPro: boolean } | null>(null);
 
   // is_public toggle
   const [isPublic, setIsPublic] = useState(false);
@@ -195,6 +196,17 @@ export default function PlanPage() {
     }
   };
 
+  useEffect(() => {
+    fetch("/api/profile")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.authenticated) {
+          setUserCredits({ credits: d.credits_remaining ?? 0, isPro: d.is_pro ?? false });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   // Store-first, Supabase fallback (active session required)
   useEffect(() => {
     const tripId = params?.tripId;
@@ -315,6 +327,40 @@ export default function PlanPage() {
           </div>
         </motion.div>
       </div>
+
+      {/* Upsell banner — show when low on credits or out */}
+      {userCredits && !userCredits.isPro && userCredits.credits <= 2 && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="mx-5 mb-4 p-4 rounded-2xl no-print"
+          style={{ background: "var(--accent-light)", border: "2px solid var(--accent)" }}
+        >
+          <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>
+            {userCredits.credits === 0 ? "To był ostatni plan ✦" : `Zostały Ci ${userCredits.credits} ${userCredits.credits === 1 ? "plan" : "plany"} ✦`}
+          </p>
+          <p className="text-xs mt-1 mb-3 leading-relaxed" style={{ color: "var(--text-muted)" }}>
+            Kup Pack (5 planów, 14,99 PLN) albo przejdź na Pro z nielimitowanymi planami i historią wyjazdów.
+          </p>
+          <div className="flex gap-2">
+            <a
+              href="/pricing"
+              className="flex-1 text-xs font-bold py-2.5 rounded-xl text-center"
+              style={{ background: "var(--accent)", color: "white", textDecoration: "none" }}
+            >
+              Kup Pack — 14,99 PLN →
+            </a>
+            <a
+              href="/pricing"
+              className="text-xs font-semibold px-3 py-2.5 rounded-xl"
+              style={{ background: "white", color: "var(--accent)", border: "1px solid var(--accent)", textDecoration: "none" }}
+            >
+              Pro
+            </a>
+          </div>
+        </motion.div>
+      )}
 
       {/* Hotel suggestions */}
       <div className="px-5 mb-4 no-print">

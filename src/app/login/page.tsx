@@ -36,6 +36,8 @@ function LoginContent() {
     });
   };
 
+  const fromQuiz = next.includes("/flights") || next.includes("/quiz");
+
   return (
     <div className="flex flex-col flex-1 px-5 pb-8 justify-center">
       <motion.div
@@ -48,13 +50,65 @@ function LoginContent() {
           <p className="text-xs font-bold tracking-widest uppercase mb-4" style={{ color: "var(--accent)" }}>
             Włóczykij
           </p>
-          <h1 className="text-3xl font-bold leading-tight">
-            Zaloguj się,<br />żeby planować.
-          </h1>
-          <p className="text-sm mt-3 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-            Po rejestracji dostaniesz 5 planów podróży za darmo.
-          </p>
+          {fromQuiz ? (
+            <>
+              <div
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-4"
+                style={{ background: "var(--accent-light)", color: "var(--accent)" }}
+              >
+                ✓ Twoje wyniki są gotowe
+              </div>
+              <h1 className="text-3xl font-bold leading-tight">
+                Zaloguj się,<br />żeby zobaczyć<br />dopasowane kierunki.
+              </h1>
+              <p className="text-sm mt-3 leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                Czekają na Ciebie 20+ destynacji dopasowanych do Twojego budżetu. Rejestracja zajmuje 10 sekund.
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-3xl font-bold leading-tight">
+                Zaloguj się,<br />żeby planować.
+              </h1>
+              <p className="text-sm mt-3 leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                Po rejestracji dostaniesz 5 kompletnych planów podróży za darmo — bez karty.
+              </p>
+            </>
+          )}
         </div>
+
+        {/* Blurred destinations tease (only when coming from quiz) */}
+        {fromQuiz && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.15 }}
+            className="mb-6 rounded-2xl overflow-hidden relative"
+            style={{ border: "1px solid var(--border)" }}
+            aria-hidden="true"
+          >
+            <div className="flex gap-2 p-3" style={{ filter: "blur(4px)", userSelect: "none" }}>
+              {["Barcelona", "Lizbona", "Praga", "Ateny"].map((city) => (
+                <div
+                  key={city}
+                  className="flex-1 rounded-xl py-2 px-2 text-center"
+                  style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
+                >
+                  <p className="text-xs font-bold truncate">{city}</p>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--accent)", fontWeight: 700 }}>~1 800 PLN</p>
+                </div>
+              ))}
+            </div>
+            <div
+              className="absolute inset-0 flex items-center justify-center"
+              style={{ background: "rgba(245,239,224,0.6)" }}
+            >
+              <p className="text-xs font-bold text-center px-4" style={{ color: "var(--accent)" }}>
+                Zaloguj się, żeby odblokować wyniki
+              </p>
+            </div>
+          </motion.div>
+        )}
 
         {sent ? (
           <div

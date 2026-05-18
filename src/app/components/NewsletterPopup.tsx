@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 
@@ -10,9 +10,12 @@ const SHOW_DELAY_MS = 10000;
 
 type NewsletterState = "idle" | "loading" | "pending" | "success" | "error" | "expired" | "invalid";
 
+const ALLOWED_PATHS = ["/pricing"];
+
 function NewsletterPopupInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
 
   const [visible, setVisible] = useState(false);
   const [email, setEmail] = useState("");
@@ -45,13 +48,16 @@ function NewsletterPopupInner() {
       return;
     }
 
+    // Only auto-show on allowed pages (pricing)
+    if (!ALLOWED_PATHS.includes(pathname)) return;
+
     try {
       if (localStorage.getItem(STORAGE_KEY)) return;
     } catch { /* ignore */ }
 
     const timer = setTimeout(() => setVisible(true), SHOW_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [searchParams, router]);
+  }, [searchParams, router, pathname]);
 
   const handleClose = () => {
     setVisible(false);

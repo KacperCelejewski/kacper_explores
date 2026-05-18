@@ -4,19 +4,32 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
+interface UserStatus {
+  authenticated: boolean;
+  credits_remaining?: number;
+  is_pro?: boolean;
+}
+
 export default function SiteNav() {
-  const [loggedIn, setLoggedIn] = useState(false);
+  const [userStatus, setUserStatus] = useState<UserStatus | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getSession().then(({ data }) => {
-      setLoggedIn(!!data.session);
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
-      setLoggedIn(!!session);
-    });
+    const loadStatus = () => {
+      supabase.auth.getSession().then(({ data }) => {
+        if (!data.session) { setUserStatus({ authenticated: false }); return; }
+        fetch("/api/profile").then((r) => r.json()).then(setUserStatus).catch(() => {});
+      });
+    };
+    loadStatus();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => loadStatus());
     return () => subscription.unsubscribe();
   }, []);
+
+  const loggedIn = userStatus?.authenticated ?? false;
+  const credits = userStatus?.credits_remaining ?? 0;
+  const isPro = userStatus?.is_pro ?? false;
+  const lowCredits = loggedIn && !isPro && credits <= 2;
 
   return (
     <nav
@@ -31,7 +44,7 @@ export default function SiteNav() {
       >
         Włóczykij
       </Link>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <Link
           href="/odkryj"
           className="text-xs font-semibold"
@@ -54,13 +67,30 @@ export default function SiteNav() {
           Cennik
         </Link>
         {loggedIn ? (
-          <Link
-            href="/profile"
-            className="text-xs font-semibold px-3 py-1.5 rounded-full"
-            style={{ background: "var(--accent)", color: "white", textDecoration: "none" }}
-          >
-            Mój profil
-          </Link>
+          <>
+            {isPro ? (
+              <Link
+                href="/profile"
+                className="text-xs font-bold px-3 py-1.5 rounded-full"
+                style={{ background: "var(--accent)", color: "white", textDecoration: "none" }}
+              >
+                ✦ Pro
+              </Link>
+            ) : (
+              <Link
+                href="/profile"
+                className="text-xs font-bold px-3 py-1.5 rounded-full"
+                style={{
+                  background: lowCredits ? "#FEE2E2" : "var(--accent-light)",
+                  color: lowCredits ? "#DC2626" : "var(--accent)",
+                  textDecoration: "none",
+                  border: `1px solid ${lowCredits ? "#FECACA" : "rgba(196,98,45,0.25)"}`,
+                }}
+              >
+                {credits} {credits === 1 ? "plan" : credits <= 4 ? "plany" : "planów"}
+              </Link>
+            )}
+          </>
         ) : (
           <Link
             href="/login"

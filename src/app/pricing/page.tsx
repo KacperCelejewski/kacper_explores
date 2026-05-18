@@ -66,12 +66,13 @@ const PLANS = [
     name: "Pack",
     price: "14,99 PLN",
     period: "jednorazowo",
+    priceBreakdown: null,
     badge: null,
     features: [
-      "5 planów podróży",
+      "5 kompletnych planów z lotem i dniem po dniu",
       "Pełny itinerary godzina po godzinie",
-      "Triki budżetowe AI",
-      "Bez wygasania",
+      "Triki budżetowe i lokalne polecenia AI",
+      "Plany nie wygasają — zostają na zawsze",
     ],
     highlight: false,
     cta: "Kup Pack →",
@@ -82,12 +83,13 @@ const PLANS = [
     name: "Pro Roczny",
     price: "149,99 PLN",
     period: "rocznie",
-    badge: "Oszczędzasz 79 PLN/rok",
+    priceBreakdown: "tylko 12,50 PLN/mies.",
+    badge: "Oszczędzasz 90 PLN vs miesięczny",
     features: [
       "Nielimitowane plany podróży",
       "Historia wszystkich wyjazdów",
-      "Priorytetowe generowanie",
-      "Dostęp do nowych funkcji",
+      "Priorytetowe generowanie AI",
+      "Dostęp do nowych funkcji jako pierwszy",
     ],
     highlight: true,
     cta: "Zostań Pro →",
@@ -98,11 +100,12 @@ const PLANS = [
     name: "Pro Miesięczny",
     price: "19,99 PLN",
     period: "miesięcznie",
+    priceBreakdown: null,
     badge: null,
     features: [
       "Nielimitowane plany podróży",
       "Historia wszystkich wyjazdów",
-      "Priorytetowe generowanie",
+      "Priorytetowe generowanie AI",
       "Dostęp do nowych funkcji",
     ],
     highlight: false,
@@ -128,7 +131,7 @@ export default function PricingPage() {
           Planer podróży solo — wybierz swój plan
         </h1>
         <p className="text-sm mt-2 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-          Zaczynasz z 5 darmowymi planami po rejestracji.
+          Zaczynasz z 5 darmowymi planami po rejestracji. Bez karty.
         </p>
       </div>
 
@@ -141,7 +144,7 @@ export default function PricingPage() {
           <div>
             <p className="font-bold text-sm">Free</p>
             <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-              Po rejestracji · bez karty
+              Po rejestracji · bez karty · bez limitu czasu
             </p>
           </div>
           <span
@@ -168,7 +171,7 @@ export default function PricingPage() {
                 className="px-5 py-2 text-xs font-bold text-center tracking-wider uppercase flex items-center justify-center gap-3"
                 style={{ background: "var(--accent)", color: "white" }}
               >
-                <span>Najlepszy wybór</span>
+                <span>🌟 Najlepszy wybór</span>
                 {plan.badge && (
                   <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: "rgba(255,255,255,0.25)" }}>
                     {plan.badge}
@@ -185,6 +188,9 @@ export default function PricingPage() {
                 <div className="text-right">
                   <p className="text-2xl font-bold" style={{ color: "var(--accent)" }}>{plan.price}</p>
                   <p className="text-xs" style={{ color: "var(--text-muted)" }}>{plan.period}</p>
+                  {plan.priceBreakdown && (
+                    <p className="text-xs font-semibold mt-0.5" style={{ color: "#16A34A" }}>{plan.priceBreakdown}</p>
+                  )}
                 </div>
               </div>
 
@@ -208,7 +214,21 @@ export default function PricingPage() {
         ))}
       </div>
 
-      <p className="text-xs text-center mt-6" style={{ color: "var(--text-muted)" }}>
+      {/* Guarantee */}
+      <div
+        className="mt-5 p-4 rounded-2xl flex items-start gap-3"
+        style={{ background: "#F0FDF4", border: "1px solid #BBF7D0" }}
+      >
+        <span className="text-xl flex-shrink-0">🛡️</span>
+        <div>
+          <p className="text-sm font-bold" style={{ color: "#15803D" }}>Gwarancja zwrotu 7 dni</p>
+          <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "#4B5563" }}>
+            Jeśli nie jesteś zadowolony w ciągu 7 dni od zakupu — oddamy Ci pieniądze bez pytań.
+          </p>
+        </div>
+      </div>
+
+      <p className="text-xs text-center mt-5" style={{ color: "var(--text-muted)" }}>
         Płatności obsługuje Stripe · Bezpieczne i szyfrowane
       </p>
     </div>

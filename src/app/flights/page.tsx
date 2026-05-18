@@ -288,6 +288,61 @@ export default function FlightsPage() {
         </div>
       </div>
 
+      {/* Low-credit warning banner */}
+      {userStatus?.authenticated && !userStatus.is_pro && (userStatus.credits_remaining ?? 0) <= 2 && (userStatus.credits_remaining ?? 0) > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-3 px-4 py-3 rounded-2xl flex items-center justify-between gap-3"
+          style={{ background: "#FEF3C7", border: "1px solid #FDE68A" }}
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="flex-shrink-0">⚡</span>
+            <p className="text-xs font-semibold" style={{ color: "#92400E" }}>
+              Zostały Ci {userStatus.credits_remaining} {userStatus.credits_remaining === 1 ? "plan" : "plany"} — kup Pack, żeby nie przerywać
+            </p>
+          </div>
+          <a
+            href="/pricing"
+            className="flex-shrink-0 text-xs font-bold px-3 py-1.5 rounded-full whitespace-nowrap"
+            style={{ background: "#92400E", color: "white", textDecoration: "none" }}
+          >
+            Pack →
+          </a>
+        </motion.div>
+      )}
+
+      {/* No credits banner */}
+      {userStatus?.authenticated && !userStatus.is_pro && (userStatus.credits_remaining ?? 0) === 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-3 px-4 py-4 rounded-2xl"
+          style={{ background: "var(--accent-light)", border: "2px solid var(--accent)" }}
+        >
+          <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>Wykorzystałeś wszystkie plany ✦</p>
+          <p className="text-xs mt-1 mb-3 leading-relaxed" style={{ color: "var(--text-muted)" }}>
+            Kup Pack (5 planów za 14,99 PLN) lub przejdź na Pro z nielimitowanymi planami.
+          </p>
+          <div className="flex gap-2">
+            <a
+              href="/pricing"
+              className="flex-1 text-xs font-bold py-2.5 rounded-xl text-center"
+              style={{ background: "var(--accent)", color: "white", textDecoration: "none" }}
+            >
+              Kup Pack — 14,99 PLN →
+            </a>
+            <a
+              href="/pricing"
+              className="text-xs font-semibold px-3 py-2.5 rounded-xl"
+              style={{ background: "white", color: "var(--accent)", border: "1px solid var(--accent)", textDecoration: "none" }}
+            >
+              Pro
+            </a>
+          </div>
+        </motion.div>
+      )}
+
       {/* Disclaimer banner */}
       {allRecs.length > 0 && (
         <div className="mt-3 px-3 py-2 rounded-xl flex items-center gap-2" style={{ background: "#F8F8F8", border: "1px solid var(--border)" }}>
