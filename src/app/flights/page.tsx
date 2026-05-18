@@ -609,7 +609,11 @@ function FlightSelectModal({
           <div>
             <h2 className="text-lg font-bold leading-tight">Loty do {dest.city}</h2>
             <p className="text-xs mt-1 font-medium" style={{ color: "var(--text-muted)" }}>
-              {dest.bestOffer.origin.code} → {dest.bestOffer.destination.code} · {formatDate(dest.bestOffer.departureDate ?? "")}
+              {dest.bestOffer.origin.code} → {dest.bestOffer.destination.code} · {
+                flights.length > 0
+                  ? formatDate(flights[0].departureDate)
+                  : new Date(dest.bestOffer.departureDate ?? "").toLocaleDateString("pl-PL", { month: "long", year: "numeric", timeZone: "UTC" })
+              }
             </p>
           </div>
           {dest.bestOffer.affiliateUrl && (
