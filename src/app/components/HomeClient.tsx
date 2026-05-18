@@ -45,12 +45,12 @@ export default function HomeClient() {
         className="mt-5"
       >
         <h1 className="text-4xl font-bold leading-tight tracking-tight">
-          Gdzie następna?<br />
-          <span style={{ color: "var(--accent)" }}>AI znajdzie lot i ułoży plan.</span>
+          Budżet + miesiąc =<br />
+          <span style={{ color: "var(--accent)" }}>gotowy plan podróży.</span>
         </h1>
         <p className="mt-4 text-base leading-relaxed" style={{ color: "var(--text-muted)" }}>
-          Podaj budżet i miesiąc — za 3 minuty wiesz dokąd lecisz
-          i masz gotowy plan na każdy dzień.
+          AI znajdzie najtańszy lot i ułoży plan godzina po godzinie.
+          Za 3 minuty wiesz dokąd lecisz.
         </p>
       </motion.div>
 
