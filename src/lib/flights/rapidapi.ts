@@ -64,13 +64,12 @@ function isoToHHMM(iso: string): string {
 
 function pickDates(month: number, duration: number): { departDate: string; returnDate: string } {
   const now = new Date();
-  let year = now.getFullYear();
+  const year = now.getFullYear();
+  const minTime = now.getTime() + 3 * 24 * 60 * 60 * 1000;
+  // Try 15th, then 25th of same month/year, then 15th next year
   let depart = new Date(Date.UTC(year, month - 1, 15));
-  // If the 15th is in the past or within 3 days, use next year
-  if (depart.getTime() < now.getTime() + 3 * 24 * 60 * 60 * 1000) {
-    year += 1;
-    depart = new Date(Date.UTC(year, month - 1, 15));
-  }
+  if (depart.getTime() < minTime) depart = new Date(Date.UTC(year, month - 1, 25));
+  if (depart.getTime() < minTime) depart = new Date(Date.UTC(year + 1, month - 1, 15));
   const ret = new Date(depart.getTime() + (duration - 1) * 24 * 60 * 60 * 1000);
   const fmt = (d: Date) =>
     `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
