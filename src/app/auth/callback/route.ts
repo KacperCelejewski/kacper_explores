@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import type { EmailOtpType } from "@supabase/supabase-js";
-import { sendWhatsApp } from "@/lib/whatsapp";
+import { sendSlack } from "@/lib/slack";
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
     if (user?.created_at) {
       const ageSeconds = (Date.now() - new Date(user.created_at).getTime()) / 1000;
       if (ageSeconds < 60) {
-        void sendWhatsApp(`🎉 Nowy użytkownik!\n${user.email}`);
+        void sendSlack(`🎉 *Nowy użytkownik!*\n${user.email}`);
       }
     }
 

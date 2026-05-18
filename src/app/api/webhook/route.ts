@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { stripe, PLANS, type PlanKey } from "@/lib/stripe";
 import { createClient } from "@supabase/supabase-js";
 import type Stripe from "stripe";
-import { sendWhatsApp } from "@/lib/whatsapp";
+import { sendSlack } from "@/lib/slack";
 
 // Service role client — bypasses RLS for webhook updates
 function createServiceClient() {
@@ -52,8 +52,8 @@ export async function POST(req: NextRequest) {
 
     // WhatsApp notification
     const amountStr = session.amount_total ? `${(session.amount_total / 100).toFixed(2)} ${(session.currency ?? "pln").toUpperCase()}` : "?";
-    void sendWhatsApp(
-      `💰 Nowa płatność!\nPlan: ${planKey}\nKwota: ${amountStr}\nUser: ${userId.slice(0, 8)}...`
+    void sendSlack(
+      `💰 *Nowa płatność!*\nPlan: \`${planKey}\`\nKwota: *${amountStr}*\nUser: \`${userId.slice(0, 8)}...\``
     );
 
     if (planKey === "pack_5") {
