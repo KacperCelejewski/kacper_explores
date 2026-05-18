@@ -14,7 +14,7 @@ const pricingSchema = {
       item: {
         "@type": "Product",
         name: "Free",
-        description: "1 plan podróży po rejestracji, bez karty kredytowej.",
+        description: "5 planów podróży po rejestracji, bez karty kredytowej.",
         offers: { "@type": "Offer", price: "0", priceCurrency: "PLN", availability: "https://schema.org/InStock" },
       },
     },
@@ -49,13 +49,13 @@ const pricingSchema = {
 
 export const metadata: Metadata = {
   title: "Plany cenowe",
-  description: "Zacznij za darmo — 1 plan podróży po rejestracji. Pack za 5 zł (5 planów) lub Pro za 19 zł/mies. (nielimitowane plany AI).",
+  description: "Zacznij za darmo — 5 planów podróży po rejestracji. Pack za 5 zł (5 planów) lub Pro za 19 zł/mies. (nielimitowane plany AI).",
   alternates: {
     canonical: "https://wloczykij.me/pricing",
   },
   openGraph: {
     title: "Plany cenowe | Włóczykij",
-    description: "Zacznij za darmo — 1 plan podróży po rejestracji. Pack za 5 zł lub Pro za 19 zł/mies.",
+    description: "Zacznij za darmo — 5 planów podróży po rejestracji. Pack za 5 zł lub Pro za 19 zł/mies.",
     url: "https://wloczykij.me/pricing",
   },
 };
@@ -128,7 +128,7 @@ export default function PricingPage() {
           Planer podróży solo — wybierz swój plan
         </h1>
         <p className="text-sm mt-2 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-          Zaczynasz z 1 darmowym planem po rejestracji.
+          Zaczynasz z 5 darmowymi planami po rejestracji.
         </p>
       </div>
 
@@ -148,7 +148,7 @@ export default function PricingPage() {
             className="text-sm font-bold px-3 py-1 rounded-full"
             style={{ background: "var(--border)", color: "var(--text-muted)" }}
           >
-            1 plan
+            5 planów
           </span>
         </div>
 

@@ -52,7 +52,7 @@ function LoginContent() {
             Zaloguj się,<br />żeby planować.
           </h1>
           <p className="text-sm mt-3 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-            Po rejestracji dostaniesz 1 plan podróży za darmo.
+            Po rejestracji dostaniesz 5 planów podróży za darmo.
           </p>
         </div>
 

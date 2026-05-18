@@ -77,7 +77,7 @@ export default function ReguaminPage() {
         <Section title="§2. Rodzaje i zakres świadczonych usług">
           <P>Operator świadczy następujące usługi drogą elektroniczną:</P>
           <ul className="list-disc pl-5 mb-4 space-y-1">
-            <Li><strong>Konto darmowe</strong> — 1 plan podróży AI po rejestracji, bez opłat.</Li>
+            <Li><strong>Konto darmowe</strong> — 5 planów podróży AI po rejestracji, bez opłat.</Li>
             <Li>
               <strong>Pack (5 planów)</strong> — jednorazowy zakup 5 planów podróży AI za{" "}
               <strong>14,99 PLN</strong>. Plany nie wygasają.

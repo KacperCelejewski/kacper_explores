@@ -1,7 +1,7 @@
 const FAQS = [
   {
     q: "Czy Włóczykij jest darmowy?",
-    a: "Tak — po rejestracji otrzymujesz 1 plan podróży całkowicie za darmo, bez podawania karty kredytowej. Jeśli chcesz więcej planów, możesz wybrać Pack (5 planów za 14,99 zł) lub Pro (nielimitowane plany za 19,99 zł/mies. lub 149,99 zł/rok).",
+    a: "Tak — po rejestracji otrzymujesz 5 planów podróży całkowicie za darmo, bez podawania karty kredytowej. Jeśli chcesz więcej planów, możesz wybrać Pack (5 planów za 14,99 zł) lub Pro (nielimitowane plany za 19,99 zł/mies. lub 149,99 zł/rok).",
   },
   {
     q: "Jak działa planowanie podróży z AI?",

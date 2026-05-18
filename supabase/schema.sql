@@ -6,7 +6,7 @@
 -- Profil użytkownika (tworzony automatycznie po rejestracji)
 CREATE TABLE IF NOT EXISTS public.user_profiles (
   id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
-  credits_remaining INT NOT NULL DEFAULT 1,         -- 1 darmowy plan po rejestracji
+  credits_remaining INT NOT NULL DEFAULT 5,         -- 5 darmowych planów po rejestracji
   subscription_tier TEXT NOT NULL DEFAULT 'free',   -- 'free' | 'pro'
   subscription_expires_at TIMESTAMPTZ,
   stripe_customer_id TEXT UNIQUE,

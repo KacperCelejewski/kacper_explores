@@ -85,7 +85,7 @@ export default function FlightsPage() {
   // Pre-fetch real prices for top 5 destinations in the background
   useEffect(() => {
     if (!quizAnswers.month || allRecs.length === 0) return;
-    allRecs.slice(0, 5).forEach((dest) => {
+    allRecs.slice(0, 3).forEach((dest) => {
       const key = dest.city;
       if (fetchedCities.current.has(key)) return;
       fetchedCities.current.add(key);

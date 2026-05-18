@@ -21,7 +21,7 @@ const faqSchema = {
       name: "Czy Włóczykij jest darmowy?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Tak — po rejestracji otrzymujesz 1 plan podróży całkowicie za darmo, bez podawania karty kredytowej. Jeśli chcesz więcej planów, możesz wybrać Pack (5 planów za 14,99 zł) lub Pro (nielimitowane plany za 19,99 zł/mies. lub 149,99 zł/rok).",
+        text: "Tak — po rejestracji otrzymujesz 5 planów podróży całkowicie za darmo, bez podawania karty kredytowej. Jeśli chcesz więcej planów, możesz wybrać Pack (5 planów za 14,99 zł) lub Pro (nielimitowane plany za 19,99 zł/mies. lub 149,99 zł/rok).",
       },
     },
     {
@@ -80,7 +80,7 @@ const webAppSchema = {
     "@type": "Offer",
     price: "0",
     priceCurrency: "PLN",
-    description: "1 plan podróży za darmo po rejestracji",
+    description: "5 planów podróży za darmo po rejestracji",
   },
 };
 

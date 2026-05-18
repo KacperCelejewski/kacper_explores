@@ -136,7 +136,7 @@ export default function HomeClient() {
           Zaplanuj podróż →
         </Link>
         <p className="text-center text-xs mt-3" style={{ color: "var(--text-muted)" }}>
-          ~3 minuty · 1 plan za darmo po rejestracji
+          ~3 minuty · 5 planów za darmo po rejestracji
         </p>
       </motion.div>
     </div>
