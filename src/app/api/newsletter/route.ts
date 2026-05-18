@@ -37,7 +37,7 @@ async function ensureCoupon() {
 
 async function createStripePromoCode(code: string): Promise<string> {
   const promo = await stripe.promotionCodes.create({
-    promotion: { type: "coupon", coupon: COUPON_ID },
+    coupon: COUPON_ID,
     code,
     max_redemptions: 1,
   });
@@ -77,9 +77,14 @@ export async function POST(req: NextRequest) {
       // Already done — just return code directly (they own this email)
       return NextResponse.json({ code: existing.discount_code, alreadySubscribed: true });
     }
-    // Not yet verified — resend confirmation
+    // Not yet verified — generate fresh token so expiry window resets
+    const newToken = randomBytes(32).toString("hex");
+    await supabase
+      .from("newsletter_subscribers")
+      .update({ verification_token: newToken, token_sent_at: new Date().toISOString() })
+      .eq("email", email);
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-    const verifyUrl = `${appUrl}/api/newsletter/verify?token=${existing.verification_token}`;
+    const verifyUrl = `${appUrl}/api/newsletter/verify?token=${newToken}`;
     try {
       await sendNewsletterConfirmation(email, verifyUrl);
     } catch {
@@ -120,6 +125,7 @@ export async function POST(req: NextRequest) {
     stripe_promo_code_id: stripePromoId,
     verified: false,
     verification_token: token,
+    token_sent_at: new Date().toISOString(),
   });
 
   if (error) return NextResponse.json({ error: "Błąd zapisu." }, { status: 500 });

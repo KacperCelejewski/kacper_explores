@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabase
     .from("newsletter_subscribers")
-    .select("id, discount_code, verified, created_at")
+    .select("id, discount_code, verified, token_sent_at")
     .eq("verification_token", token)
     .maybeSingle();
 
@@ -33,11 +33,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${appUrl}/?newsletter=verified&code=${data.discount_code}`);
   }
 
-  // Check token age (48h expiry)
-  const createdAt = new Date(data.created_at as string);
-  const age = Date.now() - createdAt.getTime();
-  if (age > 48 * 60 * 60 * 1000) {
-    return NextResponse.redirect(`${appUrl}/?newsletter=expired`);
+  // Check token age (48h expiry) — only if token_sent_at is set
+  if (data.token_sent_at) {
+    const age = Date.now() - new Date(data.token_sent_at as string).getTime();
+    if (age > 48 * 60 * 60 * 1000) {
+      return NextResponse.redirect(`${appUrl}/?newsletter=expired`);
+    }
   }
 
   await supabase
