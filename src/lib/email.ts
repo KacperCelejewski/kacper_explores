@@ -7,7 +7,7 @@ export async function sendNewsletterConfirmation(email: string, verifyUrl: strin
   await resend.emails.send({
     from: "Włóczykij <onboarding@resend.dev>",
     to: email,
-    subject: "Potwierdź zapis — odbierz 10% na Pack",
+    subject: "Potwierdź zapis — odbierz 10% na Pro Roczny",
     html: `
 <!DOCTYPE html>
 <html lang="pl">
@@ -22,7 +22,7 @@ export async function sendNewsletterConfirmation(email: string, verifyUrl: strin
           <td style="background:#FF6B35;padding:28px 32px;">
             <p style="margin:0;color:white;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">Włóczykij</p>
             <h1 style="margin:8px 0 0;color:white;font-size:22px;font-weight:800;line-height:1.3;">
-              Potwierdź zapis<br>i odbierz 10% zniżki
+              Potwierdź zapis<br>i odbierz 10% na Pro Roczny
             </h1>
           </td>
         </tr>
@@ -32,7 +32,7 @@ export async function sendNewsletterConfirmation(email: string, verifyUrl: strin
           <td style="padding:32px;">
             <p style="margin:0 0 20px;color:#4B5563;font-size:15px;line-height:1.6;">
               Dzięki za zapisanie się do newslettera!<br>
-              Kliknij poniżej, żeby potwierdzić swój adres e-mail i dostać <strong style="color:#FF6B35;">unikalny kod na 10% zniżki</strong> na Pack.
+              Kliknij poniżej, żeby potwierdzić swój adres e-mail i dostać <strong style="color:#FF6B35;">unikalny kod na 10% zniżki</strong> na subskrypcję Pro Roczny.
             </p>
 
             <table width="100%" cellpadding="0" cellspacing="0">

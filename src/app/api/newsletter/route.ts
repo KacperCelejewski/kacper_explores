@@ -6,7 +6,7 @@ import { checkRateLimit } from "@/lib/rateLimit";
 import { getClientIp } from "@/lib/validate";
 import { randomBytes } from "crypto";
 
-const COUPON_ID = "newsletter_10pct";
+const COUPON_ID = "newsletter_10pct_yearly";
 
 function createServiceClient() {
   return createClient(
@@ -30,7 +30,7 @@ async function ensureCoupon() {
       id: COUPON_ID,
       percent_off: 10,
       duration: "once",
-      name: "Newsletter — 10% na Pack",
+      name: "Newsletter — 10% na Pro Roczny",
     });
   }
 }

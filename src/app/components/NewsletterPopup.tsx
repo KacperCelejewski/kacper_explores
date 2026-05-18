@@ -108,7 +108,7 @@ function NewsletterPopupInner() {
           exit={{ y: 100, opacity: 0 }}
           transition={{ type: "spring", damping: 28, stiffness: 280 }}
           role="dialog"
-          aria-label="Newsletter — 10% zniżki na Pack"
+          aria-label="Newsletter — 10% zniżki na Pro Roczny"
           style={{
             position: "fixed",
             bottom: 80,
@@ -149,11 +149,11 @@ function NewsletterPopupInner() {
           </p>
           <h2 className="text-xl font-bold leading-snug">
             Zapisz się i odbierz<br />
-            <span style={{ color: "var(--accent)" }}>10% zniżki na Pack</span>
+            <span style={{ color: "var(--accent)" }}>10% zniżki na Pro Roczny</span>
           </h2>
           <p className="text-sm mt-2 leading-relaxed" style={{ color: "var(--text-muted)" }}>
             Nowe kierunki, triki budżetowe i okazje lotnicze co tydzień.
-            Potwierdzisz e-mail — wyślemy kod od razu.
+            Zapisz się i odbierz kod na 10% taniej na roczne Pro.
           </p>
 
           <AnimatePresence mode="wait">
@@ -187,14 +187,14 @@ function NewsletterPopupInner() {
                   </button>
                 </div>
                 <p className="text-xs mt-3 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                  Wklej kod przy zakupie Packa na stronie płatności — otrzymasz 10% zniżki.
+                  Wklej kod przy zakupie Pro Roczny na stronie płatności — otrzymasz 10% zniżki.
                 </p>
                 <Link
                   href="/pricing"
                   className="btn-primary mt-4"
                   style={{ display: "block", textAlign: "center", textDecoration: "none", fontSize: "0.875rem" }}
                 >
-                  Kup Pack ze zniżką →
+                  Kup Pro Roczny ze zniżką →
                 </Link>
               </motion.div>
             )}
