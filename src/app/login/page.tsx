@@ -25,7 +25,7 @@ function LoginContent() {
       options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${next}` },
     });
     setLoading(false);
-    if (error) setError("Błąd wysyłania. Sprawdź adres email.");
+    if (error) setError(`Błąd: ${error.message}`);
     else setSent(true);
   };
 
