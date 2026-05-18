@@ -299,6 +299,7 @@ export async function searchFlightOptions(
   }
 
   const candidates = candidateDates(month, duration);
+  const allResults: RealFlight[] = [];
 
   for (const { departDate, returnDate } of candidates.slice(0, 3)) {
     const cacheKey = `sky-${originCode}-${destCode}-${departDate}-${returnDate}`;
@@ -307,7 +308,8 @@ export async function searchFlightOptions(
     const mem = memCache.get(cacheKey);
     if (mem && mem.expiresAt > Date.now() && mem.data.length > 0) {
       void logUsage(cacheKey, originCode, destCode, month, true);
-      return { flights: mem.data.slice(0, maxResults) };
+      allResults.push(...mem.data);
+      continue;
     }
 
     // L2
@@ -315,29 +317,32 @@ export async function searchFlightOptions(
     if (cached && cached.length > 0) {
       memCache.set(cacheKey, { data: cached, expiresAt: Date.now() + CACHE_TTL });
       void logUsage(cacheKey, originCode, destCode, month, true);
-      return { flights: cached.slice(0, maxResults) };
+      allResults.push(...cached);
+      continue;
     }
 
     try {
       const results = await fetchForDate(originSky, destSky, departDate, returnDate, originCode, destCode, apiKey);
-
       if (results && results.length > 0) {
         memCache.set(cacheKey, { data: results, expiresAt: Date.now() + CACHE_TTL });
         void writeSupabaseCache(cacheKey, results);
         void logUsage(cacheKey, originCode, destCode, month, false);
-        if (Math.random() < 0.01) void cleanExpiredSupabaseCache();
-        return { flights: results.slice(0, maxResults) };
+        allResults.push(...results);
       }
-
-      console.warn(`[sky-scrapper] no results for ${originCode}→${destCode} date:${departDate}, trying next candidate`);
     } catch (err) {
       console.error("[sky-scrapper] error:", err);
-      return { flights: [], reason: "exception" };
     }
   }
 
-  console.warn(`[sky-scrapper] no flights found for ${originCode}→${destCode} month:${month} after all candidates`);
-  return { flights: [], reason: "no_flights_this_month" };
+  if (Math.random() < 0.01) void cleanExpiredSupabaseCache();
+
+  if (allResults.length === 0) {
+    console.warn(`[sky-scrapper] no flights found for ${originCode}→${destCode} month:${month}`);
+    return { flights: [], reason: "no_flights_this_month" };
+  }
+
+  allResults.sort((a, b) => a.price - b.price);
+  return { flights: allResults.slice(0, maxResults) };
 }
 
 export async function searchCheapestFlight(
