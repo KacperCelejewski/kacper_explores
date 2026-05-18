@@ -37,12 +37,8 @@ export default function SiteNav() {
       style={{ borderColor: "var(--border)" }}
       aria-label="Nawigacja główna"
     >
-      <Link
-        href="/"
-        className="text-sm font-bold tracking-wide"
-        style={{ color: "var(--accent)", textDecoration: "none" }}
-      >
-        Włóczykij
+      <Link href="/" style={{ textDecoration: "none", lineHeight: 0 }} aria-label="Włóczykij – strona główna">
+        <img src="/logo.svg" alt="Włóczykij" height={28} style={{ height: 28, width: "auto" }} />
       </Link>
       <div className="flex items-center gap-3">
         <Link
