@@ -932,8 +932,10 @@ function ActivityCard({
       transition={{ delay: index * 0.04 }}
       className="flex gap-3 relative"
     >
-      <div className="flex-shrink-0 w-11 text-center relative z-10">
-        <span className="text-lg" aria-hidden="true">{activity.emoji}</span>
+      <div className="flex-shrink-0 w-11 text-center relative z-10 overflow-hidden">
+        <span className="text-lg leading-none" aria-hidden="true">
+          {[...activity.emoji][0] ?? "📍"}
+        </span>
         <p className="text-xs mt-0.5 font-mono" style={{ color: "var(--text-muted)" }}>
           {activity.time}
         </p>
