@@ -75,7 +75,7 @@ function DestCard({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       className="rounded-2xl overflow-hidden"
-      style={{ background: "var(--card-bg)", border: "1px solid var(--border)" }}
+      style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
     >
       {/* Photo */}
       <div className="relative h-44 overflow-hidden">
@@ -232,7 +232,7 @@ function FlightModal({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 40 }}
         className="w-full max-w-md rounded-2xl p-6"
-        style={{ background: "var(--card-bg)", border: "1px solid var(--border)" }}
+        style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
       >
         <div className="flex items-center gap-3 mb-5">
           <span className="text-3xl">{dest.coverImage}</span>
@@ -341,7 +341,7 @@ function UpgradeModal({ onClose }: { onClose: () => void }) {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         className="w-full max-w-sm rounded-2xl p-6 text-center"
-        style={{ background: "var(--card-bg)", border: "1px solid var(--border)" }}
+        style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
       >
         <div className="text-4xl mb-3">✈️</div>
         <h3 className="font-bold text-lg mb-2" style={{ color: "var(--text-primary)" }}>
@@ -512,7 +512,7 @@ export default function DestinationsPage() {
       <div className="flex flex-col flex-1 px-5 pb-8">
         <div className="pt-6 pb-4">
           <p className="text-sm font-medium animate-pulse" style={{ color: "var(--text-muted)" }}>
-            AI dobiera destynacje do Twojego profilu…
+            Dobieram destynacje do Twojego profilu…
           </p>
         </div>
         <Skeleton />
@@ -575,7 +575,7 @@ export default function DestinationsPage() {
           Twoje destynacje
         </h1>
         <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-          AI dobrała te miejsca specjalnie dla Ciebie. Kliknij &ldquo;Planuj wyjazd&rdquo; i podaj daty lotu.
+          Dopasowane do Twojego budżetu i stylu. Kliknij &ldquo;Planuj wyjazd&rdquo; i podaj daty lotu.
         </p>
       </div>
 
@@ -599,8 +599,8 @@ export default function DestinationsPage() {
             className="w-16 h-16 rounded-full border-4 border-transparent animate-spin"
             style={{ borderTopColor: "var(--accent)" }}
           />
-          <p className="text-white font-semibold text-lg">Generuję Twój plan…</p>
-          <p className="text-white/60 text-sm">Gemini AI pracuje, chwilkę…</p>
+          <p className="text-white font-semibold text-lg">Układam Twój plan…</p>
+          <p className="text-white/60 text-sm">Za chwilę wiesz dokąd lecisz.</p>
         </div>
       )}
 
