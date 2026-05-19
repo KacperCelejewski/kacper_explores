@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { useRef, useState, useCallback } from "react";
 import { IconPlane, IconClock, IconCoin } from "@/app/components/Icons";
 import { getCityPhotoUrl, FEATURED_DESTINATIONS } from "@/lib/cityPhotos";
 
@@ -22,6 +23,24 @@ const EXAMPLE_PLAN = [
 ];
 
 export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: string[] }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [activeCard, setActiveCard] = useState(0);
+
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const card = el.querySelector<HTMLElement>("[data-card]");
+    if (!card) return;
+    const cardWidth = card.offsetWidth + 12;
+    setActiveCard(Math.min(Math.round(el.scrollLeft / cardWidth), FEATURED_DESTINATIONS.length - 1));
+  }, []);
+
+  const scrollToCard = (i: number) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const cards = el.querySelectorAll<HTMLElement>("[data-card]");
+    cards[i]?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
+  };
   return (
     <div className="flex flex-col flex-1 px-5 pb-10">
       {/* Brand */}
@@ -166,6 +185,8 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
         </div>
         {/* full-width snap carousel — break out of px-5 container */}
         <div
+          ref={scrollRef}
+          onScroll={handleScroll}
           className="flex overflow-x-auto"
           style={{
             scrollSnapType: "x mandatory",
@@ -184,6 +205,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
               initial={{ opacity: 0, scale: 0.97 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3, delay: 0.6 + i * 0.06 }}
+              data-card
               className="relative flex-shrink-0 rounded-2xl overflow-hidden"
               style={{
                 width: "min(calc(100vw - 56px), 408px)",
@@ -231,15 +253,21 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
         </div>
         {/* dot indicators */}
         <div className="flex justify-center gap-1.5 mt-3">
-          {FEATURED_DESTINATIONS.map((dest, i) => (
-            <div
-              key={dest.city}
-              className="rounded-full"
+          {FEATURED_DESTINATIONS.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => scrollToCard(i)}
+              aria-label={`Karta ${i + 1}`}
               style={{
-                width: i === 0 ? 16 : 6,
-                height: 6,
-                background: i === 0 ? "var(--accent)" : "var(--border)",
+                width: i === activeCard ? 20 : 8,
+                height: 8,
+                borderRadius: 4,
+                border: "none",
+                padding: 0,
+                flexShrink: 0,
+                cursor: "pointer",
                 transition: "all 0.2s",
+                background: i === activeCard ? "var(--accent)" : "var(--border)",
               }}
             />
           ))}
