@@ -157,13 +157,13 @@ export async function POST(req: NextRequest) {
 
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      const isQuota = msg.includes("429") || msg.toLowerCase().includes("quota");
-      console.error(`[destinations] model ${modelName} error:`, msg);
-      void logGeminiCall({ endpoint: "destinations", model: modelName, success: false, error_code: isQuota ? "quota" : "error" });
-      if (!isQuota) {
+      const isRetryable = msg.includes("429") || msg.includes("503") || msg.toLowerCase().includes("quota") || msg.toLowerCase().includes("high demand") || msg.toLowerCase().includes("service unavailable") || msg.toLowerCase().includes("overloaded");
+      console.error(`[destinations] model ${modelName} error (retryable=${isRetryable}):`, msg);
+      void logGeminiCall({ endpoint: "destinations", model: modelName, success: false, error_code: isRetryable ? "quota_503" : "error" });
+      if (!isRetryable) {
         return NextResponse.json({ error: `Błąd AI: ${msg}` }, { status: 500 });
       }
-      // quota → try next model
+      // retryable (quota / 503) → try next model
     }
   }
 
