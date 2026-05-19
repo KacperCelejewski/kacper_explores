@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI, SchemaType, type Schema } from "@google/generative-ai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { logGeminiCall } from "@/lib/geminiLog";
 
 export const maxDuration = 60;
@@ -9,59 +9,6 @@ import { validateQuizAnswers, validateDestination, getClientIp } from "@/lib/val
 import { getUserProfile, canGenerate, isPro } from "@/lib/userProfile";
 import { createClient } from "@/lib/supabase/server";
 import type { QuizAnswers, DestinationRecommendation, FlightDetails } from "@/types";
-
-const responseSchema: Schema = {
-  type: SchemaType.OBJECT,
-  properties: {
-    city: { type: SchemaType.STRING },
-    country: { type: SchemaType.STRING },
-    duration: { type: SchemaType.NUMBER },
-    totalBudgetEstimate: { type: SchemaType.STRING },
-    budgetBreakdown: {
-      type: SchemaType.OBJECT,
-      properties: {
-        flights: { type: SchemaType.STRING },
-        accommodation: { type: SchemaType.STRING },
-        food: { type: SchemaType.STRING },
-        attractions: { type: SchemaType.STRING },
-      },
-      required: ["flights", "accommodation", "food", "attractions"],
-    },
-    generalTips: {
-      type: SchemaType.ARRAY,
-      items: { type: SchemaType.STRING },
-    },
-    days: {
-      type: SchemaType.ARRAY,
-      items: {
-        type: SchemaType.OBJECT,
-        properties: {
-          day: { type: SchemaType.NUMBER },
-          date: { type: SchemaType.STRING },
-          theme: { type: SchemaType.STRING },
-          activities: {
-            type: SchemaType.ARRAY,
-            items: {
-              type: SchemaType.OBJECT,
-              properties: {
-                time: { type: SchemaType.STRING },
-                title: { type: SchemaType.STRING },
-                description: { type: SchemaType.STRING },
-                type: { type: SchemaType.STRING },
-                cost: { type: SchemaType.STRING },
-                location: { type: SchemaType.STRING, nullable: true },
-                emoji: { type: SchemaType.STRING },
-              },
-              required: ["time", "title", "description", "type", "cost", "emoji"],
-            },
-          },
-        },
-        required: ["day", "date", "theme", "activities"],
-      },
-    },
-  },
-  required: ["city", "country", "duration", "totalBudgetEstimate", "budgetBreakdown", "generalTips", "days"],
-};
 
 export async function POST(req: NextRequest) {
   // 1. Auth — wymagane logowanie
@@ -132,9 +79,9 @@ export async function POST(req: NextRequest) {
         const prompt = buildPlanPrompt(dest, quiz, details);
 
         const MODELS = [
-          { name: "gemini-2.5-flash", thinking: true },
           { name: "gemini-2.0-flash", thinking: false },
           { name: "gemini-2.5-flash-lite", thinking: false },
+          { name: "gemini-2.5-flash", thinking: true },
           { name: "gemini-flash-latest", thinking: false },
         ];
 
@@ -152,7 +99,6 @@ export async function POST(req: NextRequest) {
               model: name,
               generationConfig: {
                 responseMimeType: "application/json",
-                responseSchema,
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 ...(thinking ? { thinkingConfig: { thinkingBudget: 0 } } as any : {}),
               },
