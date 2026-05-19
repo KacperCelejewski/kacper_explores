@@ -934,7 +934,7 @@ function ActivityCard({
     >
       <div className="flex-shrink-0 w-11 text-center relative z-10 overflow-hidden">
         <span className="text-lg leading-none" aria-hidden="true">
-          {[...activity.emoji][0] ?? "📍"}
+          {[...new Intl.Segmenter().segment(activity.emoji ?? "")][0]?.segment ?? "📍"}
         </span>
         <p className="text-xs mt-0.5 font-mono" style={{ color: "var(--text-muted)" }}>
           {activity.time}
