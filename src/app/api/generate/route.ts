@@ -79,7 +79,6 @@ export async function POST(req: NextRequest) {
         const prompt = buildPlanPrompt(dest, quiz, details);
 
         const MODELS = [
-          { name: "gemini-2.0-flash", thinking: false },
           { name: "gemini-2.5-flash-lite", thinking: false },
           { name: "gemini-2.5-flash", thinking: true },
           { name: "gemini-flash-latest", thinking: false },

@@ -68,7 +68,6 @@ Wymagania:
 
   const MODELS = [
     { name: "gemini-2.5-flash", thinking: true },
-    { name: "gemini-2.0-flash", thinking: false },
     { name: "gemini-2.5-flash-lite", thinking: false },
   ];
 

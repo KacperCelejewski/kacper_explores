@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
 
   const prompt = buildPrompt(body as Record<string, unknown>);
 
-  const MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-flash-lite"];
+  const MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"];
 
   for (const modelName of MODELS) {
     try {
