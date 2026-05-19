@@ -185,7 +185,7 @@ export default function HomeClient() {
               transition={{ duration: 0.3, delay: 0.6 + i * 0.06 }}
               className="relative flex-shrink-0 rounded-2xl overflow-hidden"
               style={{
-                width: "calc(100vw - 56px)",
+                width: "min(calc(100vw - 56px), 408px)",
                 height: 300,
                 scrollSnapAlign: "start",
                 marginRight: i < FEATURED_DESTINATIONS.length - 1 ? 12 : 20,

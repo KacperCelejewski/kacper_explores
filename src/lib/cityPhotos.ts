@@ -105,7 +105,7 @@ export function getCityPhotoUrl(city: string, width = 800): string {
     CITY_PHOTOS[keyWithDiacritics] ??
     CITY_PHOTOS[keyNormalized] ??
     DEFAULT_ID;
-  return `https://images.unsplash.com/photo-${id}?w=${width}&q=85&auto=format&fit=crop&crop=entropy`;
+  return `https://images.unsplash.com/photo-${id}?w=${width}&q=85&auto=format&fit=crop&crop=center`;
 }
 
 // Featured destinations shown on the homepage
