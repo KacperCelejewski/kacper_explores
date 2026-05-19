@@ -38,6 +38,173 @@ function buildSkyscannerUrl(dest: DestinationRecommendation, airports: string[])
   return `https://www.skyscanner.pl/transport/flights/${origin.toLowerCase()}/${dest.city.toLowerCase().replace(/\s/g, "-")}/`;
 }
 
+// ── Generating overlay (shown during plan generation) ─────────────────────────
+
+const STEPS = [
+  "Analizuję Twoje preferencje…",
+  "Szukam najtańszych noclegów…",
+  "Dobieram atrakcje do Twojego stylu…",
+  "Układam plan dzień po dniu…",
+  "Obliczam budżet podróży…",
+  "Dodaję wskazówki dla podróżujących solo…",
+];
+
+const STEP_DELAYS = [0, 5, 12, 22, 35, 50];
+
+const CITY_FACTS: Record<string, string[]> = {
+  barcelona: ["Sagrada Família buduje się od 1882 roku i wciąż nie jest gotowa","Barcelona ma 4,2 km plaż w samym centrum","Antoni Gaudí zaprojektował 7 budynków wpisanych na listę UNESCO","Mercat de la Boqueria istnieje od XIII wieku"],
+  lizbona: ["Lizbona leży na 7 wzgórzach — tak samo jak Rzym","Tramwaj linii 28 kursuje nieprzerwanie od 1914 roku","Pastéis de nata kosztują ~1,20€ w każdej lokalnej piekarni","Fado jest wpisane na listę niematerialnego dziedzictwa UNESCO"],
+  porto: ["Port pochodzi wyłącznie z winnic w dolinie Douro","Most Dom Luís I zbudował uczeń Eiffla w 1886 roku","Porto dało nazwę całemu krajowi — Portugalia","Francesi to bułka za ~0,10€ jedzona przez miejscowych każdego ranka"],
+  wiedeń: ["Wiedeń przez 6 lat z rzędu zajmuje 1. miejsce w rankingu jakości życia","Lipizzańskie konie w Spanischer Reitschule ćwiczą 6 lat przed pierwszym pokazem","Kawa z mlekiem wynaleziono w Wiedniu po oblężeniu tureckim w 1683 roku","Metro w Wiedniu jest niezwykle punktualne — opóźnienie >2 min to rzadkość"],
+  budapeszt: ["Budapeszt powstał z połączenia trzech miast w 1873 roku","Terme Széchenyi to jedne z największych term w Europie","Ruin bary w dzielnicy VII to fenomen kulturalny na skalę światową","Bulwar Dunaju wpisany jest na listę UNESCO"],
+  praga: ["Praga zachowała średniowieczne centrum dzięki temu, że nie była bombardowana w II WŚ","Zegar astronomiczny na Rynku Starego Miasta działa od 1410 roku","Piwo w Pradze jest tańsze niż woda w wielu restauracjach","Most Karola ma 30 figur świętych — każda ma swoją historię"],
+  rzym: ["Rzym ma ponad 2800 fontann — więcej niż jakiekolwiek inne miasto na świecie","Do Fontanny di Trevi wrzuca się rocznie ~1,5 mln euro — pieniądze trafiają na cele charytatywne","Wejście do Koloseum jest bezpłatne pierwszą niedzielę miesiąca","Pizza al taglio sprzedawana jest na wagę — idealna opcja budżetowa"],
+  amsterdam: ["Amsterdam ma więcej rowerów niż mieszkańców — ok. 900 tys. vs 820 tys.","Domy przy kanałach celowo pochylają się do przodu — łatwiej wnosić meble","Anne Frank House rezerwuj z kilkumiesięcznym wyprzedzeniem","Rijksmuseum jest bezpłatne dla osób poniżej 18 lat"],
+  berlin: ["Berlin ma 3x więcej mostów niż Wenecja — ponad 1700","Mur Berliński stał zaledwie 28 lat — tyle co 1 pokolenie","Street food: currywurst to klasyk za ~3-4€","Wszystkie muzea na Wyspie Muzeów są bezpłatne w czwartkowy wieczór"],
+  krakow: ["Kraków jest jednym z niewielu miast Europy, które przetrwało II WŚ prawie bez zniszczeń","Legenda o smoku Wawelskim ma ponad 700 lat","Bar mleczny to relikt PRL — zupa i drugie danie za ok. 15 PLN","Kazimierz to jedna z najlepiej zachowanych dzielnic żydowskich w Europie"],
+};
+
+const GENERIC_FACTS = [
+  "Lokalny targ jest zawsze 2-3x tańszy niż restauracje przy atrakcjach",
+  "Komunikacja miejska jest zazwyczaj 4-5x tańsza niż Uber",
+  "Centra europejskich miast wyglądają najpiękniej o 7 rano — zanim przybędą turyści",
+  "Hostelowe wspólne kuchnie i bary to najlepszy sposób na poznanie innych podróżnych",
+  "Aplikacja Rome2Rio pomoże znaleźć najtańszy transport między miastami",
+  "Free walking tours są w niemal każdym europejskim mieście — płacisz napiwek",
+  "Muzea państwowe są często bezpłatne w pierwszy lub ostatni weekend miesiąca",
+  "Śniadanie w kawiarni za rogiem kosztuje 2-3x mniej niż w hotelu",
+];
+
+function getFacts(city?: string): string[] {
+  if (!city) return GENERIC_FACTS;
+  const key = city.toLowerCase().replace(/\s+/g, "");
+  return CITY_FACTS[key] ?? GENERIC_FACTS;
+}
+
+function GeneratingOverlay({ city }: { city?: string }) {
+  const [step, setStep] = useState(0);
+  const [factIndex, setFactIndex] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const facts = getFacts(city);
+
+  // Advance steps on schedule
+  useEffect(() => {
+    const timers = STEP_DELAYS.slice(1).map((delay, i) =>
+      setTimeout(() => setStep(i + 1), delay * 1000)
+    );
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
+  // Rotate facts every 8s
+  useEffect(() => {
+    const t = setInterval(() => setFactIndex((f) => (f + 1) % facts.length), 8000);
+    return () => clearInterval(t);
+  }, [facts.length]);
+
+  // Smooth progress bar — fills to 95% over 110s, never reaches 100%
+  useEffect(() => {
+    const start = Date.now();
+    const t = setInterval(() => {
+      const elapsed = (Date.now() - start) / 1000;
+      setProgress(Math.min(95, Math.round((elapsed / 110) * 95)));
+    }, 500);
+    return () => clearInterval(t);
+  }, []);
+
+  return (
+    <div
+      className="fixed inset-0 z-40 flex flex-col"
+      style={{ background: "var(--bg-primary)" }}
+    >
+      <div className="flex flex-col flex-1 items-center justify-center px-6 gap-8">
+        {/* Plane animation */}
+        <div className="relative" style={{ width: 180, height: 130 }}>
+          <div className="absolute bottom-0 select-none" style={{ left: "50%", transform: "translateX(-50%)", fontSize: "3.5rem" }}>
+            🗼
+          </div>
+          <motion.div
+            className="absolute select-none"
+            style={{ left: 0, top: 0, fontSize: "1.75rem" }}
+            animate={{ x: [-160, -60, 52, 64], y: [20, -20, 20, 48], rotate: [-30, -20, 5, 12] }}
+            transition={{ duration: 2.4, ease: [0.4, 0, 0.2, 1], repeat: Infinity, repeatDelay: 1.2 }}
+          >
+            ✈️
+          </motion.div>
+        </div>
+
+        {/* Title */}
+        <div className="text-center">
+          <p className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>
+            {city ? `Buduję plan dla ${city}` : "Buduję Twój plan podróży"}
+          </p>
+        </div>
+
+        {/* Steps */}
+        <div className="w-full max-w-xs flex flex-col gap-2.5">
+          {STEPS.map((s, i) => (
+            <div key={i} className="flex items-center gap-3">
+              <div
+                className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold transition-all duration-500"
+                style={{
+                  background: i < step ? "var(--accent)" : i === step ? "var(--accent-light)" : "var(--border)",
+                  color: i < step ? "#fff" : i === step ? "var(--accent)" : "var(--text-muted)",
+                  border: i === step ? "2px solid var(--accent)" : "none",
+                }}
+              >
+                {i < step ? "✓" : i === step ? (
+                  <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: "var(--accent)", display: "block" }} />
+                ) : ""}
+              </div>
+              <p
+                className="text-sm transition-all duration-500"
+                style={{
+                  color: i < step ? "var(--text-muted)" : i === step ? "var(--text-primary)" : "var(--border)",
+                  fontWeight: i === step ? 600 : 400,
+                  textDecoration: i < step ? "line-through" : "none",
+                }}
+              >
+                {s}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* Fact box */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={factIndex}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.4 }}
+            className="w-full max-w-xs px-4 py-3 rounded-2xl"
+            style={{ background: "var(--accent-light)", border: "1px solid rgba(196,98,45,0.2)" }}
+          >
+            <p className="text-xs font-bold mb-1" style={{ color: "var(--accent)" }}>💡 Czy wiesz, że…</p>
+            <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+              {facts[factIndex]}
+            </p>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* Progress bar */}
+      <div className="px-6 pb-10">
+        <div className="flex items-center justify-between mb-1.5">
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>Generowanie planu</p>
+          <p className="text-xs font-semibold" style={{ color: "var(--accent)" }}>{progress}%</p>
+        </div>
+        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
+          <div
+            className="h-full rounded-full transition-all duration-500"
+            style={{ width: `${progress}%`, background: "var(--accent)" }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Loading animation ─────────────────────────────────────────────────────────
 
 function PlaneAnimation({ city }: { city?: string }) {
@@ -673,17 +840,7 @@ export default function DestinationsPage() {
 
       {/* Generating overlay */}
       {isGeneratingPlan && (
-        <div
-          className="fixed inset-0 z-40 flex flex-col items-center justify-center gap-4"
-          style={{ background: "rgba(0,0,0,0.6)" }}
-        >
-          <div
-            className="w-16 h-16 rounded-full border-4 border-transparent animate-spin"
-            style={{ borderTopColor: "var(--accent)" }}
-          />
-          <p className="text-white font-semibold text-lg">Układam Twój plan…</p>
-          <p className="text-white/60 text-sm">Za chwilę wiesz dokąd lecisz.</p>
-        </div>
+        <GeneratingOverlay city={planModal?.city ?? quizAnswers.preferredCity} />
       )}
 
       {/* Destination cards */}
