@@ -38,18 +38,55 @@ function buildSkyscannerUrl(dest: DestinationRecommendation, airports: string[])
   return `https://www.skyscanner.pl/transport/flights/${origin.toLowerCase()}/${dest.city.toLowerCase().replace(/\s/g, "-")}/`;
 }
 
-// ── Loading skeleton ──────────────────────────────────────────────────────────
+// ── Loading animation ─────────────────────────────────────────────────────────
 
-function Skeleton() {
+function PlaneAnimation({ city }: { city?: string }) {
   return (
-    <div className="flex flex-col gap-4">
-      {Array.from({ length: 3 }).map((_, i) => (
+    <div className="flex flex-col flex-1 items-center justify-center gap-6">
+      {/* Scene */}
+      <div className="relative" style={{ width: 200, height: 160 }}>
+        {/* Tower */}
         <div
-          key={i}
-          className="rounded-2xl overflow-hidden animate-pulse"
-          style={{ background: "var(--card-bg)", height: 220 }}
-        />
-      ))}
+          className="absolute bottom-0 select-none leading-none"
+          style={{ left: "50%", transform: "translateX(-50%)", fontSize: "4rem" }}
+        >
+          🗼
+        </div>
+
+        {/* Plane — flies in from top-left, arcs down to tower tip */}
+        <motion.div
+          className="absolute select-none leading-none"
+          style={{ left: 0, top: 0, fontSize: "1.75rem" }}
+          animate={{
+            x: [-180, -80, 60, 72],
+            y: [20,  -20, 20, 55],
+            rotate: [-30, -20, 5, 12],
+          }}
+          transition={{
+            duration: 2.4,
+            ease: [0.4, 0, 0.2, 1],
+            repeat: Infinity,
+            repeatDelay: 1.2,
+          }}
+        >
+          ✈️
+        </motion.div>
+      </div>
+
+      {/* Label */}
+      <div className="text-center px-8">
+        <motion.p
+          className="text-base font-semibold"
+          animate={{ opacity: [1, 0.45, 1] }}
+          transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+          style={{ color: "var(--text-primary)" }}
+        >
+          {city ? `Przygotowuję plan dla ${city}` : "Dobieram destynacje dla Ciebie"}
+        </motion.p>
+        <p className="text-sm mt-1.5" style={{ color: "var(--text-muted)" }}>
+          Zazwyczaj zajmuje to ~30 sekund
+        </p>
+      </div>
     </div>
   );
 }
@@ -509,15 +546,8 @@ export default function DestinationsPage() {
   // ── Loading state ───────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="flex flex-col flex-1 px-5 pb-8">
-        <div className="pt-6 pb-4">
-          <p className="text-sm font-medium animate-pulse" style={{ color: "var(--text-muted)" }}>
-            {quizAnswers.preferredCity
-              ? `Przygotowuję opcje dla ${quizAnswers.preferredCity}…`
-              : "Dobieram destynacje do Twojego profilu…"}
-          </p>
-        </div>
-        <Skeleton />
+      <div className="flex flex-col flex-1">
+        <PlaneAnimation city={quizAnswers.preferredCity} />
       </div>
     );
   }
