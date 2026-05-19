@@ -698,7 +698,7 @@ export default function DestinationsPage() {
           if (!line.trim()) continue;
           let msg: Record<string, unknown>;
           try { msg = JSON.parse(line); } catch { continue; }
-          if (msg.error) throw new Error(msg.error as string);
+          if (msg.error) throw new Error(`${msg.error as string}${msg.detail ? ` [${msg.detail}]` : ""}`);
           if (msg.done) {
             setCurrentTrip({
               id: msg.tripId as string,
