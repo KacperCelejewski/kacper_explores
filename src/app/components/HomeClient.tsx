@@ -45,7 +45,7 @@ export default function HomeClient() {
         className="mt-5"
       >
         <h1 className="text-4xl font-bold leading-tight tracking-tight">
-          Masz wolny weekend<br />i 2 000 PLN?<br />
+          Masz wolny weekend<br />i trochę kasy?<br />
           <span style={{ color: "var(--accent)" }}>My mamy plan.</span>
         </h1>
         <p className="mt-4 text-base leading-relaxed" style={{ color: "var(--text-muted)" }}>
