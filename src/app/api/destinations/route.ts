@@ -135,19 +135,20 @@ export async function POST(req: NextRequest) {
 
     void logGeminiCall({ endpoint: "destinations", model: "gemini-2.5-flash", success: true });
 
-    const destinations: DestinationRecommendation[] = parsed.destinations.map((d) => ({
-      city: String(d.city),
-      country: String(d.country),
-      countryFlag: String(d.countryFlag),
-      coverImage: String(d.coverImage),
-      description: String(d.description),
-      tags: (d.tags as string[]).filter(Boolean) as TravelStyle[],
-      budgetLevel: (d.budgetLevel === "medium" ? "medium" : "low"),
-      estimatedFlightCost: String(d.estimatedFlightCost),
-      highlights: (d.highlights as string[]).filter(Boolean),
+    const raw = Array.isArray(parsed.destinations) ? parsed.destinations : [];
+    const destinations: DestinationRecommendation[] = raw.map((d) => ({
+      city: String(d.city ?? ""),
+      country: String(d.country ?? ""),
+      countryFlag: String(d.countryFlag ?? "🌍"),
+      coverImage: String(d.coverImage ?? "🗺️"),
+      description: String(d.description ?? ""),
+      tags: ((d.tags ?? []) as string[]).filter(Boolean) as TravelStyle[],
+      budgetLevel: (d.budgetLevel === "medium" ? "medium" : "low") as "low" | "medium",
+      estimatedFlightCost: String(d.estimatedFlightCost ?? ""),
+      highlights: ((d.highlights ?? []) as string[]).filter(Boolean),
       vibes: ((d.vibes ?? []) as string[]) as TravelVibe[],
       placeTypes: ((d.placeTypes ?? []) as string[]) as PlaceType[],
-    }));
+    })).filter((d) => d.city && d.country);
 
     return NextResponse.json({ destinations });
   } catch (err) {

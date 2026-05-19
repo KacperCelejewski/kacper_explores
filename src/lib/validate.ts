@@ -42,7 +42,6 @@ export function validateDestination(data: unknown): data is DestinationRecommend
 
   if (typeof d.city !== "string" || d.city.length > 60) return false;
   if (typeof d.country !== "string" || d.country.length > 60) return false;
-  if (!d.bestOffer || typeof d.bestOffer !== "object") return false;
 
   return true;
 }

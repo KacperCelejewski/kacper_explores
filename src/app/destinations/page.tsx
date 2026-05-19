@@ -389,12 +389,13 @@ export default function DestinationsPage() {
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState<string | null>(null);
   const [userStatus, setUserStatus]     = useState<UserStatus | null>(null);
+  const [fetchKey, setFetchKey]         = useState(0);
 
   const [planModal, setPlanModal]       = useState<DestinationRecommendation | null>(null);
   const [upgradeModal, setUpgradeModal] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
 
-  // Fetch destinations + profile on mount
+  // Fetch destinations + profile
   useEffect(() => {
     if (!_hasHydrated) return;
     if (!quizAnswers.budget) {
@@ -402,16 +403,27 @@ export default function DestinationsPage() {
       return;
     }
 
+    setLoading(true);
+    setError(null);
+
     Promise.all([
       fetch("/api/destinations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(quizAnswers),
-      }).then((r) => r.json()),
+      }).then(async (r) => {
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error ?? `HTTP ${r.status}`);
+        return data;
+      }),
       fetch("/api/profile").then((r) => r.json()),
     ])
       .then(([destData, profileData]) => {
-        setDestinations(destData.destinations ?? []);
+        if (!destData.destinations?.length) {
+          setError("AI nie zwróciło rekomendacji. Spróbuj ponownie.");
+        } else {
+          setDestinations(destData.destinations);
+        }
         setUserStatus(profileData);
         if (profileData?.authenticated) {
           fetch("/api/profile", {
@@ -421,9 +433,10 @@ export default function DestinationsPage() {
           }).catch(() => {});
         }
       })
-      .catch(() => setError("Nie udało się załadować rekomendacji."))
+      .catch((err: Error) => setError(err.message || "Nie udało się załadować rekomendacji."))
       .finally(() => setLoading(false));
-  }, [_hasHydrated, quizAnswers, router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [_hasHydrated, fetchKey, router]);
 
   const handlePlanClick = (dest: DestinationRecommendation) => {
     if (!userStatus?.authenticated) {
@@ -513,7 +526,7 @@ export default function DestinationsPage() {
       <div className="flex flex-col flex-1 items-center justify-center gap-4 px-8 text-center">
         <p className="text-base font-semibold" style={{ color: "var(--text-primary)" }}>{error}</p>
         <button
-          onClick={() => { setError(null); setLoading(true); }}
+          onClick={() => setFetchKey((k) => k + 1)}
           className="px-5 py-2.5 rounded-xl text-sm font-bold"
           style={{ background: "var(--accent)", color: "#fff" }}
         >
