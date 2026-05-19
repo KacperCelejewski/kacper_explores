@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI, SchemaType, type Schema } from "@google/generative-ai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createClient } from "@/lib/supabase/server";
 import { logGeminiCall } from "@/lib/geminiLog";
 import type { QuizAnswers } from "@/types";
@@ -7,25 +7,6 @@ import type { QuizAnswers } from "@/types";
 export const maxDuration = 30;
 
 const MONTH_NAMES = ["styczeń","luty","marzec","kwiecień","maj","czerwiec","lipiec","sierpień","wrzesień","październik","listopad","grudzień"];
-
-const responseSchema: Schema = {
-  type: SchemaType.OBJECT,
-  properties: {
-    categories: {
-      type: SchemaType.ARRAY,
-      items: {
-        type: SchemaType.OBJECT,
-        properties: {
-          name: { type: SchemaType.STRING },
-          emoji: { type: SchemaType.STRING },
-          items: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
-        },
-        required: ["name", "emoji", "items"],
-      },
-    },
-  },
-  required: ["categories"],
-};
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -63,7 +44,6 @@ Zwróć JSON z kategoriami: Dokumenty, Ubrania, Elektronika, Toaleta, Apteczka, 
       model: "gemini-2.5-flash",
       generationConfig: {
         responseMimeType: "application/json",
-        responseSchema,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ...({ thinkingConfig: { thinkingBudget: 0 } } as any),
       },

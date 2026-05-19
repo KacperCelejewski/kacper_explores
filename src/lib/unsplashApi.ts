@@ -15,10 +15,26 @@ const PL_TO_EN: Record<string, string> = {
   "porto": "porto", "saloniki": "thessaloniki",
 };
 
+// Cities whose names are also common words/names — need country disambiguation
+const CITY_WITH_COUNTRY: Record<string, string> = {
+  "sofia": "Sofia Bulgaria", "sofia bulgaria": "Sofia Bulgaria",
+  "milan": "Milan Italy", "mediolan": "Milan Italy",
+  "nice": "Nice France", "nicea": "Nice France",
+  "bath": "Bath England", "florence": "Florence Italy",
+  "florencja": "Florence Italy", "santiago": "Santiago Chile",
+  "victoria": "Victoria Seychelles", "lima": "Lima Peru",
+};
+
 function toEnglishCityName(city: string): string {
-  const key = city.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
   const plKey = city.toLowerCase();
+  const key = plKey.normalize("NFD").replace(/[̀-ͯ]/g, "");
   return PL_TO_EN[plKey] ?? PL_TO_EN[key] ?? city;
+}
+
+function toWikipediaTitle(city: string): string {
+  const plKey = city.toLowerCase();
+  const key = plKey.normalize("NFD").replace(/[̀-ͯ]/g, "");
+  return CITY_WITH_COUNTRY[plKey] ?? CITY_WITH_COUNTRY[key] ?? toEnglishCityName(city);
 }
 
 async function fetchWikipediaPhoto(city: string): Promise<string | null> {
@@ -66,7 +82,7 @@ export async function fetchCityPhotoUrl(city: string): Promise<string> {
   if (!isDefault) return hardcoded;
 
   // 3. Wikipedia API — free, no key, covers any city
-  const wiki = await fetchWikipediaPhoto(englishCity);
+  const wiki = await fetchWikipediaPhoto(toWikipediaTitle(city));
   if (wiki) return wiki;
 
   // 4. Final fallback — generic travel photo

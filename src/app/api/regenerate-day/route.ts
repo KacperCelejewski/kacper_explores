@@ -1,36 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI, SchemaType, type Schema } from "@google/generative-ai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createClient } from "@/lib/supabase/server";
 import { logGeminiCall } from "@/lib/geminiLog";
 import type { DayPlan, TripPlan } from "@/types";
 
 export const maxDuration = 45;
-
-const daySchema: Schema = {
-  type: SchemaType.OBJECT,
-  properties: {
-    day: { type: SchemaType.NUMBER },
-    date: { type: SchemaType.STRING },
-    theme: { type: SchemaType.STRING },
-    activities: {
-      type: SchemaType.ARRAY,
-      items: {
-        type: SchemaType.OBJECT,
-        properties: {
-          time: { type: SchemaType.STRING },
-          title: { type: SchemaType.STRING },
-          description: { type: SchemaType.STRING },
-          type: { type: SchemaType.STRING },
-          cost: { type: SchemaType.STRING },
-          location: { type: SchemaType.STRING },
-          emoji: { type: SchemaType.STRING },
-        },
-        required: ["time", "title", "description", "type", "cost", "emoji"],
-      },
-    },
-  },
-  required: ["day", "date", "theme", "activities"],
-};
 
 function isQuotaError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
@@ -99,7 +73,6 @@ Zachowaj pole "day": ${existingDay.day} i "date": "${existingDay.date}" bez zmia
         model: name,
         generationConfig: {
           responseMimeType: "application/json",
-          responseSchema: daySchema,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           ...(thinking ? ({ thinkingConfig: { thinkingBudget: 0 } } as any) : {}),
         },
