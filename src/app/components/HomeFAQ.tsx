@@ -21,7 +21,7 @@ const FAQS = [
   },
   {
     q: "Czy plan podróży można modyfikować?",
-    a: "Aktualnie plan jest generowany jednorazowo i możesz go przeglądać oraz udostępniać. Możliwość edycji planów to funkcja, którą rozwijamy dla użytkowników Pro.",
+    a: "Tak — możesz zamienić dowolną aktywność jednym kliknięciem albo wygenerować zupełnie nowy plan całego dnia. W trakcie podróży działa też asystent czatu, który zna Twój plan: zapytasz gdzie tanio zjeść, co zrobić gdy pada, jak dojechać z lotniska.",
   },
 ];
 

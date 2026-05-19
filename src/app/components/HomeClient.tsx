@@ -9,9 +9,9 @@ import { getCityPhotoUrl, FEATURED_DESTINATIONS } from "@/lib/cityPhotos";
 type IconFC = React.FC<{ size?: number }>;
 
 const features: { Icon: IconFC; label: string; desc: string }[] = [
-  { Icon: IconPlane, label: "Najtańszy lot w 3 minuty", desc: "Sprawdzamy WRO, KTW, BER i więcej — wybieramy co się opłaca" },
-  { Icon: IconClock, label: "Plan godzina po godzinie", desc: "AI układa Twój dzień od śniadania po kolację, z konkretnymi miejscami" },
-  { Icon: IconCoin, label: "Zero przepłacania", desc: "Street food, darmowe atrakcje, budżetowe triki których nie znajdziesz w Google" },
+  { Icon: IconPlane, label: "3 destynacje dopasowane do Twojego budżetu", desc: "Sprawdzamy WRO, KTW, BER i więcej — wybieramy co się opłaca" },
+  { Icon: IconClock, label: "Plan który działa gdy coś idzie nie tak", desc: "Zamień aktywność jednym kliknięciem, wygeneruj nowy dzień albo zapytaj asystenta w podróży" },
+  { Icon: IconCoin, label: "Ile wydasz — wiesz zanim zarezerwujesz", desc: "Szacunkowy podział na loty, noclegi, jedzenie i atrakcje gotowy od razu" },
 ];
 
 const EXAMPLE_PLAN = [
@@ -45,12 +45,12 @@ export default function HomeClient() {
         className="mt-5"
       >
         <h1 className="text-4xl font-bold leading-tight tracking-tight">
-          Budżet + miesiąc =<br />
-          <span style={{ color: "var(--accent)" }}>gotowy plan podróży.</span>
+          Masz wolny weekend<br />i 2 000 PLN?<br />
+          <span style={{ color: "var(--accent)" }}>My mamy plan.</span>
         </h1>
         <p className="mt-4 text-base leading-relaxed" style={{ color: "var(--text-muted)" }}>
-          AI znajdzie najtańszy lot i ułoży plan godzina po godzinie.
-          Za 3 minuty wiesz dokąd lecisz.
+          Odpowiedz na 5 pytań. Dostaniesz 3 destynacje,
+          szacunkowe ceny i plan dzień po dniu.
         </p>
       </motion.div>
 
@@ -65,7 +65,7 @@ export default function HomeClient() {
         <span className="text-lg">✈️</span>
         <div>
           <p className="text-xs font-bold" style={{ color: "var(--accent)" }}>
-            Ponad 500 planów wygenerowanych
+            500+ podróżników już wie dokąd jedzie
           </p>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
             5 planów za darmo · bez karty kredytowej
@@ -194,7 +194,7 @@ export default function HomeClient() {
           className="btn-primary"
           style={{ display: "block", textAlign: "center", textDecoration: "none" }}
         >
-          Sprawdź gdzie możesz polecieć →
+          Zaplanuj wyjazd — za darmo →
         </Link>
         <div className="flex items-center justify-center gap-3 mt-3">
           <span className="text-xs" style={{ color: "var(--text-muted)" }}>✓ Bez karty</span>

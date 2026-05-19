@@ -460,7 +460,7 @@ function StepWhen({
     <div>
       <h2 className="text-2xl font-bold mt-2">Kiedy i jak długo?</h2>
       <p className="text-sm mt-2 mb-5" style={{ color: "var(--text-muted)" }}>
-        AI uwzględni pogodę, sezon i okazje cenowe.
+        Pogoda, sezon, ceny — wszystko pod uwagę.
       </p>
 
       {/* Month grid */}
