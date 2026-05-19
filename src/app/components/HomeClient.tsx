@@ -173,10 +173,11 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
             msOverflowStyle: "none",
             marginLeft: "-20px",
             marginRight: "-20px",
-            paddingLeft: "20px",
             WebkitOverflowScrolling: "touch",
           }}
         >
+          {/* spacer — ensures left margin works reliably across browsers */}
+          <div style={{ flexShrink: 0, width: 20 }} />
           {FEATURED_DESTINATIONS.map((dest, i) => (
             <motion.div
               key={dest.city}
