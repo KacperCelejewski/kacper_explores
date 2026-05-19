@@ -164,55 +164,83 @@ export default function HomeClient() {
             Wszystkie →
           </Link>
         </div>
+        {/* full-width snap carousel — break out of px-5 container */}
         <div
-          className="flex gap-3 overflow-x-auto pb-2"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          className="flex overflow-x-auto"
+          style={{
+            scrollSnapType: "x mandatory",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+            marginLeft: "-20px",
+            marginRight: "-20px",
+            paddingLeft: "20px",
+            WebkitOverflowScrolling: "touch",
+          }}
         >
           {FEATURED_DESTINATIONS.map((dest, i) => (
             <motion.div
               key={dest.city}
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.97 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3, delay: 0.6 + i * 0.06 }}
               className="relative flex-shrink-0 rounded-2xl overflow-hidden"
-              style={{ width: 148, height: 200 }}
+              style={{
+                width: "calc(100vw - 56px)",
+                height: 300,
+                scrollSnapAlign: "start",
+                marginRight: i < FEATURED_DESTINATIONS.length - 1 ? 12 : 20,
+              }}
             >
               <Link href="/quiz" style={{ display: "block", height: "100%", textDecoration: "none" }}>
                 <Image
-                  src={getCityPhotoUrl(dest.city, 640)}
+                  src={getCityPhotoUrl(dest.city, 800)}
                   alt={dest.city}
                   fill
-                  sizes="148px"
+                  sizes="calc(100vw - 56px)"
                   className="object-cover"
                 />
                 <div
                   className="absolute inset-0"
                   style={{
-                    background: "linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.15) 55%, transparent 100%)",
+                    background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.1) 50%, transparent 100%)",
                   }}
                 />
-                {/* tag badge */}
-                <div className="absolute top-2.5 left-2.5">
+                <div className="absolute top-3 left-3">
                   <span
-                    className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                    className="text-[10px] font-bold px-2.5 py-1 rounded-full"
                     style={{ background: "var(--accent)", color: "#fff" }}
                   >
                     {dest.tag}
                   </span>
                 </div>
-                <div className="absolute bottom-0 left-0 right-0 p-3">
-                  <p className="text-white text-sm font-bold leading-tight">{dest.city}</p>
-                  <p className="text-white/70 text-[10px] leading-tight mt-0.5">{dest.flag} {dest.country}</p>
-                  <p className="text-white text-xs font-semibold mt-1.5">{dest.priceFrom}</p>
+                <div className="absolute bottom-0 left-0 right-0 p-4">
+                  <p className="text-white text-xl font-bold leading-tight">{dest.city}</p>
+                  <p className="text-white/70 text-xs leading-tight mt-0.5">{dest.flag} {dest.country}</p>
+                  <p className="text-white/90 text-sm font-semibold mt-2">{dest.priceFrom}</p>
                   <div
-                    className="mt-2 text-center text-[11px] font-bold py-1 rounded-lg"
+                    className="mt-3 text-center text-sm font-bold py-2 rounded-xl"
                     style={{ background: "var(--accent)", color: "#fff" }}
                   >
-                    Zaplanuj →
+                    Zaplanuj ten wyjazd →
                   </div>
                 </div>
               </Link>
             </motion.div>
+          ))}
+        </div>
+        {/* dot indicators */}
+        <div className="flex justify-center gap-1.5 mt-3">
+          {FEATURED_DESTINATIONS.map((dest, i) => (
+            <div
+              key={dest.city}
+              className="rounded-full"
+              style={{
+                width: i === 0 ? 16 : 6,
+                height: 6,
+                background: i === 0 ? "var(--accent)" : "var(--border)",
+                transition: "all 0.2s",
+              }}
+            />
           ))}
         </div>
       </motion.div>
