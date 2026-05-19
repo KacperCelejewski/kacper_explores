@@ -11,8 +11,10 @@ const PL_TO_EN: Record<string, string> = {
   "budapeszt": "budapest", "bratysława": "bratislava", "warszawa": "warsaw",
   "kraków": "krakow", "gdańsk": "gdansk", "wrocław": "wroclaw",
   "dubrownik": "dubrovnik", "ryga": "riga", "wilno": "vilnius",
-  "nicea": "nice", "lyon": "lyon", "marsylia": "marseille",
-  "porto": "porto", "saloniki": "thessaloniki",
+  "nicea": "nice", "marsylia": "marseille", "saloniki": "thessaloniki",
+  "walencja": "valencia", "katania": "catania", "bolonia": "bologna",
+  "tuluza": "toulouse", "zagrzeb": "zagreb", "sarajewo": "sarajevo",
+  "kiszyniów": "chisinau",
 };
 
 // Cities whose names are also common words/names — need country disambiguation
@@ -65,7 +67,7 @@ export async function fetchCityPhotoUrl(city: string): Promise<string> {
         `https://api.unsplash.com/search/photos?query=${encodeURIComponent(englishCity + " city")}&per_page=1&orientation=landscape&content_filter=high`,
         {
           headers: { Authorization: `Client-ID ${accessKey}` },
-          next: { revalidate: 86400 },
+          cache: "no-store",
         }
       );
       if (res.ok) {
