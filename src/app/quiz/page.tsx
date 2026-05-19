@@ -441,6 +441,8 @@ function durationNote(d: number): string {
   return `${full} pełne dni na miejscu + przylot i powrót`;
 }
 
+const MONTH_SHORT = ["sty","lut","mar","kwi","maj","cze","lip","sie","wrz","paź","lis","gru"];
+
 function StepWhen({
   month, setMonth, duration, setDuration,
 }: {
@@ -469,11 +471,12 @@ function StepWhen({
         {MONTH_NAMES.map((name, i) => (
           <button
             key={name}
-            className={`option-card text-center py-2.5 ${month === i + 1 ? "selected" : ""}`}
+            className={`option-card text-center ${month === i + 1 ? "selected" : ""}`}
+            style={{ padding: "10px 4px" }}
             onClick={() => setMonth(i + 1)}
             aria-pressed={month === i + 1}
           >
-            <p className="font-semibold text-xs">{name}</p>
+            <p className="font-semibold text-xs">{MONTH_SHORT[i]}</p>
           </button>
         ))}
       </div>
@@ -531,8 +534,6 @@ function StepWhen({
     </div>
   );
 }
-
-const MONTH_SHORT = ["sty","lut","mar","kwi","maj","cze","lip","sie","wrz","paź","lis","gru"];
 
 function QuizSummary() {
   const { quizAnswers } = useAppStore();

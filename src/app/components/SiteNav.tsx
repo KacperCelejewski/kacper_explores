@@ -90,7 +90,7 @@ export default function SiteNav() {
         ) : (
           <Link
             href="/login"
-            className="text-xs font-semibold px-3 py-1.5 rounded-full"
+            className="text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap"
             style={{ background: "var(--accent)", color: "white", textDecoration: "none" }}
           >
             Zaloguj się
