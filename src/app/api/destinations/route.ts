@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI, SchemaType, type Schema } from "@google/generative-ai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { checkRateLimit, LIMITS } from "@/lib/rateLimit";
 import { validateQuizAnswers, getClientIp } from "@/lib/validate";
 import { logGeminiCall } from "@/lib/geminiLog";
@@ -12,40 +12,13 @@ const MONTH_NAMES = [
   "lipiec","sierpień","wrzesień","październik","listopad","grudzień",
 ];
 
-const responseSchema: Schema = {
-  type: SchemaType.OBJECT,
-  properties: {
-    destinations: {
-      type: SchemaType.ARRAY,
-      items: {
-        type: SchemaType.OBJECT,
-        properties: {
-          city:                 { type: SchemaType.STRING },
-          country:              { type: SchemaType.STRING },
-          countryFlag:          { type: SchemaType.STRING },
-          coverImage:           { type: SchemaType.STRING },
-          description:          { type: SchemaType.STRING },
-          tags:                 { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
-          budgetLevel:          { type: SchemaType.STRING },
-          estimatedFlightCost:  { type: SchemaType.STRING },
-          highlights:           { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
-          vibes:                { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
-          placeTypes:           { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
-        },
-        required: ["city","country","countryFlag","coverImage","description","tags","budgetLevel","estimatedFlightCost","highlights"],
-      },
-    },
-  },
-  required: ["destinations"],
-};
-
 function buildPrompt(body: Record<string, unknown>): string {
   const styles = (body.styles as string[]) ?? [];
-  const budget = body.budget as string ?? "low";
-  const vibe = body.vibe as string | null ?? null;
-  const placeType = body.placeType as string | null ?? null;
-  const month = body.month as number | null ?? null;
-  const duration = body.duration as number | null ?? null;
+  const budget = (body.budget as string) ?? "low";
+  const vibe = (body.vibe as string | null) ?? null;
+  const placeType = (body.placeType as string | null) ?? null;
+  const month = (body.month as number | null) ?? null;
+  const duration = (body.duration as number | null) ?? null;
   const airports = (body.airports as string[]) ?? ["WRO"];
 
   const monthName = month ? MONTH_NAMES[month - 1] : "dowolny";
@@ -66,28 +39,44 @@ function buildPrompt(body: Record<string, unknown>): string {
     ? `lotnisko wylotu: ${airports[0]}`
     : `lotniska wylotu (dowolne z): ${airports.join(", ")}`;
 
-  return `Jesteś ekspertem od budżetowych podróży z Polski. Zaproponuj DOKŁADNIE 6 destynacji pasujących do poniższego profilu.
+  return `Jesteś ekspertem od budżetowych podróży z Polski. Zaproponuj DOKŁADNIE 6 destynacji pasujących do profilu.
 
-PROFIL PODRÓŻNIKA:
+PROFIL:
 - Budżet: ${budgetLabel}
 - Zainteresowania: ${styles.join(", ") || "różnorodne"}
-- Energia wyjazdu: ${vibe ? vibeMap[vibe] : "dowolna"}
+- Energia: ${vibe ? vibeMap[vibe] : "dowolna"}
 - Typ miejsca: ${placeType ? placeMap[placeType] : "dowolny"}
 - Miesiąc: ${monthName}
-- Długość wyjazdu: ${duration ? `${duration} dni` : "nieokreślona"}
+- Długość: ${duration ? `${duration} dni` : "nieokreślona"}
 - ${originDesc}
 
-ZASADY:
-- Propozycje MUSZĄ pasować do podanego budżetu i preferencji
-- Priorytet: destynacje dostępne tanimi lotami z podanych lotnisk (Ryanair, Wizz Air, easyJet)
-- estimatedFlightCost: realny koszt lotu w obie strony z podanych lotnisk, format "XXX–YYY PLN"
-- highlights: 3 konkretne powody dlaczego TO miejsce, nie ogólniki
-- tags: wybierz z: nature, history, architecture, food, beach, nightlife
-- budgetLevel: "low" jeśli lot < 400 PLN i nocleg < 80 PLN/noc, else "medium"
-- coverImage: jeden emoji reprezentujący miasto/kraj
-- Nie powtarzaj destynacji z tego samego kraju
+Zwróć tablicę JSON "destinations" z dokładnie 6 obiektami. Każdy obiekt MUSI mieć te pola:
+- city (string): nazwa miasta
+- country (string): nazwa kraju po polsku
+- countryFlag (string): flaga emoji
+- coverImage (string): jeden emoji reprezentujący miejsce
+- description (string): 1-2 zdania dlaczego warto
+- tags (array of strings): max 3, wybierz z: nature, history, architecture, food, beach, nightlife
+- budgetLevel (string): "low" lub "medium"
+- estimatedFlightCost (string): szacowany koszt lotu w obie strony, np. "350–550 PLN"
+- highlights (array of strings): dokładnie 3 konkretne powody
 
-Odpowiedz wyłącznie w formacie JSON.`;
+Format odpowiedzi (wyłącznie JSON, bez markdown):
+{
+  "destinations": [
+    {
+      "city": "...",
+      "country": "...",
+      "countryFlag": "...",
+      "coverImage": "...",
+      "description": "...",
+      "tags": ["..."],
+      "budgetLevel": "low",
+      "estimatedFlightCost": "...",
+      "highlights": ["...", "...", "..."]
+    }
+  ]
+}`;
 }
 
 export async function POST(req: NextRequest) {
@@ -108,52 +97,75 @@ export async function POST(req: NextRequest) {
   }
 
   if (!validateQuizAnswers(body)) {
-    return NextResponse.json({ error: "Nieprawidłowe dane wejściowe." }, { status: 400 });
+    console.error("[destinations] validateQuizAnswers failed:", JSON.stringify(body));
+    return NextResponse.json({ error: "Nieprawidłowe dane wejściowe.", detail: "validation_failed" }, { status: 400 });
   }
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
+    console.error("[destinations] GEMINI_API_KEY not set");
     return NextResponse.json({ error: "Gemini API key not configured." }, { status: 500 });
   }
 
   const prompt = buildPrompt(body as Record<string, unknown>);
-  const start = Date.now();
 
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema,
-      },
-    });
+  const MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-flash-lite"];
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
-    const parsed = JSON.parse(text) as { destinations: Array<Record<string, unknown>> };
+  for (const modelName of MODELS) {
+    try {
+      console.log(`[destinations] trying model: ${modelName}`);
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        generationConfig: { responseMimeType: "application/json" },
+      });
 
-    void logGeminiCall({ endpoint: "destinations", model: "gemini-2.5-flash", success: true });
+      const result = await model.generateContent(prompt);
+      const text = result.response.text();
+      console.log(`[destinations] raw response (first 300): ${text.slice(0, 300)}`);
 
-    const raw = Array.isArray(parsed.destinations) ? parsed.destinations : [];
-    const destinations: DestinationRecommendation[] = raw.map((d) => ({
-      city: String(d.city ?? ""),
-      country: String(d.country ?? ""),
-      countryFlag: String(d.countryFlag ?? "🌍"),
-      coverImage: String(d.coverImage ?? "🗺️"),
-      description: String(d.description ?? ""),
-      tags: ((d.tags ?? []) as string[]).filter(Boolean) as TravelStyle[],
-      budgetLevel: (d.budgetLevel === "medium" ? "medium" : "low") as "low" | "medium",
-      estimatedFlightCost: String(d.estimatedFlightCost ?? ""),
-      highlights: ((d.highlights ?? []) as string[]).filter(Boolean),
-      vibes: ((d.vibes ?? []) as string[]) as TravelVibe[],
-      placeTypes: ((d.placeTypes ?? []) as string[]) as PlaceType[],
-    })).filter((d) => d.city && d.country);
+      let parsed: { destinations?: Array<Record<string, unknown>> };
+      try {
+        const cleaned = text.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "").trim();
+        parsed = JSON.parse(cleaned);
+      } catch (parseErr) {
+        console.error("[destinations] JSON parse error:", parseErr, "raw:", text.slice(0, 500));
+        continue;
+      }
 
-    return NextResponse.json({ destinations });
-  } catch (err) {
-    void logGeminiCall({ endpoint: "destinations", model: "gemini-2.5-flash", success: false, error_code: "error" });
-    console.error("Destinations AI error:", err);
-    return NextResponse.json({ error: "Błąd generowania rekomendacji." }, { status: 500 });
+      const raw = Array.isArray(parsed.destinations) ? parsed.destinations : [];
+      console.log(`[destinations] parsed ${raw.length} destinations`);
+
+      const destinations: DestinationRecommendation[] = raw
+        .filter((d) => d && typeof d === "object" && d.city && d.country)
+        .map((d) => ({
+          city: String(d.city),
+          country: String(d.country),
+          countryFlag: String(d.countryFlag ?? "🌍"),
+          coverImage: String(d.coverImage ?? "🗺️"),
+          description: String(d.description ?? ""),
+          tags: ((d.tags ?? []) as string[]).filter(Boolean) as TravelStyle[],
+          budgetLevel: (d.budgetLevel === "medium" ? "medium" : "low") as "low" | "medium",
+          estimatedFlightCost: String(d.estimatedFlightCost ?? ""),
+          highlights: ((d.highlights ?? []) as string[]).filter(Boolean),
+          vibes: ((d.vibes ?? []) as string[]) as TravelVibe[],
+          placeTypes: ((d.placeTypes ?? []) as string[]) as PlaceType[],
+        }));
+
+      void logGeminiCall({ endpoint: "destinations", model: modelName, success: true });
+      return NextResponse.json({ destinations });
+
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const isQuota = msg.includes("429") || msg.toLowerCase().includes("quota");
+      console.error(`[destinations] model ${modelName} error:`, msg);
+      void logGeminiCall({ endpoint: "destinations", model: modelName, success: false, error_code: isQuota ? "quota" : "error" });
+      if (!isQuota) {
+        return NextResponse.json({ error: `Błąd AI: ${msg}` }, { status: 500 });
+      }
+      // quota → try next model
+    }
   }
+
+  return NextResponse.json({ error: "Wszystkie modele AI przeciążone. Spróbuj za chwilę." }, { status: 503 });
 }
