@@ -308,7 +308,11 @@ function QuizPageInner() {
 
       <motion.div layout className="mt-6">
         <button className="btn-primary" disabled={!canProceed()} onClick={handleNext}>
-          {currentQuizStep < TOTAL_STEPS - 1 ? "Dalej →" : "Znajdź loty →"}
+          {currentQuizStep < TOTAL_STEPS - 1
+            ? "Dalej →"
+            : quizAnswers.preferredCity
+            ? `Zaplanuj wyjazd do ${quizAnswers.preferredCity} →`
+            : "Dobierz destynacje →"}
         </button>
       </motion.div>
     </div>
