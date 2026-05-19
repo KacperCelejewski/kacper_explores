@@ -1,7 +1,6 @@
-import type { QuizAnswers, DestinationRecommendation, TripPlan } from "@/types";
+import type { QuizAnswers, DestinationRecommendation, FlightDetails, TripPlan } from "@/types";
 import { MONTH_NAMES } from "@/lib/mockFlights";
 import { calcTripSchedule, formatScheduleForPrompt } from "@/lib/tripSchedule";
-import type { RealFlight } from "@/lib/flights/rapidapi";
 
 const STYLE_LABELS: Record<string, string> = {
   nature: "natura i przyroda",
@@ -28,14 +27,14 @@ const PLACE_LABELS: Record<string, string> = {
 export function buildPlanPrompt(
   destination: DestinationRecommendation,
   quiz: QuizAnswers,
-  realFlight?: RealFlight | null
+  flightDetails?: FlightDetails | null
 ): string {
   const monthName = quiz.month ? MONTH_NAMES[quiz.month - 1] : "nieokreślony";
   const stylesList = quiz.styles.map((s) => STYLE_LABELS[s] ?? s).join(", ");
   const budgetLabel = quiz.budget === "low" ? "niski (backpacker)" : "średni (komfortowy)";
   const vibeLabel = quiz.vibe ? VIBE_LABELS[quiz.vibe] : null;
   const placeLabel = quiz.placeType ? PLACE_LABELS[quiz.placeType] : null;
-  const flightCost = destination.bestOffer.realCost;
+  const estimatedCost = destination.estimatedFlightCost ?? "nieznany";
   const duration = quiz.duration ?? 3;
 
   const vibeInstruction = vibeLabel ? `- Energia wyjazdu: ${vibeLabel}` : "";
@@ -51,11 +50,11 @@ export function buildPlanPrompt(
     ? "Uwzględnij aktywności fizyczne — piesze trasy, rowery miejskie, pływanie, sport. Mniej muzeów, więcej ruchu."
     : "Zbalansowane tempo — mix atrakcji i odpoczynku.";
 
-  const schedule = calcTripSchedule(destination.bestOffer, duration, realFlight);
+  const schedule = calcTripSchedule(duration, flightDetails);
   const schedulePrompt = formatScheduleForPrompt(schedule);
 
-  const flightNote = realFlight
-    ? `DANE LOTU (${realFlight.airline}, ${realFlight.departureDate}): wylot ${realFlight.departureTime} → przylot ${realFlight.arrivalTime} (${Math.floor(realFlight.durationMinutes / 60)}h${realFlight.durationMinutes % 60}m), powrót ${realFlight.returnDate} wylot ${realFlight.returnDepartureTime} → przylot ${realFlight.returnArrivalTime}. Cena: ~${realFlight.price} PLN.`
+  const flightNote = flightDetails
+    ? `DANE LOTU: przylot ${flightDetails.arrivalDate} o ${flightDetails.arrivalTime} (czas lokalny), powrót ${flightDetails.returnDate} wylot o ${flightDetails.returnTime}. Plan MUSI uwzględniać te godziny.`
     : `UWAGA: Dokładne godziny lotu nieznane — użytkownik rezerwuje samodzielnie. Plan musi być elastyczny.`;
 
   return `Jesteś ekspertem od budżetowych podróży solo po Europie. Stwórz szczegółowy plan podróży do ${destination.city}, ${destination.country}.
@@ -68,7 +67,7 @@ PROFIL PODRÓŻNIKA:
 ${vibeInstruction}
 ${placeInstruction}
 - Miesiąc: ${monthName}
-- Koszt lotów: ~${realFlight?.price ?? flightCost} PLN (w obie strony)
+- Szacowany koszt lotów: ${estimatedCost}
 
 INSTRUKCJE DLA KAŻDEGO DNIA (${duration} dni łącznie):
 
@@ -98,7 +97,7 @@ Odpowiedz WYŁĄCZNIE w formacie JSON:
   "duration": ${duration},
   "totalBudgetEstimate": "np. '1200-1500 PLN'",
   "budgetBreakdown": {
-    "flights": "${flightCost} PLN",
+    "flights": "${estimatedCost}",
     "accommodation": "np. '300-400 PLN'",
     "food": "np. '200-250 PLN'",
     "attractions": "np. '100-150 PLN'"

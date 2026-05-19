@@ -2,15 +2,18 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { QuizAnswers, DestinationRecommendation, Trip, DayPlan, DayActivity } from "@/types";
+import type { QuizAnswers, DestinationRecommendation, FlightDetails, Trip, DayPlan, DayActivity } from "@/types";
 
 interface AppState {
   // Quiz
   quizAnswers: QuizAnswers;
   currentQuizStep: number;
 
-  // Flight selection
+  // Destination selection
   selectedDestination: DestinationRecommendation | null;
+
+  // Flight details entered by the user
+  flightDetails: FlightDetails | null;
 
   // Trip / plan
   currentTrip: Trip | null;
@@ -27,6 +30,7 @@ interface AppState {
   resetQuiz: () => void;
 
   selectDestination: (dest: DestinationRecommendation) => void;
+  setFlightDetails: (details: FlightDetails | null) => void;
   setCurrentTrip: (trip: Trip) => void;
   updateTripDay: (dayIndex: number, day: DayPlan) => void;
   updateTripActivity: (dayIndex: number, activityIndex: number, activity: DayActivity) => void;
@@ -50,6 +54,7 @@ export const useAppStore = create<AppState>()(
       quizAnswers: defaultQuizAnswers,
       currentQuizStep: 0,
       selectedDestination: null,
+      flightDetails: null,
       currentTrip: null,
       isGeneratingPlan: false,
       _hasHydrated: false,
@@ -86,10 +91,12 @@ export const useAppStore = create<AppState>()(
           quizAnswers: defaultQuizAnswers,
           currentQuizStep: 0,
           selectedDestination: null,
+          flightDetails: null,
           currentTrip: null,
         }),
 
       selectDestination: (dest) => set({ selectedDestination: dest }),
+      setFlightDetails: (details) => set({ flightDetails: details }),
 
       setCurrentTrip: (trip) => set({ currentTrip: trip }),
 
@@ -148,6 +155,7 @@ export const useAppStore = create<AppState>()(
         quizAnswers: state.quizAnswers,
         currentQuizStep: state.currentQuizStep,
         selectedDestination: state.selectedDestination,
+        flightDetails: state.flightDetails,
         currentTrip: state.currentTrip,
       }),
     }

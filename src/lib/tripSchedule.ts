@@ -1,5 +1,4 @@
-import type { FlightOffer } from "@/types";
-import type { RealFlight } from "@/lib/flights/rapidapi";
+import type { FlightDetails } from "@/types";
 
 export interface DaySchedule {
   dayNumber: number;
@@ -30,31 +29,29 @@ function addHours(time: string, hours: number): string {
 }
 
 function formatTime(time: string): string {
-  // Normalize "8:45" → "08:45"
   const [h, m] = time.split(":");
   return `${String(Number(h)).padStart(2, "0")}:${m ?? "00"}`;
 }
 
-function calcArrivalDay(dayNumber: number, realArrivalTime?: string): DaySchedule {
-  if (realArrivalTime) {
-    const arrHour = parseHour(realArrivalTime);
-    const from = formatTime(addHours(realArrivalTime, 1.5));
+function calcArrivalDay(dayNumber: number, arrivalTime?: string): DaySchedule {
+  if (arrivalTime) {
+    const arrHour = parseHour(arrivalTime);
+    const from = formatTime(addHours(arrivalTime, 1.5));
     const fromHour = arrHour + 1.5;
 
     let instruction: string;
     if (fromHour >= 21) {
-      instruction = `DZIEŃ ${dayNumber} — PRZYLOT o ${realArrivalTime} (CZAS LOKALNY). Dojazd do centrum ~1,5h → dostępny od ~${from}. TYLKO: zameldowanie, kolacja w pobliżu. Maksymalnie 2 aktywności. BEZ zwiedzania.`;
+      instruction = `DZIEŃ ${dayNumber} — PRZYLOT o ${arrivalTime} (CZAS LOKALNY). Dojazd do centrum ~1,5h → dostępny od ~${from}. TYLKO: zameldowanie, kolacja w pobliżu. Maksymalnie 2 aktywności. BEZ zwiedzania.`;
     } else if (fromHour >= 15) {
-      instruction = `DZIEŃ ${dayNumber} — PRZYLOT o ${realArrivalTime}. Dojazd → centrum od ~${from}. Zaplanuj popołudnie i wieczór: zameldowanie, spacer, kolacja. 4-5 aktywności od ${from}.`;
+      instruction = `DZIEŃ ${dayNumber} — PRZYLOT o ${arrivalTime}. Dojazd → centrum od ~${from}. Zaplanuj popołudnie i wieczór: zameldowanie, spacer, kolacja. 4-5 aktywności od ${from}.`;
     } else if (fromHour >= 11) {
-      instruction = `DZIEŃ ${dayNumber} — PRZYLOT o ${realArrivalTime}. Dojazd → centrum od ~${from}. Pełne popołudnie: zameldowanie, pierwsze atrakcje, kolacja. 5-6 aktywności od ${from}.`;
+      instruction = `DZIEŃ ${dayNumber} — PRZYLOT o ${arrivalTime}. Dojazd → centrum od ~${from}. Pełne popołudnie: zameldowanie, pierwsze atrakcje, kolacja. 5-6 aktywności od ${from}.`;
     } else {
-      instruction = `DZIEŃ ${dayNumber} — PRZYLOT o ${realArrivalTime}. Dojazd → centrum od ~${from}. Prawie pełny dzień — szybkie zameldowanie, intensywne zwiedzanie. 6-7 aktywności od ${from}.`;
+      instruction = `DZIEŃ ${dayNumber} — PRZYLOT o ${arrivalTime}. Dojazd → centrum od ~${from}. Prawie pełny dzień — szybkie zameldowanie, intensywne zwiedzanie. 6-7 aktywności od ${from}.`;
     }
     return { dayNumber, type: "arrival", availableFrom: from, availableTo: "23:00", instruction };
   }
 
-  // Fallback: no real data — assume typical mid-afternoon arrival
   return {
     dayNumber,
     type: "arrival",
@@ -64,25 +61,23 @@ function calcArrivalDay(dayNumber: number, realArrivalTime?: string): DaySchedul
   };
 }
 
-function calcDepartureDay(dayNumber: number, realReturnDepartureTime?: string): DaySchedule {
-  if (realReturnDepartureTime) {
-    const retHour = parseHour(realReturnDepartureTime);
-    // Need to leave hotel ~3h before flight (transfer + security)
+function calcDepartureDay(dayNumber: number, returnTime?: string): DaySchedule {
+  if (returnTime) {
+    const retHour = parseHour(returnTime);
     const checkoutHour = Math.max(6, retHour - 3);
     const checkoutTime = formatTime(String(checkoutHour).padStart(2, "0") + ":00");
 
     let instruction: string;
     if (retHour <= 9) {
-      instruction = `DZIEŃ ${dayNumber} — POWRÓT. LOT O ${realReturnDepartureTime} — bardzo wczesny wylot! Wyjście z hotelu ok. ${checkoutTime}. Zaplanuj TYLKO: szybkie śniadanie na wynos, wymeldowanie. Maksymalnie 1-2 aktywności o świcie. BEZ zwiedzania.`;
+      instruction = `DZIEŃ ${dayNumber} — POWRÓT. LOT O ${returnTime} — bardzo wczesny wylot! Wyjście z hotelu ok. ${checkoutTime}. Zaplanuj TYLKO: szybkie śniadanie na wynos, wymeldowanie. Maksymalnie 1-2 aktywności o świcie. BEZ zwiedzania.`;
     } else if (retHour <= 14) {
-      instruction = `DZIEŃ ${dayNumber} — POWRÓT. LOT O ${realReturnDepartureTime} — wymeldowanie do ${checkoutTime}. Zaplanuj TYLKO poranek: śniadanie, krótki spacer w pobliżu hotelu, wymeldowanie. Maksymalnie 2-3 aktywności. Bez odległych miejsc.`;
+      instruction = `DZIEŃ ${dayNumber} — POWRÓT. LOT O ${returnTime} — wymeldowanie do ${checkoutTime}. Zaplanuj TYLKO poranek: śniadanie, krótki spacer w pobliżu hotelu, wymeldowanie. Maksymalnie 2-3 aktywności. Bez odległych miejsc.`;
     } else {
-      instruction = `DZIEŃ ${dayNumber} — POWRÓT. LOT O ${realReturnDepartureTime} — wymeldowanie do ${checkoutTime}. Zaplanuj spokojne przedpołudnie: śniadanie, kilka bliskich atrakcji, wymeldowanie, bagażownia w hotelu. Do 4 aktywności. Bez odległych miejsc ani rezerwacji.`;
+      instruction = `DZIEŃ ${dayNumber} — POWRÓT. LOT O ${returnTime} — wymeldowanie do ${checkoutTime}. Zaplanuj spokojne przedpołudnie: śniadanie, kilka bliskich atrakcji, wymeldowanie, bagażownia w hotelu. Do 4 aktywności. Bez odległych miejsc ani rezerwacji.`;
     }
     return { dayNumber, type: "departure", availableFrom: "07:00", availableTo: checkoutTime, instruction };
   }
 
-  // Fallback
   return {
     dayNumber,
     type: "departure",
@@ -103,24 +98,27 @@ function fullDay(dayNumber: number): DaySchedule {
 }
 
 export function calcTripSchedule(
-  flight: FlightOffer,
   duration: number,
-  realFlight?: RealFlight | null
+  flightDetails?: FlightDetails | null
 ): TripSchedule {
-  const arrivalTime = realFlight?.arrivalTime ?? null;
-  const arrivalDate = realFlight?.departureDate ?? flight.departureDate ?? null;
-  const returnDate = realFlight?.returnDate ?? flight.returnDate ?? null;
+  const arrivalTime = flightDetails?.arrivalTime ?? null;
+  const arrivalDate = flightDetails?.arrivalDate ?? null;
+  const returnDate = flightDetails?.returnDate ?? null;
 
   const days: DaySchedule[] = [];
 
   if (duration === 1) {
+    const fromTime = arrivalTime ? formatTime(addHours(arrivalTime, 1.5)) : "14:00";
+    const toTime = flightDetails?.returnTime
+      ? formatTime(String(Math.max(6, parseHour(flightDetails.returnTime) - 3)).padStart(2, "0") + ":00")
+      : "11:00";
     days.push({
       dayNumber: 1,
       type: "arrival_and_departure",
-      availableFrom: realFlight ? formatTime(addHours(realFlight.arrivalTime, 1.5)) : "14:00",
-      availableTo: realFlight ? formatTime(String(Math.max(6, parseHour(realFlight.returnDepartureTime) - 3)).padStart(2,"0") + ":00") : "11:00",
-      instruction: realFlight
-        ? `DZIEŃ 1 — PRZYLOT O ${realFlight.arrivalTime}, POWRÓT O ${realFlight.returnDepartureTime}. Czas w mieście: ${formatTime(addHours(realFlight.arrivalTime, 1.5))}–${formatTime(String(Math.max(6, parseHour(realFlight.returnDepartureTime) - 3)).padStart(2,"0") + ":00")}. Zaplanuj 3-4 aktywności blisko centrum.`
+      availableFrom: fromTime,
+      availableTo: toTime,
+      instruction: flightDetails
+        ? `DZIEŃ 1 — PRZYLOT O ${arrivalTime}, POWRÓT O ${flightDetails.returnTime}. Czas w mieście: ${fromTime}–${toTime}. Zaplanuj 3-4 aktywności blisko centrum.`
         : `DZIEŃ 1 — PRZYLOT I POWRÓT TEGO SAMEGO DNIA. Zaplanuj 3-4 aktywności blisko centrum. Lekki plan.`,
     });
     return { days, arrivalTime: arrivalTime ?? "14:00", arrivalDate, returnDate, usefulDays: 1 };
@@ -132,7 +130,7 @@ export function calcTripSchedule(
     days.push(fullDay(d));
   }
 
-  days.push(calcDepartureDay(duration, realFlight?.returnDepartureTime ?? undefined));
+  days.push(calcDepartureDay(duration, flightDetails?.returnTime ?? undefined));
 
   const usefulDays = days.filter((d) => {
     const from = parseHour(d.availableFrom);
@@ -144,6 +142,5 @@ export function calcTripSchedule(
 }
 
 export function formatScheduleForPrompt(schedule: TripSchedule): string {
-  const lines = schedule.days.map((d) => d.instruction);
-  return lines.join("\n\n");
+  return schedule.days.map((d) => d.instruction).join("\n\n");
 }

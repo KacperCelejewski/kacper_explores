@@ -84,7 +84,7 @@ export default function ProfilePage() {
     if (p.month) setQuizAnswer("month", p.month);
     if (p.duration) setQuizAnswer("duration", p.duration);
     p.styles.forEach((s) => toggleStyle(s));
-    router.push("/flights");
+    router.push("/destinations");
   };
 
   const handleBillingPortal = async () => {

@@ -314,7 +314,7 @@ export default function PlanPage() {
         />
         <div className="absolute top-4 left-5">
           <button
-            onClick={() => router.push("/flights")}
+            onClick={() => router.push("/destinations")}
             className="text-sm transition-opacity hover:opacity-70 no-print"
             style={{ color: "rgba(255,255,255,0.9)" }}
           >

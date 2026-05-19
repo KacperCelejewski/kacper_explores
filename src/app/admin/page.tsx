@@ -1,5 +1,7 @@
 import { createClient as createServiceClient } from "@supabase/supabase-js";
-import { DAILY_CAP } from "@/lib/flights/rapidapi";
+
+// RapidAPI flight search removed — real-flight stats are legacy
+const DAILY_CAP = 10600;
 
 interface GeminiRow {
   called_at: string;

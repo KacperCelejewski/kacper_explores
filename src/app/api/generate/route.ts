@@ -4,12 +4,11 @@ import { logGeminiCall } from "@/lib/geminiLog";
 
 export const maxDuration = 60;
 import { buildPlanPrompt, parsePlanResponse, validateAndFixPlan } from "@/lib/gemini";
-import { searchCheapestFlight } from "@/lib/flights/rapidapi";
 import { checkRateLimit, LIMITS } from "@/lib/rateLimit";
 import { validateQuizAnswers, validateDestination, getClientIp } from "@/lib/validate";
 import { getUserProfile, canGenerate, isPro } from "@/lib/userProfile";
 import { createClient } from "@/lib/supabase/server";
-import type { QuizAnswers, DestinationRecommendation } from "@/types";
+import type { QuizAnswers, DestinationRecommendation, FlightDetails } from "@/types";
 
 const responseSchema: Schema = {
   type: SchemaType.OBJECT,
@@ -100,10 +99,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Nieprawidłowy format żądania." }, { status: 400 });
   }
 
-  const { destination, quizAnswers, selectedFlight } = body as {
+  const { destination, quizAnswers, flightDetails } = body as {
     destination: unknown;
     quizAnswers: unknown;
-    selectedFlight?: import("@/lib/flights/rapidapi").RealFlight | null;
+    flightDetails?: FlightDetails | null;
   };
 
   if (!validateDestination(destination) || !validateQuizAnswers(quizAnswers)) {
@@ -128,20 +127,9 @@ export async function POST(req: NextRequest) {
         const genAI = new GoogleGenerativeAI(apiKey);
         const dest = destination as DestinationRecommendation;
         const quiz = quizAnswers as QuizAnswers;
+        const details = (flightDetails ?? null) as FlightDetails | null;
 
-        const realFlight: import("@/lib/flights/rapidapi").RealFlight | null =
-          selectedFlight !== undefined
-            ? (selectedFlight ?? null)
-            : quiz.month
-            ? await searchCheapestFlight(
-                dest.bestOffer.origin.code,
-                dest.bestOffer.destination.code,
-                quiz.month,
-                quiz.duration ?? 3
-              ).catch(() => null)
-            : null;
-
-        const prompt = buildPlanPrompt(dest, quiz, realFlight);
+        const prompt = buildPlanPrompt(dest, quiz, details);
 
         const MODELS = [
           { name: "gemini-2.5-flash", thinking: true },

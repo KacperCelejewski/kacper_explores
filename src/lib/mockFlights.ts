@@ -146,7 +146,7 @@ export function getRecommendations(
 
       return { dest: { ...dest, bestOffer: best }, score };
     })
-    .filter((x): x is { dest: DestinationRecommendation; score: number } => x !== null);
+    .filter((x) => x !== null) as Array<{ dest: DestinationRecommendation; score: number }>;
 
   return scored
     .sort((a, b) => b.score - a.score)

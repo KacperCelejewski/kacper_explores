@@ -138,7 +138,7 @@ function QuizPageInner() {
         if (d.authenticated && d.quiz_preferences) setSavedPrefs(d.quiz_preferences);
         if (d.authenticated && searchParams.get("afterLogin") === "1" && !autoStarted.current) {
           autoStarted.current = true;
-          router.replace("/flights");
+          router.replace("/destinations");
         }
       })
       .catch(() => {});
@@ -155,7 +155,7 @@ function QuizPageInner() {
     if (savedPrefs.duration) setQuizAnswer("duration",  savedPrefs.duration);
     if (savedPrefs.airports?.length) setQuizAnswer("airports", savedPrefs.airports);
     savedPrefs.styles.forEach((s) => toggleStyle(s));
-    router.push("/flights");
+    router.push("/destinations");
   };
 
   const progress = ((currentQuizStep + 1) / TOTAL_STEPS) * 100;
@@ -178,7 +178,7 @@ function QuizPageInner() {
       if (!profile.authenticated) {
         router.push("/login?next=/quiz%3FafterLogin%3D1");
       } else {
-        router.push("/flights");
+        router.push("/destinations");
       }
     }
   };

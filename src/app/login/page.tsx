@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 
 function LoginContent() {
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/flights";
+  const next = searchParams.get("next") ?? "/destinations";
 
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
@@ -36,7 +36,7 @@ function LoginContent() {
     });
   };
 
-  const fromQuiz = next.includes("/flights") || next.includes("/quiz");
+  const fromQuiz = next.includes("/destinations") || next.includes("/quiz");
 
   return (
     <div className="flex flex-col flex-1 px-5 pb-8 justify-center">

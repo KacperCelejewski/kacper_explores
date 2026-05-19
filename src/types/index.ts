@@ -65,14 +65,26 @@ export interface DestinationRecommendation {
   tags: TravelStyle[];
   budgetLevel: BudgetLevel;
   coverImage: string; // emoji reprezentujące miasto
-  flightWro: FlightOffer | null;
-  flightBer: FlightOffer | null;
-  bestOffer: FlightOffer;
   description: string;
   vibes?: TravelVibe[];
   placeTypes?: PlaceType[];
-  /** All fetched flights keyed by departure airport code */
+  /** Estimated flight cost range from AI (e.g. "350–600 PLN") */
+  estimatedFlightCost?: string;
+  /** Pre-built Google Flights / Skyscanner search URL */
+  flightSearchUrl?: string;
+  /** Legacy flight offer fields — kept for backward compat with saved trips */
+  flightWro?: FlightOffer | null;
+  flightBer?: FlightOffer | null;
+  bestOffer?: FlightOffer;
   flights?: Record<string, FlightOffer>;
+}
+
+/** Manually entered flight details by the user */
+export interface FlightDetails {
+  arrivalDate: string;   // "2026-06-12"
+  arrivalTime: string;   // "14:30" — local time at destination
+  returnDate: string;    // "2026-06-19"
+  returnTime: string;    // "06:00" — departure time from destination
 }
 
 export interface DayActivity {
