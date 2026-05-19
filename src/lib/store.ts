@@ -27,6 +27,7 @@ interface AppState {
   toggleStyle: (style: QuizAnswers["styles"][number]) => void;
   nextQuizStep: () => void;
   prevQuizStep: () => void;
+  setCurrentQuizStep: (step: number) => void;
   resetQuiz: () => void;
 
   selectDestination: (dest: DestinationRecommendation) => void;
@@ -85,6 +86,8 @@ export const useAppStore = create<AppState>()(
         set((state) => ({
           currentQuizStep: Math.max(0, state.currentQuizStep - 1),
         })),
+
+      setCurrentQuizStep: (step) => set({ currentQuizStep: step }),
 
       resetQuiz: () =>
         set({

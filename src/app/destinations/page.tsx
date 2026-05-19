@@ -430,6 +430,7 @@ export default function DestinationsPage() {
     setCurrentTrip,
     setIsGeneratingPlan,
     isGeneratingPlan,
+    setCurrentQuizStep,
     _hasHydrated,
   } = useAppStore();
 
@@ -583,7 +584,7 @@ export default function DestinationsPage() {
       <div className="pt-6 pb-4">
         <div className="flex items-center justify-between mb-1">
           <button
-            onClick={() => router.push("/quiz")}
+            onClick={() => { setCurrentQuizStep(4); router.push("/quiz"); }}
             className="text-sm font-medium transition-opacity hover:opacity-60"
             style={{ color: "var(--text-muted)" }}
           >
