@@ -3,6 +3,8 @@ import HomeClient from "./components/HomeClient";
 import HomeFAQ from "./components/HomeFAQ";
 import SiteNav from "./components/SiteNav";
 import SiteFooter from "./components/SiteFooter";
+import { FEATURED_DESTINATIONS } from "@/lib/cityPhotos";
+import { fetchCityPhotoUrl } from "@/lib/unsplashApi";
 
 export const metadata: Metadata = {
   title: "Budżetowe podróże solo po Europie — AI planuje Twój wyjazd",
@@ -84,7 +86,11 @@ const webAppSchema = {
   },
 };
 
-export default function HomePage() {
+export default async function HomePage() {
+  const galleryPhotos = await Promise.all(
+    FEATURED_DESTINATIONS.map((d) => fetchCityPhotoUrl(d.city))
+  );
+
   return (
     <>
       <script
@@ -96,7 +102,7 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
       <SiteNav />
-      <HomeClient />
+      <HomeClient galleryPhotos={galleryPhotos} />
       <HomeFAQ />
       <SiteFooter />
     </>

@@ -21,7 +21,7 @@ const EXAMPLE_PLAN = [
   { time: "16:00", emoji: "🏖️", text: "Plaża Barceloneta — bezpłatna, leżak 3 EUR" },
 ];
 
-export default function HomeClient() {
+export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: string[] }) {
   return (
     <div className="flex flex-col flex-1 px-5 pb-10">
       {/* Brand */}
@@ -193,7 +193,7 @@ export default function HomeClient() {
             >
               <Link href={`/quiz?city=${encodeURIComponent(dest.city)}`} style={{ display: "block", height: "100%", textDecoration: "none" }}>
                 <Image
-                  src={getCityPhotoUrl(dest.city, 800)}
+                  src={galleryPhotos[i] || getCityPhotoUrl(dest.city, 800)}
                   alt={dest.city}
                   fill
                   sizes="calc(100vw - 56px)"
