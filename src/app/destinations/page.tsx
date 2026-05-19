@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/lib/store";
@@ -105,6 +105,17 @@ function DestCard({
   month: number | null;
 }) {
   const highlights = (dest as DestinationRecommendation & { highlights?: string[] }).highlights ?? [];
+  const [photoUrl, setPhotoUrl] = useState(() => getCityPhotoUrl(dest.city, 800));
+  const fetchedRef = useRef(false);
+
+  useEffect(() => {
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+    fetch(`/api/city-photo?city=${encodeURIComponent(dest.city)}`)
+      .then((r) => r.json())
+      .then((d) => { if (d.url) setPhotoUrl(d.url); })
+      .catch(() => {});
+  }, [dest.city]);
 
   return (
     <motion.div
@@ -117,7 +128,7 @@ function DestCard({
       {/* Photo */}
       <div className="relative h-44 overflow-hidden">
         <img
-          src={getCityPhotoUrl(dest.city, 800)}
+          src={photoUrl}
           alt={dest.city}
           className="w-full h-full object-cover"
           loading="lazy"
