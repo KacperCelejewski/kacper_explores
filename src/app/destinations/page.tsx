@@ -442,6 +442,7 @@ export default function DestinationsPage() {
   const [planModal, setPlanModal]       = useState<DestinationRecommendation | null>(null);
   const [upgradeModal, setUpgradeModal] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
+  const [showSavePrompt, setShowSavePrompt] = useState(false);
 
   // Fetch destinations + profile
   useEffect(() => {
@@ -474,11 +475,7 @@ export default function DestinationsPage() {
         }
         setUserStatus(profileData);
         if (profileData?.authenticated) {
-          fetch("/api/profile", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ quiz_preferences: quizAnswers }),
-          }).catch(() => {});
+          setShowSavePrompt(true);
         }
       })
       .catch((err: Error) => setError(err.message || "Nie udało się załadować rekomendacji."))
@@ -621,6 +618,47 @@ export default function DestinationsPage() {
           Dopasowane do Twojego budżetu i stylu. Kliknij &ldquo;Planuj wyjazd&rdquo; i podaj daty lotu.
         </p>
       </div>
+
+      {/* Save preferences prompt */}
+      <AnimatePresence>
+        {showSavePrompt && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.25 }}
+            className="rounded-2xl px-4 py-3 mb-4 flex items-center justify-between gap-3"
+            style={{ background: "var(--accent-light)", border: "1px solid rgba(196,98,45,0.25)" }}
+          >
+            <p className="text-xs font-medium" style={{ color: "var(--accent)" }}>
+              Zapisać te preferencje? Następnym razem pominiesz quiz.
+            </p>
+            <div className="flex gap-2 flex-shrink-0">
+              <button
+                onClick={() => setShowSavePrompt(false)}
+                className="text-xs px-2.5 py-1 rounded-lg"
+                style={{ color: "var(--text-muted)", border: "1px solid var(--border)" }}
+              >
+                Nie
+              </button>
+              <button
+                onClick={() => {
+                  fetch("/api/profile", {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ quiz_preferences: quizAnswers }),
+                  }).catch(() => {});
+                  setShowSavePrompt(false);
+                }}
+                className="text-xs font-bold px-2.5 py-1 rounded-lg"
+                style={{ background: "var(--accent)", color: "#fff" }}
+              >
+                Zapisz ✓
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Error banner */}
       {generateError && (
