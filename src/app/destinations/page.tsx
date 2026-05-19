@@ -512,7 +512,9 @@ export default function DestinationsPage() {
       <div className="flex flex-col flex-1 px-5 pb-8">
         <div className="pt-6 pb-4">
           <p className="text-sm font-medium animate-pulse" style={{ color: "var(--text-muted)" }}>
-            Dobieram destynacje do Twojego profilu…
+            {quizAnswers.preferredCity
+              ? `Przygotowuję opcje dla ${quizAnswers.preferredCity}…`
+              : "Dobieram destynacje do Twojego profilu…"}
           </p>
         </div>
         <Skeleton />
