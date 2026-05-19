@@ -128,8 +128,9 @@ function QuizPageInner() {
   const [dir, setDir] = useState(1);
   const [savedPrefs, setSavedPrefs] = useState<QuizAnswers | null>(null);
   const autoStarted = useRef(false);
-  const { quizAnswers, currentQuizStep, setQuizAnswer, toggleStyle, nextQuizStep, prevQuizStep, resetQuiz } =
+  const { quizAnswers, currentQuizStep, setQuizAnswer, toggleStyle, nextQuizStep, prevQuizStep, setCurrentQuizStep, resetQuiz } =
     useAppStore();
+  const [maxVisitedStep, setMaxVisitedStep] = useState(currentQuizStep);
 
   useEffect(() => {
     const cityParam = searchParams.get("city");
@@ -147,6 +148,16 @@ function QuizPageInner() {
       .catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (currentQuizStep > maxVisitedStep) setMaxVisitedStep(currentQuizStep);
+  }, [currentQuizStep]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const jumpToStep = (step: number) => {
+    if (step === currentQuizStep || step > maxVisitedStep) return;
+    setDir(step > currentQuizStep ? 1 : -1);
+    setCurrentQuizStep(step);
+  };
 
   const handleUseSaved = () => {
     if (!savedPrefs) return;
@@ -204,9 +215,31 @@ function QuizPageInner() {
           >
             ← Wstecz
           </button>
-          <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
-            {currentQuizStep + 1} / {TOTAL_STEPS}
-          </span>
+          <div className="flex items-center gap-1.5">
+            {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+              <button
+                key={i}
+                onClick={() => jumpToStep(i)}
+                disabled={i > maxVisitedStep}
+                aria-label={`Krok ${i + 1}`}
+                style={{
+                  width: i === currentQuizStep ? 20 : 8,
+                  height: 8,
+                  borderRadius: 4,
+                  transition: "all 0.2s",
+                  background: i === currentQuizStep
+                    ? "var(--accent)"
+                    : i <= maxVisitedStep
+                    ? "rgba(196,98,45,0.35)"
+                    : "var(--border)",
+                  cursor: i > maxVisitedStep ? "default" : "pointer",
+                  border: "none",
+                  padding: 0,
+                  flexShrink: 0,
+                }}
+              />
+            ))}
+          </div>
         </div>
         <div
           className="progress-bar"
