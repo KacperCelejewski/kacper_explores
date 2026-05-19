@@ -96,8 +96,6 @@ export interface DayActivity {
   type: "attraction" | "food" | "transport" | "tip" | "accommodation";
   cost: string;        // "Free" / "~15 PLN"
   location?: string;
-  lat?: number;
-  lon?: number;
   emoji: string;
 }
 
