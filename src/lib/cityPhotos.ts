@@ -110,12 +110,12 @@ export function getCityPhotoUrl(city: string, width = 800): string {
 
 // Featured destinations shown on the homepage
 export const FEATURED_DESTINATIONS = [
-  { city: "Barcelona", country: "Hiszpania", flag: "🇪🇸" },
-  { city: "Lizbona", country: "Portugalia", flag: "🇵🇹" },
-  { city: "Rzym", country: "Włochy", flag: "🇮🇹" },
-  { city: "Ateny", country: "Grecja", flag: "🇬🇷" },
-  { city: "Praga", country: "Czechy", flag: "🇨🇿" },
-  { city: "Dubrownik", country: "Chorwacja", flag: "🇭🇷" },
-  { city: "Budapeszt", country: "Węgry", flag: "🇭🇺" },
-  { city: "Porto", country: "Portugalia", flag: "🇵🇹" },
+  { city: "Barcelona", country: "Hiszpania", flag: "🇪🇸", priceFrom: "od ~1 400 PLN", tag: "Gorący" },
+  { city: "Lizbona", country: "Portugalia", flag: "🇵🇹", priceFrom: "od ~900 PLN", tag: "Tanie loty" },
+  { city: "Rzym", country: "Włochy", flag: "🇮🇹", priceFrom: "od ~1 100 PLN", tag: "Klasyk" },
+  { city: "Ateny", country: "Grecja", flag: "🇬🇷", priceFrom: "od ~1 000 PLN", tag: "Słońce" },
+  { city: "Praga", country: "Czechy", flag: "🇨🇿", priceFrom: "od ~500 PLN", tag: "Blisko" },
+  { city: "Dubrownik", country: "Chorwacja", flag: "🇭🇷", priceFrom: "od ~800 PLN", tag: "Lato" },
+  { city: "Budapeszt", country: "Węgry", flag: "🇭🇺", priceFrom: "od ~400 PLN", tag: "Blisko" },
+  { city: "Porto", country: "Portugalia", flag: "🇵🇹", priceFrom: "od ~950 PLN", tag: "Tanie loty" },
 ];

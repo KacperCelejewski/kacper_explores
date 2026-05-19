@@ -142,9 +142,18 @@ export default function HomeClient() {
         transition={{ duration: 0.4, delay: 0.6 }}
         className="mt-8"
       >
-        <p className="text-xs font-semibold mb-3" style={{ color: "var(--text-muted)" }}>
-          Popularne kierunki
-        </p>
+        <div className="flex items-baseline justify-between mb-3">
+          <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
+            Gdzie możesz polecieć
+          </p>
+          <Link
+            href="/quiz"
+            className="text-xs font-semibold"
+            style={{ color: "var(--accent)", textDecoration: "none" }}
+          >
+            Wszystkie →
+          </Link>
+        </div>
         <div
           className="flex gap-3 overflow-x-auto pb-2"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
@@ -156,25 +165,43 @@ export default function HomeClient() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3, delay: 0.6 + i * 0.06 }}
               className="relative flex-shrink-0 rounded-2xl overflow-hidden"
-              style={{ width: 120, height: 160 }}
+              style={{ width: 148, height: 200 }}
             >
-              <Image
-                src={getCityPhotoUrl(dest.city, 640)}
-                alt={dest.city}
-                fill
-                sizes="120px"
-                className="object-cover"
-              />
-              <div
-                className="absolute inset-0"
-                style={{
-                  background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.1) 55%, transparent 100%)",
-                }}
-              />
-              <div className="absolute bottom-0 left-0 right-0 p-2.5">
-                <p className="text-white text-xs font-bold leading-tight">{dest.city}</p>
-                <p className="text-white/70 text-[10px] leading-tight mt-0.5">{dest.flag} {dest.country}</p>
-              </div>
+              <Link href="/quiz" style={{ display: "block", height: "100%", textDecoration: "none" }}>
+                <Image
+                  src={getCityPhotoUrl(dest.city, 640)}
+                  alt={dest.city}
+                  fill
+                  sizes="148px"
+                  className="object-cover"
+                />
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: "linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.15) 55%, transparent 100%)",
+                  }}
+                />
+                {/* tag badge */}
+                <div className="absolute top-2.5 left-2.5">
+                  <span
+                    className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                    style={{ background: "var(--accent)", color: "#fff" }}
+                  >
+                    {dest.tag}
+                  </span>
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 p-3">
+                  <p className="text-white text-sm font-bold leading-tight">{dest.city}</p>
+                  <p className="text-white/70 text-[10px] leading-tight mt-0.5">{dest.flag} {dest.country}</p>
+                  <p className="text-white text-xs font-semibold mt-1.5">{dest.priceFrom}</p>
+                  <div
+                    className="mt-2 text-center text-[11px] font-bold py-1 rounded-lg"
+                    style={{ background: "var(--accent)", color: "#fff" }}
+                  >
+                    Zaplanuj →
+                  </div>
+                </div>
+              </Link>
             </motion.div>
           ))}
         </div>
