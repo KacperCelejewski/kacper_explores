@@ -17,26 +17,10 @@ const PL_TO_EN: Record<string, string> = {
   "kiszyniów": "chisinau",
 };
 
-// Cities whose names are also common words/names — need country disambiguation
-const CITY_WITH_COUNTRY: Record<string, string> = {
-  "sofia": "Sofia Bulgaria", "sofia bulgaria": "Sofia Bulgaria",
-  "milan": "Milan Italy", "mediolan": "Milan Italy",
-  "nice": "Nice France", "nicea": "Nice France",
-  "bath": "Bath England", "florence": "Florence Italy",
-  "florencja": "Florence Italy", "santiago": "Santiago Chile",
-  "victoria": "Victoria Seychelles", "lima": "Lima Peru",
-};
-
 function toEnglishCityName(city: string): string {
   const plKey = city.toLowerCase();
   const key = plKey.normalize("NFD").replace(/[̀-ͯ]/g, "");
   return PL_TO_EN[plKey] ?? PL_TO_EN[key] ?? city;
-}
-
-function toWikipediaTitle(city: string): string {
-  const plKey = city.toLowerCase();
-  const key = plKey.normalize("NFD").replace(/[̀-ͯ]/g, "");
-  return CITY_WITH_COUNTRY[plKey] ?? CITY_WITH_COUNTRY[key] ?? toEnglishCityName(city);
 }
 
 async function fetchWikipediaPhoto(city: string): Promise<string | null> {
@@ -60,6 +44,8 @@ export async function fetchCityPhotoUrl(city: string): Promise<string> {
   const accessKey = process.env.UNSPLASH_ACCESS_KEY;
   const englishCity = toEnglishCityName(city);
 
+  console.log(`[city-photo] city="${city}" englishCity="${englishCity}" hasKey=${!!accessKey}`);
+
   // 1. Try Unsplash API (best quality, requires key)
   if (accessKey) {
     try {
@@ -70,12 +56,16 @@ export async function fetchCityPhotoUrl(city: string): Promise<string> {
           cache: "no-store",
         }
       );
+      console.log(`[city-photo] Unsplash status=${res.status} for "${englishCity}"`);
       if (res.ok) {
         const data = await res.json();
         const url: string | undefined = data.results?.[0]?.urls?.regular;
+        console.log(`[city-photo] Unsplash results=${data.results?.length ?? 0} url=${url ?? "none"}`);
         if (url) return url;
       }
-    } catch { /* fall through */ }
+    } catch (e) {
+      console.error(`[city-photo] Unsplash error for "${englishCity}":`, e);
+    }
   }
 
   // 2. Try hardcoded list (instant, no network)
@@ -84,9 +74,13 @@ export async function fetchCityPhotoUrl(city: string): Promise<string> {
   if (!isDefault) return hardcoded;
 
   // 3. Wikipedia API — free, no key, covers any city
-  const wiki = await fetchWikipediaPhoto(toWikipediaTitle(city));
+  const wikiTitle = toEnglishCityName(city);
+  console.log(`[city-photo] trying Wikipedia for "${wikiTitle}"`);
+  const wiki = await fetchWikipediaPhoto(wikiTitle);
+  console.log(`[city-photo] Wikipedia result=${wiki ?? "null"}`);
   if (wiki) return wiki;
 
   // 4. Final fallback — generic travel photo
+  console.log(`[city-photo] fallback Eiffel Tower for "${city}"`);
   return hardcoded;
 }
