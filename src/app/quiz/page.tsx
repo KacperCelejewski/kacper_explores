@@ -133,7 +133,7 @@ function QuizPageInner() {
 
   useEffect(() => {
     const cityParam = searchParams.get("city");
-    if (cityParam) setQuizAnswer("preferredCity", cityParam);
+    setQuizAnswer("preferredCity", cityParam ?? undefined);
 
     fetch("/api/profile")
       .then((r) => r.json())
