@@ -52,6 +52,16 @@ export default function HomeClient() {
           Odpowiedz na 5 pytań. Dostaniesz 3 destynacje,
           szacunkowe ceny i plan dzień po dniu.
         </p>
+        <Link
+          href="/quiz"
+          className="btn-primary mt-5"
+          style={{ display: "block", textAlign: "center", textDecoration: "none" }}
+        >
+          Zaplanuj wyjazd — za darmo →
+        </Link>
+        <p className="mt-2 text-xs text-center" style={{ color: "var(--text-muted)" }}>
+          Bez karty · 5 planów gratis · 3 minuty
+        </p>
       </motion.div>
 
       {/* Social proof bar */}
