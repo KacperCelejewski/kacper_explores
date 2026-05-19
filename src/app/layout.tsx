@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Cormorant_Garamond } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
-import GlobalMenu from "@/app/components/GlobalMenu";
+import BottomNav from "@/app/components/BottomNav";
 import CookieBanner from "@/app/components/CookieBanner";
 import NewsletterPopup from "@/app/components/NewsletterPopup";
 
@@ -57,7 +57,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <a href="#main-content" className="skip-link">Przejdź do treści</a>
         <main id="main-content" className="app-shell">
           {children}
-          <GlobalMenu />
+          <BottomNav />
           <CookieBanner />
           <NewsletterPopup />
         </main>
