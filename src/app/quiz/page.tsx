@@ -492,7 +492,7 @@ function StepWhen({
           <button
             key={name}
             className={`option-card text-center ${month === i + 1 ? "selected" : ""}`}
-            style={{ padding: "10px 4px" }}
+            style={{ padding: "10px 4px", textAlign: "center" }}
             onClick={() => setMonth(i + 1)}
             aria-pressed={month === i + 1}
           >
