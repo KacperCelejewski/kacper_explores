@@ -20,6 +20,7 @@ function buildPrompt(body: Record<string, unknown>): string {
   const month = (body.month as number | null) ?? null;
   const duration = (body.duration as number | null) ?? null;
   const airports = (body.airports as string[]) ?? ["WRO"];
+  const preferredCity = (body.preferredCity as string | undefined) ?? null;
 
   const monthName = month ? MONTH_NAMES[month - 1] : "dowolny";
   const budgetLabel = budget === "low" ? "niski (backpacker, do 1500 PLN łącznie)" : "średni (komfortowy, do 2500 PLN łącznie)";
@@ -40,7 +41,7 @@ function buildPrompt(body: Record<string, unknown>): string {
     : `lotniska wylotu (dowolne z): ${airports.join(", ")}`;
 
   return `Jesteś ekspertem od budżetowych podróży z Polski. Zaproponuj DOKŁADNIE 6 destynacji pasujących do profilu.
-
+${preferredCity ? `\nWAŻNE: Użytkownik wybrał miasto ${preferredCity} — MUSI ono być pierwszą rekomendacją na liście.\n` : ""}
 PROFIL:
 - Budżet: ${budgetLabel}
 - Zainteresowania: ${styles.join(", ") || "różnorodne"}

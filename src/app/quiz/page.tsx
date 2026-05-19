@@ -132,6 +132,9 @@ function QuizPageInner() {
     useAppStore();
 
   useEffect(() => {
+    const cityParam = searchParams.get("city");
+    if (cityParam) setQuizAnswer("preferredCity", cityParam);
+
     fetch("/api/profile")
       .then((r) => r.json())
       .then((d) => {
@@ -221,6 +224,19 @@ function QuizPageInner() {
           />
         </div>
       </div>
+
+      {/* Preferred city banner */}
+      {quizAnswers.preferredCity && (
+        <div
+          className="flex items-center gap-2 px-4 py-2.5 rounded-2xl mb-4"
+          style={{ background: "var(--accent-light)", border: "1px solid rgba(196,98,45,0.25)" }}
+        >
+          <span>✈️</span>
+          <p className="text-sm font-semibold" style={{ color: "var(--accent)" }}>
+            Kierunek: {quizAnswers.preferredCity}
+          </p>
+        </div>
+      )}
 
       {/* Saved prefs shortcut */}
       <AnimatePresence>

@@ -191,7 +191,7 @@ export default function HomeClient() {
                 marginRight: i < FEATURED_DESTINATIONS.length - 1 ? 12 : 20,
               }}
             >
-              <Link href="/quiz" style={{ display: "block", height: "100%", textDecoration: "none" }}>
+              <Link href={`/quiz?city=${encodeURIComponent(dest.city)}`} style={{ display: "block", height: "100%", textDecoration: "none" }}>
                 <Image
                   src={getCityPhotoUrl(dest.city, 800)}
                   alt={dest.city}

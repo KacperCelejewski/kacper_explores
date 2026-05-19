@@ -25,6 +25,8 @@ export interface QuizAnswers {
   airports: string[];
   /** @deprecated use airports instead */
   includeBerlin?: boolean;
+  /** Pre-selected city from homepage gallery (e.g. "Barcelona") */
+  preferredCity?: string;
 }
 
 export interface Airport {
