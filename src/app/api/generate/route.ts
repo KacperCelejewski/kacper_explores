@@ -132,15 +132,20 @@ export async function POST(req: NextRequest) {
         const prompt = buildPlanPrompt(dest, quiz, details);
 
         const MODELS = [
+          { name: "gemini-2.5-flash", thinking: true },
           { name: "gemini-2.0-flash", thinking: false },
           { name: "gemini-2.5-flash-lite", thinking: false },
-          { name: "gemini-2.5-flash", thinking: true },
           { name: "gemini-flash-latest", thinking: false },
         ];
 
-        function isQuotaError(err: unknown): boolean {
+        function isRetryableError(err: unknown): boolean {
           const msg = err instanceof Error ? err.message : String(err);
-          return msg.includes("429") || msg.toLowerCase().includes("quota") || msg.includes("Too Many Requests");
+          return msg.includes("429")
+            || msg.toLowerCase().includes("quota")
+            || msg.includes("Too Many Requests")
+            || msg.includes("did not match the expected pattern")
+            || msg.includes("INVALID_ARGUMENT")
+            || msg.includes("schema");
         }
 
         let plan = null;
@@ -172,8 +177,8 @@ export async function POST(req: NextRequest) {
             break;
           } catch (err) {
             lastErr = err;
-            if (isQuotaError(err)) {
-              void logGeminiCall({ endpoint: "generate", model: name, success: false, error_code: "quota" });
+            if (isRetryableError(err)) {
+              void logGeminiCall({ endpoint: "generate", model: name, success: false, error_code: "quota_or_schema" });
               continue;
             }
             if (err instanceof SyntaxError) { continue; }
