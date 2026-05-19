@@ -49,7 +49,7 @@ const responseSchema: Schema = {
                 description: { type: SchemaType.STRING },
                 type: { type: SchemaType.STRING },
                 cost: { type: SchemaType.STRING },
-                location: { type: SchemaType.STRING },
+                location: { type: SchemaType.STRING, nullable: true },
                 emoji: { type: SchemaType.STRING },
               },
               required: ["time", "title", "description", "type", "cost", "emoji"],
@@ -138,14 +138,9 @@ export async function POST(req: NextRequest) {
           { name: "gemini-flash-latest", thinking: false },
         ];
 
-        function isRetryableError(err: unknown): boolean {
+        function isQuotaError(err: unknown): boolean {
           const msg = err instanceof Error ? err.message : String(err);
-          return msg.includes("429")
-            || msg.toLowerCase().includes("quota")
-            || msg.includes("Too Many Requests")
-            || msg.includes("did not match the expected pattern")
-            || msg.includes("INVALID_ARGUMENT")
-            || msg.includes("schema");
+          return msg.includes("429") || msg.toLowerCase().includes("quota") || msg.includes("Too Many Requests");
         }
 
         let plan = null;
@@ -177,8 +172,8 @@ export async function POST(req: NextRequest) {
             break;
           } catch (err) {
             lastErr = err;
-            if (isRetryableError(err)) {
-              void logGeminiCall({ endpoint: "generate", model: name, success: false, error_code: "quota_or_schema" });
+            if (isQuotaError(err)) {
+              void logGeminiCall({ endpoint: "generate", model: name, success: false, error_code: "quota" });
               continue;
             }
             if (err instanceof SyntaxError) { continue; }
