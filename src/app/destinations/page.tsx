@@ -598,11 +598,29 @@ export default function DestinationsPage() {
     setIsGeneratingPlan,
     isGeneratingPlan,
     setCurrentQuizStep,
+    cachedDestinations,
+    setCachedDestinations,
     _hasHydrated,
   } = useAppStore();
 
-  const [destinations, setDestinations] = useState<DestinationRecommendation[]>([]);
-  const [loading, setLoading]           = useState(true);
+  // Klucz cache oparty na tych samych polach co serwer
+  const destCacheKey = JSON.stringify({
+    styles: quizAnswers.styles,
+    budget: quizAnswers.budget,
+    vibe: quizAnswers.vibe,
+    placeType: quizAnswers.placeType,
+    month: quizAnswers.month,
+    duration: quizAnswers.duration,
+    airports: quizAnswers.airports,
+    preferredCity: quizAnswers.preferredCity,
+  });
+
+  const [destinations, setDestinations] = useState<DestinationRecommendation[]>(
+    cachedDestinations?.key === destCacheKey ? cachedDestinations.destinations : []
+  );
+  const [loading, setLoading]           = useState(
+    cachedDestinations?.key !== destCacheKey
+  );
   const [error, setError]               = useState<string | null>(null);
   const [userStatus, setUserStatus]     = useState<UserStatus | null>(null);
   const [fetchKey, setFetchKey]         = useState(0);
@@ -612,7 +630,7 @@ export default function DestinationsPage() {
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [showSavePrompt, setShowSavePrompt] = useState(false);
 
-  // Fetch destinations + profile
+  // Fetch destinations + profile — pomija Gemini gdy mamy już wyniki dla tych quiz answers
   useEffect(() => {
     if (!_hasHydrated) return;
     if (!quizAnswers.budget) {
@@ -620,19 +638,25 @@ export default function DestinationsPage() {
       return;
     }
 
-    setLoading(true);
-    setError(null);
+    const hasDestCache = cachedDestinations?.key === destCacheKey;
+
+    if (!hasDestCache) {
+      setLoading(true);
+      setError(null);
+    }
 
     Promise.all([
-      fetch("/api/destinations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(quizAnswers),
-      }).then(async (r) => {
-        const data = await r.json();
-        if (!r.ok) throw new Error(data.error ?? `HTTP ${r.status}`);
-        return data;
-      }),
+      hasDestCache
+        ? Promise.resolve({ destinations: cachedDestinations.destinations })
+        : fetch("/api/destinations", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(quizAnswers),
+          }).then(async (r) => {
+            const data = await r.json();
+            if (!r.ok) throw new Error(data.error ?? `HTTP ${r.status}`);
+            return data;
+          }),
       fetch("/api/profile").then((r) => r.json()),
     ])
       .then(([destData, profileData]) => {
@@ -640,6 +664,9 @@ export default function DestinationsPage() {
           setError("AI nie zwróciło rekomendacji. Spróbuj ponownie.");
         } else {
           setDestinations(destData.destinations);
+          if (!hasDestCache) {
+            setCachedDestinations(destCacheKey, destData.destinations);
+          }
         }
         setUserStatus(profileData);
         if (profileData?.authenticated) {
@@ -707,6 +734,7 @@ export default function DestinationsPage() {
               plan: msg.plan as import("@/types").TripPlan,
               createdAt: new Date().toISOString(),
             });
+            setIsGeneratingPlan(false);
             router.push(`/plan/${msg.tripId as string}`);
             navigated = true;
           }

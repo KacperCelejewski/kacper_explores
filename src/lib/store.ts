@@ -12,6 +12,9 @@ interface AppState {
   // Destination selection
   selectedDestination: DestinationRecommendation | null;
 
+  // Cached destination recommendations (keyed by quiz answers hash, not persisted)
+  cachedDestinations: { key: string; destinations: DestinationRecommendation[] } | null;
+
   // Flight details entered by the user
   flightDetails: FlightDetails | null;
 
@@ -36,6 +39,7 @@ interface AppState {
   updateTripDay: (dayIndex: number, day: DayPlan) => void;
   updateTripActivity: (dayIndex: number, activityIndex: number, activity: DayActivity) => void;
   setIsGeneratingPlan: (val: boolean) => void;
+  setCachedDestinations: (key: string, destinations: DestinationRecommendation[]) => void;
   setHasHydrated: (val: boolean) => void;
 }
 
@@ -55,6 +59,7 @@ export const useAppStore = create<AppState>()(
       quizAnswers: defaultQuizAnswers,
       currentQuizStep: 0,
       selectedDestination: null,
+      cachedDestinations: null,
       flightDetails: null,
       currentTrip: null,
       isGeneratingPlan: false,
@@ -63,6 +68,7 @@ export const useAppStore = create<AppState>()(
       setQuizAnswer: (key, value) =>
         set((state) => ({
           quizAnswers: { ...state.quizAnswers, [key]: value },
+          cachedDestinations: null,
         })),
 
       toggleStyle: (style) =>
@@ -76,6 +82,7 @@ export const useAppStore = create<AppState>()(
                 ? styles.filter((s) => s !== style)
                 : [...styles, style],
             },
+            cachedDestinations: null,
           };
         }),
 
@@ -134,6 +141,9 @@ export const useAppStore = create<AppState>()(
         }),
 
       setIsGeneratingPlan: (val) => set({ isGeneratingPlan: val }),
+
+      setCachedDestinations: (key, destinations) =>
+        set({ cachedDestinations: { key, destinations } }),
 
       setHasHydrated: (val) => set({ _hasHydrated: val }),
     }),
