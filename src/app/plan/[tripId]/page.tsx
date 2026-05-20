@@ -684,6 +684,14 @@ export default function PlanPage() {
           </button>
         </div>
 
+        {/* Map link */}
+        <button
+          onClick={() => router.push(`/plan/${currentTrip?.id}/mapa`)}
+          className="py-3 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 transition-opacity hover:opacity-80 no-print"
+          style={{ background: "#E8F4FD", color: "#1A73E8" }}
+        >
+          🗺️ Mapa atrakcji
+        </button>
 
         {/* is_public toggle */}
         <button

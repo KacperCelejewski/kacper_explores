@@ -26,13 +26,11 @@ type TpApiResponse = { data: Record<string, Record<string, TpOffer>> };
 const cache = new Map<string, { data: Record<string, TpOffer>; expiresAt: number }>();
 const CACHE_TTL = 3 * 60 * 60 * 1000;
 
-// IATA → mock destination (keyed by both WRO and BER destination IATAs)
+// IATA → mock destination (keyed by WRO destination IATA)
 const DEST_BY_IATA = new Map<string, DestinationRecommendation>();
 for (const dest of MOCK_DESTINATIONS) {
-  const wroIata = dest.flightWro?.destination.code;
-  const berIata = dest.flightBer?.destination.code;
-  if (wroIata) DEST_BY_IATA.set(wroIata, dest);
-  if (berIata && berIata !== wroIata) DEST_BY_IATA.set(berIata, dest);
+  const iata = dest.flightWro?.destination.code ?? dest.flightBer?.destination.code;
+  if (iata) DEST_BY_IATA.set(iata, dest);
 }
 
 // WRO IATA → catalog entry (for iataBer lookup)

@@ -11,7 +11,6 @@ export interface RealFlight {
   returnDepartureTime: string; // HH:MM local at destination
   returnArrivalTime: string;   // HH:MM local at origin
   durationMinutes: number;
-  stops: number;               // 0 = direct
 }
 
 // ── Sky Scrapper response types ───────────────────────────────────────────────
@@ -100,8 +99,6 @@ function candidateDates(month: number, duration: number): Array<{ departDate: st
 export const DAILY_CAP = 10600;
 const ALERT_THRESHOLD = 0.8;
 
-// In-memory counter is a per-instance fast pre-check only.
-// The authoritative cross-instance limit is enforced by the Supabase counter.
 let dailyCallCount = 0;
 let dailyResetAt = startOfNextDay();
 
@@ -111,7 +108,7 @@ function startOfNextDay(): number {
   return d.getTime();
 }
 
-async function canCallApi(): Promise<boolean> {
+function canCallApi(): boolean {
   const now = Date.now();
   if (now >= dailyResetAt) {
     dailyCallCount = 0;
@@ -119,28 +116,10 @@ async function canCallApi(): Promise<boolean> {
   }
   if (dailyCallCount >= DAILY_CAP) return false;
   dailyCallCount++;
-
-  const sb = getSupabase();
-  if (!sb) {
-    if (dailyCallCount === Math.floor(DAILY_CAP * ALERT_THRESHOLD)) {
-      void fireAlertIfNeeded(dailyCallCount);
-    }
-    return true;
+  if (dailyCallCount === Math.floor(DAILY_CAP * ALERT_THRESHOLD)) {
+    void fireAlertIfNeeded(dailyCallCount);
   }
-
-  try {
-    const { data, error } = await sb.rpc("increment_flight_api_counter", { p_cap: DAILY_CAP });
-    if (error) {
-      console.error("[sky-scrapper] counter rpc error:", error.message);
-      return true;
-    }
-    const allowed = data === true;
-    if (!allowed) console.warn("[sky-scrapper] daily cap reached (DB)");
-    else if (dailyCallCount === Math.floor(DAILY_CAP * ALERT_THRESHOLD)) void fireAlertIfNeeded(dailyCallCount);
-    return allowed;
-  } catch {
-    return true;
-  }
+  return true;
 }
 
 async function fireAlertIfNeeded(count: number): Promise<void> {
@@ -244,7 +223,7 @@ async function fetchForDate(
       cache: "no-store",
     });
 
-  if (!await canCallApi()) return null;
+  if (!canCallApi()) return null;
 
   let res = await skyFetch();
   if (!res.ok) {
@@ -258,7 +237,7 @@ async function fetchForDate(
   // Sky Scrapper always needs two calls — first builds the session, second returns results
   if (!json.status || !json.data?.itineraries?.length) {
     await new Promise((r) => setTimeout(r, 1000));
-    if (!await canCallApi()) return null;
+    if (!canCallApi()) return null;
     res = await skyFetch();
     if (!res.ok) {
       console.error(`[sky-scrapper] retry HTTP ${res.status} ${originCode}→${destCode} date:${departDate}`);
@@ -282,7 +261,6 @@ async function fetchForDate(
 
     const airline = outbound.carriers?.marketing?.[0]?.name ?? "Linie lotnicze";
     const durMinutes = outbound.durationInMinutes ?? 120;
-    const stops = (outbound.segments?.length ?? 1) - 1;
 
     results.push({
       price,
@@ -294,7 +272,6 @@ async function fetchForDate(
       returnDepartureTime: inbound ? isoToHHMM(inbound.departure) : "08:00",
       returnArrivalTime: inbound ? isoToHHMM(inbound.arrival) : "11:00",
       durationMinutes: durMinutes,
-      stops,
     });
   }
 
@@ -323,42 +300,41 @@ export async function searchFlightOptions(
 
   const candidates = candidateDates(month, duration).slice(0, 3);
 
-  // Try dates sequentially — stop once we have enough results.
-  // This avoids firing all 6 Sky Scrapper API calls in parallel when 2 are sufficient.
-  const allResults: RealFlight[] = [];
+  const perCandidate = await Promise.all(
+    candidates.map(async ({ departDate, returnDate }) => {
+      const cacheKey = `sky-${originCode}-${destCode}-${departDate}-${returnDate}`;
 
-  for (const { departDate, returnDate } of candidates) {
-    const cacheKey = `sky-${originCode}-${destCode}-${departDate}-${returnDate}`;
+      // L1
+      const mem = memCache.get(cacheKey);
+      if (mem && mem.expiresAt > Date.now() && mem.data.length > 0) {
+        void logUsage(cacheKey, originCode, destCode, month, true);
+        return mem.data;
+      }
 
-    // L1
-    const mem = memCache.get(cacheKey);
-    if (mem && mem.expiresAt > Date.now() && mem.data.length > 0) {
-      void logUsage(cacheKey, originCode, destCode, month, true);
-      allResults.push(...mem.data);
-    } else {
       // L2
       const cached = await readSupabaseCache(cacheKey);
       if (cached && cached.length > 0) {
         memCache.set(cacheKey, { data: cached, expiresAt: Date.now() + CACHE_TTL });
         void logUsage(cacheKey, originCode, destCode, month, true);
-        allResults.push(...cached);
-      } else {
-        try {
-          const results = await fetchForDate(originSky, destSky, departDate, returnDate, originCode, destCode, apiKey);
-          if (results && results.length > 0) {
-            memCache.set(cacheKey, { data: results, expiresAt: Date.now() + CACHE_TTL });
-            void writeSupabaseCache(cacheKey, results);
-            void logUsage(cacheKey, originCode, destCode, month, false);
-            allResults.push(...results);
-          }
-        } catch (err) {
-          console.error("[sky-scrapper] error:", err);
-        }
+        return cached;
       }
-    }
 
-    if (allResults.length >= maxResults) break;
-  }
+      try {
+        const results = await fetchForDate(originSky, destSky, departDate, returnDate, originCode, destCode, apiKey);
+        if (results && results.length > 0) {
+          memCache.set(cacheKey, { data: results, expiresAt: Date.now() + CACHE_TTL });
+          void writeSupabaseCache(cacheKey, results);
+          void logUsage(cacheKey, originCode, destCode, month, false);
+          return results;
+        }
+      } catch (err) {
+        console.error("[sky-scrapper] error:", err);
+      }
+      return null;
+    })
+  );
+
+  const allResults: RealFlight[] = perCandidate.flatMap((r) => r ?? []);
 
   if (Math.random() < 0.01) void cleanExpiredSupabaseCache();
 
