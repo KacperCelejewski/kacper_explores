@@ -1,4 +1,4 @@
-import type { QuizAnswers, DestinationRecommendation, FlightDetails, TripPlan } from "@/types";
+import type { QuizAnswers, DestinationRecommendation, FlightDetails, TripPlan, DayPlan } from "@/types";
 import { MONTH_NAMES } from "@/lib/mockFlights";
 import { calcTripSchedule, formatScheduleForPrompt } from "@/lib/tripSchedule";
 
@@ -85,43 +85,60 @@ ZASADY DLA WSZYSTKICH DNI:
 - Pole "location" wypełnij dla każdej aktywności z fizyczną lokalizacją (nie dla transportu i wskazówek)
 
 KRYTYCZNE WYMAGANIA DOTYCZĄCE LICZBY DNI:
-- Tablica "days" MUSI zawierać DOKŁADNIE ${duration} elementów (od day:1 do day:${duration})
-- Wygenerowanie mniejszej liczby dni jest błędem i spowoduje odrzucenie odpowiedzi
+- Wygeneruj DOKŁADNIE ${duration} linii z dniami (od day:1 do day:${duration})
 - Każdy dzień musi istnieć nawet jeśli ma mało aktywności (np. dzień przylotu wieczorem)
 
-Odpowiedz WYŁĄCZNIE w formacie JSON:
+Odpowiedz w formacie NDJSON — każdy obiekt na OSOBNEJ LINII, bez żadnego dodatkowego tekstu.
 
-{
-  "city": "${destination.city}",
-  "country": "${destination.country}",
-  "duration": ${duration},
-  "totalBudgetEstimate": "np. '1200-1500 PLN'",
-  "budgetBreakdown": {
-    "flights": "${estimatedCost}",
-    "accommodation": "np. '300-400 PLN'",
-    "food": "np. '200-250 PLN'",
-    "attractions": "np. '100-150 PLN'"
-  },
-  "generalTips": ["tip1","tip2","tip3","tip4","tip5"],
-  "days": [
-    {
-      "day": 1,
-      "date": "Dzień 1 – [dzień tygodnia jeśli znany]",
-      "theme": "krótki motyw dnia",
-      "activities": [
-        {
-          "time": "10:00",
-          "title": "Nazwa aktywności",
-          "description": "2-3 zdania z konkretnymi wskazówkami",
-          "type": "attraction|food|transport|tip|accommodation",
-          "cost": "Free lub '~15 PLN'",
-          "location": "Nazwa miejsca lub adres",
-          "emoji": "emoji"
-        }
-      ]
-    }
-  ]
-}`;
+Linia 1 — nagłówek (jeden obiekt):
+{"type":"header","city":"${destination.city}","country":"${destination.country}","duration":${duration},"totalBudgetEstimate":"np. 1200-1500 PLN","budgetBreakdown":{"flights":"${estimatedCost}","accommodation":"np. 300-400 PLN","food":"np. 200-250 PLN","attractions":"np. 100-150 PLN"},"generalTips":["tip1","tip2","tip3","tip4","tip5"]}
+
+Linie 2–${duration + 1} — każdy dzień osobno (jeden obiekt na linię):
+{"type":"day","day":1,"date":"Dzień 1 – [dzień tygodnia jeśli znany]","theme":"krótki motyw dnia","activities":[{"time":"10:00","title":"Nazwa aktywności","description":"2-3 zdania z konkretnymi wskazówkami","type":"attraction|food|transport|tip|accommodation","cost":"Free lub ~15 PLN","location":"Nazwa miejsca lub adres","emoji":"emoji"}]}
+
+Każda linia musi być poprawnym, kompletnym JSON-em. Żadnych przerw w środku obiektu.`;
+}
+
+// Parsuje NDJSON stream z Gemini — każda linia to osobny obiekt JSON.
+// Wywołuje onDay() dla każdego ukończonego dnia, zwraca nagłówek + wszystkie dni.
+export async function parseNdjsonStream(
+  stream: AsyncIterable<{ text(): string }>,
+  onDay: (day: DayPlan, current: number) => void,
+): Promise<{ header: Omit<TripPlan, "days">; days: DayPlan[] }> {
+  let buf = "";
+  let header: Omit<TripPlan, "days"> | null = null;
+  const days: DayPlan[] = [];
+
+  const parseLine = (line: string) => {
+    const trimmed = line.trim();
+    if (!trimmed) return;
+    // Strip occasional markdown fences the model might emit
+    const cleaned = trimmed.replace(/^```[a-z]*\s*/i, "").replace(/\s*```$/i, "").trim();
+    if (!cleaned || cleaned === "{" || cleaned === "}") return;
+    try {
+      const obj = JSON.parse(cleaned) as Record<string, unknown>;
+      if (obj.type === "header") {
+        header = obj as unknown as Omit<TripPlan, "days">;
+      } else if (obj.type === "day" && typeof obj.day === "number") {
+        const day = obj as unknown as DayPlan;
+        days.push(day);
+        onDay(day, days.length);
+      }
+    } catch { /* incomplete line — skip */ }
+  };
+
+  for await (const chunk of stream) {
+    buf += chunk.text();
+    const lines = buf.split("\n");
+    buf = lines.pop() ?? "";
+    for (const line of lines) parseLine(line);
+  }
+  if (buf) parseLine(buf);
+
+  if (!header) {
+    throw new SyntaxError("NDJSON header missing — model returned unexpected format");
+  }
+  return { header, days };
 }
 
 export function parsePlanResponse(raw: string): TripPlan {

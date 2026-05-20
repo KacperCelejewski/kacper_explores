@@ -81,19 +81,9 @@ function getFacts(city?: string): string[] {
   return CITY_FACTS[key] ?? GENERIC_FACTS;
 }
 
-function GeneratingOverlay({ city }: { city?: string }) {
-  const [step, setStep] = useState(0);
+function GeneratingOverlay({ city, currentDay = 0, totalDays = 0 }: { city?: string; currentDay?: number; totalDays?: number }) {
   const [factIndex, setFactIndex] = useState(0);
-  const [progress, setProgress] = useState(0);
   const facts = getFacts(city);
-
-  // Advance steps on schedule
-  useEffect(() => {
-    const timers = STEP_DELAYS.slice(1).map((delay, i) =>
-      setTimeout(() => setStep(i + 1), delay * 1000)
-    );
-    return () => timers.forEach(clearTimeout);
-  }, []);
 
   // Rotate facts every 8s
   useEffect(() => {
@@ -101,15 +91,8 @@ function GeneratingOverlay({ city }: { city?: string }) {
     return () => clearInterval(t);
   }, [facts.length]);
 
-  // Smooth progress bar — fills to 95% over 110s, never reaches 100%
-  useEffect(() => {
-    const start = Date.now();
-    const t = setInterval(() => {
-      const elapsed = (Date.now() - start) / 1000;
-      setProgress(Math.min(95, Math.round((elapsed / 110) * 95)));
-    }, 500);
-    return () => clearInterval(t);
-  }, []);
+  const hasRealProgress = totalDays > 0;
+  const progress = hasRealProgress ? Math.round((currentDay / totalDays) * 100) : 5;
 
   return (
     <div
@@ -137,37 +120,51 @@ function GeneratingOverlay({ city }: { city?: string }) {
           <p className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>
             {city ? `Buduję plan dla ${city}` : "Buduję Twój plan podróży"}
           </p>
+          {hasRealProgress && (
+            <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
+              {currentDay < totalDays ? `Generuję dzień ${currentDay + 1} z ${totalDays}…` : "Finalizuję plan…"}
+            </p>
+          )}
         </div>
 
-        {/* Steps */}
-        <div className="w-full max-w-xs flex flex-col gap-2.5">
-          {STEPS.map((s, i) => (
-            <div key={i} className="flex items-center gap-3">
-              <div
-                className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold transition-all duration-500"
-                style={{
-                  background: i < step ? "var(--accent)" : i === step ? "var(--accent-light)" : "var(--border)",
-                  color: i < step ? "#fff" : i === step ? "var(--accent)" : "var(--text-muted)",
-                  border: i === step ? "2px solid var(--accent)" : "none",
-                }}
-              >
-                {i < step ? "✓" : i === step ? (
-                  <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: "var(--accent)", display: "block" }} />
-                ) : ""}
-              </div>
-              <p
-                className="text-sm transition-all duration-500"
-                style={{
-                  color: i < step ? "var(--text-muted)" : i === step ? "var(--text-primary)" : "var(--border)",
-                  fontWeight: i === step ? 600 : 400,
-                  textDecoration: i < step ? "line-through" : "none",
-                }}
-              >
-                {s}
-              </p>
-            </div>
-          ))}
-        </div>
+        {/* Day progress */}
+        {hasRealProgress ? (
+          <div className="w-full max-w-xs flex flex-col gap-2">
+            {Array.from({ length: totalDays }).map((_, i) => {
+              const dayNum = i + 1;
+              const done = dayNum <= currentDay;
+              const active = dayNum === currentDay + 1;
+              return (
+                <div key={dayNum} className="flex items-center gap-3">
+                  <div
+                    className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold transition-all duration-500"
+                    style={{
+                      background: done ? "var(--accent)" : active ? "var(--accent-light)" : "var(--border)",
+                      color: done ? "#fff" : "var(--text-muted)",
+                      border: active ? "2px solid var(--accent)" : "none",
+                    }}
+                  >
+                    {done ? "✓" : active ? (
+                      <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: "var(--accent)", display: "block" }} />
+                    ) : ""}
+                  </div>
+                  <p className="text-sm transition-all duration-500" style={{
+                    color: done ? "var(--text-muted)" : active ? "var(--text-primary)" : "var(--border)",
+                    fontWeight: active ? 600 : 400,
+                    textDecoration: done ? "line-through" : "none",
+                  }}>
+                    Dzień {dayNum}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="flex items-center gap-3">
+            <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: "var(--accent)", display: "block" }} />
+            <p className="text-sm" style={{ color: "var(--text-secondary)" }}>Łączę się z AI…</p>
+          </div>
+        )}
 
         {/* Fact box */}
         <AnimatePresence mode="wait">
@@ -191,12 +188,14 @@ function GeneratingOverlay({ city }: { city?: string }) {
       {/* Progress bar */}
       <div className="px-6 pb-10">
         <div className="flex items-center justify-between mb-1.5">
-          <p className="text-xs" style={{ color: "var(--text-muted)" }}>Generowanie planu</p>
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+            {hasRealProgress ? `${currentDay} / ${totalDays} dni` : "Generowanie planu"}
+          </p>
           <p className="text-xs font-semibold" style={{ color: "var(--accent)" }}>{progress}%</p>
         </div>
         <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
           <div
-            className="h-full rounded-full transition-all duration-500"
+            className="h-full rounded-full transition-all duration-700"
             style={{ width: `${progress}%`, background: "var(--accent)" }}
           />
         </div>
@@ -629,6 +628,7 @@ export default function DestinationsPage() {
   const [upgradeModal, setUpgradeModal] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [showSavePrompt, setShowSavePrompt] = useState(false);
+  const [genProgress, setGenProgress]   = useState<{ current: number; total: number }>({ current: 0, total: 0 });
 
   // Fetch destinations + profile — pomija Gemini gdy mamy już wyniki dla tych quiz answers
   useEffect(() => {
@@ -696,6 +696,7 @@ export default function DestinationsPage() {
     setFlightDetails(details);
     setIsGeneratingPlan(true);
     setGenerateError(null);
+    setGenProgress({ current: 0, total: 0 });
 
     try {
       const res = await fetch("/api/generate", {
@@ -726,6 +727,12 @@ export default function DestinationsPage() {
           let msg: Record<string, unknown>;
           try { msg = JSON.parse(line); } catch { continue; }
           if (msg.error) throw new Error(`${msg.error as string}${msg.detail ? ` [${msg.detail}]` : ""}`);
+          if (msg.status === "generating" && typeof msg.total === "number") {
+            setGenProgress({ current: 0, total: msg.total as number });
+          }
+          if (msg.status === "day" && typeof msg.current === "number" && typeof msg.total === "number") {
+            setGenProgress({ current: msg.current as number, total: msg.total as number });
+          }
           if (msg.done) {
             setCurrentTrip({
               id: msg.tripId as string,
@@ -868,7 +875,11 @@ export default function DestinationsPage() {
 
       {/* Generating overlay */}
       {isGeneratingPlan && (
-        <GeneratingOverlay city={planModal?.city ?? quizAnswers.preferredCity} />
+        <GeneratingOverlay
+          city={planModal?.city ?? quizAnswers.preferredCity}
+          currentDay={genProgress.current}
+          totalDays={genProgress.total}
+        />
       )}
 
       {/* Destination cards */}

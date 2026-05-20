@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { logGeminiCall } from "@/lib/geminiLog";
 
 export const maxDuration = 60;
-import { buildPlanPrompt, parsePlanResponse, validateAndFixPlan } from "@/lib/gemini";
+import { buildPlanPrompt, parseNdjsonStream, validateAndFixPlan } from "@/lib/gemini";
 import { checkRateLimit, LIMITS } from "@/lib/rateLimit";
 import { validateQuizAnswers, validateDestination, getClientIp } from "@/lib/validate";
 import { getUserProfile, canGenerate, isPro } from "@/lib/userProfile";
@@ -91,30 +91,26 @@ export async function POST(req: NextRequest) {
           return msg.includes("429") || msg.toLowerCase().includes("quota") || msg.includes("Too Many Requests");
         }
 
+        const duration = quiz.duration ?? 3;
         let plan = null;
         let lastErr: unknown;
         let usedModel = MODELS[0];
         for (const name of MODELS) {
           try {
-            const m = genAI.getGenerativeModel({
-              model: name,
-              generationConfig: { responseMimeType: "application/json" },
-            });
+            // Bez responseMimeType — to właśnie powodowało buforowanie całej odpowiedzi.
+            // Model streamuje tokeny natychmiast, parsujemy linie NDJSON na bieżąco.
+            const m = genAI.getGenerativeModel({ model: name });
 
-            // Streaming: wysyłaj fragmenty do klienta zaraz po ich wygenerowaniu
-            // zamiast czekać na całą odpowiedź (~15–40s blokady)
-            send(controller, { status: "generating" });
+            send(controller, { status: "generating", total: duration });
             const streamResult = await m.generateContentStream(prompt);
 
-            let fullText = "";
-            for await (const chunk of streamResult.stream) {
-              const part = chunk.text();
-              if (part) {
-                fullText += part;
-                // Informuj klient o postępie (opcjonalnie można tu wysyłać % ukończenia)
-                send(controller, { status: "streaming", partial: true });
+            const { header, days } = await parseNdjsonStream(
+              streamResult.stream,
+              (day, current) => {
+                // Każdy skończony dzień wysyłamy natychmiast do klienta
+                send(controller, { status: "day", day, current, total: duration });
               }
-            }
+            );
 
             const response = await streamResult.response;
             usedModel = name;
@@ -125,8 +121,9 @@ export async function POST(req: NextRequest) {
               input_tokens: response.usageMetadata?.promptTokenCount,
               output_tokens: response.usageMetadata?.candidatesTokenCount,
             });
-            const rawPlan = parsePlanResponse(fullText);
-            plan = validateAndFixPlan(rawPlan, quiz.duration ?? 3);
+
+            const rawPlan = { ...header, days };
+            plan = validateAndFixPlan(rawPlan, duration);
             break;
           } catch (err) {
             lastErr = err;
