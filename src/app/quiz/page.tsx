@@ -132,9 +132,21 @@ function QuizPageInner() {
     useAppStore();
   const [maxVisitedStep, setMaxVisitedStep] = useState(currentQuizStep);
 
+  // Stable session ID for this quiz attempt (not persisted — resets on page refresh)
+  const sessionId = useRef(crypto.randomUUID());
+
+  const track = (event: string, step?: number) => {
+    void fetch("/api/track", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id: sessionId.current, event, step }),
+    });
+  };
+
   useEffect(() => {
     const cityParam = searchParams.get("city");
     setQuizAnswer("preferredCity", cityParam ?? undefined);
+    track("step_view", 0);
 
     fetch("/api/profile")
       .then((r) => r.json())
@@ -150,7 +162,10 @@ function QuizPageInner() {
   }, []);
 
   useEffect(() => {
-    if (currentQuizStep > maxVisitedStep) setMaxVisitedStep(currentQuizStep);
+    if (currentQuizStep > maxVisitedStep) {
+      setMaxVisitedStep(currentQuizStep);
+      track("step_view", currentQuizStep);
+    }
   }, [currentQuizStep]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const jumpToStep = (step: number) => {
@@ -185,9 +200,11 @@ function QuizPageInner() {
 
   const handleNext = async () => {
     setDir(1);
+    track("step_complete", currentQuizStep);
     if (currentQuizStep < TOTAL_STEPS - 1) {
       nextQuizStep();
     } else {
+      track("quiz_complete");
       const profile = await fetch("/api/profile").then((r) => r.json()).catch(() => ({}));
       if (!profile.authenticated) {
         router.push("/login?next=/quiz%3FafterLogin%3D1");
