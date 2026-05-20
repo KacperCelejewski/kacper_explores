@@ -78,10 +78,12 @@ export async function POST(req: NextRequest) {
 
         const prompt = buildPlanPrompt(dest, quiz, details);
 
+        // Tylko szybkie, bezthinkingowe modele — gemini-2.5-flash z thinking: true
+        // i thinkingBudget: 0 to sprzeczność, która dodaje latencję bez korzyści
         const MODELS = [
-          { name: "gemini-2.5-flash-lite", thinking: false },
-          { name: "gemini-2.5-flash", thinking: true },
-          { name: "gemini-flash-latest", thinking: false },
+          "gemini-2.5-flash-lite",
+          "gemini-2.5-flash",
+          "gemini-flash-latest",
         ];
 
         function isQuotaError(err: unknown): boolean {
@@ -91,28 +93,39 @@ export async function POST(req: NextRequest) {
 
         let plan = null;
         let lastErr: unknown;
-        let usedModel = MODELS[0].name;
-        for (const { name, thinking } of MODELS) {
+        let usedModel = MODELS[0];
+        for (const name of MODELS) {
           try {
             const m = genAI.getGenerativeModel({
               model: name,
-              generationConfig: {
-                responseMimeType: "application/json",
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                ...(thinking ? { thinkingConfig: { thinkingBudget: 0 } } as any : {}),
-              },
+              generationConfig: { responseMimeType: "application/json" },
             });
-            const result = await m.generateContent(prompt);
+
+            // Streaming: wysyłaj fragmenty do klienta zaraz po ich wygenerowaniu
+            // zamiast czekać na całą odpowiedź (~15–40s blokady)
+            send(controller, { status: "generating" });
+            const streamResult = await m.generateContentStream(prompt);
+
+            let fullText = "";
+            for await (const chunk of streamResult.stream) {
+              const part = chunk.text();
+              if (part) {
+                fullText += part;
+                // Informuj klient o postępie (opcjonalnie można tu wysyłać % ukończenia)
+                send(controller, { status: "streaming", partial: true });
+              }
+            }
+
+            const response = await streamResult.response;
             usedModel = name;
             void logGeminiCall({
               endpoint: "generate",
               model: name,
               success: true,
-              input_tokens: result.response.usageMetadata?.promptTokenCount,
-              output_tokens: result.response.usageMetadata?.candidatesTokenCount,
+              input_tokens: response.usageMetadata?.promptTokenCount,
+              output_tokens: response.usageMetadata?.candidatesTokenCount,
             });
-            const text = result.response.text();
-            const rawPlan = parsePlanResponse(text);
+            const rawPlan = parsePlanResponse(fullText);
             plan = validateAndFixPlan(rawPlan, quiz.duration ?? 3);
             break;
           } catch (err) {

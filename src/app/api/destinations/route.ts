@@ -7,6 +7,16 @@ import type { DestinationRecommendation, TravelStyle, TravelVibe, PlaceType } fr
 
 export const maxDuration = 30;
 
+// Cache w pamięci: te same preferencje quiz → te same destynacje przez 10 minut
+// Unika powtórnych wywołań Gemini (~10–20s) przy odświeżeniu lub retry
+const destCache = new Map<string, { data: DestinationRecommendation[]; ts: number }>();
+const CACHE_TTL_MS = 10 * 60 * 1000;
+
+function cacheKey(body: Record<string, unknown>): string {
+  const { styles, budget, vibe, placeType, month, duration, airports, preferredCity } = body;
+  return JSON.stringify({ styles, budget, vibe, placeType, month, duration, airports, preferredCity });
+}
+
 const MONTH_NAMES = [
   "styczeń","luty","marzec","kwiecień","maj","czerwiec",
   "lipiec","sierpień","wrzesień","październik","listopad","grudzień",
@@ -108,9 +118,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Gemini API key not configured." }, { status: 500 });
   }
 
+  // Sprawdź cache przed wywołaniem Gemini
+  const key = cacheKey(body as Record<string, unknown>);
+  const cached = destCache.get(key);
+  if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
+    console.log("[destinations] cache hit");
+    return NextResponse.json({ destinations: cached.data });
+  }
+
   const prompt = buildPrompt(body as Record<string, unknown>);
 
-  const MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"];
+  // Szybszy model najpierw — flash-lite wystarczy do polecenia destynacji
+  const MODELS = ["gemini-2.5-flash-lite", "gemini-2.5-flash"];
 
   for (const modelName of MODELS) {
     try {
@@ -154,6 +173,7 @@ export async function POST(req: NextRequest) {
         }));
 
       void logGeminiCall({ endpoint: "destinations", model: modelName, success: true });
+      destCache.set(key, { data: destinations, ts: Date.now() });
       return NextResponse.json({ destinations });
 
     } catch (err) {
