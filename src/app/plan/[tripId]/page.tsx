@@ -53,10 +53,19 @@ interface PackingCategory {
   items: string[];
 }
 
+interface Restaurant {
+  name: string;
+  cuisine: string;
+  priceRange: "€" | "€€" | "€€€";
+  description: string;
+  address: string;
+  highlight: string;
+}
+
 export default function PlanPage() {
   const router = useRouter();
   const params = useParams<{ tripId: string }>();
-  const { currentTrip, setCurrentTrip, updateTripDay, updateTripActivity, resetQuiz } = useAppStore();
+  const { currentTrip, setCurrentTrip, updateTripDay, updateTripActivity, addTripActivity, resetQuiz } = useAppStore();
   const [activeDay, setActiveDay] = useState(0);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -93,6 +102,15 @@ export default function PlanPage() {
   const [packingList, setPackingList] = useState<PackingCategory[] | null>(null);
   const [packingError, setPackingError] = useState<string | null>(null);
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
+
+  // Restaurants state
+  const [restaurantsOpen, setRestaurantsOpen] = useState(false);
+  const [restaurantsLoading, setRestaurantsLoading] = useState(false);
+  const [restaurants, setRestaurants] = useState<Restaurant[] | null>(null);
+  const [restaurantsError, setRestaurantsError] = useState<string | null>(null);
+
+  // Add activity modal state
+  const [addModal, setAddModal] = useState<{ dayIndex: number } | null>(null);
 
   // Regenerate day state — keyed by day index
   const [regenLoading, setRegenLoading] = useState<Record<number, boolean>>({});
@@ -189,6 +207,27 @@ export default function PlanPage() {
     }
   };
 
+  const handleRestaurants = async () => {
+    if (restaurants) { setRestaurantsOpen((o) => !o); return; }
+    setRestaurantsOpen(true);
+    setRestaurantsLoading(true);
+    setRestaurantsError(null);
+    try {
+      const res = await fetch("/api/restaurants", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ city: currentTrip?.plan?.city, country: currentTrip?.plan?.country }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Błąd generowania");
+      setRestaurants(data.restaurants);
+    } catch (err) {
+      setRestaurantsError(err instanceof Error ? err.message : "Błąd sieci");
+    } finally {
+      setRestaurantsLoading(false);
+    }
+  };
+
   const toggleChecked = (key: string) => {
     setCheckedItems((prev) => {
       const next = new Set(prev);
@@ -200,6 +239,20 @@ export default function PlanPage() {
   const showActionError = (msg: string) => {
     setActionError(msg);
     setTimeout(() => setActionError(null), 5000);
+  };
+
+  const handleAddActivity = async (dayIndex: number, activity: DayActivity) => {
+    addTripActivity(dayIndex, activity);
+    setAddModal(null);
+    if (!currentTrip?.id || !currentTrip.plan) return;
+    const updatedDays = currentTrip.plan.days.map((d, i) =>
+      i === dayIndex ? { ...d, activities: [...d.activities, activity] } : d
+    );
+    await fetch(`/api/trips/${currentTrip.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ai_plan_json: { ...currentTrip.plan, days: updatedDays } }),
+    }).catch(() => {});
   };
 
   const handleSwapActivity = async (dayIndex: number, activityIndex: number) => {
@@ -451,6 +504,47 @@ export default function PlanPage() {
         </div>
       </div>
 
+      {/* Restaurants */}
+      <div className="px-5 mb-4 no-print">
+        <button
+          onClick={handleRestaurants}
+          disabled={restaurantsLoading}
+          className="w-full py-3 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 transition-opacity hover:opacity-80 mb-3"
+          style={{ background: "rgba(255,107,53,0.08)", color: "var(--accent)", border: "1px solid rgba(255,107,53,0.2)" }}
+        >
+          {restaurantsLoading ? (
+            <>
+              <span className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "var(--accent)", borderTopColor: "transparent" }} />
+              Szukam restauracji…
+            </>
+          ) : (
+            <>{restaurantsOpen && restaurants ? "🍽️ Polecane restauracje ↑" : "🍽️ Najlepsze restauracje w " + plan.city}</>
+          )}
+        </button>
+
+        <AnimatePresence>
+          {restaurantsOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              {restaurantsError && (
+                <p className="text-sm text-center py-3" style={{ color: "var(--error)" }}>{restaurantsError}</p>
+              )}
+              {restaurants && (
+                <div className="flex flex-col gap-3">
+                  {restaurants.map((r, i) => (
+                    <RestaurantCard key={i} restaurant={r} city={plan.city} index={i} />
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
       {/* Tips */}
       {plan.generalTips?.length > 0 && (
         <div className="px-5 mb-4">
@@ -553,6 +647,7 @@ export default function PlanPage() {
             onRegenerate={handleRegenerateDay}
             swapLoading={swapLoading}
             onSwapActivity={handleSwapActivity}
+            onAddActivity={() => setAddModal({ dayIndex: i })}
           />
         </div>
       ))}
@@ -802,6 +897,18 @@ export default function PlanPage() {
         )}
       </AnimatePresence>
 
+      {/* Add activity modal */}
+      <AnimatePresence>
+        {addModal && (
+          <AddActivityModal
+            key="add-modal"
+            dayNum={(plan.days[addModal.dayIndex]?.day ?? addModal.dayIndex + 1)}
+            onClose={() => setAddModal(null)}
+            onSave={(activity) => handleAddActivity(addModal.dayIndex, activity)}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Floating chat panel */}
       {currentTrip && (
         <ChatPanel tripId={currentTrip.id} city={plan.city} />
@@ -842,6 +949,7 @@ function DayPlanView({
   onRegenerate,
   swapLoading,
   onSwapActivity,
+  onAddActivity,
 }: {
   day: DayPlan;
   city: string;
@@ -851,6 +959,7 @@ function DayPlanView({
   onRegenerate: (i: number) => void;
   swapLoading: Record<string, boolean>;
   onSwapActivity: (dayIndex: number, activityIndex: number) => void;
+  onAddActivity: () => void;
 }) {
   const mapsUrl = buildMapsRouteUrl(day.activities, city);
 
@@ -919,6 +1028,299 @@ function DayPlanView({
           ))}
         </div>
       </div>
+
+      {/* Add activity button */}
+      <button
+        onClick={onAddActivity}
+        className="mt-3 ml-11 flex items-center gap-2 text-xs font-semibold px-3 py-2 rounded-full transition-opacity hover:opacity-70 no-print"
+        style={{ background: "var(--accent-light)", color: "var(--accent)", border: "1px solid rgba(196,98,45,0.25)" }}
+      >
+        <span className="text-base leading-none">+</span>
+        Dodaj aktywność
+      </button>
+    </motion.div>
+  );
+}
+
+const PRICE_COLORS: Record<string, { bg: string; color: string }> = {
+  "€":   { bg: "rgba(34,197,94,0.1)",  color: "#16A34A" },
+  "€€":  { bg: "rgba(234,179,8,0.1)",  color: "#A16207" },
+  "€€€": { bg: "rgba(239,68,68,0.1)",  color: "#DC2626" },
+};
+
+function RestaurantCard({ restaurant: r, city, index }: { restaurant: Restaurant; city: string; index: number }) {
+  const price = PRICE_COLORS[r.priceRange] ?? PRICE_COLORS["€€"];
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${r.name}, ${city}`)}`;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.06 }}
+      className="glass-card px-4 py-3"
+    >
+      <div className="flex items-start justify-between gap-2 mb-1.5">
+        <p className="text-sm font-bold leading-tight flex-1">{r.name}</p>
+        <span
+          className="text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0"
+          style={{ background: price.bg, color: price.color }}
+        >
+          {r.priceRange}
+        </span>
+      </div>
+
+      <span
+        className="inline-block text-xs px-2 py-0.5 rounded-md font-medium mb-2"
+        style={{ background: "rgba(0,0,0,0.06)", color: "var(--text-secondary)" }}
+      >
+        {r.cuisine}
+      </span>
+
+      <p className="text-xs leading-relaxed mb-2" style={{ color: "var(--text-muted)" }}>
+        {r.description}
+      </p>
+
+      <div
+        className="flex items-center gap-2 px-3 py-2 rounded-xl mb-2"
+        style={{ background: "rgba(255,107,53,0.06)", border: "1px solid rgba(255,107,53,0.15)" }}
+      >
+        <span style={{ color: "var(--accent)", fontSize: 13, fontWeight: 700, flexShrink: 0 }}>✦</span>
+        <p className="text-xs" style={{ color: "var(--text-secondary)" }}>{r.highlight}</p>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+          <span aria-hidden="true">📍 </span>{r.address}
+        </p>
+        <a
+          href={mapsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs font-semibold ml-2 flex-shrink-0 transition-opacity hover:opacity-70"
+          style={{ color: "#1A73E8", textDecoration: "none" }}
+        >
+          Nawiguj →
+        </a>
+      </div>
+    </motion.div>
+  );
+}
+
+function AddActivityModal({
+  dayNum,
+  onClose,
+  onSave,
+}: {
+  dayNum: number;
+  onClose: () => void;
+  onSave: (activity: DayActivity) => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [time, setTime] = useState("10:00");
+  const [cost, setCost] = useState("Free");
+  const [description, setDescription] = useState("");
+  const [location, setLocation] = useState("");
+  const [emoji, setEmoji] = useState("📍");
+  const [type, setType] = useState<DayActivity["type"]>("attraction");
+
+  const canSave = title.trim().length >= 2;
+
+  const handleSave = () => {
+    if (!canSave) return;
+    onSave({
+      time,
+      title: title.trim(),
+      description: description.trim(),
+      type,
+      cost: cost.trim() || "Free",
+      location: location.trim() || undefined,
+      emoji,
+    });
+  };
+
+  const ACTIVITY_TYPES: { value: DayActivity["type"]; label: string }[] = [
+    { value: "attraction",    label: "Atrakcja" },
+    { value: "food",          label: "Jedzenie" },
+    { value: "accommodation", label: "Nocleg" },
+    { value: "transport",     label: "Transport" },
+    { value: "tip",           label: "Wskazówka" },
+  ];
+
+  const EMOJI_PRESETS = ["📍", "🏛️", "🍽️", "🏨", "🚌", "☕", "🛍️", "🌅", "🎭", "⚽", "🏖️", "🌿"];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-end justify-center"
+      style={{ background: "rgba(0,0,0,0.6)" }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <motion.div
+        initial={{ y: 80, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 80, opacity: 0 }}
+        transition={{ type: "spring", damping: 28, stiffness: 280 }}
+        className="w-full max-w-lg rounded-t-3xl px-5 pb-8 pt-5 overflow-y-auto"
+        style={{ background: "var(--bg-primary)", maxHeight: "90vh" }}
+      >
+        <div className="flex justify-center mb-4">
+          <div className="w-10 h-1 rounded-full" style={{ background: "var(--border)" }} />
+        </div>
+
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-lg font-bold">Dodaj do dnia {dayNum}</h3>
+          <button onClick={onClose} className="text-xl" style={{ color: "var(--text-muted)" }}>✕</button>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          {/* Emoji picker */}
+          <div>
+            <label className="block text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+              Emoji
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {EMOJI_PRESETS.map((e) => (
+                <button
+                  key={e}
+                  onClick={() => setEmoji(e)}
+                  className="w-10 h-10 rounded-xl text-xl flex items-center justify-center transition-all"
+                  style={{
+                    background: emoji === e ? "var(--accent-light)" : "var(--bg-surface)",
+                    border: emoji === e ? "2px solid var(--accent)" : "2px solid var(--border)",
+                  }}
+                >
+                  {e}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Type */}
+          <div>
+            <label className="block text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+              Typ
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {ACTIVITY_TYPES.map((t) => (
+                <button
+                  key={t.value}
+                  onClick={() => setType(t.value)}
+                  className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+                  style={type === t.value ? {
+                    background: "var(--accent)",
+                    color: "#fff",
+                  } : {
+                    background: "var(--bg-surface)",
+                    color: "var(--text-muted)",
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Time + Cost */}
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className="block text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+                Godzina
+              </label>
+              <input
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-xl text-sm outline-none"
+                style={{ background: "var(--bg-surface)", border: "1.5px solid var(--border)", color: "var(--text-primary)" }}
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+                Koszt
+              </label>
+              <input
+                type="text"
+                value={cost}
+                onChange={(e) => setCost(e.target.value)}
+                placeholder="Free / ~20 PLN"
+                className="w-full px-3 py-2.5 rounded-xl text-sm outline-none"
+                style={{ background: "var(--bg-surface)", border: "1.5px solid var(--border)", color: "var(--text-primary)" }}
+              />
+            </div>
+          </div>
+
+          {/* Title */}
+          <div>
+            <label className="block text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+              Nazwa aktywności *
+            </label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="np. Muzeum Narodowe"
+              autoFocus
+              className="w-full px-3 py-2.5 rounded-xl text-sm outline-none"
+              style={{
+                background: "var(--bg-surface)",
+                border: `1.5px solid ${title.length >= 2 ? "var(--accent)" : "var(--border)"}`,
+                color: "var(--text-primary)",
+              }}
+            />
+          </div>
+
+          {/* Location */}
+          <div>
+            <label className="block text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+              Lokalizacja (opcjonalna)
+            </label>
+            <input
+              type="text"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="np. Plac Zamkowy 4"
+              className="w-full px-3 py-2.5 rounded-xl text-sm outline-none"
+              style={{ background: "var(--bg-surface)", border: "1.5px solid var(--border)", color: "var(--text-primary)" }}
+            />
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="block text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+              Notatka (opcjonalna)
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Dodatkowe informacje..."
+              rows={2}
+              className="w-full px-3 py-2.5 rounded-xl text-sm outline-none resize-none"
+              style={{ background: "var(--bg-surface)", border: "1.5px solid var(--border)", color: "var(--text-primary)" }}
+            />
+          </div>
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <button
+            onClick={onClose}
+            className="flex-1 py-3 rounded-2xl font-medium text-sm"
+            style={{ background: "var(--bg-surface)", color: "var(--text-muted)", border: "1.5px solid var(--border)" }}
+          >
+            Anuluj
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={!canSave}
+            className="flex-[2] py-3 rounded-2xl font-bold text-sm disabled:opacity-50"
+            style={{ background: "var(--accent)", color: "#fff" }}
+          >
+            Dodaj do planu ✓
+          </button>
+        </div>
+      </motion.div>
     </motion.div>
   );
 }

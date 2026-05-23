@@ -50,17 +50,22 @@ export async function PATCH(
     return NextResponse.json({ error: "Nieprawidłowy format." }, { status: 400 });
   }
 
-  const { is_public } = body as { is_public?: boolean };
-  if (typeof is_public !== "boolean") {
-    return NextResponse.json({ error: "Brak pola is_public." }, { status: 400 });
+  const { is_public, ai_plan_json } = body as { is_public?: boolean; ai_plan_json?: unknown };
+
+  const updates: Record<string, unknown> = {};
+  if (typeof is_public === "boolean") updates.is_public = is_public;
+  if (ai_plan_json !== undefined) updates.ai_plan_json = ai_plan_json;
+
+  if (Object.keys(updates).length === 0) {
+    return NextResponse.json({ error: "Brak pól do aktualizacji." }, { status: 400 });
   }
 
   const { error } = await supabase
     .from("trips")
-    .update({ is_public })
+    .update(updates)
     .eq("id", tripId)
     .eq("user_id", user.id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true, is_public });
+  return NextResponse.json({ ok: true, ...updates });
 }

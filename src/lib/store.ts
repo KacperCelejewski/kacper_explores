@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { QuizAnswers, DestinationRecommendation, FlightDetails, Trip, DayPlan, DayActivity } from "@/types";
 
+
 interface AppState {
   // Quiz
   quizAnswers: QuizAnswers;
@@ -38,6 +39,7 @@ interface AppState {
   setCurrentTrip: (trip: Trip) => void;
   updateTripDay: (dayIndex: number, day: DayPlan) => void;
   updateTripActivity: (dayIndex: number, activityIndex: number, activity: DayActivity) => void;
+  addTripActivity: (dayIndex: number, activity: DayActivity) => void;
   setIsGeneratingPlan: (val: boolean) => void;
   setCachedDestinations: (key: string, destinations: DestinationRecommendation[]) => void;
   setHasHydrated: (val: boolean) => void;
@@ -51,6 +53,7 @@ const defaultQuizAnswers: QuizAnswers = {
   month: null,
   duration: null,
   airports: ["WRO"],
+  companion: null,
 };
 
 export const useAppStore = create<AppState>()(
@@ -140,6 +143,21 @@ export const useAppStore = create<AppState>()(
           };
         }),
 
+      addTripActivity: (dayIndex, activity) =>
+        set((state) => {
+          if (!state.currentTrip?.plan) return {};
+          const days = [...state.currentTrip.plan.days];
+          const day = days[dayIndex];
+          if (!day) return {};
+          days[dayIndex] = { ...day, activities: [...day.activities, activity] };
+          return {
+            currentTrip: {
+              ...state.currentTrip,
+              plan: { ...state.currentTrip.plan, days },
+            },
+          };
+        }),
+
       setIsGeneratingPlan: (val) => set({ isGeneratingPlan: val }),
 
       setCachedDestinations: (key, destinations) =>
@@ -149,7 +167,7 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: "kacper-explores-store",
-      version: 2,
+      version: 3,
       onRehydrateStorage: () => (state) => {
         if (state) state.setHasHydrated(true);
       },
@@ -160,6 +178,11 @@ export const useAppStore = create<AppState>()(
           if (!qa.airports || !Array.isArray(qa.airports) || qa.airports.length === 0) {
             qa.airports = ["WRO"];
           }
+          s.quizAnswers = qa;
+        }
+        if (version < 3) {
+          const qa = (s.quizAnswers ?? {}) as Record<string, unknown>;
+          if (qa.companion === undefined) qa.companion = null;
           s.quizAnswers = qa;
         }
         return s;

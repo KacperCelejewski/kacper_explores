@@ -81,11 +81,20 @@ function getFacts(city?: string): string[] {
   return CITY_FACTS[key] ?? GENERIC_FACTS;
 }
 
-function GeneratingOverlay({ city, currentDay = 0, totalDays = 0 }: { city?: string; currentDay?: number; totalDays?: number }) {
+function GeneratingOverlay({
+  city,
+  currentDay = 0,
+  totalDays = 0,
+  previewActivities = [],
+}: {
+  city?: string;
+  currentDay?: number;
+  totalDays?: number;
+  previewActivities?: { time: string; emoji: string; title: string }[];
+}) {
   const [factIndex, setFactIndex] = useState(0);
   const facts = getFacts(city);
 
-  // Rotate facts every 8s
   useEffect(() => {
     const t = setInterval(() => setFactIndex((f) => (f + 1) % facts.length), 8000);
     return () => clearInterval(t);
@@ -93,13 +102,14 @@ function GeneratingOverlay({ city, currentDay = 0, totalDays = 0 }: { city?: str
 
   const hasRealProgress = totalDays > 0;
   const progress = hasRealProgress ? Math.round((currentDay / totalDays) * 100) : 5;
+  const hasPreview = previewActivities.length > 0;
 
   return (
     <div
       className="fixed inset-0 z-40 flex flex-col"
       style={{ background: "var(--bg-primary)" }}
     >
-      <div className="flex flex-col flex-1 items-center justify-center px-6 gap-8">
+      <div className="flex flex-col flex-1 items-center justify-center px-6 gap-6">
         {/* Plane animation */}
         <div className="relative" style={{ width: 180, height: 130 }}>
           <div className="absolute bottom-0 select-none" style={{ left: "50%", transform: "translateX(-50%)", fontSize: "3.5rem" }}>
@@ -130,7 +140,7 @@ function GeneratingOverlay({ city, currentDay = 0, totalDays = 0 }: { city?: str
         {/* Day progress */}
         {hasRealProgress ? (
           <div className="w-full max-w-xs flex flex-col gap-2">
-            {Array.from({ length: totalDays }).map((_, i) => {
+            {Array.from({ length: Math.min(totalDays, 7) }).map((_, i) => {
               const dayNum = i + 1;
               const done = dayNum <= currentDay;
               const active = dayNum === currentDay + 1;
@@ -158,6 +168,9 @@ function GeneratingOverlay({ city, currentDay = 0, totalDays = 0 }: { city?: str
                 </div>
               );
             })}
+            {totalDays > 7 && (
+              <p className="text-xs pl-8" style={{ color: "var(--text-muted)" }}>+ {totalDays - 7} kolejnych dni…</p>
+            )}
           </div>
         ) : (
           <div className="flex items-center gap-3">
@@ -166,22 +179,45 @@ function GeneratingOverlay({ city, currentDay = 0, totalDays = 0 }: { city?: str
           </div>
         )}
 
-        {/* Fact box */}
+        {/* Preview of day 1 activities OR rotating fact */}
         <AnimatePresence mode="wait">
-          <motion.div
-            key={factIndex}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.4 }}
-            className="w-full max-w-xs px-4 py-3 rounded-2xl"
-            style={{ background: "var(--accent-light)", border: "1px solid rgba(196,98,45,0.2)" }}
-          >
-            <p className="text-xs font-bold mb-1" style={{ color: "var(--accent)" }}>💡 Czy wiesz, że…</p>
-            <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-              {facts[factIndex]}
-            </p>
-          </motion.div>
+          {hasPreview ? (
+            <motion.div
+              key="preview"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.4 }}
+              className="w-full max-w-xs px-4 py-3 rounded-2xl"
+              style={{ background: "var(--accent-light)", border: "1px solid rgba(196,98,45,0.2)" }}
+            >
+              <p className="text-xs font-bold mb-2" style={{ color: "var(--accent)" }}>📍 Dzień 1 gotowy</p>
+              <div className="flex flex-col gap-1.5">
+                {previewActivities.slice(0, 3).map((a, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <span className="text-xs font-mono w-10 flex-shrink-0" style={{ color: "var(--text-muted)" }}>{a.time}</span>
+                    <span className="text-sm">{a.emoji}</span>
+                    <span className="text-xs truncate" style={{ color: "var(--text-secondary)" }}>{a.title}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key={factIndex}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.4 }}
+              className="w-full max-w-xs px-4 py-3 rounded-2xl"
+              style={{ background: "var(--accent-light)", border: "1px solid rgba(196,98,45,0.2)" }}
+            >
+              <p className="text-xs font-bold mb-1" style={{ color: "var(--accent)" }}>💡 Czy wiesz, że…</p>
+              <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                {facts[factIndex]}
+              </p>
+            </motion.div>
+          )}
         </AnimatePresence>
       </div>
 
@@ -629,6 +665,7 @@ export default function DestinationsPage() {
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [showSavePrompt, setShowSavePrompt] = useState(false);
   const [genProgress, setGenProgress]   = useState<{ current: number; total: number }>({ current: 0, total: 0 });
+  const [previewActivities, setPreviewActivities] = useState<{ time: string; emoji: string; title: string }[]>([]);
 
   // Fetch destinations + profile — pomija Gemini gdy mamy już wyniki dla tych quiz answers
   useEffect(() => {
@@ -697,6 +734,7 @@ export default function DestinationsPage() {
     setIsGeneratingPlan(true);
     setGenerateError(null);
     setGenProgress({ current: 0, total: 0 });
+    setPreviewActivities([]);
 
     try {
       const res = await fetch("/api/generate", {
@@ -732,6 +770,10 @@ export default function DestinationsPage() {
           }
           if (msg.status === "day" && typeof msg.current === "number" && typeof msg.total === "number") {
             setGenProgress({ current: msg.current as number, total: msg.total as number });
+            if (msg.current === 1 && msg.day) {
+              const day = msg.day as { activities?: { time: string; emoji: string; title: string }[] };
+              setPreviewActivities(day.activities?.slice(0, 3) ?? []);
+            }
           }
           if (msg.done) {
             setCurrentTrip({
@@ -879,6 +921,7 @@ export default function DestinationsPage() {
           city={planModal?.city ?? quizAnswers.preferredCity}
           currentDay={genProgress.current}
           totalDays={genProgress.total}
+          previewActivities={previewActivities}
         />
       )}
 

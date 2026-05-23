@@ -27,10 +27,11 @@ import {
   IconCar,
   IconGlobe,
 } from "@/app/components/Icons";
+import type { Companion } from "@/types";
 
 type IconFC = React.FC<{ size?: number }>;
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 6;
 
 // ── Region definitions ────────────────────────────────────────────────────────
 
@@ -190,11 +191,12 @@ function QuizPageInner() {
   const progress = ((currentQuizStep + 1) / TOTAL_STEPS) * 100;
 
   const canProceed = () => {
-    if (currentQuizStep === 0) return quizAnswers.budget !== null;
-    if (currentQuizStep === 1) return quizAnswers.vibe !== null;
-    if (currentQuizStep === 2) return true; // styles are optional
-    if (currentQuizStep === 3) return quizAnswers.month !== null; // duration has default
-    if (currentQuizStep === 4) return quizAnswers.airports.length > 0;
+    if (currentQuizStep === 0) return quizAnswers.companion !== null;
+    if (currentQuizStep === 1) return quizAnswers.budget !== null;
+    if (currentQuizStep === 2) return quizAnswers.vibe !== null;
+    if (currentQuizStep === 3) return true; // styles are optional
+    if (currentQuizStep === 4) return quizAnswers.month !== null; // duration has default
+    if (currentQuizStep === 5) return quizAnswers.airports.length > 0;
     return false;
   };
 
@@ -316,24 +318,33 @@ function QuizPageInner() {
       <div className="flex-1 relative overflow-hidden">
         <AnimatePresence mode="wait" custom={dir}>
           {currentQuizStep === 0 && (
+            <motion.div key="step-companion" custom={dir} variants={slideVariants}
+              initial="enter" animate="center" exit="exit" transition={{ duration: 0.28, ease: "easeInOut" }}>
+              <StepCompanion
+                companion={quizAnswers.companion}
+                setCompanion={(v) => setQuizAnswer("companion", v)}
+              />
+            </motion.div>
+          )}
+          {currentQuizStep === 1 && (
             <motion.div key="step-budget" custom={dir} variants={slideVariants}
               initial="enter" animate="center" exit="exit" transition={{ duration: 0.28, ease: "easeInOut" }}>
               <StepBudget />
             </motion.div>
           )}
-          {currentQuizStep === 1 && (
+          {currentQuizStep === 2 && (
             <motion.div key="step-vibe" custom={dir} variants={slideVariants}
               initial="enter" animate="center" exit="exit" transition={{ duration: 0.28, ease: "easeInOut" }}>
               <StepVibe />
             </motion.div>
           )}
-          {currentQuizStep === 2 && (
+          {currentQuizStep === 3 && (
             <motion.div key="step-style" custom={dir} variants={slideVariants}
               initial="enter" animate="center" exit="exit" transition={{ duration: 0.28, ease: "easeInOut" }}>
               <StepStyle styles={quizAnswers.styles} toggleStyle={toggleStyle} />
             </motion.div>
           )}
-          {currentQuizStep === 3 && (
+          {currentQuizStep === 4 && (
             <motion.div key="step-when" custom={dir} variants={slideVariants}
               initial="enter" animate="center" exit="exit" transition={{ duration: 0.28, ease: "easeInOut" }}>
               <StepWhen
@@ -344,7 +355,7 @@ function QuizPageInner() {
               />
             </motion.div>
           )}
-          {currentQuizStep === 4 && (
+          {currentQuizStep === 5 && (
             <motion.div key="step-departure" custom={dir} variants={slideVariants}
               initial="enter" animate="center" exit="exit" transition={{ duration: 0.28, ease: "easeInOut" }}>
               <StepDeparture
@@ -364,6 +375,11 @@ function QuizPageInner() {
             ? `Zaplanuj wyjazd do ${quizAnswers.preferredCity} →`
             : "Dobierz destynacje →"}
         </button>
+        {currentQuizStep === 0 && (
+          <p className="text-center text-xs mt-3" style={{ color: "var(--text-muted)" }}>
+            Krok 1 z {TOTAL_STEPS} — zajmie Ci ok. 2 minuty
+          </p>
+        )}
       </motion.div>
     </div>
   );
@@ -378,6 +394,72 @@ export default function QuizPage() {
 }
 
 // ── Step components ───────────────────────────────────────────────────────────
+
+type CompanionIconFC = React.FC<{ size?: number }>;
+
+const IconSolo: CompanionIconFC = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+    <circle cx="12" cy="7" r="4" /><path d="M5 21a7 7 0 0 1 14 0" />
+  </svg>
+);
+const IconCouple: CompanionIconFC = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+    <circle cx="9" cy="7" r="3.5" /><path d="M2 20a7 7 0 0 1 14 0" />
+    <circle cx="17" cy="8" r="3" /><path d="M14 20h8" />
+  </svg>
+);
+const IconFamily: CompanionIconFC = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+    <circle cx="8" cy="6" r="3" /><circle cx="16" cy="6" r="3" /><circle cx="12" cy="16" r="2.5" />
+    <path d="M2 19a6 6 0 0 1 12 0" /><path d="M10 19a6 6 0 0 1 12 0" />
+  </svg>
+);
+const IconGroupFriends: CompanionIconFC = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+    <circle cx="6" cy="7" r="3" /><circle cx="12" cy="5" r="3" /><circle cx="18" cy="7" r="3" />
+    <path d="M0 21a6 6 0 0 1 12 0" /><path d="M12 21a6 6 0 0 1 12 0" />
+  </svg>
+);
+
+const COMPANION_OPTIONS: { value: Companion; label: string; Icon: CompanionIconFC; desc: string }[] = [
+  { value: "solo",    label: "Sam/a",    Icon: IconSolo,         desc: "Porady bezpieczeństwa, miejsca do poznania ludzi" },
+  { value: "couple",  label: "Para",     Icon: IconCouple,       desc: "Romantyczne kolacje, wspólne aktywności" },
+  { value: "family",  label: "Rodzina",  Icon: IconFamily,       desc: "Family-friendly, spokojne tempo, bezpieczeństwo" },
+  { value: "friends", label: "Znajomi",  Icon: IconGroupFriends, desc: "Aktywności grupowe, wieczory w barach, podział kosztów" },
+];
+
+function StepCompanion({
+  companion,
+  setCompanion,
+}: {
+  companion: Companion | null;
+  setCompanion: (v: Companion) => void;
+}) {
+  return (
+    <div>
+      <h2 className="text-2xl font-bold mt-2">Kto jedzie?</h2>
+      <p className="text-sm mt-2 mb-6" style={{ color: "var(--text-muted)" }}>
+        AI dopasuje atrakcje, restauracje i wskazówki do Twojej grupy.
+      </p>
+      <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Wybierz kto podróżuje">
+        {COMPANION_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            className={`option-card ${companion === opt.value ? "selected" : ""}`}
+            onClick={() => setCompanion(opt.value)}
+            aria-pressed={companion === opt.value}
+          >
+            <span style={{ color: companion === opt.value ? "var(--accent)" : "var(--text-muted)" }}>
+              <opt.Icon size={24} />
+            </span>
+            <p className="font-semibold text-sm mt-2">{opt.label}</p>
+            <p className="text-xs mt-0.5 leading-tight" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function StepBudget() {
   const { quizAnswers, setQuizAnswer } = useAppStore();

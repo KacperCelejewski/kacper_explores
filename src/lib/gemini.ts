@@ -8,7 +8,7 @@ export function buildPlanPrompt(
   flightDetails?: FlightDetails | null
 ): string {
   const monthName = quiz.month ? MONTH_NAMES[quiz.month - 1] : "nieokreślony";
-  const stylesList = quiz.styles.map((s) => STYLE_LABELS[s] ?? s).join(", ");
+  const stylesList = quiz.styles.map((s) => STYLE_LABELS[s] ?? s).join(", ") || "brak preferencji";
   const budgetLabel = quiz.budget === "low" ? "niski (backpacker)" : "średni (komfortowy)";
   const vibeLabel = quiz.vibe ? VIBE_LABELS[quiz.vibe] : null;
   const placeLabel = quiz.placeType ? PLACE_LABELS[quiz.placeType] : null;
@@ -17,6 +17,20 @@ export function buildPlanPrompt(
 
   const vibeInstruction = vibeLabel ? `- Energia wyjazdu: ${vibeLabel}` : "";
   const placeInstruction = placeLabel ? `- Preferowany typ miejsca: ${placeLabel}` : "";
+
+  const companionLabel = quiz.companion === "solo"    ? "solo (samotny podróżnik)"
+    : quiz.companion === "couple"  ? "para"
+    : quiz.companion === "family"  ? "rodzina z dziećmi"
+    : quiz.companion === "friends" ? "grupa znajomych"
+    : "solo (samotny podróżnik)";
+
+  const companionGuide = quiz.companion === "couple"
+    ? "Para — wieczory w romantycznych restauracjach przy świecach, wspólne aktywności, prywatne noclegi."
+    : quiz.companion === "family"
+    ? "Rodzina z dziećmi — wolniejsze tempo, family-friendly atrakcje (parki, interaktywne muzea), bezpieczne dzielnice, wczesne kolacje."
+    : quiz.companion === "friends"
+    ? "Grupa znajomych — aktywności grupowe, wieczorne wyjścia, bary i imprezy, podział kosztów noclegów."
+    : "Solo — wskazówki bezpieczeństwa, miejsca do poznania innych podróżnych (hostelowe bary, free tours, food markety).";
 
   const vibeGuide = quiz.vibe === "chill"
     ? "Spokojne tempo — ranki na kawie, popołudnia na spacerach, wieczory w lokalnych barach. Bez pośpiechu."
@@ -35,11 +49,12 @@ export function buildPlanPrompt(
     ? `DANE LOTU: przylot ${flightDetails.arrivalDate} o ${flightDetails.arrivalTime} (czas lokalny), powrót ${flightDetails.returnDate} wylot o ${flightDetails.returnTime}. Plan MUSI uwzględniać te godziny.`
     : `UWAGA: Dokładne godziny lotu nieznane — użytkownik rezerwuje samodzielnie. Plan musi być elastyczny.`;
 
-  return `Jesteś ekspertem od budżetowych podróży solo po Europie. Stwórz szczegółowy plan podróży do ${destination.city}, ${destination.country}.
+  return `Jesteś ekspertem od podróży. Stwórz szczegółowy plan podróży do ${destination.city}, ${destination.country}.
 
 ${flightNote}
 
 PROFIL PODRÓŻNIKA:
+- Kto podróżuje: ${companionLabel}
 - Budżet: ${budgetLabel}
 - Zainteresowania: ${stylesList}
 ${vibeInstruction}
@@ -53,14 +68,15 @@ ${schedulePrompt}
 
 STYL PLANOWANIA:
 ${vibeGuide}
+${companionGuide}
 
-ZASADY DLA WSZYSTKICH DNI:
-- Tanie miejsca do jedzenia (street food, lokalne bary, bazary)
-- Darmowe lub tanie atrakcje (priorytet!)
-- Praktyczne wskazówki budżetowe
-- Porady dla podróżujących solo — gdzie poznać ludzi, bezpieczeństwo
-- Szacunkowe koszty każdej aktywności w PLN
-- Pole "location" wypełnij dla każdej aktywności z fizyczną lokalizacją (nie dla transportu i wskazówek)
+ZASADY DLA WSZYSTKICH DNI — BEZWZGLĘDNIE OBOWIĄZUJĄCE:
+1. KONKRETNE NAZWY: ZAWSZE podawaj pełną, prawdziwą nazwę miejsca. NIE "lokalne muzeum" — tylko "Muzeum Archeologiczne im. X" albo "Narodowe Muzeum Sztuki Nowoczesnej". NIE "dobra restauracja" — tylko "Restauracja Azahar" albo "Bar El Nacional przy Passeig de Gràcia". NIE "spacer po centrum" — tylko "Spacer po Dzielnicy Gotyckiej: ulica Carrer del Bisbe i Plac Sant Jaume".
+2. Tanie miejsca do jedzenia — konkretne miejsca z adresem lub dzielnicą
+3. Darmowe lub tanie atrakcje (priorytet!) — z konkretnymi nazwami
+4. Praktyczne wskazówki budżetowe
+5. Szacunkowe koszty każdej aktywności w PLN
+6. Pole "location" — pełna nazwa miejsca z ulicą lub dzielnicą (nie dla transportu i wskazówek)
 
 KRYTYCZNE WYMAGANIA DOTYCZĄCE LICZBY DNI:
 - Wygeneruj DOKŁADNIE ${duration} linii z dniami (od day:1 do day:${duration})

@@ -1,5 +1,7 @@
 export type BudgetLevel = "low" | "medium";
 
+export type Companion = "solo" | "couple" | "family" | "friends";
+
 export type TravelStyle =
   | "nature"
   | "history"
@@ -25,6 +27,8 @@ export interface QuizAnswers {
   airports: string[];
   /** Pre-selected city from homepage gallery (e.g. "Barcelona") */
   preferredCity?: string;
+  /** Who's traveling */
+  companion: Companion | null;
 }
 
 export interface Airport {
