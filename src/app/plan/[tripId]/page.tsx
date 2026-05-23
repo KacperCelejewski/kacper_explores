@@ -218,6 +218,10 @@ export default function PlanPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ city: currentTrip?.plan?.city, country: currentTrip?.plan?.country }),
       });
+      const contentType = res.headers.get("content-type") ?? "";
+      if (!contentType.includes("application/json")) {
+        throw new Error(`Błąd serwera (${res.status})`);
+      }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Błąd generowania");
       setRestaurants(data.restaurants);
