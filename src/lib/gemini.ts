@@ -1,28 +1,6 @@
 import type { QuizAnswers, DestinationRecommendation, FlightDetails, TripPlan, DayPlan } from "@/types";
-import { MONTH_NAMES } from "@/lib/mockFlights";
+import { MONTH_NAMES, STYLE_LABELS, VIBE_LABELS, PLACE_LABELS } from "@/lib/constants";
 import { calcTripSchedule, formatScheduleForPrompt } from "@/lib/tripSchedule";
-
-const STYLE_LABELS: Record<string, string> = {
-  nature: "natura i przyroda",
-  history: "historia i kultura",
-  architecture: "architektura i zabytki",
-  food: "lokalna kuchnia i street food",
-  beach: "plaże i relaks przy wodzie",
-  nightlife: "życie nocne i rozrywka",
-};
-
-const VIBE_LABELS: Record<string, string> = {
-  chill: "relaksujący — powolne tempo, kawiarnie, dużo czasu dla siebie",
-  intense: "intensywny — jak najwięcej atrakcji, każda godzina zaplanowana",
-  social: "towarzyski — poznawanie ludzi, bary, hostelowe przygody, nocne życie",
-  active: "aktywny — piesze trasy, sport, ruch na świeżym powietrzu",
-};
-
-const PLACE_LABELS: Record<string, string> = {
-  big_city: "duże miasto (metro, muzea, energia tłumu)",
-  charming: "kameralne miejsce (małe uliczki, autentyczność, mniej turystów)",
-  beach_sun: "słońce i woda (plaże, morze, relaks na zewnątrz)",
-};
 
 export function buildPlanPrompt(
   destination: DestinationRecommendation,

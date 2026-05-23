@@ -6,7 +6,7 @@ import { Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/lib/store";
 import type { TravelStyle, TripDuration, TravelVibe, PlaceType, QuizAnswers } from "@/types";
-import { MONTH_NAMES } from "@/lib/mockFlights";
+import { MONTH_NAMES } from "@/lib/constants";
 import {
   IconBackpack,
   IconSuitcase,

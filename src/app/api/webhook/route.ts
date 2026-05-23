@@ -1,16 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe, PLANS, type PlanKey } from "@/lib/stripe";
-import { createClient } from "@supabase/supabase-js";
+import { createServiceClient } from "@/lib/supabase/service";
 import type Stripe from "stripe";
 import { sendSlack } from "@/lib/slack";
-
-// Service role client — bypasses RLS for webhook updates
-function createServiceClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
 
 export async function POST(req: NextRequest) {
   const body = await req.text();

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createSupabaseServer } from "@/lib/supabase/server";
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({}, { status: 400 });
     }
 
-    const supabase = await createClient();
+    const supabase = await createSupabaseServer();
     await supabase.from("quiz_events").insert({ session_id, event, step: step ?? null });
   } catch {
     // Tracking errors are silent — never block the user

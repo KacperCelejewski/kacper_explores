@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { createClient } from "@/lib/supabase/server";
+import { createSupabaseServer } from "@/lib/supabase/server";
 import { logGeminiCall } from "@/lib/geminiLog";
+import { MONTH_NAMES } from "@/lib/constants";
 import type { QuizAnswers } from "@/types";
 
 export const maxDuration = 30;
 
-const MONTH_NAMES = ["styczeń","luty","marzec","kwiecień","maj","czerwiec","lipiec","sierpień","wrzesień","październik","listopad","grudzień"];
-
 export async function POST(req: NextRequest) {
-  const supabase = await createClient();
+  const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

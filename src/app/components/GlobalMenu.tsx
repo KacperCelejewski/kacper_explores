@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { createClient } from "@/lib/supabase/client";
+import { createSupabaseClient } from "@/lib/supabase/client";
 import {
   IconHome,
   IconCompass,
@@ -37,7 +37,7 @@ export default function GlobalMenu() {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = createSupabaseClient();
   const fabRef = useRef<HTMLButtonElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
 

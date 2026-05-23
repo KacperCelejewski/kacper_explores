@@ -7,7 +7,7 @@ import { buildPlanPrompt, parseNdjsonStream, validateAndFixPlan } from "@/lib/ge
 import { checkRateLimit, LIMITS } from "@/lib/rateLimit";
 import { validateQuizAnswers, validateDestination, getClientIp } from "@/lib/validate";
 import { getUserProfile, canGenerate, isPro } from "@/lib/userProfile";
-import { createClient } from "@/lib/supabase/server";
+import { createSupabaseServer } from "@/lib/supabase/server";
 import type { QuizAnswers, DestinationRecommendation, FlightDetails } from "@/types";
 
 export async function POST(req: NextRequest) {
@@ -143,7 +143,7 @@ export async function POST(req: NextRequest) {
 
         const tripId = `${(destination as DestinationRecommendation).city.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`;
 
-        const supabase = await createClient();
+        const supabase = await createSupabaseServer();
         const { data: { user } } = await supabase.auth.getUser();
         if (user && !isPro(profile)) {
           await supabase

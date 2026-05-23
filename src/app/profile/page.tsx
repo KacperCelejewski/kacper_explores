@@ -109,8 +109,8 @@ export default function ProfilePage() {
         throw new Error(d.error ?? "Błąd usuwania konta");
       }
       // Sign out locally and redirect
-      const { createClient } = await import("@/lib/supabase/client");
-      await createClient().auth.signOut();
+      const { createSupabaseClient } = await import("@/lib/supabase/client");
+      await createSupabaseClient().auth.signOut();
       router.replace("/");
     } catch (err) {
       alert(err instanceof Error ? err.message : "Błąd usuwania konta. Spróbuj ponownie.");

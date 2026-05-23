@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { createClient } from "@/lib/supabase/server";
+import { createSupabaseServer } from "@/lib/supabase/server";
 import { logGeminiCall } from "@/lib/geminiLog";
 import type { DayActivity, TripPlan } from "@/types";
 
@@ -12,7 +12,7 @@ function isQuotaError(err: unknown): boolean {
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = await createClient();
+  const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

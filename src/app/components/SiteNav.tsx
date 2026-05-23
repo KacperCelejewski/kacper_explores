@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { createSupabaseClient } from "@/lib/supabase/client";
 
 interface UserStatus {
   authenticated: boolean;
@@ -14,7 +14,7 @@ export default function SiteNav() {
   const [userStatus, setUserStatus] = useState<UserStatus | null>(null);
 
   useEffect(() => {
-    const supabase = createClient();
+    const supabase = createSupabaseClient();
     const loadStatus = () => {
       supabase.auth.getSession().then(({ data }) => {
         if (!data.session) { setUserStatus({ authenticated: false }); return; }

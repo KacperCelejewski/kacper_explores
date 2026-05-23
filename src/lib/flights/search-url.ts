@@ -21,15 +21,9 @@ export function buildSkyscannerUrl(
   const origin = toSkyId(originCode);
   const dest = toSkyId(destCode);
 
-  let datePart = "";
-  if (departDate && returnDate) {
-    datePart = `${toSkyDate(departDate)}/${toSkyDate(returnDate)}/`;
-  } else if (departDate) {
-    const d = new Date(departDate);
-    const yy = String(d.getUTCFullYear()).slice(2);
-    const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
-    datePart = `${yy}${mm}/`;
-  }
+  const datePart = (departDate && returnDate)
+    ? `${toSkyDate(departDate)}/${toSkyDate(returnDate)}/`
+    : "";
 
   return `https://www.skyscanner.pl/transport/loty/${origin}/${dest}/${datePart}?adultsv2=1&cabin_class=economy`;
 }

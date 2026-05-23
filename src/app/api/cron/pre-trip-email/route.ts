@@ -1,15 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createServiceClient } from "@/lib/supabase/service";
 import { Resend } from "resend";
 
 export const maxDuration = 60;
-
-function serviceClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
 
 function buildPreTripEmail(city: string, country: string, shareUrl: string): string {
   return `<!DOCTYPE html>
@@ -80,7 +73,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const supabase = serviceClient();
+  const supabase = createServiceClient();
   const resend = new Resend(process.env.RESEND_API_KEY!);
 
   // Find trips departing in exactly 3 days

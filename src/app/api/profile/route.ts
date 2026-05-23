@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { getUserProfile, canGenerate, isPro } from "@/lib/userProfile";
-import { createClient } from "@/lib/supabase/server";
+import { createSupabaseServer } from "@/lib/supabase/server";
 import { validateQuizAnswers } from "@/lib/validate";
 
 export async function GET() {
-  const supabase = await createClient();
+  const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
 
   const profile = await getUserProfile();
@@ -34,7 +34,7 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
-  const supabase = await createClient();
+  const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -60,7 +60,7 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE() {
-  const supabase = await createClient();
+  const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

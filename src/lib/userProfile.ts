@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createSupabaseServer } from "@/lib/supabase/server";
 import type { QuizAnswers } from "@/types";
 
 export interface UserProfile {
@@ -11,7 +11,7 @@ export interface UserProfile {
 }
 
 export async function getUserProfile(): Promise<UserProfile | null> {
-  const supabase = await createClient();
+  const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 

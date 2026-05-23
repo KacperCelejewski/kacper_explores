@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createSupabaseServer } from "@/lib/supabase/server";
 import Link from "next/link";
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "hej@wloczykij.me";
@@ -10,7 +10,7 @@ const NAV = [
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient();
+  const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user || user.email !== ADMIN_EMAIL) {

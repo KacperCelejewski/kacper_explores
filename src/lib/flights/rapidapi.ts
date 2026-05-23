@@ -1,4 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
+import { createServiceClient } from "@/lib/supabase/service";
+import { FLIGHT_CACHE_TTL_MS } from "@/lib/constants";
 import { SKY_IDS } from "@/lib/flights/sky-ids";
 
 export interface RealFlight {
@@ -137,19 +138,20 @@ async function fireAlertIfNeeded(count: number): Promise<void> {
     await sb.from("api_alert_log").insert({ threshold: Math.round((count / DAILY_CAP) * 100) });
     const { sendApiAlert } = await import("@/lib/email");
     await sendApiAlert(count, DAILY_CAP);
-  } catch { /* non-critical */ }
+  } catch (err) {
+    console.error("[rapidapi] fireAlertIfNeeded failed:", err);
+  }
 }
 
 // ── Process-level L1 cache ────────────────────────────────────────────────────
 const memCache = new Map<string, { data: RealFlight[]; expiresAt: number }>();
-const CACHE_TTL = 12 * 60 * 60 * 1000;
 
 // ── Supabase L2 cache ─────────────────────────────────────────────────────────
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return null;
-  return createClient(url, key);
+  return createServiceClient();
 }
 
 async function readSupabaseCache(cacheKey: string): Promise<RealFlight[] | null> {
@@ -169,7 +171,7 @@ async function readSupabaseCache(cacheKey: string): Promise<RealFlight[] | null>
 async function writeSupabaseCache(cacheKey: string, flights: RealFlight[]): Promise<void> {
   const sb = getSupabase();
   if (!sb) return;
-  const expiresAt = new Date(Date.now() + CACHE_TTL).toISOString();
+  const expiresAt = new Date(Date.now() + FLIGHT_CACHE_TTL_MS).toISOString();
   try {
     await sb.from("flight_cache").upsert({ cache_key: cacheKey, flights, expires_at: expiresAt });
   } catch { /* non-critical */ }
@@ -314,7 +316,7 @@ export async function searchFlightOptions(
       // L2
       const cached = await readSupabaseCache(cacheKey);
       if (cached && cached.length > 0) {
-        memCache.set(cacheKey, { data: cached, expiresAt: Date.now() + CACHE_TTL });
+        memCache.set(cacheKey, { data: cached, expiresAt: Date.now() + FLIGHT_CACHE_TTL_MS });
         void logUsage(cacheKey, originCode, destCode, month, true);
         return cached;
       }
@@ -322,7 +324,7 @@ export async function searchFlightOptions(
       try {
         const results = await fetchForDate(originSky, destSky, departDate, returnDate, originCode, destCode, apiKey);
         if (results && results.length > 0) {
-          memCache.set(cacheKey, { data: results, expiresAt: Date.now() + CACHE_TTL });
+          memCache.set(cacheKey, { data: results, expiresAt: Date.now() + FLIGHT_CACHE_TTL_MS });
           void writeSupabaseCache(cacheKey, results);
           void logUsage(cacheKey, originCode, destCode, month, false);
           return results;

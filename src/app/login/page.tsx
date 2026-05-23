@@ -3,7 +3,7 @@
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { createClient } from "@/lib/supabase/client";
+import { createSupabaseClient } from "@/lib/supabase/client";
 
 function LoginContent() {
   const searchParams = useSearchParams();
@@ -14,7 +14,7 @@ function LoginContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const supabase = createClient();
+  const supabase = createSupabaseClient();
 
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();

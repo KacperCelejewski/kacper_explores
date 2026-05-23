@@ -23,8 +23,6 @@ export interface QuizAnswers {
   duration: TripDuration | null;
   /** Selected departure airport codes, e.g. ["WRO", "KTW", "BER"] */
   airports: string[];
-  /** @deprecated use airports instead */
-  includeBerlin?: boolean;
   /** Pre-selected city from homepage gallery (e.g. "Barcelona") */
   preferredCity?: string;
 }

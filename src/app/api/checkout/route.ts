@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe, PLANS, type PlanKey } from "@/lib/stripe";
-import { createClient } from "@/lib/supabase/server";
+import { createSupabaseServer } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { getClientIp } from "@/lib/validate";
 
@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Zbyt wiele prób." }, { status: 429 });
   }
 
-  const supabase = await createClient();
+  const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Musisz być zalogowany." }, { status: 401 });

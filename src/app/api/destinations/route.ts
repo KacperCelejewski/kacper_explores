@@ -3,6 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { checkRateLimit, LIMITS } from "@/lib/rateLimit";
 import { validateQuizAnswers, getClientIp } from "@/lib/validate";
 import { logGeminiCall } from "@/lib/geminiLog";
+import { MONTH_NAMES, VIBE_LABELS, PLACE_LABELS, DESTINATION_CACHE_TTL_MS } from "@/lib/constants";
 import type { DestinationRecommendation, TravelStyle, TravelVibe, PlaceType } from "@/types";
 
 export const maxDuration = 30;
@@ -10,17 +11,11 @@ export const maxDuration = 30;
 // Cache w pamięci: te same preferencje quiz → te same destynacje przez 10 minut
 // Unika powtórnych wywołań Gemini (~10–20s) przy odświeżeniu lub retry
 const destCache = new Map<string, { data: DestinationRecommendation[]; ts: number }>();
-const CACHE_TTL_MS = 10 * 60 * 1000;
 
 function cacheKey(body: Record<string, unknown>): string {
   const { styles, budget, vibe, placeType, month, duration, airports, preferredCity } = body;
   return JSON.stringify({ styles, budget, vibe, placeType, month, duration, airports, preferredCity });
 }
-
-const MONTH_NAMES = [
-  "styczeń","luty","marzec","kwiecień","maj","czerwiec",
-  "lipiec","sierpień","wrzesień","październik","listopad","grudzień",
-];
 
 function buildPrompt(body: Record<string, unknown>): string {
   const styles = (body.styles as string[]) ?? [];
@@ -34,17 +29,6 @@ function buildPrompt(body: Record<string, unknown>): string {
 
   const monthName = month ? MONTH_NAMES[month - 1] : "dowolny";
   const budgetLabel = budget === "low" ? "niski (backpacker, do 1500 PLN łącznie)" : "średni (komfortowy, do 2500 PLN łącznie)";
-  const vibeMap: Record<string, string> = {
-    chill: "relaksujący",
-    intense: "intensywny — max atrakcji",
-    social: "towarzyski — bary, ludzie",
-    active: "aktywny — sport, trasy",
-  };
-  const placeMap: Record<string, string> = {
-    big_city: "duże miasto (metro, muzea)",
-    charming: "kameralne miejsce (małe uliczki)",
-    beach_sun: "plaża i słońce",
-  };
 
   const originDesc = airports.length === 1
     ? `lotnisko wylotu: ${airports[0]}`
@@ -55,8 +39,8 @@ ${preferredCity ? `\nWAŻNE: Użytkownik wybrał miasto ${preferredCity} — MUS
 PROFIL:
 - Budżet: ${budgetLabel}
 - Zainteresowania: ${styles.join(", ") || "różnorodne"}
-- Energia: ${vibe ? vibeMap[vibe] : "dowolna"}
-- Typ miejsca: ${placeType ? placeMap[placeType] : "dowolny"}
+- Energia: ${vibe ? VIBE_LABELS[vibe] : "dowolna"}
+- Typ miejsca: ${placeType ? PLACE_LABELS[placeType] : "dowolny"}
 - Miesiąc: ${monthName}
 - Długość: ${duration ? `${duration} dni` : "nieokreślona"}
 - ${originDesc}
@@ -121,7 +105,7 @@ export async function POST(req: NextRequest) {
   // Sprawdź cache przed wywołaniem Gemini
   const key = cacheKey(body as Record<string, unknown>);
   const cached = destCache.get(key);
-  if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
+  if (cached && Date.now() - cached.ts < DESTINATION_CACHE_TTL_MS) {
     console.log("[destinations] cache hit");
     return NextResponse.json({ destinations: cached.data });
   }

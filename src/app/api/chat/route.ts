@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { createClient } from "@/lib/supabase/server";
+import { createSupabaseServer } from "@/lib/supabase/server";
 import { logGeminiCall } from "@/lib/geminiLog";
 import { checkRateLimit, LIMITS } from "@/lib/rateLimit";
 import { getClientIp } from "@/lib/validate";
+import { CHAT_MAX_OUTPUT_TOKENS } from "@/lib/constants";
 import type { TripPlan } from "@/types";
 
 export const maxDuration = 30;
@@ -14,7 +15,7 @@ interface ChatMessage {
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = await createClient();
+  const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -87,10 +88,9 @@ Bazuj na planie, ale możesz uzupełniać szczegółami. Nie wychodzisz poza tem
       model: "gemini-2.5-flash",
       systemInstruction,
       generationConfig: {
-        maxOutputTokens: 512,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ...({ thinkingConfig: { thinkingBudget: 0 } } as any),
-      },
+        maxOutputTokens: CHAT_MAX_OUTPUT_TOKENS,
+        thinkingConfig: { thinkingBudget: 0 },
+      } as Parameters<typeof genAI.getGenerativeModel>[0]["generationConfig"],
     });
 
     // All messages except the last form the history

@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createServiceClient } from "@/lib/supabase/service";
 
 interface GeminiLogEntry {
   endpoint: string;
@@ -9,17 +9,10 @@ interface GeminiLogEntry {
   output_tokens?: number;
 }
 
-function getServiceClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
-
 export async function logGeminiCall(entry: GeminiLogEntry) {
   try {
-    await getServiceClient().from("gemini_usage_log").insert(entry);
-  } catch {
-    // non-critical — never let logging break the request
+    await createServiceClient().from("gemini_usage_log").insert(entry);
+  } catch (err) {
+    console.error("[geminiLog] failed to log call:", err);
   }
 }

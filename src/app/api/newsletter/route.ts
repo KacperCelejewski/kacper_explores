@@ -1,33 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createServiceClient } from "@/lib/supabase/service";
 import { stripe } from "@/lib/stripe";
 import { sendNewsletterConfirmation } from "@/lib/email";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { getClientIp } from "@/lib/validate";
+import { generatePromoCode } from "@/lib/newsletter";
+import { STRIPE_NEWSLETTER_COUPON_ID } from "@/lib/constants";
 import { randomBytes } from "crypto";
-
-const COUPON_ID = "newsletter_10pct_yearly";
-
-function createServiceClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
-
-function randomCode(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let s = "";
-  for (let i = 0; i < 8; i++) s += chars[Math.floor(Math.random() * chars.length)];
-  return `PACK10-${s}`;
-}
 
 async function ensureCoupon() {
   try {
-    await stripe.coupons.retrieve(COUPON_ID);
+    await stripe.coupons.retrieve(STRIPE_NEWSLETTER_COUPON_ID);
   } catch {
     await stripe.coupons.create({
-      id: COUPON_ID,
+      id: STRIPE_NEWSLETTER_COUPON_ID,
       percent_off: 10,
       duration: "once",
       name: "Newsletter — 10% na Pro Roczny",
@@ -37,7 +23,7 @@ async function ensureCoupon() {
 
 async function createStripePromoCode(code: string): Promise<string> {
   const promo = await stripe.promotionCodes.create({
-    promotion: { type: "coupon", coupon: COUPON_ID },
+    promotion: { type: "coupon", coupon: STRIPE_NEWSLETTER_COUPON_ID },
     code,
     max_redemptions: 1,
   });
@@ -100,7 +86,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Błąd konfiguracji zniżki." }, { status: 500 });
   }
 
-  const code = randomCode();
+  const code = generatePromoCode();
   let stripePromoId: string | null = null;
   let finalCode = code;
 
@@ -108,7 +94,7 @@ export async function POST(req: NextRequest) {
     stripePromoId = await createStripePromoCode(code);
   } catch {
     // Retry with a different code on collision
-    const code2 = randomCode();
+    const code2 = generatePromoCode();
     try {
       stripePromoId = await createStripePromoCode(code2);
       finalCode = code2;
@@ -135,8 +121,8 @@ export async function POST(req: NextRequest) {
 
   try {
     await sendNewsletterConfirmation(email, verifyUrl);
-  } catch {
-    // Don't fail — user can request resend
+  } catch (err) {
+    console.error("[newsletter] failed to send confirmation email:", err);
   }
 
   return NextResponse.json({ pending: true });
