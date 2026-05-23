@@ -133,7 +133,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
             position: "absolute",
             inset: 0,
             background:
-              "linear-gradient(to bottom, rgba(8,5,2,0.12) 0%, rgba(8,5,2,0.32) 35%, rgba(8,5,2,0.76) 65%, rgba(8,5,2,0.97) 100%)",
+              "linear-gradient(to bottom, rgba(8,5,2,0.45) 0%, rgba(8,5,2,0.58) 35%, rgba(8,5,2,0.82) 65%, rgba(8,5,2,0.97) 100%)",
           }}
         />
 
