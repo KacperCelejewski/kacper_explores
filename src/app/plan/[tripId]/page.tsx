@@ -5,9 +5,10 @@ import { useRouter, useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { useAppStore } from "@/lib/store";
-import { downloadICS } from "@/lib/ics";
+import { downloadICS } from "@/app/utils/ics-download";
 import ChatPanel from "@/app/components/ChatPanel";
 import BudgetTracker from "@/app/components/BudgetTracker";
+import FeedbackWidget from "@/app/components/FeedbackWidget";
 import type { DayPlan, DayActivity, TripPlan, DestinationRecommendation } from "@/types";
 import { getCityPhotoUrl } from "@/lib/cityPhotos";
 
@@ -62,6 +63,10 @@ export default function PlanPage() {
   const [userCredits, setUserCredits] = useState<{ credits: number; isPro: boolean } | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfGate, setPdfGate] = useState(false);
+  const [feedbackGiven, setFeedbackGiven] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem(`feedback-${params?.tripId}`) === "1";
+  });
 
   // is_public toggle
   const [isPublic, setIsPublic] = useState(false);
@@ -115,8 +120,15 @@ export default function PlanPage() {
 
   const handlePrint = () => window.print();
 
+  const handlePdfUnlocked = () => {
+    setFeedbackGiven(true);
+    if (params?.tripId) {
+      localStorage.setItem(`feedback-${params.tripId}`, "1");
+    }
+  };
+
   const handlePDF = async () => {
-    if (!userCredits?.isPro) {
+    if (!userCredits?.isPro && !feedbackGiven) {
       setPdfGate(true);
       return;
     }
@@ -669,11 +681,11 @@ export default function PlanPage() {
             disabled={pdfLoading}
             className="py-3 rounded-2xl text-xs font-semibold flex items-center justify-center gap-1 transition-all hover:opacity-80 relative"
             style={{
-              background: userCredits?.isPro ? "#F0F0F0" : "var(--accent-light)",
-              color: userCredits?.isPro ? "var(--text-secondary)" : "var(--accent)",
+              background: userCredits?.isPro || feedbackGiven ? "#F0F0F0" : "var(--accent-light)",
+              color: userCredits?.isPro || feedbackGiven ? "var(--text-secondary)" : "var(--accent)",
             }}
           >
-            {pdfLoading ? "…" : userCredits?.isPro ? "📄 PDF" : "🔒 PDF Pro"}
+            {pdfLoading ? "…" : userCredits?.isPro || feedbackGiven ? "📄 PDF" : "🔒 PDF"}
           </button>
           <button
             onClick={handleICS}
@@ -704,6 +716,15 @@ export default function PlanPage() {
           Zaplanuj nową podróż →
         </button>
       </div>
+
+      {/* Feedback widget — pokazuj tylko jeśli nie dano jeszcze feedbacku i nie jest Pro */}
+      {!feedbackGiven && !userCredits?.isPro && currentTrip && (
+        <FeedbackWidget
+          tripId={currentTrip.id}
+          city={plan.city}
+          onPdfUnlocked={handlePdfUnlocked}
+        />
+      )}
 
       {/* PDF Pro gate modal */}
       <AnimatePresence>
