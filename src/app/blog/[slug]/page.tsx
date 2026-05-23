@@ -193,7 +193,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             Gotowy na swoją podróż? →
           </p>
           <p className="text-xs mt-1 mb-4" style={{ color: "var(--text-muted)" }}>
-            AI znajdzie najtańszy lot i zaplanuje Twój wyjazd godzina po godzinie
+            AI zaplanuje Twój wyjazd godzina po godzinie
           </p>
           <Link
             href="/quiz"

@@ -5,15 +5,15 @@ const FAQS = [
   },
   {
     q: "Jak działa planowanie podróży z AI?",
-    a: "Odpowiadasz na 6 krótkich pytań o swoje preferencje (budżet, styl, długość wyjazdu). AI analizuje odpowiedzi, dobiera najtańsze loty z WRO lub BER i generuje szczegółowy plan godzina po godzinie — od śniadania po kolację, z trasami na Google Maps i trikami budżetowymi.",
+    a: "Odpowiadasz na 6 krótkich pytań o swoje preferencje (budżet, styl, długość wyjazdu). AI analizuje odpowiedzi i generuje szczegółowy plan godzina po godzinie — od śniadania po kolację, z konkretnymi miejscami, trasami na Google Maps i trikami budżetowymi.",
   },
   {
-    q: "Skąd lata aplikacja — tylko z Wrocławia?",
-    a: "Aplikacja sprawdza loty zarówno z Wrocławia (WRO), jak i z Berlina (BER i SXF) — stolicy dostępnej busem lub samochodem w ~2 godziny. Berlin otwiera znacznie więcej tras i często tańsze połączenia.",
+    q: "Skąd mogę planować wyjazd — tylko z Wrocławia?",
+    a: "Podajesz swoje miasto startowe i AI dopasowuje destynacje do Twojej lokalizacji. Obsługujemy wyjazdy z Wrocławia i okolic — plany generujemy dla całej Europy.",
   },
   {
     q: "Ile trwa generowanie planu podróży?",
-    a: "Zazwyczaj 30–60 sekund. Gemini AI analizuje Twoje preferencje, sprawdza dostępność lotów i układa szczegółowy itinerary. Plan możesz potem udostępnić znajomym lub zapisać w swoim profilu.",
+    a: "Zazwyczaj 30–60 sekund. Gemini AI analizuje Twoje preferencje i układa szczegółowy plan godzina po godzinie. Plan możesz potem udostępnić znajomym lub zapisać w swoim profilu.",
   },
   {
     q: "Na ile dni mogę zaplanować podróż?",

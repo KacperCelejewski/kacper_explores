@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     default: "Włóczykij — Budżetowe podróże solo",
     template: "%s | Włóczykij",
   },
-  description: "Budżetowe podróże solo z Polski — AI planuje Twój wyjazd godzina po godzinie. Najtańsze loty z WRO i nie tylko. Zacznij za darmo.",
+  description: "Budżetowe podróże solo po Europie — AI planuje Twój wyjazd godzina po godzinie. Restauracje, atrakcje, budżet. 5 planów za darmo.",
   metadataBase: new URL("https://wloczykij.me"),
   alternates: {
     canonical: "https://wloczykij.me",
@@ -32,13 +32,13 @@ export const metadata: Metadata = {
     url: "https://wloczykij.me",
     siteName: "Włóczykij",
     title: "Włóczykij — Budżetowe podróże solo",
-    description: "Odpowiedz na 6 pytań — AI znajdzie najtańszy lot i zaplanuje Twój wyjazd godzina po godzinie.",
+    description: "Odpowiedz na 6 pytań — AI zaplanuje Twój wyjazd godzina po godzinie. Restauracje, atrakcje, budżet — gotowe w 60 sekund.",
     images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Włóczykij — Budżetowe podróże solo po Europie" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Włóczykij — Budżetowe podróże solo",
-    description: "Odpowiedz na 6 pytań — AI znajdzie najtańszy lot i zaplanuje Twój wyjazd godzina po godzinie.",
+    description: "Odpowiedz na 6 pytań — AI zaplanuje Twój wyjazd godzina po godzinie. Restauracje, atrakcje, budżet — gotowe w 60 sekund.",
     images: ["/opengraph-image"],
   },
 };

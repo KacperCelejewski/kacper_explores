@@ -221,7 +221,7 @@ export default function ShareClient() {
             Wygeneruj swój plan z AI →
           </p>
           <p className="text-xs mt-1 mb-4" style={{ color: "var(--text-muted)" }}>
-            Odpowiedz na 6 pytań — znajdziemy najtańszy lot i ułożymy plan dla Ciebie
+            Odpowiedz na 6 pytań — AI ułoży Twój plan godzina po godzinie
           </p>
           <Link
             href="/"

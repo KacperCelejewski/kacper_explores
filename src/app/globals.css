@@ -195,3 +195,66 @@ h1, h2, h3 {
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+
+/* ================================================================
+   HOME PAGE — full-width override + cinematic nav + marquee
+   ================================================================ */
+
+/* 1. Unlock the 448px shell for the landing page */
+body.is-home main.app-shell {
+  max-width: none;
+  padding: 0;
+}
+
+/* 2. Fixed, frosted-glass nav over the hero */
+body.is-home main.app-shell > nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: rgba(8, 5, 2, 0.58) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07) !important;
+  max-width: none;
+}
+
+body.is-home main.app-shell > nav a {
+  color: rgba(255, 255, 255, 0.78) !important;
+}
+
+/* 3. Keep FAQ + footer centered at comfortable reading width */
+body.is-home main.app-shell > section,
+body.is-home main.app-shell > footer {
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+
+/* 4. Anchor scroll offset for fixed nav */
+body.is-home section[id] {
+  scroll-margin-top: 72px;
+}
+
+/* 5. Continuous marquee animation */
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.marquee-track {
+  overflow: hidden;
+}
+
+.marquee-inner {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll 36s linear infinite;
+  will-change: transform;
+}
+
+.marquee-inner:hover {
+  animation-play-state: paused;
+}

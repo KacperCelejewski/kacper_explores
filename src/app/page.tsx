@@ -8,7 +8,7 @@ import { fetchCityPhotoUrl } from "@/lib/unsplashApi";
 
 export const metadata: Metadata = {
   title: "Budżetowe podróże solo po Europie — AI planuje Twój wyjazd",
-  description: "Budżetowe podróże solo z Polski — AI planuje Twój wyjazd godzina po godzinie. Najtańsze loty z WRO i nie tylko. Zacznij za darmo.",
+  description: "Budżetowe podróże solo po Europie — AI planuje Twój wyjazd godzina po godzinie. Restauracje, atrakcje, budżet. 5 planów za darmo.",
   alternates: {
     canonical: "https://wloczykij.me",
   },
@@ -31,15 +31,15 @@ const faqSchema = {
       name: "Jak działa planowanie podróży z AI?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Odpowiadasz na 6 krótkich pytań o swoje preferencje (budżet, styl, długość wyjazdu). AI analizuje odpowiedzi, dobiera najtańsze loty z WRO lub BER i generuje szczegółowy plan godzina po godzinie — od śniadania po kolację, z trasami na Google Maps i trikami budżetowymi.",
+        text: "Odpowiadasz na 6 krótkich pytań o swoje preferencje (budżet, styl, długość wyjazdu). AI analizuje odpowiedzi i generuje szczegółowy plan godzina po godzinie — od śniadania po kolację, z konkretnymi miejscami, trasami na Google Maps i trikami budżetowymi.",
       },
     },
     {
       "@type": "Question",
-      name: "Skąd lata aplikacja — tylko z Wrocławia?",
+      name: "Skąd mogę planować wyjazd — tylko z Wrocławia?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Aplikacja sprawdza loty zarówno z Wrocławia (WRO), jak i z Berlina (BER i SXF) — stolicy dostępnej busem lub samochodem w ~2 godziny. Berlin otwiera znacznie więcej tras i często tańsze połączenia.",
+        text: "Podajesz swoje miasto startowe i AI dopasowuje destynacje do Twojej lokalizacji. Obsługujemy wyjazdy z Wrocławia i okolic — ale plany podróży generujemy dla całej Europy.",
       },
     },
     {
@@ -47,7 +47,7 @@ const faqSchema = {
       name: "Ile trwa generowanie planu podróży?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Zazwyczaj 30–60 sekund. Gemini AI analizuje Twoje preferencje, sprawdza dostępność lotów i układa szczegółowy itinerary. Plan możesz potem udostępnić znajomym lub zapisać w swoim profilu.",
+        text: "Zazwyczaj 30–60 sekund. Gemini AI analizuje Twoje preferencje i układa szczegółowy plan godzina po godzinie. Plan możesz potem udostępnić znajomym lub zapisać w swoim profilu.",
       },
     },
     {
@@ -74,7 +74,7 @@ const webAppSchema = {
   "@type": "WebApplication",
   name: "Włóczykij",
   url: "https://wloczykij.me",
-  description: "Budżetowe planowanie podróży solo — najtańsze loty i plany AI godzina po godzinie.",
+  description: "Budżetowe planowanie podróży solo — AI układa Twój plan godzina po godzinie. Restauracje, atrakcje, budżet. Zacznij za darmo.",
   applicationCategory: "TravelApplication",
   operatingSystem: "Web",
   inLanguage: "pl",
