@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Cormorant_Garamond } from "next/font/google";
 import Script from "next/script";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import GlobalMenu from "@/app/components/GlobalMenu";
 import CookieBanner from "@/app/components/CookieBanner";
@@ -61,6 +62,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <CookieBanner />
           <NewsletterPopup />
         </main>
+        <SpeedInsights />
         <Script
           id="sw-register"
           strategy="lazyOnload"
