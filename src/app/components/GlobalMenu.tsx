@@ -62,6 +62,11 @@ export default function GlobalMenu() {
     return () => clearTimeout(timer);
   }, [open]);
 
+  const close = () => {
+    setOpen(false);
+    setTimeout(() => fabRef.current?.focus(), 50);
+  };
+
   // Escape key + focus trap
   useEffect(() => {
     if (!open) return;
@@ -92,11 +97,6 @@ export default function GlobalMenu() {
     close();
     router.push("/");
     router.refresh();
-  };
-
-  const close = () => {
-    setOpen(false);
-    setTimeout(() => fabRef.current?.focus(), 50);
   };
 
   return (

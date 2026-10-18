@@ -12,7 +12,7 @@ const store = new Map<string, WindowEntry>();
 
 // Clean up stale keys every 10 minutes to avoid memory leaks
 if (typeof setInterval !== "undefined") {
-  setInterval(() => {
+  const cleanup = setInterval(() => {
     const now = Date.now();
     for (const [key, entry] of store.entries()) {
       if (entry.timestamps.length === 0 || now - entry.timestamps[entry.timestamps.length - 1] > 3_600_000) {
@@ -20,6 +20,8 @@ if (typeof setInterval !== "undefined") {
       }
     }
   }, 10 * 60 * 1000);
+  // Don't keep the process alive just for cleanup (Node/serverless, tests)
+  if (typeof cleanup === "object" && "unref" in cleanup) cleanup.unref();
 }
 
 interface RateLimitResult {

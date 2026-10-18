@@ -34,7 +34,7 @@ export function generateICS(plan: TripPlan, startDate?: string): string {
     const summary = `${plan.city} – Dzień ${day.day}: ${day.theme}`;
     const desc = day.activities
       .map((a) => `${a.time} ${a.emoji} ${a.title} (${a.cost})`)
-      .join("\\n");
+      .join("\n");
 
     lines.push(
       "BEGIN:VEVENT",

@@ -60,12 +60,12 @@ export default function ReguaminPage() {
           <P>
             Niniejszy Regulamin określa zasady korzystania z serwisu internetowego <strong>Włóczykij</strong>,
             dostępnego pod adresem <strong>wloczykij.me</strong>, prowadzonego przez Włóczykij
-            (zwanego dalej „Operatorem"), dostępnego pod adresem e-mail:{" "}
+            (zwanego dalej „Operatorem”), dostępnego pod adresem e-mail:{" "}
             <a href="mailto:hej@wloczykij.me" style={{ color: "var(--accent)" }}>hej@wloczykij.me</a>.
           </P>
           <P>
             Serwis oferuje narzędzie do planowania budżetowych podróży solo przy wykorzystaniu sztucznej
-            inteligencji (zwane dalej „Usługą"). Korzystanie z Serwisu oznacza akceptację niniejszego Regulaminu.
+            inteligencji (zwane dalej „Usługą”). Korzystanie z Serwisu oznacza akceptację niniejszego Regulaminu.
           </P>
           <P>
             Regulamin dostępny jest w każdym czasie pod adresem{" "}
@@ -189,7 +189,7 @@ export default function ReguaminPage() {
             Linki afiliacyjne nie wpływają na cenę lotu dla Użytkownika.
           </P>
           <P>
-            Linki partnerskie są oznaczone atrybutem <code>rel="sponsored"</code> w kodzie strony.
+            Linki partnerskie są oznaczone atrybutem <code>{'rel="sponsored"'}</code> w kodzie strony.
           </P>
         </Section>
 
