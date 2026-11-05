@@ -129,7 +129,14 @@ function HeroPoster({ id, crop, className }: { id: string; crop: string; classNa
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: string[] }) {
+export default function HomeClient({
+  galleryPhotos = [],
+  faq,
+}: {
+  galleryPhotos?: string[];
+  /** Objection handling, rendered before the final call to action */
+  faq?: React.ReactNode;
+}) {
   /* ── full-width + dark nav override ── */
   useEffect(() => {
     document.body.classList.add("is-home");
@@ -187,7 +194,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
               letterSpacing: "0.02em",
             }}
           >
-            5 planów za darmo · loty z 7 polskich lotnisk
+            Loty z 7 polskich lotnisk
           </motion.p>
 
           {/* Headline — Cormorant Garamond, massive, editorial */}
@@ -663,31 +670,18 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
                   <p style={{ color: "rgba(255,255,255,0.82)", fontSize: 13, marginTop: 3 }}>
                     {dest.flag}&nbsp;{dest.country}
                   </p>
-                  <p
-                    style={{
-                      color: ACCENT,
-                      fontSize: 16,
-                      fontWeight: 800,
-                      marginTop: 10,
-                      letterSpacing: "-0.01em",
-                    }}
-                  >
-                    {dest.priceFrom}
-                  </p>
                   <div
                     style={{
-                      marginTop: 12,
-                      background: "var(--accent)",
-                      color: "white",
-                      borderRadius: 12,
-                      padding: "10px 0",
-                      textAlign: "center",
-                      fontSize: 13,
-                      fontWeight: 700,
-                      letterSpacing: "0.01em",
+                      display: "flex",
+                      alignItems: "baseline",
+                      justifyContent: "space-between",
+                      marginTop: 10,
                     }}
                   >
-                    Zaplanuj ten wyjazd →
+                    <p style={{ color: ACCENT, fontSize: 16, fontWeight: 800, letterSpacing: "-0.01em" }}>
+                      {dest.priceFrom}
+                    </p>
+                    <span style={{ color: "white", fontSize: 14, fontWeight: 700 }}>Zaplanuj →</span>
                   </div>
                 </div>
               </Link>
@@ -720,6 +714,8 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
         </div>
       </section>
 
+      {faq}
+
       {/* ════════════════════════════════════════════════════════════════════
           §6  FINAL CTA — full-bleed photo, centered call to action
           ════════════════════════════════════════════════════════════════════ */}
@@ -735,7 +731,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
       >
         <Image
           src={galleryPhotos[2] || getCityPhotoUrl("Santorini", 1400)}
-          alt="Europa czeka"
+          alt=""
           fill
           sizes="100vw"
           className="object-cover"
@@ -765,29 +761,12 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
               lineHeight: 1.05,
               color: "white",
               letterSpacing: "-0.03em",
-              marginBottom: 18,
+              marginBottom: 32,
             }}
           >
             Twój następny wyjazd<br />
             <em style={{ fontStyle: "italic", color: ACCENT }}>zaczyna się tutaj.</em>
           </motion.h2>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-            style={{
-              color: "rgba(255,255,255,0.78)",
-              fontSize: 15,
-              maxWidth: 340,
-              margin: "0 auto 36px",
-              lineHeight: 1.72,
-            }}
-          >
-            5 planów za darmo. Bez karty kredytowej.
-            <br />Bez zobowiązań.
-          </motion.p>
 
           <motion.div
             initial={{ opacity: 0, y: 10 }}

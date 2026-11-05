@@ -27,7 +27,7 @@ export const FAQS = [
 
 export default function HomeFAQ() {
   return (
-    <section className="mt-16 mb-6 px-5" aria-labelledby="faq-heading">
+    <section className="mx-auto max-w-[600px] px-5 pt-4 pb-20" aria-labelledby="faq-heading">
       <h2
         id="faq-heading"
         className="mb-6 leading-tight"

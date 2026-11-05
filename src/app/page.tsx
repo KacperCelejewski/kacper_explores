@@ -58,8 +58,7 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
       <SiteNav />
-      <HomeClient galleryPhotos={galleryPhotos} />
-      <HomeFAQ />
+      <HomeClient galleryPhotos={galleryPhotos} faq={<HomeFAQ />} />
       <SiteFooter />
     </>
   );
