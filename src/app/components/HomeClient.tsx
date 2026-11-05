@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useRef, useState, useEffect, useCallback } from "react";
 import { getCityPhotoUrl, FEATURED_DESTINATIONS } from "@/lib/cityPhotos";
 
@@ -11,13 +11,13 @@ import { getCityPhotoUrl, FEATURED_DESTINATIONS } from "@/lib/cityPhotos";
 const STEPS = [
   {
     num: "01",
-    title: "5 pytań o Ciebie",
+    title: "6 pytań o Ciebie",
     desc: "Kto jedzie, kiedy, jaki masz budżet i co lubisz robić. Zajmuje mniej niż 3 minuty.",
   },
   {
     num: "02",
-    title: "Dostajesz 3 destynacje skrojone pod Ciebie",
-    desc: "Gemini analizuje Twój budżet, styl podróżowania i termin — i dobiera 3 miejsca, które będą idealne akurat dla Ciebie.",
+    title: "Dostajesz 6 kierunków skrojonych pod Ciebie",
+    desc: "Patrzymy na budżet, styl i termin, i dobieramy 6 miejsc, które mieszczą się w Twoich widełkach. Z cenami lotów z Twojego lotniska.",
   },
   {
     num: "03",
@@ -36,7 +36,8 @@ const EXAMPLE_PLAN = [
 
 // ─── Shared style tokens ─────────────────────────────────────────────────────
 
-const GOLD = "#E8A030";
+// Poster brick: illustration, large type and accents on the dark sections
+const ACCENT = "var(--accent-poster)";
 const DARK = "#0D0A07";
 const OVERLINE: React.CSSProperties = {
   fontSize: 10,
@@ -47,26 +48,157 @@ const OVERLINE: React.CSSProperties = {
   marginBottom: 14,
 };
 
+// ─── Hero poster ─────────────────────────────────────────────────────────────
+// Flat railway-poster scene from the brand palette. The walker is the logo's
+// silhouette, standing on the ridge and looking out over the valley.
+
+const WALKER_PATHS = [
+  "M 4 78 C 28 64, 96 58, 154 62 C 168 64, 176 72, 170 78 C 168 82, 156 84, 138 86 C 90 92, 38 92, 14 88 C 4 86, -2 82, 4 78 Z",
+  "M 76 68 C 70 30, 88 12, 104 12 C 124 12, 134 32, 128 68 Z",
+  "M 86 86 L 86 96 C 78 98, 74 102, 78 108 C 80 112, 86 116, 94 118 L 116 118 C 122 118, 126 114, 126 108 L 126 86 Z",
+  "M 88 118 C 80 132, 76 158, 78 184 L 82 208 L 88 220 L 122 220 L 130 210 L 132 134 C 132 124, 126 118, 120 118 L 116 118 Z",
+  "M 130 124 C 148 126, 162 138, 162 156 L 162 196 C 162 206, 156 210, 148 208 L 132 204 L 132 134 C 132 124, 130 124, 130 124 Z",
+  "M 88 220 L 76 264 L 60 290 L 48 296 L 52 300 L 92 300 L 98 268 L 110 220 Z",
+  "M 112 220 L 118 244 L 130 268 L 154 274 L 166 270 L 160 264 L 146 260 L 134 252 L 126 232 L 122 220 Z",
+];
+
+// `crop` picks the window onto the 1440×900 scene: the full sky behind the copy
+// from tablet up, a tight frame on the sun and walker on phones.
+function HeroPoster({ id, crop, className }: { id: string; crop: string; className: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox={crop}
+      preserveAspectRatio="xMaxYMax slice"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <defs>
+        {/* Woodcut cuts through the lower half of the sun */}
+        <mask id={`${id}-sun-cuts`}>
+          <rect width="1440" height="900" fill="white" />
+          {[0, 1, 2, 3, 4].map((i) => (
+            <rect key={i} x="0" y={772 + i * 20} width="1440" height={6 + i * 3} fill="black" />
+          ))}
+        </mask>
+        {/* Grain fades in toward the land so the sky meets the page without a seam */}
+        <linearGradient id={`${id}-grain-fade`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0.6" stopColor="white" stopOpacity="0" />
+          <stop offset="0.8" stopColor="white" stopOpacity="1" />
+        </linearGradient>
+        <mask id={`${id}-grain-mask`}>
+          <rect width="1440" height="900" fill={`url(#${id}-grain-fade)`} />
+        </mask>
+        <filter id={`${id}-grain`}>
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch" />
+          <feColorMatrix type="saturate" values="0" />
+          <feComponentTransfer>
+            <feFuncA type="table" tableValues="0 0.22" />
+          </feComponentTransfer>
+        </filter>
+      </defs>
+
+      <circle cx="1180" cy="760" r="160" fill="var(--accent-poster)" mask={`url(#${id}-sun-cuts)`} />
+
+      {/* Far ridge */}
+      <path
+        d="M0 806 C 220 786, 420 792, 640 774 C 860 760, 1040 792, 1240 786 C 1340 783, 1400 776, 1440 772 L1440 900 L0 900 Z"
+        fill="var(--border)"
+      />
+      {/* Middle ridge */}
+      <path
+        d="M0 846 C 260 828, 520 838, 760 822 C 960 810, 1100 830, 1300 826 C 1370 824, 1420 821, 1440 819 L1440 900 L0 900 Z"
+        fill="var(--text-muted)"
+      />
+      {/* Near ridge the walker stands on */}
+      <path
+        d="M0 886 C 300 876, 620 882, 880 870 C 1000 864, 1060 858, 1140 859 C 1240 860, 1340 868, 1440 872 L1440 900 L0 900 Z"
+        fill="var(--green)"
+      />
+
+      <g transform="translate(1086 650) scale(0.72)" fill="var(--text-primary)">
+        {WALKER_PATHS.map((d) => (
+          <path key={d} d={d} />
+        ))}
+      </g>
+
+      <rect width="1440" height="900" filter={`url(#${id}-grain)`} mask={`url(#${id}-grain-mask)`} />
+    </svg>
+  );
+}
+
+// Closing scene: same poster world at dusk, the walker heading off toward the sun.
+function DuskPoster() {
+  return (
+    <svg
+      viewBox="0 0 1440 360"
+      preserveAspectRatio="xMidYMax slice"
+      aria-hidden="true"
+      focusable="false"
+      style={{ display: "block", width: "100%", height: "clamp(200px, 24vw, 340px)" }}
+    >
+      <defs>
+        <mask id="dusk-sun-cuts">
+          <rect width="1440" height="360" fill="white" />
+          {[0, 1, 2, 3].map((i) => (
+            <rect key={i} x="0" y={226 + i * 20} width="1440" height={5 + i * 3} fill="black" />
+          ))}
+        </mask>
+        <clipPath id="dusk-ink">
+          <circle cx="720" cy="270" r="150" />
+          <path d="M0 270 C 240 250, 480 262, 700 246 C 900 232, 1120 258, 1440 244 L1440 360 L0 360 Z" />
+        </clipPath>
+        <filter id="dusk-grain">
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch" />
+          <feColorMatrix type="saturate" values="0" />
+          <feComponentTransfer>
+            <feFuncA type="table" tableValues="0 0.18" />
+          </feComponentTransfer>
+        </filter>
+      </defs>
+
+      <circle cx="720" cy="270" r="150" fill="var(--accent-poster)" mask="url(#dusk-sun-cuts)" />
+      <path
+        d="M0 270 C 240 250, 480 262, 700 246 C 900 232, 1120 258, 1440 244 L1440 360 L0 360 Z"
+        fill="var(--text-secondary)"
+      />
+      <path
+        d="M0 312 C 300 296, 560 306, 760 292 C 960 280, 1180 300, 1440 290 L1440 360 L0 360 Z"
+        fill="var(--text-muted)"
+      />
+      <path
+        d="M0 346 C 280 336, 560 340, 780 326 C 900 318, 1000 316, 1120 322 C 1260 328, 1360 336, 1440 338 L1440 360 L0 360 Z"
+        fill="var(--green)"
+      />
+
+      {/* Mirrored so he walks right, toward the sun and off the page */}
+      <g transform="translate(828 158) scale(-0.56 0.56)" fill="var(--text-primary)">
+        {WALKER_PATHS.map((d) => (
+          <path key={d} d={d} />
+        ))}
+      </g>
+
+      {/* Grain only on the sun and land, so the sky meets the section without a seam */}
+      <rect width="1440" height="360" filter="url(#dusk-grain)" clipPath="url(#dusk-ink)" />
+    </svg>
+  );
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: string[] }) {
+export default function HomeClient({
+  galleryPhotos = [],
+  faq,
+}: {
+  galleryPhotos?: string[];
+  /** Objection handling, rendered before the final call to action */
+  faq?: React.ReactNode;
+}) {
   /* ── full-width + dark nav override ── */
   useEffect(() => {
     document.body.classList.add("is-home");
     return () => document.body.classList.remove("is-home");
   }, []);
-
-  /* ── hero rotating background ── */
-  const [heroIdx, setHeroIdx] = useState(0);
-  const heroPhotos =
-    galleryPhotos.length >= 3
-      ? galleryPhotos.slice(0, 5)
-      : FEATURED_DESTINATIONS.slice(0, 5).map((d) => getCityPhotoUrl(d.city, 1400));
-
-  useEffect(() => {
-    const id = setInterval(() => setHeroIdx((i) => (i + 1) % heroPhotos.length), 5500);
-    return () => clearInterval(id);
-  }, [heroPhotos.length]);
 
   /* ── destinations carousel ── */
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -95,85 +227,32 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
     <div>
 
       {/* ════════════════════════════════════════════════════════════════════
-          §1  HERO — Full viewport, cinematic, rotating city photos
+          §1  HERO — sand railway poster: walker, setting sun, flat hills
           ════════════════════════════════════════════════════════════════════ */}
-      <section
-        style={{
-          position: "relative",
-          height: "100dvh",
-          minHeight: 620,
-          overflow: "hidden",
-        }}
-      >
-        {/* Rotating background photo */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={heroIdx}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 1.6, ease: "easeInOut" }}
-            style={{ position: "absolute", inset: 0 }}
-          >
-            <Image
-              src={heroPhotos[heroIdx]}
-              alt="Europejskie miasto"
-              fill
-              sizes="100vw"
-              className="object-cover"
-              priority
-            />
-          </motion.div>
-        </AnimatePresence>
-
-        {/* Deep gradient — bottom heavy so text pops */}
-        <div
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            inset: 0,
-            background:
-              "linear-gradient(to bottom, rgba(8,5,2,0.45) 0%, rgba(8,5,2,0.58) 35%, rgba(8,5,2,0.82) 65%, rgba(8,5,2,0.97) 100%)",
-          }}
-        />
+      <section className="home-hero">
+        <HeroPoster id="hero-wide" crop="0 0 1440 900" className="home-hero-art home-hero-art--wide" />
+        <HeroPoster id="hero-phone" crop="760 560 680 340" className="home-hero-art home-hero-art--phone" />
 
         {/* ── Content ── */}
-        <div
-          style={{
-            position: "relative",
-            zIndex: 2,
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "flex-end",
-            padding: "72px 28px 84px",   /* top pad = fixed nav height */
-            maxWidth: 920,
-          }}
-        >
-          {/* Badge */}
-          <motion.div
+        <div className="home-hero-copy">
+          <motion.p
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.45 }}
             style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              background: "rgba(196,98,45,0.82)",
-              backdropFilter: "blur(10px)",
+              display: "inline-block",
+              background: "var(--accent)",
               color: "white",
               borderRadius: 999,
               padding: "6px 14px",
               fontSize: 12,
               fontWeight: 700,
               marginBottom: 22,
-              width: "fit-content",
               letterSpacing: "0.02em",
-              border: "1px solid rgba(255,255,255,0.1)",
             }}
           >
-            ✈️&nbsp;<span>500+ podróżników już wie dokąd jedzie</span>
-          </motion.div>
+            Loty z 7 polskich lotnisk
+          </motion.p>
 
           {/* Headline — Cormorant Garamond, massive, editorial */}
           <motion.h1
@@ -182,17 +261,17 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
             transition={{ duration: 0.85, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
             style={{
               fontFamily: "var(--font-heading)",
-              fontSize: "clamp(44px, 12vw, 86px)",
+              fontSize: "clamp(44px, min(12vw, 9vh), 86px)",
               lineHeight: 1.02,
               fontWeight: 700,
-              color: "white",
+              color: "var(--text-primary)",
               letterSpacing: "-0.03em",
               marginBottom: 18,
             }}
           >
             Masz wolny weekend<br />
             i trochę kasy?<br />
-            <em style={{ fontStyle: "italic", color: GOLD }}>My mamy plan.</em>
+            <em style={{ fontStyle: "italic", color: ACCENT }}>My mamy plan.</em>
           </motion.h1>
 
           <motion.p
@@ -200,15 +279,15 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.65, delay: 0.3, ease: "easeOut" }}
             style={{
-              color: "rgba(255,255,255,0.66)",
-              fontSize: "clamp(14px, 3.5vw, 17px)",
+              color: "var(--text-secondary)",
+              fontSize: "clamp(15px, 3.5vw, 17px)",
               lineHeight: 1.7,
               maxWidth: 400,
               marginBottom: 30,
             }}
           >
-            Odpowiedz na 5 pytań. Dostaniesz 3 destynacje
-            dopasowane do Ciebie i plan godzina po godzinie.
+            Odpowiedz na 6 pytań. Dostaniesz 6 kierunków
+            dopasowanych do Ciebie i plan godzina po godzinie.
           </motion.p>
 
           {/* CTAs */}
@@ -230,119 +309,37 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
                 textDecoration: "none",
                 fontSize: 16,
                 letterSpacing: "0.01em",
-                boxShadow: "0 4px 28px rgba(196,98,45,0.45)",
+                boxShadow: "0 6px 20px rgba(196,98,45,0.28)",
               }}
             >
               Zaplanuj wyjazd — za darmo →
             </Link>
-            <a
-              href="#jak-to-dziala"
+            <Link
+              href="/quick"
               style={{
-                color: "rgba(255,255,255,0.58)",
-                textDecoration: "none",
-                fontSize: 14,
+                color: "var(--text-primary)",
+                textDecoration: "underline",
+                textDecorationColor: "var(--accent)",
+                textUnderlineOffset: 4,
+                fontSize: 15,
                 fontWeight: 600,
+                padding: "12px 0",
               }}
             >
-              Jak to działa? ↓
-            </a>
+              Wiesz już dokąd? 4 kroki →
+            </Link>
           </motion.div>
 
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.82 }}
-            style={{ color: "rgba(255,255,255,0.32)", fontSize: 11, marginTop: 14 }}
+            style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 14 }}
           >
-            Bez karty · 5 planów gratis · 3 minuty
+            6 pytań · darmowe konto · 5 planów gratis, bez karty
           </motion.p>
         </div>
-
-        {/* Photo dots — bottom right */}
-        <div
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            bottom: 28,
-            right: 24,
-            display: "flex",
-            gap: 6,
-            zIndex: 3,
-          }}
-        >
-          {heroPhotos.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setHeroIdx(i)}
-              aria-label={`Zdjęcie tła ${i + 1}`}
-              style={{
-                width: i === heroIdx ? 24 : 6,
-                height: 4,
-                borderRadius: 2,
-                background: i === heroIdx ? GOLD : "rgba(255,255,255,0.3)",
-                border: "none",
-                padding: 0,
-                cursor: "pointer",
-                transition: "all 0.35s cubic-bezier(0.4,0,0.2,1)",
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Scroll bounce indicator */}
-        <motion.div
-          aria-hidden="true"
-          animate={{ y: [0, 9, 0] }}
-          transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
-          style={{
-            position: "absolute",
-            bottom: 22,
-            left: "50%",
-            transform: "translateX(-50%)",
-            color: "rgba(255,255,255,0.28)",
-            fontSize: 18,
-            zIndex: 3,
-            userSelect: "none",
-            pointerEvents: "none",
-          }}
-        >
-          ↓
-        </motion.div>
       </section>
-
-      {/* ════════════════════════════════════════════════════════════════════
-          §2  MARQUEE — accent strip scrolling with destination names
-          ════════════════════════════════════════════════════════════════════ */}
-      <div
-        aria-hidden="true"
-        style={{ background: "var(--accent)", overflow: "hidden", padding: "11px 0" }}
-      >
-        <div className="marquee-track">
-          <div className="marquee-inner">
-            {[...FEATURED_DESTINATIONS, ...FEATURED_DESTINATIONS].map((d, i) => (
-              <span
-                key={i}
-                style={{
-                  flexShrink: 0,
-                  color: "white",
-                  fontSize: 11,
-                  fontWeight: 800,
-                  letterSpacing: "0.07em",
-                  marginRight: 36,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  textTransform: "uppercase",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {d.flag}&nbsp;{d.city}&nbsp;·&nbsp;{d.priceFrom}
-                <span style={{ opacity: 0.32 }}>✦</span>
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
 
       {/* ════════════════════════════════════════════════════════════════════
           §3  HOW IT WORKS — dark, editorial, numbered steps
@@ -356,7 +353,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
             initial={{ opacity: 0, y: 8 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            style={OVERLINE}
+            style={{ ...OVERLINE, color: ACCENT }}
           >
             Jak to działa
           </motion.p>
@@ -376,7 +373,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
             }}
           >
             3 minuty od teraz<br />
-            <em style={{ color: GOLD, fontStyle: "italic" }}>do gotowego planu.</em>
+            <em style={{ color: ACCENT, fontStyle: "italic" }}>do gotowego planu.</em>
           </motion.h2>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 44 }}>
@@ -397,10 +394,11 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
                     fontSize: 76,
                     fontWeight: 700,
                     lineHeight: 0.82,
-                    color: "var(--accent)",
+                    color: ACCENT,
                     flexShrink: 0,
                     width: 58,
                     letterSpacing: "-0.05em",
+                    fontVariantNumeric: "lining-nums",
                     opacity: 0.88,
                   }}
                 >
@@ -410,7 +408,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
                   <p style={{ fontWeight: 700, fontSize: 17, marginBottom: 7, letterSpacing: "-0.01em" }}>
                     {step.title}
                   </p>
-                  <p style={{ fontSize: 13, color: "rgba(255,255,255,0.48)", lineHeight: 1.78 }}>
+                  <p style={{ fontSize: 14, color: "rgba(255,255,255,0.74)", lineHeight: 1.72 }}>
                     {step.desc}
                   </p>
                 </div>
@@ -431,17 +429,17 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
                 display: "block",
                 textAlign: "center",
                 textDecoration: "none",
-                background: GOLD,
-                color: DARK,
+                background: "var(--accent)",
+                color: "white",
                 fontWeight: 800,
                 borderRadius: 14,
                 padding: "16px 28px",
                 fontSize: 16,
                 letterSpacing: "0.01em",
-                boxShadow: `0 4px 28px rgba(232,160,48,0.22)`,
+                boxShadow: `0 4px 28px rgba(196,98,45,0.22)`,
               }}
             >
-              Zacznij za darmo — 5 pytań →
+              Zacznij za darmo — 6 pytań →
             </Link>
           </motion.div>
         </div>
@@ -475,8 +473,8 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
               marginBottom: 10,
             }}
           >
-            Barcelona, 5 dni.<br />
-            <em style={{ fontStyle: "italic", color: "var(--accent)" }}>Łącznie 2 200 PLN.</em>
+            Barcelona, weekend.<br />
+            <em style={{ fontStyle: "italic", color: "var(--accent)" }}>Łącznie 2 200 zł.</em>
           </motion.h2>
 
           <motion.p
@@ -520,15 +518,15 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
               }}
             >
               <div>
-                <p style={{ fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", opacity: 0.68, marginBottom: 4 }}>
-                  Dzień 1 — Wtorek
+                <p style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", opacity: 0.9, marginBottom: 4 }}>
+                  Dzień 1 — Piątek
                 </p>
                 <p style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-0.01em" }}>
                   Barcelona, Katalonia 🇪🇸
                 </p>
               </div>
               <div style={{ textAlign: "right" }}>
-                <p style={{ fontSize: 9, opacity: 0.62, marginBottom: 3 }}>Budżet dnia</p>
+                <p style={{ fontSize: 11, opacity: 0.9, marginBottom: 3 }}>Budżet dnia</p>
                 <p style={{ fontSize: 19, fontWeight: 800, letterSpacing: "-0.03em" }}>~95 EUR</p>
               </div>
             </div>
@@ -542,14 +540,14 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
                   alignItems: "flex-start",
                   gap: 12,
                   padding: "12px 20px",
-                  background: i % 2 === 0 ? "#FAFAF8" : "#F5F1EC",
+                  background: i % 2 === 0 ? "var(--bg-primary)" : "var(--bg-surface)",
                   borderBottom: i < EXAMPLE_PLAN.length - 1 ? "1px solid var(--border)" : "none",
                 }}
               >
                 <span
                   style={{
-                    fontSize: 10,
-                    fontFamily: "monospace",
+                    fontSize: 12,
+                    fontVariantNumeric: "tabular-nums",
                     color: "var(--text-muted)",
                     flexShrink: 0,
                     paddingTop: 2,
@@ -560,7 +558,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
                   {item.time}
                 </span>
                 <span style={{ flexShrink: 0, fontSize: 15 }}>{item.emoji}</span>
-                <p style={{ fontSize: 12, lineHeight: 1.65, color: "var(--text-primary)" }}>
+                <p style={{ fontSize: 14, lineHeight: 1.6, color: "var(--text-primary)" }}>
                   {item.text}
                 </p>
               </div>
@@ -634,7 +632,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
                 paddingBottom: 4,
               }}
             >
-              Wszystkie →
+              Dopasuj do siebie →
             </Link>
           </div>
         </div>
@@ -650,8 +648,8 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
             scrollbarWidth: "none",
             msOverflowStyle: "none",
             WebkitOverflowScrolling: "touch",
-            paddingLeft: 24,
-            scrollPaddingLeft: 24,
+            paddingLeft: "max(24px, calc((100vw - 560px) / 2 + 28px))",
+            scrollPaddingLeft: "max(24px, calc((100vw - 560px) / 2 + 28px))",
           }}
         >
 
@@ -685,6 +683,8 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
                   fill
                   sizes="360px"
                   className="object-cover"
+                  // Warm, slightly faded print so the photos sit in the poster palette
+                  style={{ filter: "sepia(0.32) saturate(0.82) contrast(1.04)" }}
                 />
                 {/* Gradient overlay */}
                 <div
@@ -699,7 +699,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
                 <div style={{ position: "absolute", top: 14, left: 14 }}>
                   <span
                     style={{
-                      fontSize: 9,
+                      fontSize: 11,
                       fontWeight: 800,
                       padding: "4px 10px",
                       borderRadius: 999,
@@ -726,34 +726,21 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
                   >
                     {dest.city}
                   </p>
-                  <p style={{ color: "rgba(255,255,255,0.58)", fontSize: 12, marginTop: 3 }}>
+                  <p style={{ color: "rgba(255,255,255,0.82)", fontSize: 13, marginTop: 3 }}>
                     {dest.flag}&nbsp;{dest.country}
-                  </p>
-                  <p
-                    style={{
-                      color: GOLD,
-                      fontSize: 16,
-                      fontWeight: 800,
-                      marginTop: 10,
-                      letterSpacing: "-0.01em",
-                    }}
-                  >
-                    {dest.priceFrom}
                   </p>
                   <div
                     style={{
-                      marginTop: 12,
-                      background: "var(--accent)",
-                      color: "white",
-                      borderRadius: 12,
-                      padding: "10px 0",
-                      textAlign: "center",
-                      fontSize: 13,
-                      fontWeight: 700,
-                      letterSpacing: "0.01em",
+                      display: "flex",
+                      alignItems: "baseline",
+                      justifyContent: "space-between",
+                      marginTop: 10,
                     }}
                   >
-                    Zaplanuj ten wyjazd →
+                    <p style={{ color: ACCENT, fontSize: 16, fontWeight: 800, letterSpacing: "-0.01em" }}>
+                      {dest.priceFrom}
+                    </p>
+                    <span style={{ color: "white", fontSize: 14, fontWeight: 700 }}>Zaplanuj →</span>
                   </div>
                 </div>
               </Link>
@@ -763,63 +750,40 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
 
         {/* Dot indicators */}
         <div
-          style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 20, padding: "0 28px" }}
+          style={{ display: "flex", justifyContent: "center", gap: 0, marginTop: 12, padding: "0 28px" }}
         >
-          {FEATURED_DESTINATIONS.map((_, i) => (
+          {FEATURED_DESTINATIONS.map((dest, i) => (
             <button
               key={i}
               onClick={() => scrollToCard(i)}
-              aria-label={`Karta destynacji ${i + 1}`}
+              aria-label={`Pokaż ${dest.city}`}
+              aria-current={i === activeCard ? "true" : undefined}
               style={{
-                width: i === activeCard ? 20 : 8,
-                height: 8,
-                borderRadius: 4,
+                // 28px hit area around an 8px dot
+                width: i === activeCard ? 36 : 24,
+                height: 28,
+                padding: "10px 8px",
+                borderRadius: 14,
                 border: "none",
-                padding: 0,
                 flexShrink: 0,
                 cursor: "pointer",
                 transition: "all 0.22s",
                 background: i === activeCard ? "var(--accent)" : "var(--border)",
+                // After `background`, which would otherwise reset it
+                backgroundClip: "content-box",
               }}
             />
           ))}
         </div>
       </section>
 
-      {/* ════════════════════════════════════════════════════════════════════
-          §6  FINAL CTA — full-bleed photo, centered call to action
-          ════════════════════════════════════════════════════════════════════ */}
-      <section
-        style={{
-          position: "relative",
-          minHeight: 460,
-          overflow: "hidden",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Image
-          src={galleryPhotos[2] || getCityPhotoUrl("Santorini", 1400)}
-          alt="Europa czeka"
-          fill
-          sizes="100vw"
-          className="object-cover"
-        />
-        {/* Dark tint */}
-        <div
-          style={{ position: "absolute", inset: 0, background: "rgba(8,5,2,0.78)" }}
-          aria-hidden="true"
-        />
+      {faq}
 
-        <div
-          style={{
-            position: "relative",
-            zIndex: 2,
-            textAlign: "center",
-            padding: "88px 28px",
-          }}
-        >
+      {/* ════════════════════════════════════════════════════════════════════
+          §6  FINAL CTA — dusk poster: the walker heads off over the ridge
+          ════════════════════════════════════════════════════════════════════ */}
+      <section style={{ background: "var(--text-primary)", overflow: "hidden" }}>
+        <div style={{ textAlign: "center", padding: "96px 28px 8px" }}>
           <motion.h2
             initial={{ opacity: 0, y: 22 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -829,67 +793,45 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
               fontSize: "clamp(34px, 11vw, 62px)",
               fontWeight: 700,
               lineHeight: 1.05,
-              color: "white",
+              color: "var(--bg-primary)",
               letterSpacing: "-0.03em",
-              marginBottom: 18,
+              marginBottom: 32,
             }}
           >
-            Twój następny wyjazd<br />
-            <em style={{ fontStyle: "italic", color: GOLD }}>zaczyna się tutaj.</em>
+            W piątek rano<br />
+            <em style={{ fontStyle: "italic", color: ACCENT }}>możesz już być w drodze.</em>
           </motion.h2>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-            style={{
-              color: "rgba(255,255,255,0.58)",
-              fontSize: 15,
-              maxWidth: 340,
-              margin: "0 auto 36px",
-              lineHeight: 1.72,
-            }}
-          >
-            5 planów za darmo. Bez karty kredytowej.
-            <br />Bez zobowiązań.
-          </motion.p>
 
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ delay: 0.3 }}
+            transition={{ delay: 0.2 }}
           >
             <Link
               href="/quiz"
               style={{
                 display: "inline-block",
-                background: GOLD,
-                color: DARK,
+                background: "var(--accent)",
+                color: "white",
                 fontWeight: 800,
                 borderRadius: 14,
                 padding: "16px 42px",
                 textDecoration: "none",
                 fontSize: 16,
                 letterSpacing: "0.01em",
-                boxShadow: "0 6px 32px rgba(232,160,48,0.28)",
               }}
             >
               Zaplanuj wyjazd za darmo →
             </Link>
           </motion.div>
 
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.46 }}
-            style={{ color: "rgba(255,255,255,0.28)", fontSize: 11, marginTop: 14 }}
-          >
-            Bez karty · 5 planów gratis · 3 minuty
-          </motion.p>
+          <p style={{ color: "rgba(245,239,224,0.78)", fontSize: 13, marginTop: 14 }}>
+            6 pytań · darmowe konto · 5 planów gratis, bez karty
+          </p>
         </div>
+
+        <DuskPoster />
       </section>
 
     </div>

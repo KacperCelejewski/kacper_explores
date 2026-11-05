@@ -9,13 +9,13 @@ export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
   const rl = checkRateLimit(`checkout:${ip}`, 10, 60 * 60 * 1000);
   if (!rl.allowed) {
-    return NextResponse.json({ error: "Zbyt wiele prób." }, { status: 429 });
+    return NextResponse.json({ error: "Za dużo prób. Spróbuj za chwilę." }, { status: 429 });
   }
 
   const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json({ error: "Musisz być zalogowany." }, { status: 401 });
+    return NextResponse.json({ error: "Zaloguj się, żeby kupić." }, { status: 401 });
   }
 
   const { planKey }: { planKey: PlanKey } = await req.json();

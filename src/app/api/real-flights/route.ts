@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   const rl = checkRateLimit(`real-flights:${ip}`, LIMITS.realFlights.limit, LIMITS.realFlights.windowMs);
   if (!rl.allowed) {
     return NextResponse.json(
-      { error: `Zbyt wiele requestów. Spróbuj ponownie za ${rl.resetInSeconds}s.` },
+      { error: `Za dużo naraz. Spróbuj za ${rl.resetInSeconds} s.` },
       { status: 429, headers: { "Retry-After": String(rl.resetInSeconds) } }
     );
   }

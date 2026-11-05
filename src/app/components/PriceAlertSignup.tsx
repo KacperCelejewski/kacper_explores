@@ -38,8 +38,8 @@ export default function PriceAlertSignup() {
             Alerty cenowe — już wkrótce
           </p>
           <p className="text-xs mt-1 leading-relaxed" style={{ color: "#3B4A6B" }}>
-            Powiadomimy Cię gdy lot do Barcelony, Lizbony lub Aten spadnie poniżej Twojego budżetu.
-            Zapisz email — dostaniesz alert jako pierwszy.
+            Damy znać, kiedy lot do Barcelony, Lizbony albo Aten spadnie poniżej Twojego budżetu.
+            Zostaw e-mail, a odezwiemy się, gdy alerty ruszą.
           </p>
         </div>
       </div>
@@ -54,7 +54,7 @@ export default function PriceAlertSignup() {
       ) : (
         <form onSubmit={handleSubmit} className="flex gap-2">
           <label htmlFor="price-alert-email" className="sr-only">
-            Email na alerty cenowe
+            E-mail na alerty cenowe
           </label>
           <input
             id="price-alert-email"

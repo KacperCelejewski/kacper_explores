@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "Włóczykij — Budżetowe podróże solo";
+export const alt = "Włóczykij — budżetowy weekend w Europie. Obudź w sobie Włóczykija.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -58,9 +58,8 @@ export default function OGImage() {
             maxWidth: 900,
           }}
         >
-          Budżetowe podróże{" "}
-          <span style={{ color: "#FF6B35" }}>solo</span>
-          {" "}po Europie
+          Weekend w Europie{" "}
+          <span style={{ color: "#FF6B35" }}>za grosze</span>
         </div>
 
         {/* Subtitle */}
@@ -74,7 +73,7 @@ export default function OGImage() {
             lineHeight: 1.4,
           }}
         >
-          AI planuje Twój wyjazd godzina po godzinie
+          Obudź w sobie Włóczykija.
         </div>
 
         {/* Flags */}

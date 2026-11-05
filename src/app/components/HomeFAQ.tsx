@@ -1,23 +1,25 @@
-const FAQS = [
+import { PRICES } from "@/lib/prices";
+
+export const FAQS = [
   {
     q: "Czy Włóczykij jest darmowy?",
-    a: "Tak — po rejestracji otrzymujesz 5 planów podróży całkowicie za darmo, bez podawania karty kredytowej. Jeśli chcesz więcej planów, możesz wybrać Pack (5 planów za 14,99 zł) lub Pro (nielimitowane plany za 19,99 zł/mies. lub 149,99 zł/rok).",
+    a: `Pierwsze 5 planów tak. Dostajesz je po rejestracji, bez podawania karty. Potem możesz dokupić Pack (5 planów za ${PRICES.pack.label}) albo wziąć Pro bez limitu za ${PRICES.proMonthly.label}/mies. lub ${PRICES.proYearly.label}/rok.`,
   },
   {
     q: "Jak działa planowanie podróży z AI?",
-    a: "Odpowiadasz na 6 krótkich pytań o swoje preferencje (budżet, styl, długość wyjazdu). AI analizuje odpowiedzi i generuje szczegółowy plan godzina po godzinie — od śniadania po kolację, z konkretnymi miejscami, trasami na Google Maps i trikami budżetowymi.",
+    a: "Odpowiadasz na 6 krótkich pytań: budżet, styl, termin, kto jedzie. Na tej podstawie dostajesz plan godzina po godzinie, od śniadania po kolację, z konkretnymi miejscami, trasami w Google Maps i trikami, jak wydać mniej.",
   },
   {
     q: "Skąd mogę planować wyjazd — tylko z Wrocławia?",
-    a: "Podajesz swoje miasto startowe i AI dopasowuje destynacje do Twojej lokalizacji. Obsługujemy wyjazdy z Wrocławia i okolic — plany generujemy dla całej Europy.",
+    a: "Nie. Wybierasz lotnisko wylotu: Wrocław, Katowice, Kraków, Warszawa, Modlin, Poznań albo Gdańsk. Plany układamy dla całej Europy.",
   },
   {
     q: "Ile trwa generowanie planu podróży?",
-    a: "Zazwyczaj 30–60 sekund. Gemini AI analizuje Twoje preferencje i układa szczegółowy plan godzina po godzinie. Plan możesz potem udostępnić znajomym lub zapisać w swoim profilu.",
+    a: "Zwykle niecałą minutę. Nie czekasz na całość: dni pojawiają się na ekranie jeden po drugim. Gotowy plan zapiszesz w profilu albo wyślesz znajomym linkiem.",
   },
   {
     q: "Na ile dni mogę zaplanować podróż?",
-    a: "Aplikacja obsługuje wyjazdy od 2 do 14 dni. Optymalnie działa dla wyjazdów 4–7-dniowych — tyle czasu potrzeba, żeby w pełni poznać europejskie miasto.",
+    a: "Od 2 do 14 dni. Włóczykij powstał z myślą o weekendach — piątek rano wylot, niedziela wieczór powrót — ale dłuższy wyjazd też ułoży.",
   },
   {
     q: "Czy plan podróży można modyfikować?",
@@ -27,19 +29,20 @@ const FAQS = [
 
 export default function HomeFAQ() {
   return (
-    <section className="mt-10 px-5" aria-labelledby="faq-heading">
-      <p className="text-xs font-bold tracking-widest uppercase mb-4" style={{ color: "var(--accent)" }}>
-        FAQ
-      </p>
-      <h2 id="faq-heading" className="text-xl font-bold mb-5 leading-snug">
-        Często zadawane pytania
+    <section className="mx-auto max-w-[600px] px-5 pt-4 pb-20" aria-labelledby="faq-heading">
+      <h2
+        id="faq-heading"
+        className="mb-6 leading-tight"
+        style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(30px, 8vw, 40px)", fontWeight: 700, letterSpacing: "-0.02em" }}
+      >
+        Zanim klikniesz
       </h2>
       <div className="flex flex-col gap-3">
         {FAQS.map(({ q, a }) => (
           <details
             key={q}
             className="p-4 rounded-2xl"
-            style={{ background: "#F7F7F5", border: "1px solid var(--border)" }}
+            style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
           >
             <summary
               className="text-sm font-semibold leading-snug cursor-pointer list-none flex items-center justify-between gap-2"
@@ -48,7 +51,7 @@ export default function HomeFAQ() {
               <span>{q}</span>
               <span aria-hidden="true" className="flex-shrink-0 text-xs" style={{ color: "var(--text-muted)" }}>▾</span>
             </summary>
-            <p className="text-xs mt-2 leading-relaxed" style={{ color: "var(--text-muted)" }}>{a}</p>
+            <p className="text-sm mt-2 leading-relaxed" style={{ color: "var(--text-secondary)" }}>{a}</p>
           </details>
         ))}
       </div>

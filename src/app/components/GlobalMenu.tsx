@@ -108,7 +108,7 @@ export default function GlobalMenu() {
         aria-label="Otwórz menu"
         aria-haspopup="dialog"
         aria-expanded={open}
-        className="no-print fixed z-50 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-transform active:scale-95"
+        className="global-fab no-print fixed z-50 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-transform active:scale-95"
         style={{
           bottom: "1.5rem",
           right: "max(1.25rem, calc(50vw - 224px + 1.25rem))",

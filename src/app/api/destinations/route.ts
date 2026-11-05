@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
   const rl = checkRateLimit(`destinations:${ip}`, LIMITS.flights.limit, LIMITS.flights.windowMs);
   if (!rl.allowed) {
     return NextResponse.json(
-      { error: `Zbyt wiele requestów. Spróbuj ponownie za ${rl.resetInSeconds}s.` },
+      { error: `Za dużo naraz. Spróbuj za ${rl.resetInSeconds} s.` },
       { status: 429, headers: { "Retry-After": String(rl.resetInSeconds) } }
     );
   }
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     console.error("[destinations] GEMINI_API_KEY not set");
-    return NextResponse.json({ error: "Gemini API key not configured." }, { status: 500 });
+    return NextResponse.json({ error: "Coś poszło nie tak. Spróbuj jeszcze raz — zwykle działa za drugim." }, { status: 500 });
   }
 
   // Sprawdź cache przed wywołaniem Gemini
@@ -166,11 +166,11 @@ export async function POST(req: NextRequest) {
       console.error(`[destinations] model ${modelName} error (retryable=${isRetryable}):`, msg);
       void logGeminiCall({ endpoint: "destinations", model: modelName, success: false, error_code: isRetryable ? "quota_503" : "error" });
       if (!isRetryable) {
-        return NextResponse.json({ error: `Błąd AI: ${msg}` }, { status: 500 });
+        return NextResponse.json({ error: "Coś poszło nie tak. Spróbuj jeszcze raz — zwykle działa za drugim." }, { status: 500 });
       }
       // retryable (quota / 503) → try next model
     }
   }
 
-  return NextResponse.json({ error: "Wszystkie modele AI przeciążone. Spróbuj za chwilę." }, { status: 503 });
+  return NextResponse.json({ error: "Mamy teraz tłok. Spróbuj za minutę." }, { status: 503 });
 }

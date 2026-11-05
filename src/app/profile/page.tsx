@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useAppStore } from "@/lib/store";
 import type { QuizAnswers } from "@/types";
+import { PRICES } from "@/lib/prices";
 
 interface Trip {
   id: string;
@@ -106,14 +107,15 @@ export default function ProfilePage() {
       const res = await fetch("/api/profile", { method: "DELETE" });
       if (!res.ok) {
         const d = await res.json();
-        throw new Error(d.error ?? "Błąd usuwania konta");
+        throw new Error(d.error);
       }
       // Sign out locally and redirect
       const { createSupabaseClient } = await import("@/lib/supabase/client");
       await createSupabaseClient().auth.signOut();
       router.replace("/");
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Błąd usuwania konta. Spróbuj ponownie.");
+      console.error("[delete-account]", err);
+      alert("Konto się nie usunęło. Spróbuj jeszcze raz, a jeśli dalej nie działa, napisz na hej@wloczykij.me.");
       setDeleting(false);
       setDeleteStep("idle");
     }
@@ -209,7 +211,7 @@ export default function ProfilePage() {
             ✦ Zostań Pro — nielimitowane plany →
           </p>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-            19,99 PLN/mies. lub 149,99 PLN/rok · anuluj kiedy chcesz
+            {PRICES.proMonthly.label}/mies. lub {PRICES.proYearly.label}/rok · anuluj kiedy chcesz
           </p>
         </motion.button>
       )}
@@ -347,7 +349,7 @@ export default function ProfilePage() {
           className="text-sm font-semibold py-3 rounded-2xl transition-opacity hover:opacity-70"
           style={{ background: "#F0F0F0", color: "var(--text-secondary)" }}
         >
-          {saved ? "✓ Zapisano!" : saving ? "Zapisuję…" : "Zapisz obecne ustawienia quizu"}
+          {saved ? "✓ Zapisano" : saving ? "Zapisuję…" : "Zapisz obecne ustawienia quizu"}
         </button>
       </div>
 

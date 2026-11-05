@@ -61,7 +61,7 @@ const CITY_FACTS: Record<string, string[]> = {
   rzym: ["Rzym ma ponad 2800 fontann — więcej niż jakiekolwiek inne miasto na świecie","Do Fontanny di Trevi wrzuca się rocznie ~1,5 mln euro — pieniądze trafiają na cele charytatywne","Wejście do Koloseum jest bezpłatne pierwszą niedzielę miesiąca","Pizza al taglio sprzedawana jest na wagę — idealna opcja budżetowa"],
   amsterdam: ["Amsterdam ma więcej rowerów niż mieszkańców — ok. 900 tys. vs 820 tys.","Domy przy kanałach celowo pochylają się do przodu — łatwiej wnosić meble","Anne Frank House rezerwuj z kilkumiesięcznym wyprzedzeniem","Rijksmuseum jest bezpłatne dla osób poniżej 18 lat"],
   berlin: ["Berlin ma 3x więcej mostów niż Wenecja — ponad 1700","Mur Berliński stał zaledwie 28 lat — tyle co 1 pokolenie","Street food: currywurst to klasyk za ~3-4€","Wszystkie muzea na Wyspie Muzeów są bezpłatne w czwartkowy wieczór"],
-  krakow: ["Kraków jest jednym z niewielu miast Europy, które przetrwało II WŚ prawie bez zniszczeń","Legenda o smoku Wawelskim ma ponad 700 lat","Bar mleczny to relikt PRL — zupa i drugie danie za ok. 15 PLN","Kazimierz to jedna z najlepiej zachowanych dzielnic żydowskich w Europie"],
+  krakow: ["Kraków jest jednym z niewielu miast Europy, które przetrwało II WŚ prawie bez zniszczeń","Legenda o smoku Wawelskim ma ponad 700 lat","Bar mleczny to relikt PRL — zupa i drugie danie za ok. 15 zł","Kazimierz to jedna z najlepiej zachowanych dzielnic żydowskich w Europie"],
 };
 
 const GENERIC_FACTS = [
@@ -491,7 +491,7 @@ function FlightModal({
               {dest.city}, {dest.country}
             </h3>
             <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-              Podaj daty lotu — plan będzie idealnie dopasowany
+              Podaj daty lotu, a ułożymy plan pod godziny przylotu i wylotu
             </p>
           </div>
         </div>
@@ -691,14 +691,14 @@ export default function DestinationsPage() {
             body: JSON.stringify(quizAnswers),
           }).then(async (r) => {
             const data = await r.json();
-            if (!r.ok) throw new Error(data.error ?? `HTTP ${r.status}`);
+            if (!r.ok) throw new Error(data.error ?? "Coś poszło nie tak. Spróbuj jeszcze raz — zwykle działa za drugim.");
             return data;
           }),
       fetch("/api/profile").then((r) => r.json()),
     ])
       .then(([destData, profileData]) => {
         if (!destData.destinations?.length) {
-          setError("AI nie zwróciło rekomendacji. Spróbuj ponownie.");
+          setError("Tym razem nic nie wpadło. Spróbuj jeszcze raz — zwykle działa za drugim.");
         } else {
           setDestinations(destData.destinations);
           if (!hasDestCache) {
@@ -710,7 +710,7 @@ export default function DestinationsPage() {
           setShowSavePrompt(true);
         }
       })
-      .catch((err: Error) => setError(err.message || "Nie udało się załadować rekomendacji."))
+      .catch((err: Error) => setError(err.message || "Coś poszło nie tak. Spróbuj jeszcze raz — zwykle działa za drugim."))
       .finally(() => setLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_hasHydrated, fetchKey, router]);
@@ -744,7 +744,7 @@ export default function DestinationsPage() {
       });
 
       if (!res.ok || !res.body) {
-        let msg = `HTTP ${res.status}`;
+        let msg = "Coś poszło nie tak. Spróbuj jeszcze raz — zwykle działa za drugim.";
         try { const j = await res.json(); msg = j.error ?? msg; } catch { /* ignore */ }
         throw new Error(msg);
       }
@@ -764,7 +764,10 @@ export default function DestinationsPage() {
           if (!line.trim()) continue;
           let msg: Record<string, unknown>;
           try { msg = JSON.parse(line); } catch { continue; }
-          if (msg.error) throw new Error(`${msg.error as string}${msg.detail ? ` [${msg.detail}]` : ""}`);
+          if (msg.error) {
+            if (msg.detail) console.error("[generate]", msg.detail);
+            throw new Error(msg.error as string);
+          }
           if (msg.status === "generating" && typeof msg.total === "number") {
             setGenProgress({ current: 0, total: msg.total as number });
           }
@@ -790,9 +793,8 @@ export default function DestinationsPage() {
         }
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Nieznany błąd";
       setIsGeneratingPlan(false);
-      setGenerateError(`Nie udało się wygenerować planu: ${msg}`);
+      setGenerateError(err instanceof Error && err.message ? err.message : "Coś poszło nie tak. Spróbuj jeszcze raz — zwykle działa za drugim.");
     }
   };
 

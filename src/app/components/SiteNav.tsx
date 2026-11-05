@@ -43,21 +43,22 @@ export default function SiteNav() {
       <div className="flex items-center gap-3">
         <Link
           href="/odkryj"
-          className="text-xs font-semibold"
+          className="text-xs font-semibold py-2"
           style={{ color: "var(--text-muted)", textDecoration: "none" }}
         >
           Odkryj
         </Link>
+        {/* Na wąskich ekranach Blog jest w menu pod przyciskiem, tu się nie mieści */}
         <Link
           href="/blog"
-          className="text-xs font-semibold"
+          className="hidden sm:inline text-xs font-semibold py-2"
           style={{ color: "var(--text-muted)", textDecoration: "none" }}
         >
           Blog
         </Link>
         <Link
           href="/pricing"
-          className="text-xs font-semibold"
+          className="text-xs font-semibold py-2"
           style={{ color: "var(--text-muted)", textDecoration: "none" }}
         >
           Cennik

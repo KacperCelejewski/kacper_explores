@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import HomeClient from "./components/HomeClient";
-import HomeFAQ from "./components/HomeFAQ";
+import HomeFAQ, { FAQS } from "./components/HomeFAQ";
 import SiteNav from "./components/SiteNav";
 import SiteFooter from "./components/SiteFooter";
 import { FEATURED_DESTINATIONS } from "@/lib/cityPhotos";
 import { fetchCityPhotoUrl } from "@/lib/unsplashApi";
 
 export const metadata: Metadata = {
-  title: "Budżetowe podróże solo po Europie — AI planuje Twój wyjazd",
-  description: "Budżetowe podróże solo po Europie — AI planuje Twój wyjazd godzina po godzinie. Restauracje, atrakcje, budżet. 5 planów za darmo.",
+  title: "Budżetowy weekend solo w Europie — lot i plan w 3 minuty",
+  description: "Odpowiedz na 6 pytań, a dostaniesz 6 kierunków w Twoim budżecie, ceny lotów z polskich lotnisk i plan godzina po godzinie. 5 planów za darmo.",
   alternates: {
     canonical: "https://wloczykij.me",
   },
@@ -17,56 +17,12 @@ export const metadata: Metadata = {
 const faqSchema = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
-  mainEntity: [
-    {
-      "@type": "Question",
-      name: "Czy Włóczykij jest darmowy?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Tak — po rejestracji otrzymujesz 5 planów podróży całkowicie za darmo, bez podawania karty kredytowej. Jeśli chcesz więcej planów, możesz wybrać Pack (5 planów za 14,99 zł) lub Pro (nielimitowane plany za 19,99 zł/mies. lub 149,99 zł/rok).",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Jak działa planowanie podróży z AI?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Odpowiadasz na 6 krótkich pytań o swoje preferencje (budżet, styl, długość wyjazdu). AI analizuje odpowiedzi i generuje szczegółowy plan godzina po godzinie — od śniadania po kolację, z konkretnymi miejscami, trasami na Google Maps i trikami budżetowymi.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Skąd mogę planować wyjazd — tylko z Wrocławia?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Podajesz swoje miasto startowe i AI dopasowuje destynacje do Twojej lokalizacji. Obsługujemy wyjazdy z Wrocławia i okolic — ale plany podróży generujemy dla całej Europy.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Ile trwa generowanie planu podróży?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Zazwyczaj 30–60 sekund. Gemini AI analizuje Twoje preferencje i układa szczegółowy plan godzina po godzinie. Plan możesz potem udostępnić znajomym lub zapisać w swoim profilu.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Na ile dni mogę zaplanować podróż?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Aplikacja obsługuje wyjazdy od 2 do 14 dni. Optymalnie działa dla wyjazdów 4–7-dniowych — tyle czasu potrzeba, żeby w pełni poznać europejskie miasto.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Czy plan podróży można modyfikować?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Aktualnie plan jest generowany jednorazowo i możesz go przeglądać oraz udostępniać. Możliwość edycji planów to funkcja, którą rozwijamy dla użytkowników Pro.",
-      },
-    },
-  ],
+  // Z tej samej tablicy co widoczne FAQ, żeby Google i strona mówiły to samo
+  mainEntity: FAQS.map(({ q, a }) => ({
+    "@type": "Question",
+    name: q,
+    acceptedAnswer: { "@type": "Answer", text: a },
+  })),
 };
 
 const webAppSchema = {
@@ -74,7 +30,7 @@ const webAppSchema = {
   "@type": "WebApplication",
   name: "Włóczykij",
   url: "https://wloczykij.me",
-  description: "Budżetowe planowanie podróży solo — AI układa Twój plan godzina po godzinie. Restauracje, atrakcje, budżet. Zacznij za darmo.",
+  description: "Budżetowe weekendy solo w Europie: lot z Polski i plan godzina po godzinie z cenami, knajpami i trikami, jak wydać mniej.",
   applicationCategory: "TravelApplication",
   operatingSystem: "Web",
   inLanguage: "pl",
@@ -102,8 +58,7 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
       <SiteNav />
-      <HomeClient galleryPhotos={galleryPhotos} />
-      <HomeFAQ />
+      <HomeClient galleryPhotos={galleryPhotos} faq={<HomeFAQ />} />
       <SiteFooter />
     </>
   );

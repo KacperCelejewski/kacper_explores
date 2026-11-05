@@ -11,6 +11,7 @@ import BudgetTracker from "@/app/components/BudgetTracker";
 import FeedbackWidget from "@/app/components/FeedbackWidget";
 import type { DayPlan, DayActivity, TripPlan, DestinationRecommendation } from "@/types";
 import { getCityPhotoUrl } from "@/lib/cityPhotos";
+import { PRICES } from "@/lib/prices";
 
 function buildBookingUrl(city: string, country: string, checkin?: string, checkout?: string): string {
   const params = new URLSearchParams({ ss: `${city}, ${country}`, group_adults: "1", no_rooms: "1" });
@@ -198,10 +199,11 @@ export default function PlanPage() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Błąd generowania");
+      if (!res.ok) throw new Error(data.error);
       setPackingList(data.categories);
     } catch (err) {
-      setPackingError(err instanceof Error ? err.message : "Błąd sieci");
+      console.error("[packing-list]", err);
+      setPackingError("Lista się nie ułożyła. Spróbuj jeszcze raz — zwykle działa za drugim.");
     } finally {
       setPackingLoading(false);
     }
@@ -220,13 +222,14 @@ export default function PlanPage() {
       });
       const contentType = res.headers.get("content-type") ?? "";
       if (!contentType.includes("application/json")) {
-        throw new Error(`Błąd serwera (${res.status})`);
+        throw new Error(`HTTP ${res.status}`);
       }
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Błąd generowania");
+      if (!res.ok) throw new Error(data.error);
       setRestaurants(data.restaurants);
     } catch (err) {
-      setRestaurantsError(err instanceof Error ? err.message : "Błąd sieci");
+      console.error("[restaurants]", err);
+      setRestaurantsError("Knajpy się nie wczytały. Spróbuj jeszcze raz — zwykle działa za drugim.");
     } finally {
       setRestaurantsLoading(false);
     }
@@ -270,10 +273,10 @@ export default function PlanPage() {
         body: JSON.stringify({ tripId: currentTrip.id, dayIndex, activityIndex }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Błąd zamiany");
+      if (!res.ok) throw new Error(data.error);
       updateTripActivity(dayIndex, activityIndex, data.activity);
     } catch {
-      showActionError("Nie udało się zamienić aktywności. Spróbuj ponownie.");
+      showActionError("Zamiana nie wyszła. Kliknij jeszcze raz — zwykle działa za drugim.");
     } finally {
       setSwapLoading((prev) => ({ ...prev, [key]: false }));
     }
@@ -289,10 +292,10 @@ export default function PlanPage() {
         body: JSON.stringify({ tripId: currentTrip.id, dayIndex }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Błąd regeneracji");
+      if (!res.ok) throw new Error(data.error);
       updateTripDay(dayIndex, data.day);
     } catch {
-      showActionError("Nie udało się wygenerować nowego planu dnia. Spróbuj ponownie.");
+      showActionError("Ten dzień się nie ułożył. Kliknij jeszcze raz — zwykle działa za drugim.");
     } finally {
       setRegenLoading((prev) => ({ ...prev, [dayIndex]: false }));
     }
@@ -443,7 +446,7 @@ export default function PlanPage() {
             {userCredits.credits === 0 ? "To był ostatni plan ✦" : `Zostały Ci ${userCredits.credits} ${userCredits.credits === 1 ? "plan" : "plany"} ✦`}
           </p>
           <p className="text-xs mt-1 mb-3 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-            Kup Pack (5 planów, 14,99 PLN) albo przejdź na Pro z nielimitowanymi planami i historią wyjazdów.
+            Kup Pack (5 planów, {PRICES.pack.label}) albo przejdź na Pro z nielimitowanymi planami i historią wyjazdów.
           </p>
           <div className="flex gap-2">
             <a
@@ -451,7 +454,7 @@ export default function PlanPage() {
               className="flex-1 text-xs font-bold py-2.5 rounded-xl text-center"
               style={{ background: "var(--accent)", color: "white", textDecoration: "none" }}
             >
-              Kup Pack — 14,99 PLN →
+              Kup Pack — {PRICES.pack.label} →
             </a>
             <a
               href="/pricing"
@@ -522,7 +525,7 @@ export default function PlanPage() {
               Szukam restauracji…
             </>
           ) : (
-            <>{restaurantsOpen && restaurants ? "🍽️ Polecane restauracje ↑" : "🍽️ Najlepsze restauracje w " + plan.city}</>
+            <>{restaurantsOpen && restaurants ? "🍽️ Polecane restauracje ↑" : "🍽️ Gdzie zjeść w " + plan.city}</>
           )}
         </button>
 
@@ -773,7 +776,7 @@ export default function PlanPage() {
               color: copied && !isPublic ? "#92400E" : copied ? "#16A34A" : "var(--text-secondary)",
             }}
           >
-            {copied && !isPublic ? "↓ Najpierw udostępnij plan" : copied ? "✓ Skopiowano!" : "🔗 Udostępnij"}
+            {copied && !isPublic ? "↓ Najpierw udostępnij plan" : copied ? "✓ Skopiowano" : "🔗 Udostępnij"}
           </button>
           <button
             onClick={handlePDF}
@@ -854,7 +857,7 @@ export default function PlanPage() {
                 Eksport PDF<br />wymaga Pro
               </h2>
               <p className="text-sm mb-6 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                Zapisz swój plan jako gotowy PDF — idealny do druku i offline. Dostępny dla użytkowników Pro.
+                Plan w PDF przyda się w samolocie i wszędzie tam, gdzie nie ma zasięgu.
               </p>
               <div className="flex flex-col gap-3 mb-4">
                 <a
@@ -870,8 +873,8 @@ export default function PlanPage() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-base text-white">149,99 PLN</p>
-                      <p className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>12,50 PLN/mies.</p>
+                      <p className="font-bold text-base text-white">{PRICES.proYearly.label}</p>
+                      <p className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>{PRICES.proYearly.perMonth}/mies.</p>
                     </div>
                   </div>
                 </a>
@@ -885,7 +888,7 @@ export default function PlanPage() {
                       <p className="font-bold text-sm">🎒 Pack</p>
                       <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>5 planów bez wygasania</p>
                     </div>
-                    <p className="font-bold text-sm" style={{ color: "var(--accent)" }}>14,99 PLN</p>
+                    <p className="font-bold text-sm" style={{ color: "var(--accent)" }}>{PRICES.pack.label}</p>
                   </div>
                 </a>
               </div>
@@ -1249,7 +1252,7 @@ function AddActivityModal({
                 type="text"
                 value={cost}
                 onChange={(e) => setCost(e.target.value)}
-                placeholder="Free / ~20 PLN"
+                placeholder="Za darmo / ~20 zł"
                 className="w-full px-3 py-2.5 rounded-xl text-sm outline-none"
                 style={{ background: "var(--bg-surface)", border: "1.5px solid var(--border)", color: "var(--text-primary)" }}
               />
