@@ -333,6 +333,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
                     flexShrink: 0,
                     width: 58,
                     letterSpacing: "-0.05em",
+                    fontVariantNumeric: "lining-nums",
                     opacity: 0.88,
                   }}
                 >
@@ -342,7 +343,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
                   <p style={{ fontWeight: 700, fontSize: 17, marginBottom: 7, letterSpacing: "-0.01em" }}>
                     {step.title}
                   </p>
-                  <p style={{ fontSize: 13, color: "rgba(255,255,255,0.48)", lineHeight: 1.78 }}>
+                  <p style={{ fontSize: 14, color: "rgba(255,255,255,0.74)", lineHeight: 1.72 }}>
                     {step.desc}
                   </p>
                 </div>
@@ -452,7 +453,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
               }}
             >
               <div>
-                <p style={{ fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", opacity: 0.68, marginBottom: 4 }}>
+                <p style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", opacity: 0.9, marginBottom: 4 }}>
                   Dzień 1 — Piątek
                 </p>
                 <p style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-0.01em" }}>
@@ -460,7 +461,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
                 </p>
               </div>
               <div style={{ textAlign: "right" }}>
-                <p style={{ fontSize: 9, opacity: 0.62, marginBottom: 3 }}>Budżet dnia</p>
+                <p style={{ fontSize: 11, opacity: 0.9, marginBottom: 3 }}>Budżet dnia</p>
                 <p style={{ fontSize: 19, fontWeight: 800, letterSpacing: "-0.03em" }}>~95 EUR</p>
               </div>
             </div>
@@ -474,14 +475,14 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
                   alignItems: "flex-start",
                   gap: 12,
                   padding: "12px 20px",
-                  background: i % 2 === 0 ? "#FAFAF8" : "#F5F1EC",
+                  background: i % 2 === 0 ? "var(--bg-primary)" : "var(--bg-surface)",
                   borderBottom: i < EXAMPLE_PLAN.length - 1 ? "1px solid var(--border)" : "none",
                 }}
               >
                 <span
                   style={{
-                    fontSize: 10,
-                    fontFamily: "monospace",
+                    fontSize: 12,
+                    fontVariantNumeric: "tabular-nums",
                     color: "var(--text-muted)",
                     flexShrink: 0,
                     paddingTop: 2,
@@ -492,7 +493,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
                   {item.time}
                 </span>
                 <span style={{ flexShrink: 0, fontSize: 15 }}>{item.emoji}</span>
-                <p style={{ fontSize: 12, lineHeight: 1.65, color: "var(--text-primary)" }}>
+                <p style={{ fontSize: 14, lineHeight: 1.6, color: "var(--text-primary)" }}>
                   {item.text}
                 </p>
               </div>
@@ -566,7 +567,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
                 paddingBottom: 4,
               }}
             >
-              Wszystkie →
+              Dopasuj do siebie →
             </Link>
           </div>
         </div>
@@ -582,8 +583,8 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
             scrollbarWidth: "none",
             msOverflowStyle: "none",
             WebkitOverflowScrolling: "touch",
-            paddingLeft: 24,
-            scrollPaddingLeft: 24,
+            paddingLeft: "max(24px, calc((100vw - 560px) / 2 + 28px))",
+            scrollPaddingLeft: "max(24px, calc((100vw - 560px) / 2 + 28px))",
           }}
         >
 
@@ -631,7 +632,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
                 <div style={{ position: "absolute", top: 14, left: 14 }}>
                   <span
                     style={{
-                      fontSize: 9,
+                      fontSize: 11,
                       fontWeight: 800,
                       padding: "4px 10px",
                       borderRadius: 999,
@@ -658,7 +659,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
                   >
                     {dest.city}
                   </p>
-                  <p style={{ color: "rgba(255,255,255,0.58)", fontSize: 12, marginTop: 3 }}>
+                  <p style={{ color: "rgba(255,255,255,0.82)", fontSize: 13, marginTop: 3 }}>
                     {dest.flag}&nbsp;{dest.country}
                   </p>
                   <p
@@ -776,7 +777,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
             style={{
-              color: "rgba(255,255,255,0.58)",
+              color: "rgba(255,255,255,0.78)",
               fontSize: 15,
               maxWidth: 340,
               margin: "0 auto 36px",

@@ -45,10 +45,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#F5EFE0" },
-    { media: "(prefers-color-scheme: dark)", color: "#1C1008" },
-  ],
+  // The site has no dark theme, so the browser bar stays sand in both modes
+  themeColor: "#F5EFE0",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

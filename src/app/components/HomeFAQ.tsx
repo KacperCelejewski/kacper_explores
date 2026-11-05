@@ -27,19 +27,20 @@ export const FAQS = [
 
 export default function HomeFAQ() {
   return (
-    <section className="mt-10 px-5" aria-labelledby="faq-heading">
-      <p className="text-xs font-bold tracking-widest uppercase mb-4" style={{ color: "var(--accent)" }}>
-        FAQ
-      </p>
-      <h2 id="faq-heading" className="text-xl font-bold mb-5 leading-snug">
-        Często zadawane pytania
+    <section className="mt-16 mb-6 px-5" aria-labelledby="faq-heading">
+      <h2
+        id="faq-heading"
+        className="mb-6 leading-tight"
+        style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(30px, 8vw, 40px)", fontWeight: 700, letterSpacing: "-0.02em" }}
+      >
+        Zanim klikniesz
       </h2>
       <div className="flex flex-col gap-3">
         {FAQS.map(({ q, a }) => (
           <details
             key={q}
             className="p-4 rounded-2xl"
-            style={{ background: "#F7F7F5", border: "1px solid var(--border)" }}
+            style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
           >
             <summary
               className="text-sm font-semibold leading-snug cursor-pointer list-none flex items-center justify-between gap-2"
@@ -48,7 +49,7 @@ export default function HomeFAQ() {
               <span>{q}</span>
               <span aria-hidden="true" className="flex-shrink-0 text-xs" style={{ color: "var(--text-muted)" }}>▾</span>
             </summary>
-            <p className="text-xs mt-2 leading-relaxed" style={{ color: "var(--text-muted)" }}>{a}</p>
+            <p className="text-sm mt-2 leading-relaxed" style={{ color: "var(--text-secondary)" }}>{a}</p>
           </details>
         ))}
       </div>
