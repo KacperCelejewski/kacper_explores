@@ -465,8 +465,8 @@ function StepBudget() {
   const { quizAnswers, setQuizAnswer } = useAppStore();
 
   const opts: { value: "low" | "medium"; Icon: IconFC; label: string; desc: string }[] = [
-    { value: "low",    Icon: IconBackpack,  label: "Backpacker",  desc: "Do 1500 PLN · hostele, street food, darmowe atrakcje" },
-    { value: "medium", Icon: IconSuitcase,  label: "Komfortowy",  desc: "1500–3000 PLN · Airbnb lub 3★ hotel, restauracje" },
+    { value: "low",    Icon: IconBackpack,  label: "Backpacker",  desc: "Do 1500 zł · hostele, street food, darmowe atrakcje" },
+    { value: "medium", Icon: IconSuitcase,  label: "Komfortowy",  desc: "1500–3000 zł · Airbnb lub 3★ hotel, restauracje" },
   ];
 
   return (
@@ -588,7 +588,7 @@ function StepPlaceType() {
 
 function durationNote(d: number): string {
   const full = d - 2;
-  if (full <= 0) return "Lot tam i z powrotem — idealny na weekend";
+  if (full <= 0) return "Lot tam i z powrotem — w sam raz na weekend";
   if (full === 1) return "1 pełny dzień na miejscu + przylot i powrót";
   return `${full} pełne dni na miejscu + przylot i powrót`;
 }

@@ -76,7 +76,7 @@ function NewsletterPopupInner() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setErrorMsg(data.error ?? "Coś poszło nie tak.");
+        setErrorMsg(data.error ?? "Coś poszło nie tak. Spróbuj jeszcze raz — zwykle działa za drugim.");
         setState("error");
         return;
       }
@@ -87,7 +87,7 @@ function NewsletterPopupInner() {
         setState("pending");
       }
     } catch {
-      setErrorMsg("Błąd połączenia. Spróbuj ponownie.");
+      setErrorMsg("Nie ma połączenia. Sprawdź internet i spróbuj jeszcze raz.");
       setState("error");
     }
   };
@@ -158,8 +158,8 @@ function NewsletterPopupInner() {
             <span style={{ color: "var(--accent)" }}>10% zniżki na Pro Roczny</span>
           </h2>
           <p className="text-sm mt-2 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-            Nowe kierunki, triki budżetowe i okazje lotnicze co tydzień.
-            Zapisz się i odbierz kod na 10% taniej na roczne Pro.
+            Nowe kierunki, triki budżetowe i tanie loty prosto na skrzynkę.
+            Na start dostajesz kod na 10% taniej na roczne Pro.
           </p>
 
           <AnimatePresence mode="wait">
@@ -172,7 +172,7 @@ function NewsletterPopupInner() {
                 style={{ background: "var(--accent-light)", border: "1px solid rgba(255,107,53,0.25)" }}
               >
                 <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>
-                  Oto Twój kod zniżkowy 🎉
+                  Twój kod na 10% taniej
                 </p>
                 <div
                   className="mt-3 flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
@@ -193,7 +193,7 @@ function NewsletterPopupInner() {
                   </button>
                 </div>
                 <p className="text-xs mt-3 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                  Wklej kod przy zakupie Pro Roczny na stronie płatności — otrzymasz 10% zniżki.
+                  Wklej go przy płatności za roczne Pro.
                 </p>
                 <Link
                   href="/pricing"
@@ -214,14 +214,14 @@ function NewsletterPopupInner() {
                 style={{ background: "#F0FDF4", border: "1px solid #BBF7D0" }}
               >
                 <p className="text-sm font-bold" style={{ color: "#16A34A" }}>
-                  Sprawdź skrzynkę ✉️
+                  Sprawdź skrzynkę
                 </p>
                 <p className="text-sm mt-2 leading-relaxed" style={{ color: "#4B5563" }}>
                   Wysłaliśmy e-mail na <strong>{email}</strong>.<br />
                   Kliknij link w wiadomości — odbierzesz kod od razu.
                 </p>
                 <p className="text-xs mt-3" style={{ color: "#9CA3AF" }}>
-                  Nie ma maila? Sprawdź spam lub{" "}
+                  Nie ma e-maila? Sprawdź spam lub{" "}
                   <button
                     onClick={handleRetry}
                     className="underline"
@@ -242,7 +242,7 @@ function NewsletterPopupInner() {
                 style={{ background: "#FEF9C3", border: "1px solid #FDE68A" }}
               >
                 <p className="text-sm font-bold" style={{ color: "#92400E" }}>
-                  Link wygasł ⏰
+                  Link wygasł
                 </p>
                 <p className="text-sm mt-1" style={{ color: "#4B5563" }}>
                   Linki są ważne 48 godzin. Zapisz się ponownie, żeby dostać nowy.
@@ -285,7 +285,7 @@ function NewsletterPopupInner() {
               <motion.div key="form" initial={{ opacity: 1 }} exit={{ opacity: 0 }} className="mt-5">
                 <div className="flex gap-2">
                   <label htmlFor="newsletter-popup-email" className="sr-only">
-                    Adres email do newslettera
+                    Adres e-mail do newslettera
                   </label>
                   <input
                     id="newsletter-popup-email"

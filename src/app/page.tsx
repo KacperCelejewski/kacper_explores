@@ -7,8 +7,8 @@ import { FEATURED_DESTINATIONS } from "@/lib/cityPhotos";
 import { fetchCityPhotoUrl } from "@/lib/unsplashApi";
 
 export const metadata: Metadata = {
-  title: "Budżetowe podróże solo po Europie — AI planuje Twój wyjazd",
-  description: "Budżetowe podróże solo po Europie — AI planuje Twój wyjazd godzina po godzinie. Restauracje, atrakcje, budżet. 5 planów za darmo.",
+  title: "Budżetowy weekend solo w Europie — lot i plan w 3 minuty",
+  description: "Odpowiedz na 6 pytań, a dostaniesz 6 kierunków w Twoim budżecie, ceny lotów z polskich lotnisk i plan godzina po godzinie. 5 planów za darmo.",
   alternates: {
     canonical: "https://wloczykij.me",
   },
@@ -30,7 +30,7 @@ const webAppSchema = {
   "@type": "WebApplication",
   name: "Włóczykij",
   url: "https://wloczykij.me",
-  description: "Budżetowe planowanie podróży solo — AI układa Twój plan godzina po godzinie. Restauracje, atrakcje, budżet. Zacznij za darmo.",
+  description: "Budżetowe weekendy solo w Europie: lot z Polski i plan godzina po godzinie z cenami, knajpami i trikami, jak wydać mniej.",
   applicationCategory: "TravelApplication",
   operatingSystem: "Web",
   inLanguage: "pl",

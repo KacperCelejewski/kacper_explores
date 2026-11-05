@@ -25,7 +25,10 @@ function LoginContent() {
       options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${next}` },
     });
     setLoading(false);
-    if (error) setError(`Błąd: ${error.message}`);
+    if (error) {
+      console.error("[login]", error.message);
+      setError("Link nie wyszedł. Sprawdź adres i spróbuj jeszcze raz.");
+    }
     else setSent(true);
   };
 
@@ -62,7 +65,7 @@ function LoginContent() {
                 Zaloguj się,<br />żeby zobaczyć<br />dopasowane kierunki.
               </h1>
               <p className="text-sm mt-3 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                Czekają na Ciebie 20+ destynacji dopasowanych do Twojego budżetu. Rejestracja zajmuje 10 sekund.
+                Masz gotowe 6 kierunków w swoim budżecie. Logujesz się linkiem z e-maila, bez hasła.
               </p>
             </>
           ) : (
@@ -95,7 +98,7 @@ function LoginContent() {
                   style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
                 >
                   <p className="text-xs font-bold truncate">{city}</p>
-                  <p className="text-xs mt-0.5" style={{ color: "var(--accent)", fontWeight: 700 }}>~1 800 PLN</p>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--accent)", fontWeight: 700 }}>~1 800 zł</p>
                 </div>
               ))}
             </div>
@@ -147,7 +150,7 @@ function LoginContent() {
             {/* Divider */}
             <div className="flex items-center gap-3 my-1">
               <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
-              <span className="text-xs" style={{ color: "var(--text-muted)" }}>lub email</span>
+              <span className="text-xs" style={{ color: "var(--text-muted)" }}>albo e-mail</span>
               <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
             </div>
 
@@ -159,7 +162,7 @@ function LoginContent() {
               <input
                 id="login-email"
                 type="email"
-                placeholder="Twój adres email"
+                placeholder="Twój adres e-mail"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -186,7 +189,7 @@ function LoginContent() {
             </form>
 
             <p className="text-xs text-center mt-1" style={{ color: "var(--text-muted)" }}>
-              Bez hasła. Kliknij link w emailu i gotowe.
+              Bez hasła. Kliknij link w e-mailu i gotowe.
             </p>
           </div>
         )}

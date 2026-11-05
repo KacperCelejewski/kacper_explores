@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
   const rl = checkRateLimit(`newsletter:${ip}`, 5, 60 * 60 * 1000);
   if (!rl.allowed) {
-    return NextResponse.json({ error: "Zbyt wiele prób. Spróbuj za godzinę." }, { status: 429 });
+    return NextResponse.json({ error: "Za dużo prób. Spróbuj za godzinę." }, { status: 429 });
   }
 
   let email: string;
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
   try {
     await ensureCoupon();
   } catch {
-    return NextResponse.json({ error: "Błąd konfiguracji zniżki." }, { status: 500 });
+    return NextResponse.json({ error: "Coś poszło nie tak. Spróbuj jeszcze raz — zwykle działa za drugim." }, { status: 500 });
   }
 
   const code = generatePromoCode();
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
       stripePromoId = await createStripePromoCode(code2);
       finalCode = code2;
     } catch {
-      return NextResponse.json({ error: "Nie udało się wygenerować kodu. Spróbuj ponownie." }, { status: 500 });
+      return NextResponse.json({ error: "Coś poszło nie tak. Spróbuj jeszcze raz — zwykle działa za drugim." }, { status: 500 });
     }
   }
 
@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
     token_sent_at: new Date().toISOString(),
   });
 
-  if (error) return NextResponse.json({ error: "Błąd zapisu." }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Coś poszło nie tak. Spróbuj jeszcze raz — zwykle działa za drugim." }, { status: 500 });
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const verifyUrl = `${appUrl}/api/newsletter/verify?token=${token}`;

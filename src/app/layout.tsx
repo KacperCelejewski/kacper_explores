@@ -19,10 +19,10 @@ const cormorant = Cormorant_Garamond({
 export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   title: {
-    default: "Włóczykij — Budżetowe podróże solo",
+    default: "Włóczykij — budżetowe weekendy solo w Europie",
     template: "%s | Włóczykij",
   },
-  description: "Budżetowe podróże solo po Europie — AI planuje Twój wyjazd godzina po godzinie. Restauracje, atrakcje, budżet. 5 planów za darmo.",
+  description: "Odpowiedz na 6 pytań, a dostaniesz 6 kierunków w Twoim budżecie, ceny lotów z polskich lotnisk i plan godzina po godzinie. 5 planów za darmo.",
   metadataBase: new URL("https://wloczykij.me"),
   alternates: {
     canonical: "https://wloczykij.me",
@@ -32,14 +32,14 @@ export const metadata: Metadata = {
     locale: "pl_PL",
     url: "https://wloczykij.me",
     siteName: "Włóczykij",
-    title: "Włóczykij — Budżetowe podróże solo",
-    description: "Odpowiedz na 6 pytań — AI zaplanuje Twój wyjazd godzina po godzinie. Restauracje, atrakcje, budżet — gotowe w 60 sekund.",
-    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Włóczykij — Budżetowe podróże solo po Europie" }],
+    title: "Włóczykij — budżetowe weekendy solo w Europie",
+    description: "Odpowiedz na 6 pytań i dostań lot oraz plan godzina po godzinie. Ceny, knajpy i triki — w Twoim budżecie.",
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Włóczykij — budżetowy weekend w Europie" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Włóczykij — Budżetowe podróże solo",
-    description: "Odpowiedz na 6 pytań — AI zaplanuje Twój wyjazd godzina po godzinie. Restauracje, atrakcje, budżet — gotowe w 60 sekund.",
+    title: "Włóczykij — budżetowe weekendy solo w Europie",
+    description: "Odpowiedz na 6 pytań i dostań lot oraz plan godzina po godzinie. Ceny, knajpy i triki — w Twoim budżecie.",
     images: ["/opengraph-image"],
   },
 };

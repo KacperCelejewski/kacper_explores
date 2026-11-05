@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, creditAdded });
   } catch (err) {
     console.error("[feedback]", err);
-    return NextResponse.json({ error: "Błąd serwera" }, { status: 500 });
+    return NextResponse.json({ error: "Coś poszło nie tak. Spróbuj jeszcze raz — zwykle działa za drugim." }, { status: 500 });
   }
 }
 

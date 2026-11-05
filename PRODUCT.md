@@ -40,7 +40,7 @@ Not another flight aggregator and not a generic "travel planner". Włóczykij is
 
 ## Capabilities and Constraints
 
-- Monetisation: 5 free plans (credits) on sign-up; one-off pack of 5 plans for 14,99 PLN; Pro unlimited at 19 PLN/month or 149 PLN/year; Stripe billing portal. No credits returns `402`.
+- Monetisation: 5 free plans (credits) on sign-up; one-off pack of 5 plans for 14,99 zł; Pro unlimited at 19,99 zł/month or 149,99 zł/year (display prices live in `src/lib/prices.ts`); Stripe billing portal. No credits returns `402`.
 - Auth via Supabase; rate limiting on expensive endpoints; flight results cached to stay within free-tier API quotas. Generation, flights and chat cost real money per call.
 - Gemini output is NDJSON streamed per day and repaired (`validateAndFixPlan`); the UI must render days as they arrive rather than wait ~30 s.
 - All UI and content are in Polish (`lang="pl"`, `pl_PL`); prices in PLN for flights/plans, local currency (often EUR) inside itineraries. Code and README in English.

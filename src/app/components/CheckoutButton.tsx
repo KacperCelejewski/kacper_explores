@@ -25,9 +25,9 @@ export default function CheckoutButton({ planKey, cta }: Props) {
       if (res.status === 401) { router.push(`/login?next=/pricing`); return; }
       const data = await res.json();
       if (data.url) window.location.href = data.url;
-      else setError("Nie udało się uruchomić płatności. Spróbuj ponownie.");
+      else setError("Płatność się nie otworzyła. Spróbuj jeszcze raz — zwykle działa za drugim.");
     } catch {
-      setError("Błąd połączenia. Sprawdź internet i spróbuj ponownie.");
+      setError("Nie ma połączenia. Sprawdź internet i kliknij jeszcze raz.");
     } finally {
       setLoading(false);
     }

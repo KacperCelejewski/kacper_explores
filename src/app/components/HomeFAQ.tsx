@@ -1,11 +1,13 @@
+import { PRICES } from "@/lib/prices";
+
 export const FAQS = [
   {
     q: "Czy Włóczykij jest darmowy?",
-    a: "Tak — po rejestracji otrzymujesz 5 planów podróży całkowicie za darmo, bez podawania karty kredytowej. Jeśli chcesz więcej planów, możesz wybrać Pack (5 planów za 14,99 zł) lub Pro (nielimitowane plany za 19,99 zł/mies. lub 149,99 zł/rok).",
+    a: `Pierwsze 5 planów tak. Dostajesz je po rejestracji, bez podawania karty. Potem możesz dokupić Pack (5 planów za ${PRICES.pack.label}) albo wziąć Pro bez limitu za ${PRICES.proMonthly.label}/mies. lub ${PRICES.proYearly.label}/rok.`,
   },
   {
     q: "Jak działa planowanie podróży z AI?",
-    a: "Odpowiadasz na 6 krótkich pytań o swoje preferencje (budżet, styl, długość wyjazdu). AI analizuje odpowiedzi i generuje szczegółowy plan godzina po godzinie — od śniadania po kolację, z konkretnymi miejscami, trasami na Google Maps i trikami budżetowymi.",
+    a: "Odpowiadasz na 6 krótkich pytań: budżet, styl, termin, kto jedzie. Na tej podstawie dostajesz plan godzina po godzinie, od śniadania po kolację, z konkretnymi miejscami, trasami w Google Maps i trikami, jak wydać mniej.",
   },
   {
     q: "Skąd mogę planować wyjazd — tylko z Wrocławia?",
@@ -13,7 +15,7 @@ export const FAQS = [
   },
   {
     q: "Ile trwa generowanie planu podróży?",
-    a: "Zazwyczaj 30–60 sekund. Gemini AI analizuje Twoje preferencje i układa szczegółowy plan godzina po godzinie. Plan możesz potem udostępnić znajomym lub zapisać w swoim profilu.",
+    a: "Zwykle niecałą minutę. Nie czekasz na całość: dni pojawiają się na ekranie jeden po drugim. Gotowy plan zapiszesz w profilu albo wyślesz znajomym linkiem.",
   },
   {
     q: "Na ile dni mogę zaplanować podróż?",

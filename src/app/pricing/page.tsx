@@ -3,6 +3,7 @@ import CheckoutButton from "../components/CheckoutButton";
 import SiteNav from "../components/SiteNav";
 import SiteFooter from "../components/SiteFooter";
 import PriceAlertSignup from "../components/PriceAlertSignup";
+import { PRICES } from "@/lib/prices";
 
 const pricingSchema = {
   "@context": "https://schema.org",
@@ -25,8 +26,8 @@ const pricingSchema = {
       item: {
         "@type": "Product",
         name: "Pack",
-        description: "5 planów podróży AI bez wygasania.",
-        offers: { "@type": "Offer", price: "5", priceCurrency: "PLN", availability: "https://schema.org/InStock" },
+        description: "5 planów podróży bez wygasania.",
+        offers: { "@type": "Offer", price: PRICES.pack.amount, priceCurrency: "PLN", availability: "https://schema.org/InStock" },
       },
     },
     {
@@ -35,13 +36,13 @@ const pricingSchema = {
       item: {
         "@type": "Product",
         name: "Pro",
-        description: "Nielimitowane plany podróży AI, historia wyjazdów, priorytetowe generowanie.",
+        description: "Nielimitowane plany podróży i historia wyjazdów.",
         offers: {
           "@type": "Offer",
-          price: "19",
+          price: PRICES.proMonthly.amount,
           priceCurrency: "PLN",
           availability: "https://schema.org/InStock",
-          priceSpecification: { "@type": "UnitPriceSpecification", price: "19", priceCurrency: "PLN", unitCode: "MON" },
+          priceSpecification: { "@type": "UnitPriceSpecification", price: PRICES.proMonthly.amount, priceCurrency: "PLN", unitCode: "MON" },
         },
       },
     },
@@ -50,13 +51,13 @@ const pricingSchema = {
 
 export const metadata: Metadata = {
   title: "Plany cenowe",
-  description: "Zacznij za darmo — 5 planów podróży po rejestracji. Pack za 5 zł (5 planów) lub Pro za 19 zł/mies. (nielimitowane plany AI).",
+  description: `5 wyjazdów za darmo po rejestracji. Potem Pack za ${PRICES.pack.label} (5 planów) albo Pro za ${PRICES.proMonthly.label}/mies. bez limitu.`,
   alternates: {
     canonical: "https://wloczykij.me/pricing",
   },
   openGraph: {
     title: "Plany cenowe | Włóczykij",
-    description: "Zacznij za darmo — 5 planów podróży po rejestracji. Pack za 5 zł lub Pro za 19 zł/mies.",
+    description: `5 wyjazdów za darmo. Potem Pack za ${PRICES.pack.label} albo Pro za ${PRICES.proMonthly.label}/mies.`,
     url: "https://wloczykij.me/pricing",
   },
 };
@@ -65,15 +66,15 @@ const PLANS = [
   {
     key: "pack_5",
     name: "Pack",
-    price: "14,99 PLN",
+    price: PRICES.pack.label,
     period: "jednorazowo",
     priceBreakdown: null,
     badge: null,
     features: [
-      "5 kompletnych planów z lotem i dniem po dniu",
-      "Pełny itinerary godzina po godzinie",
-      "Triki budżetowe i lokalne polecenia AI",
-      "Plany nie wygasają — zostają na zawsze",
+      "5 wyjazdów z lotem i planem dzień po dniu",
+      "Każdy dzień rozpisany godzina po godzinie",
+      "Ceny na miejscu i triki, jak wydać mniej",
+      "Plany nie wygasają",
     ],
     highlight: false,
     cta: "Kup Pack →",
@@ -82,15 +83,14 @@ const PLANS = [
   {
     key: "pro_yearly",
     name: "Pro Roczny",
-    price: "149,99 PLN",
+    price: PRICES.proYearly.label,
     period: "rocznie",
-    priceBreakdown: "tylko 12,50 PLN/mies.",
-    badge: "Oszczędzasz 90 PLN vs miesięczny",
+    priceBreakdown: `${PRICES.proYearly.perMonth} miesięcznie`,
+    badge: `o ${PRICES.proYearly.savings} taniej niż miesięcznie`,
     features: [
-      "Nielimitowane plany podróży",
+      "Wyjazdy bez limitu",
       "Historia wszystkich wyjazdów",
-      "Priorytetowe generowanie AI",
-      "Dostęp do nowych funkcji jako pierwszy",
+      "Nowe funkcje trafiają do Ciebie najpierw",
     ],
     highlight: true,
     cta: "Zostań Pro →",
@@ -99,15 +99,14 @@ const PLANS = [
   {
     key: "pro_monthly",
     name: "Pro Miesięczny",
-    price: "19,99 PLN",
+    price: PRICES.proMonthly.label,
     period: "miesięcznie",
     priceBreakdown: null,
     badge: null,
     features: [
-      "Nielimitowane plany podróży",
+      "Wyjazdy bez limitu",
       "Historia wszystkich wyjazdów",
-      "Priorytetowe generowanie AI",
-      "Dostęp do nowych funkcji",
+      "Odwołujesz, kiedy chcesz",
     ],
     highlight: false,
     cta: "Zostań Pro →",
@@ -129,10 +128,10 @@ export default function PricingPage() {
           Plany
         </p>
         <h1 className="text-3xl font-bold leading-tight">
-          Planer podróży solo — wybierz swój plan
+          5 wyjazdów masz za darmo. Potem wybierz, ile chcesz latać.
         </h1>
         <p className="text-sm mt-2 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-          Zaczynasz z 5 darmowymi planami po rejestracji. Bez karty.
+          Darmowe plany dostajesz po rejestracji, bez podawania karty.
         </p>
       </div>
 
@@ -172,7 +171,7 @@ export default function PricingPage() {
                 className="px-5 py-2 text-xs font-bold text-center tracking-wider uppercase flex items-center justify-center gap-3"
                 style={{ background: "var(--accent)", color: "white" }}
               >
-                <span>🌟 Najlepszy wybór</span>
+                <span>Najtaniej</span>
                 {plan.badge && (
                   <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: "rgba(255,255,255,0.25)" }}>
                     {plan.badge}
@@ -215,24 +214,23 @@ export default function PricingPage() {
         ))}
       </div>
 
-      {/* Guarantee */}
+      {/* Zasady zwrotu, zgodnie z regulaminem §5 */}
       <div
-        className="mt-5 p-4 rounded-2xl flex items-start gap-3"
+        className="mt-5 p-4 rounded-2xl"
         style={{ background: "#F0FDF4", border: "1px solid #BBF7D0" }}
       >
-        <span className="text-xl flex-shrink-0">🛡️</span>
-        <div>
-          <p className="text-sm font-bold" style={{ color: "#15803D" }}>Gwarancja zwrotu 7 dni</p>
-          <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "#4B5563" }}>
-            Jeśli nie jesteś zadowolony w ciągu 7 dni od zakupu — oddamy Ci pieniądze bez pytań.
-          </p>
-        </div>
+        <p className="text-sm font-bold" style={{ color: "#15803D" }}>Zwroty</p>
+        <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "#4B5563" }}>
+          Pro możesz zwrócić w ciągu 14 dni, dopóki nie wygenerujesz na nim planu. Wygenerowany plan
+          jest już Twój, więc Packa po użyciu nie zwracamy. Szczegóły w{" "}
+          <a href="/regulamin" style={{ color: "#15803D", textDecoration: "underline" }}>regulaminie</a>.
+        </p>
       </div>
 
       <PriceAlertSignup />
 
       <p className="text-xs text-center mt-5" style={{ color: "var(--text-muted)" }}>
-        Płatności obsługuje Stripe · Bezpieczne i szyfrowane
+        Płatności obsługuje Stripe. Nie widzimy ani nie przechowujemy danych Twojej karty.
       </p>
     </div>
     <SiteFooter />

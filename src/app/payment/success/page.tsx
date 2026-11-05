@@ -25,14 +25,16 @@ export default async function PaymentSuccessPage({ searchParams }: Props) {
 
   return (
     <div className="flex flex-col flex-1 px-5 pb-8 justify-center items-center text-center">
-      <span className="text-6xl">{valid ? "🎉" : "✅"}</span>
+      <span className="text-6xl" aria-hidden="true">🎒</span>
       <h1 className="text-2xl font-bold mt-4">
-        {isPro ? "Subskrypcja Pro aktywna!" : "Płatność udana!"}
+        {!valid ? "Prawie gotowe." : isPro ? "Pro działa." : "Pack jest Twój."}
       </h1>
       <p className="text-sm mt-2" style={{ color: "var(--text-muted)" }}>
-        {isPro
-          ? "Masz teraz nielimitowane plany podróży. Miłego włóczenia!"
-          : "5 planów podróży zostało dodanych do Twojego konta."}
+        {!valid
+          ? "Płatność jeszcze się księguje. Plany pojawią się na koncie za chwilę."
+          : isPro
+          ? "Teraz możesz lecieć ile chcesz. Do roboty."
+          : "Masz na koncie 5 planów więcej. Dokąd tym razem?"}
       </p>
 
       <Link
@@ -40,7 +42,7 @@ export default async function PaymentSuccessPage({ searchParams }: Props) {
         className="btn-primary"
         style={{ display: "block", textAlign: "center", textDecoration: "none", marginTop: "2rem" }}
       >
-        Zaplanuj podróż →
+        Zaplanuj wyjazd →
       </Link>
 
       <Link href="/profile">

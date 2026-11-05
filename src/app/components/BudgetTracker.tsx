@@ -81,7 +81,7 @@ export default function BudgetTracker({ tripId, plannedBreakdown, plannedTotal }
                 <div>
                   <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>WYDANO</p>
                   <p className="text-2xl font-bold" style={{ color: overBudget ? "#B91C1C" : "var(--text-primary)" }}>
-                    {totalSpent.toLocaleString("pl-PL")} PLN
+                    {totalSpent.toLocaleString("pl-PL")} zł
                   </p>
                 </div>
                 <div className="text-right">
@@ -103,10 +103,10 @@ export default function BudgetTracker({ tripId, plannedBreakdown, plannedTotal }
                 <span>{overBudget ? "⚠️" : "✓"}</span>
                 <span>
                   {overBudget
-                    ? `${diff.toLocaleString("pl-PL")} PLN powyżej budżetu`
+                    ? `${diff.toLocaleString("pl-PL")} zł powyżej budżetu`
                     : totalSpent === 0
                     ? "Zacznij wpisywać wydatki"
-                    : `${Math.abs(diff).toLocaleString("pl-PL")} PLN poniżej budżetu`}
+                    : `${Math.abs(diff).toLocaleString("pl-PL")} zł poniżej budżetu`}
                 </span>
               </div>
 
@@ -127,7 +127,7 @@ export default function BudgetTracker({ tripId, plannedBreakdown, plannedTotal }
                         </span>
                         {planned !== null && (
                           <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-                            plan: ~{planned} PLN
+                            plan: ~{planned} zł
                           </span>
                         )}
                       </div>
@@ -157,7 +157,7 @@ export default function BudgetTracker({ tripId, plannedBreakdown, plannedTotal }
                             className="absolute right-3 top-1/2 -translate-y-1/2 text-xs"
                             style={{ color: "var(--text-muted)" }}
                           >
-                            PLN
+                            zł
                           </span>
                         </div>
                         <button

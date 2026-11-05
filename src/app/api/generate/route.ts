@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   const profile = await getUserProfile();
   if (!profile) {
     return NextResponse.json(
-      { error: "Musisz być zalogowany aby generować plany.", code: "UNAUTHENTICATED" },
+      { error: "Zaloguj się, żeby ułożyć plan.", code: "UNAUTHENTICATED" },
       { status: 401 }
     );
   }
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   const rl = checkRateLimit(`generate:${ip}`, LIMITS.generate.limit, LIMITS.generate.windowMs);
   if (!rl.allowed) {
     return NextResponse.json(
-      { error: `Zbyt wiele requestów. Spróbuj ponownie za ${rl.resetInSeconds}s.` },
+      { error: `Za dużo naraz. Spróbuj za ${rl.resetInSeconds} s.` },
       { status: 429, headers: { "Retry-After": String(rl.resetInSeconds) } }
     );
   }
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
   // 3. Sprawdź kredyty / subskrypcję
   if (!canGenerate(profile)) {
     return NextResponse.json(
-      { error: "Brak kredytów. Kup pack lub subskrypcję Pro.", code: "NO_CREDITS" },
+      { error: "Darmowe plany się skończyły. Dokup Pack albo przejdź na Pro.", code: "NO_CREDITS" },
       { status: 402 }
     );
   }
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ error: "Gemini API key not configured" }, { status: 500 });
+    return NextResponse.json({ error: "Coś poszło nie tak. Spróbuj jeszcze raz — zwykle działa za drugim." }, { status: 500 });
   }
 
   const encoder = new TextEncoder();
@@ -177,9 +177,9 @@ export async function POST(req: NextRequest) {
         const message = err instanceof Error ? err.message : String(err);
         console.error("Generate error:", message);
         if (message.includes("429") || message.includes("quota") || message.includes("Too Many Requests")) {
-          send(controller, { error: "Limit zapytań AI wyczerpany. Spróbuj ponownie za kilka minut lub jutro.", code: "QUOTA_EXCEEDED" });
+          send(controller, { error: "Na dziś wyczerpaliśmy limit planowania. Wróć za kilka minut albo jutro.", code: "QUOTA_EXCEEDED" });
         } else {
-          send(controller, { error: "Błąd generowania planu. Spróbuj ponownie.", detail: message });
+          send(controller, { error: "Coś poszło nie tak. Spróbuj jeszcze raz — zwykle działa za drugim.", detail: message });
         }
       } finally {
         controller.close();

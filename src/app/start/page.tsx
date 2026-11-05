@@ -29,11 +29,11 @@ export default function StartPage() {
           className="mb-8"
         >
           <h1 className="text-3xl font-bold leading-tight tracking-tight">
-            Gdzie następna<br />
-            <span style={{ color: "var(--accent)" }}>przygoda?</span>
+            Dokąd<br />
+            <span style={{ color: "var(--accent)" }}>tym razem?</span>
           </h1>
           <p className="mt-3 text-sm leading-relaxed" style={{ color: "var(--text-muted, #7A6A55)" }}>
-            AI tworzy plan podróży dopasowany do Ciebie — konkretne atrakcje, restauracje i wskazówki budżetowe.
+            Plan dzień po dniu w Twoim budżecie: konkretne miejsca, knajpy i ceny.
           </p>
         </motion.div>
 
@@ -59,7 +59,7 @@ export default function StartPage() {
                   Nie wiem gdzie lecieć
                 </p>
                 <p className="text-sm mt-1 leading-relaxed" style={{ color: "rgba(255,255,255,0.8)" }}>
-                  Odpowiedz na kilka pytań — AI dobierze 3 destynacje dopasowane do Twojego budżetu i stylu.
+                  Odpowiedz na 6 pytań, a dobierzemy 6 kierunków pod Twój budżet i styl.
                 </p>
                 <div className="flex flex-wrap gap-2 mt-3">
                   {["Budżet", "Styl", "Termin", "Lotnisko"].map((tag) => (
@@ -133,7 +133,7 @@ export default function StartPage() {
           style={{ background: "rgba(196,98,45,0.06)", border: "1px solid rgba(196,98,45,0.15)" }}
         >
           <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: "var(--accent)" }}>
-            Przykład planu AI
+            Przykładowy plan
           </p>
           <div className="flex flex-col gap-2">
             {[
@@ -162,7 +162,7 @@ export default function StartPage() {
           className="text-center text-xs mt-6"
           style={{ color: "var(--text-muted)" }}
         >
-          5 planów za darmo · bez karty kredytowej
+          5 planów za darmo · bez karty
         </motion.p>
       </div>
     </div>

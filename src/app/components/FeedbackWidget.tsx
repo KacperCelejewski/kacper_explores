@@ -294,7 +294,7 @@ export default function FeedbackWidget({ tripId, city, onPdfUnlocked }: Props) {
           >
             <p className="text-2xl mb-2">🎒</p>
             <p className="text-sm font-bold mb-1">
-              {creditAdded ? "Dzięki! +1 kredyt dodany na konto." : "Dzięki za feedback!"}
+              {creditAdded ? "Dzięki. Masz na koncie 1 plan więcej." : "Dzięki za opinię."}
             </p>
             <p className="text-xs" style={{ color: "var(--text-muted)" }}>
               {creditAdded

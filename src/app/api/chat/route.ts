@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
   const rl = checkRateLimit(`chat:${ip}`, 20, 60_000);
   if (!rl.allowed) {
-    return NextResponse.json({ error: `Zbyt wiele pytań. Spróbuj za ${rl.resetInSeconds}s.` }, { status: 429 });
+    return NextResponse.json({ error: `Dużo pytań naraz. Kolejne za ${rl.resetInSeconds} s.` }, { status: 429 });
   }
 
   let body: unknown;
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   }
   const lastText = messages[messages.length - 1]?.parts?.[0]?.text ?? "";
   if (lastText.length > 2000) {
-    return NextResponse.json({ error: "Wiadomość jest zbyt długa (max 2000 znaków)." }, { status: 400 });
+    return NextResponse.json({ error: "Za długa wiadomość. Zmieść się w 2000 znaków." }, { status: 400 });
   }
 
   const { data: trip } = await supabase
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (!trip) return NextResponse.json({ error: "Wycieczka nie znaleziona." }, { status: 404 });
+  if (!trip) return NextResponse.json({ error: "Nie znaleźliśmy tego wyjazdu." }, { status: 404 });
 
   const plan = trip.ai_plan_json as TripPlan;
   const planSummary = JSON.stringify({
