@@ -13,6 +13,8 @@
   --text-muted: #7A5C44;
   --border: #CFC0A4;
   --green: #2D5A27;
+  /* Stream in the hero poster */
+  --water: #5C7A78;
   --error: #B91C1C;
 }
 
@@ -288,12 +290,90 @@ body.is-home section[id] {
 }
 
 .home-hero-art--phone {
-  aspect-ratio: 680 / 340;
+  aspect-ratio: 720 / 360;
   height: auto;
 }
 
 .home-hero-art--wide {
   display: none;
+}
+
+/* Hero walker: hops left over four stones, turns, hops back. 10s loop.
+   Horizontal and vertical motion run on separate groups so each hop is an arc.
+   Stone offsets match STONES in HomeClient.tsx (150px apart; landing heights
+   0, +3, -3, +1.5 from the first stone). */
+.hero-hop-x,
+.hero-hop-y,
+.hero-hop-face,
+.hero-hop-squash {
+  animation-duration: 10s;
+  animation-iteration-count: infinite;
+}
+
+.hero-hop-x {
+  animation-name: hero-hop-x;
+  animation-timing-function: linear;
+}
+
+.hero-hop-y { animation-name: hero-hop-y; }
+.hero-hop-face { animation-name: hero-hop-face; }
+.hero-hop-squash { animation-name: hero-hop-squash; }
+
+@keyframes hero-hop-x {
+  0%, 12%   { transform: translateX(0); }
+  17%, 21%  { transform: translateX(-150px); }
+  26%, 30%  { transform: translateX(-300px); }
+  35%, 50%  { transform: translateX(-450px); }
+  55%, 59%  { transform: translateX(-300px); }
+  64%, 68%  { transform: translateX(-150px); }
+  73%, 100% { transform: translateX(0); }
+}
+
+/* Ground keyframes ease out into the rise, apex keyframes ease in to the fall */
+@keyframes hero-hop-y {
+  0%, 12%   { transform: translateY(0);       animation-timing-function: cubic-bezier(0.3, 0.6, 0.5, 1); }
+  14.5%     { transform: translateY(-60px);   animation-timing-function: cubic-bezier(0.5, 0, 0.7, 0.4); }
+  17%, 21%  { transform: translateY(3px);     animation-timing-function: cubic-bezier(0.3, 0.6, 0.5, 1); }
+  23.5%     { transform: translateY(-58px);   animation-timing-function: cubic-bezier(0.5, 0, 0.7, 0.4); }
+  26%, 30%  { transform: translateY(-3px);    animation-timing-function: cubic-bezier(0.3, 0.6, 0.5, 1); }
+  32.5%     { transform: translateY(-60px);   animation-timing-function: cubic-bezier(0.5, 0, 0.7, 0.4); }
+  35%, 50%  { transform: translateY(1.5px);   animation-timing-function: cubic-bezier(0.3, 0.6, 0.5, 1); }
+  52.5%     { transform: translateY(-60px);   animation-timing-function: cubic-bezier(0.5, 0, 0.7, 0.4); }
+  55%, 59%  { transform: translateY(-3px);    animation-timing-function: cubic-bezier(0.3, 0.6, 0.5, 1); }
+  61.5%     { transform: translateY(-58px);   animation-timing-function: cubic-bezier(0.5, 0, 0.7, 0.4); }
+  64%, 68%  { transform: translateY(3px);     animation-timing-function: cubic-bezier(0.3, 0.6, 0.5, 1); }
+  70.5%     { transform: translateY(-58px);   animation-timing-function: cubic-bezier(0.5, 0, 0.7, 0.4); }
+  73%, 100% { transform: translateY(0); }
+}
+
+/* Faces left on the way out, turns at the far stone, turns back at home */
+@keyframes hero-hop-face {
+  0%, 42%     { transform: scaleX(1); }
+  42.6%, 86%  { transform: scaleX(-1); }
+  86.6%, 100% { transform: scaleX(1); }
+}
+
+/* Crouch before each take-off, stretch leaving the stone, squash on landing */
+@keyframes hero-hop-squash {
+  0%, 100%,
+  10.5%, 14%, 17%, 19%,
+  19.5%, 23%, 26%, 28%,
+  28.5%, 32%, 35%, 37%,
+  48.5%, 52%, 55%, 57%,
+  57.5%, 61%, 64%, 66%,
+  66.5%, 70%, 73%, 75%                     { transform: scale(1, 1); }
+  11.5%, 20.5%, 29.5%, 49.5%, 58.5%, 67.5% { transform: scale(1.06, 0.92); }
+  12.8%, 21.8%, 30.8%, 50.8%, 59.8%, 68.8% { transform: scale(0.95, 1.06); }
+  17.6%, 26.6%, 35.6%, 55.6%, 64.6%, 73.6% { transform: scale(1.08, 0.9); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-hop-x,
+  .hero-hop-y,
+  .hero-hop-face,
+  .hero-hop-squash {
+    animation: none;
+  }
 }
 
 @media (min-width: 768px) {

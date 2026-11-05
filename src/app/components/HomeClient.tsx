@@ -11,23 +11,23 @@ import { getCityPhotoUrl, FEATURED_DESTINATIONS } from "@/lib/cityPhotos";
 const STEPS = [
   {
     num: "01",
-    title: "6 pytań o Ciebie",
-    desc: "Kto jedzie, kiedy, jaki masz budżet i co lubisz robić. Zajmuje mniej niż 3 minuty.",
+    title: "6 pytań o Ciebie",
+    desc: "Kto jedzie, kiedy, jaki masz budżet i co lubisz robić. Zajmuje mniej niż 3 minuty.",
   },
   {
     num: "02",
     title: "Dostajesz 6 kierunków skrojonych pod Ciebie",
-    desc: "Patrzymy na budżet, styl i termin, i dobieramy 6 miejsc, które mieszczą się w Twoich widełkach. Z cenami lotów z Twojego lotniska.",
+    desc: "Patrzymy na budżet, styl i termin, i dobieramy 6 miejsc, które mieszczą się w Twoich widełkach. Z cenami lotów z Twojego lotniska.",
   },
   {
     num: "03",
     title: "Plan godzina po godzinie",
-    desc: "Śniadania, muzea, restauracje — z cenami, trasami i trikami budżetowymi. Gotowy od razu.",
+    desc: "Śniadania, muzea, restauracje — z cenami, trasami i trikami budżetowymi. Gotowy od razu.",
   },
 ];
 
 const EXAMPLE_PLAN = [
-  { time: "08:30", emoji: "☕", text: "Śniadanie w lokalnej piekarni — croissant + kawa, ~4 EUR" },
+  { time: "08:30", emoji: "☕", text: "Śniadanie w lokalnej piekarni — croissant + kawa, ~4 EUR" },
   { time: "10:00", emoji: "🏛️", text: "Park Güell — wejście 10 EUR, widok na całą Barcelonę" },
   { time: "13:00", emoji: "🥘", text: "Obiad na Mercat de Santa Caterina — 2x tapas za 9 EUR" },
   { time: "16:00", emoji: "🏖️", text: "Plaża Barceloneta — bezpłatna, leżak 3 EUR" },
@@ -40,7 +40,7 @@ const EXAMPLE_PLAN = [
 const ACCENT = "var(--accent-poster)";
 const DARK = "#0D0A07";
 const OVERLINE: React.CSSProperties = {
-  fontSize: 10,
+  fontSize: 12,
   fontWeight: 800,
   textTransform: "uppercase",
   letterSpacing: "0.13em",
@@ -50,7 +50,7 @@ const OVERLINE: React.CSSProperties = {
 
 // ─── Hero poster ─────────────────────────────────────────────────────────────
 // Flat railway-poster scene from the brand palette. The walker is the logo's
-// silhouette, standing on the ridge and looking out over the valley.
+// silhouette, hopping across stepping stones in a stream and back again.
 
 const WALKER_PATHS = [
   "M 4 78 C 28 64, 96 58, 154 62 C 168 64, 176 72, 170 78 C 168 82, 156 84, 138 86 C 90 92, 38 92, 14 88 C 4 86, -2 82, 4 78 Z",
@@ -61,6 +61,17 @@ const WALKER_PATHS = [
   "M 88 220 L 76 264 L 60 290 L 48 296 L 52 300 L 92 300 L 98 268 L 110 220 Z",
   "M 112 220 L 118 244 L 130 268 L 154 274 L 166 270 L 160 264 L 146 260 L 134 252 L 126 232 L 122 220 Z",
 ];
+
+// Stepping stones, right to left. `top` is where the walker's feet land; the
+// hop offsets in globals.css (.hero-hop-*) are measured from the first stone.
+const STONES = [
+  { x: 1300, w: 112, h: 36 },
+  { x: 1150, w: 96, h: 32 },
+  { x: 1000, w: 108, h: 40 },
+  { x: 850, w: 120, h: 34 },
+];
+const STREAM_BED = 882;
+const stoneTop = (h: number) => STREAM_BED - 0.75 * h;
 
 // `crop` picks the window onto the 1440×900 scene: the full sky behind the copy
 // from tablet up, a tight frame on the sun and walker on phones.
@@ -110,16 +121,49 @@ function HeroPoster({ id, crop, className }: { id: string; crop: string; classNa
         d="M0 846 C 260 828, 520 838, 760 822 C 960 810, 1100 830, 1300 826 C 1370 824, 1420 821, 1440 819 L1440 900 L0 900 Z"
         fill="var(--text-muted)"
       />
-      {/* Near ridge the walker stands on */}
+      {/* Near bank */}
       <path
         d="M0 886 C 300 876, 620 882, 880 870 C 1000 864, 1060 858, 1140 859 C 1240 860, 1340 868, 1440 872 L1440 900 L0 900 Z"
         fill="var(--green)"
       />
+      {/* Stream across the foreground */}
+      <path
+        d="M0 888 C 360 880, 720 884, 1000 877 C 1180 873, 1320 875, 1440 879 L1440 900 L0 900 Z"
+        fill="var(--water)"
+      />
 
-      <g transform="translate(1086 650) scale(0.72)" fill="var(--text-primary)">
-        {WALKER_PATHS.map((d) => (
-          <path key={d} d={d} />
-        ))}
+      {STONES.map(({ x, w, h }) => (
+        <g key={x}>
+          <path
+            d={`M${x - w / 2 - 10} ${STREAM_BED + 2} h${w + 20}`}
+            stroke="var(--bg-primary)"
+            strokeOpacity="0.45"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+          <path
+            d={`M${x - w / 2} ${STREAM_BED} C ${x - w / 2} ${STREAM_BED - h}, ${x + w / 2} ${STREAM_BED - h}, ${x + w / 2} ${STREAM_BED} Z`}
+            fill="var(--text-secondary)"
+          />
+          <ellipse cx={x - w * 0.12} cy={stoneTop(h) + 4} rx={w * 0.22} ry="3" fill="var(--text-muted)" />
+        </g>
+      ))}
+
+      {/* Feet sit at the local origin so the squash and the turn pivot on the stone */}
+      <g transform={`translate(${STONES[0].x} ${stoneTop(STONES[0].h)})`} fill="var(--text-primary)">
+        <g className="hero-hop-x">
+          <g className="hero-hop-y">
+            <g className="hero-hop-face">
+              <g className="hero-hop-squash">
+                <g transform="scale(0.72) translate(-88 -300)">
+                  {WALKER_PATHS.map((d) => (
+                    <path key={d} d={d} />
+                  ))}
+                </g>
+              </g>
+            </g>
+          </g>
+        </g>
       </g>
 
       <rect width="1440" height="900" filter={`url(#${id}-grain)`} mask={`url(#${id}-grain-mask)`} />
@@ -227,18 +271,16 @@ export default function HomeClient({
     <div>
 
       {/* ════════════════════════════════════════════════════════════════════
-          §1  HERO — sand railway poster: walker, setting sun, flat hills
+          §1  HERO — sand railway poster: walker hopping stones, setting sun
           ════════════════════════════════════════════════════════════════════ */}
       <section className="home-hero">
         <HeroPoster id="hero-wide" crop="0 0 1440 900" className="home-hero-art home-hero-art--wide" />
-        <HeroPoster id="hero-phone" crop="760 560 680 340" className="home-hero-art home-hero-art--phone" />
+        <HeroPoster id="hero-phone" crop="720 540 720 360" className="home-hero-art home-hero-art--phone" />
 
         {/* ── Content ── */}
         <div className="home-hero-copy">
           <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.45 }}
+            initial={false}
             style={{
               display: "inline-block",
               background: "var(--accent)",
@@ -256,9 +298,7 @@ export default function HomeClient({
 
           {/* Headline — Cormorant Garamond, massive, editorial */}
           <motion.h1
-            initial={{ opacity: 0, y: 36 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.85, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+            initial={false}
             style={{
               fontFamily: "var(--font-heading)",
               fontSize: "clamp(44px, min(12vw, 9vh), 86px)",
@@ -275,9 +315,7 @@ export default function HomeClient({
           </motion.h1>
 
           <motion.p
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.65, delay: 0.3, ease: "easeOut" }}
+            initial={false}
             style={{
               color: "var(--text-secondary)",
               fontSize: "clamp(15px, 3.5vw, 17px)",
@@ -287,14 +325,12 @@ export default function HomeClient({
             }}
           >
             Odpowiedz na 6 pytań. Dostaniesz 6 kierunków
-            dopasowanych do Ciebie i plan godzina po godzinie.
+            dopasowanych do Ciebie i plan godzina po godzinie.
           </motion.p>
 
           {/* CTAs */}
           <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.5, ease: "easeOut" }}
+            initial={false}
             style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}
           >
             <Link
@@ -331,9 +367,7 @@ export default function HomeClient({
           </motion.div>
 
           <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.82 }}
+            initial={false}
             style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 14 }}
           >
             6 pytań · darmowe konto · 5 planów gratis, bez karty
@@ -518,7 +552,7 @@ export default function HomeClient({
               }}
             >
               <div>
-                <p style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", opacity: 0.9, marginBottom: 4 }}>
+                <p style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", opacity: 0.9, marginBottom: 4 }}>
                   Dzień 1 — Piątek
                 </p>
                 <p style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-0.01em" }}>
@@ -526,7 +560,7 @@ export default function HomeClient({
                 </p>
               </div>
               <div style={{ textAlign: "right" }}>
-                <p style={{ fontSize: 11, opacity: 0.9, marginBottom: 3 }}>Budżet dnia</p>
+                <p style={{ fontSize: 12, opacity: 0.9, marginBottom: 3 }}>Budżet dnia</p>
                 <p style={{ fontSize: 19, fontWeight: 800, letterSpacing: "-0.03em" }}>~95 EUR</p>
               </div>
             </div>
@@ -576,6 +610,8 @@ export default function HomeClient({
               <Link
                 href="/quiz"
                 style={{
+                  display: "inline-block",
+                  padding: "6px 0",
                   fontSize: 13,
                   fontWeight: 700,
                   color: "var(--accent)",
@@ -623,13 +659,14 @@ export default function HomeClient({
             <Link
               href="/quiz"
               style={{
+                display: "inline-block",
+                padding: "6px 0",
                 fontSize: 12,
                 fontWeight: 700,
                 color: "var(--accent)",
                 textDecoration: "none",
                 flexShrink: 0,
                 marginLeft: 16,
-                paddingBottom: 4,
               }}
             >
               Dopasuj do siebie →
@@ -699,7 +736,7 @@ export default function HomeClient({
                 <div style={{ position: "absolute", top: 14, left: 14 }}>
                   <span
                     style={{
-                      fontSize: 11,
+                      fontSize: 12,
                       fontWeight: 800,
                       padding: "4px 10px",
                       borderRadius: 999,
@@ -799,7 +836,7 @@ export default function HomeClient({
             }}
           >
             W piątek rano<br />
-            <em style={{ fontStyle: "italic", color: ACCENT }}>możesz już być w drodze.</em>
+            <em style={{ fontStyle: "italic", color: ACCENT }}>możesz już być w drodze.</em>
           </motion.h2>
 
           <motion.div
