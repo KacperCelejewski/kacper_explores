@@ -36,7 +36,8 @@ const EXAMPLE_PLAN = [
 
 // ─── Shared style tokens ─────────────────────────────────────────────────────
 
-const ACCENT = "#C4622D";
+// Poster brick: illustration, large type and accents on the dark sections
+const ACCENT = "var(--accent-poster)";
 const DARK = "#0D0A07";
 const OVERLINE: React.CSSProperties = {
   fontSize: 10,
@@ -97,7 +98,7 @@ function HeroPoster({ id, crop, className }: { id: string; crop: string; classNa
         </filter>
       </defs>
 
-      <circle cx="1180" cy="760" r="160" fill="var(--accent)" mask={`url(#${id}-sun-cuts)`} />
+      <circle cx="1180" cy="760" r="160" fill="var(--accent-poster)" mask={`url(#${id}-sun-cuts)`} />
 
       {/* Far ridge */}
       <path
@@ -288,7 +289,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
             initial={{ opacity: 0, y: 8 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            style={OVERLINE}
+            style={{ ...OVERLINE, color: ACCENT }}
           >
             Jak to działa
           </motion.p>
@@ -329,7 +330,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
                     fontSize: 76,
                     fontWeight: 700,
                     lineHeight: 0.82,
-                    color: "var(--accent)",
+                    color: ACCENT,
                     flexShrink: 0,
                     width: 58,
                     letterSpacing: "-0.05em",
@@ -364,8 +365,8 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
                 display: "block",
                 textAlign: "center",
                 textDecoration: "none",
-                background: ACCENT,
-                color: DARK,
+                background: "var(--accent)",
+                color: "white",
                 fontWeight: 800,
                 borderRadius: 14,
                 padding: "16px 28px",
@@ -798,8 +799,8 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
               href="/quiz"
               style={{
                 display: "inline-block",
-                background: ACCENT,
-                color: DARK,
+                background: "var(--accent)",
+                color: "white",
                 fontWeight: 800,
                 borderRadius: 14,
                 padding: "16px 42px",

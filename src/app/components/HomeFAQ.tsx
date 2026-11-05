@@ -17,7 +17,7 @@ export const FAQS = [
   },
   {
     q: "Na ile dni mogę zaplanować podróż?",
-    a: "Aplikacja obsługuje wyjazdy od 2 do 14 dni. Optymalnie działa dla wyjazdów 4–7-dniowych — tyle czasu potrzeba, żeby w pełni poznać europejskie miasto.",
+    a: "Od 2 do 14 dni. Włóczykij powstał z myślą o weekendach — piątek rano wylot, niedziela wieczór powrót — ale dłuższy wyjazd też ułoży.",
   },
   {
     q: "Czy plan podróży można modyfikować?",

@@ -3,7 +3,10 @@
 :root {
   --bg-primary: #F5EFE0;
   --bg-surface: #EDE8D8;
-  --accent: #C4622D;
+  /* UI accent: ≥4.5:1 with white text and on sand, surface and accent-light */
+  --accent: #A04B20;
+  /* Poster brick from BRAND.md: illustration and accents on dark backgrounds */
+  --accent-poster: #C4622D;
   --accent-light: #F0DFD0;
   --text-primary: #1C1008;
   --text-secondary: #3D2B1F;
@@ -52,6 +55,11 @@
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
+
+::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}
 
 /* Reduced motion: no smooth scroll, no CSS loops or long transitions */
 @media (prefers-reduced-motion: reduce) {

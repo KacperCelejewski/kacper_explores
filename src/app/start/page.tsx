@@ -16,7 +16,7 @@ export default function StartPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
           className="text-xs font-bold tracking-widest uppercase mb-6"
-          style={{ color: "var(--accent, #C4622D)" }}
+          style={{ color: "var(--accent)" }}
         >
           Włóczykij
         </motion.p>
@@ -30,7 +30,7 @@ export default function StartPage() {
         >
           <h1 className="text-3xl font-bold leading-tight tracking-tight">
             Gdzie następna<br />
-            <span style={{ color: "var(--accent, #C4622D)" }}>przygoda?</span>
+            <span style={{ color: "var(--accent)" }}>przygoda?</span>
           </h1>
           <p className="mt-3 text-sm leading-relaxed" style={{ color: "var(--text-muted, #7A6A55)" }}>
             AI tworzy plan podróży dopasowany do Ciebie — konkretne atrakcje, restauracje i wskazówki budżetowe.
@@ -48,7 +48,7 @@ export default function StartPage() {
             href="/quiz"
             className="block rounded-3xl p-5 no-underline transition-opacity hover:opacity-90 active:scale-[0.98]"
             style={{
-              background: "var(--accent, #C4622D)",
+              background: "var(--accent)",
               textDecoration: "none",
             }}
           >
@@ -92,7 +92,7 @@ export default function StartPage() {
             className="block rounded-3xl p-5 no-underline transition-opacity hover:opacity-90 active:scale-[0.98]"
             style={{
               background: "var(--bg-surface, #FFF9F0)",
-              border: "2px solid var(--accent, #C4622D)",
+              border: "2px solid var(--accent)",
               textDecoration: "none",
             }}
           >

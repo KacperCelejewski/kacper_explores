@@ -150,7 +150,7 @@ export default function PricingPage() {
           </div>
           <span
             className="text-sm font-bold px-3 py-1 rounded-full"
-            style={{ background: "var(--border)", color: "var(--text-muted)" }}
+            style={{ background: "var(--border)", color: "var(--text-secondary)" }}
           >
             5 planów
           </span>
@@ -190,7 +190,7 @@ export default function PricingPage() {
                   <p className="text-2xl font-bold" style={{ color: "var(--accent)" }}>{plan.price}</p>
                   <p className="text-xs" style={{ color: "var(--text-muted)" }}>{plan.period}</p>
                   {plan.priceBreakdown && (
-                    <p className="text-xs font-semibold mt-0.5" style={{ color: "#16A34A" }}>{plan.priceBreakdown}</p>
+                    <p className="text-xs font-semibold mt-0.5" style={{ color: "var(--green)" }}>{plan.priceBreakdown}</p>
                   )}
                 </div>
               </div>

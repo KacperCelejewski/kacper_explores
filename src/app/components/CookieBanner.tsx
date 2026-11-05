@@ -99,7 +99,7 @@ export default function CookieBanner() {
                 padding: "10px 0",
                 borderRadius: 12,
                 border: "none",
-                background: "var(--accent, #C4622D)",
+                background: "var(--accent)",
                 color: "#fff",
                 fontWeight: 700,
                 fontSize: 13,
