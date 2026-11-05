@@ -16,8 +16,8 @@ const STEPS = [
   },
   {
     num: "02",
-    title: "Dostajesz 3 destynacje skrojone pod Ciebie",
-    desc: "Gemini analizuje Twój budżet, styl podróżowania i termin — i dobiera 3 miejsca, które będą idealne akurat dla Ciebie.",
+    title: "Dostajesz 6 kierunków skrojonych pod Ciebie",
+    desc: "Patrzymy na budżet, styl i termin, i dobieramy 6 miejsc, które mieszczą się w Twoich widełkach. Z cenami lotów z Twojego lotniska.",
   },
   {
     num: "03",
@@ -286,8 +286,8 @@ export default function HomeClient({
               marginBottom: 30,
             }}
           >
-            Odpowiedz na 6 pytań. Dostaniesz 3 destynacje
-            dopasowane do Ciebie i plan godzina po godzinie.
+            Odpowiedz na 6 pytań. Dostaniesz 6 kierunków
+            dopasowanych do Ciebie i plan godzina po godzinie.
           </motion.p>
 
           {/* CTAs */}
@@ -474,7 +474,7 @@ export default function HomeClient({
             }}
           >
             Barcelona, weekend.<br />
-            <em style={{ fontStyle: "italic", color: "var(--accent)" }}>Łącznie 2 200 PLN.</em>
+            <em style={{ fontStyle: "italic", color: "var(--accent)" }}>Łącznie 2 200 zł.</em>
           </motion.h2>
 
           <motion.p
@@ -750,23 +750,27 @@ export default function HomeClient({
 
         {/* Dot indicators */}
         <div
-          style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 20, padding: "0 28px" }}
+          style={{ display: "flex", justifyContent: "center", gap: 0, marginTop: 12, padding: "0 28px" }}
         >
-          {FEATURED_DESTINATIONS.map((_, i) => (
+          {FEATURED_DESTINATIONS.map((dest, i) => (
             <button
               key={i}
               onClick={() => scrollToCard(i)}
-              aria-label={`Karta destynacji ${i + 1}`}
+              aria-label={`Pokaż ${dest.city}`}
+              aria-current={i === activeCard ? "true" : undefined}
               style={{
-                width: i === activeCard ? 20 : 8,
-                height: 8,
-                borderRadius: 4,
+                // 28px hit area around an 8px dot
+                width: i === activeCard ? 36 : 24,
+                height: 28,
+                padding: "10px 8px",
+                borderRadius: 14,
                 border: "none",
-                padding: 0,
                 flexShrink: 0,
                 cursor: "pointer",
                 transition: "all 0.22s",
                 background: i === activeCard ? "var(--accent)" : "var(--border)",
+                // After `background`, which would otherwise reset it
+                backgroundClip: "content-box",
               }}
             />
           ))}
