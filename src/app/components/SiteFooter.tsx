@@ -19,7 +19,7 @@ export default function SiteFooter() {
             hej@wloczykij.me
           </a>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center flex-wrap gap-x-4 gap-y-2">
           <Link
             href="/"
             className="text-xs"

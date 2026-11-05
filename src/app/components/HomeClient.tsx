@@ -11,7 +11,7 @@ import { getCityPhotoUrl, FEATURED_DESTINATIONS } from "@/lib/cityPhotos";
 const STEPS = [
   {
     num: "01",
-    title: "5 pytań o Ciebie",
+    title: "6 pytań o Ciebie",
     desc: "Kto jedzie, kiedy, jaki masz budżet i co lubisz robić. Zajmuje mniej niż 3 minuty.",
   },
   {
@@ -172,7 +172,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
               border: "1px solid rgba(255,255,255,0.1)",
             }}
           >
-            ✈️&nbsp;<span>500+ podróżników już wie dokąd jedzie</span>
+            <span>5 planów za darmo · loty z 7 polskich lotnisk</span>
           </motion.div>
 
           {/* Headline — Cormorant Garamond, massive, editorial */}
@@ -207,7 +207,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
               marginBottom: 30,
             }}
           >
-            Odpowiedz na 5 pytań. Dostaniesz 3 destynacje
+            Odpowiedz na 6 pytań. Dostaniesz 3 destynacje
             dopasowane do Ciebie i plan godzina po godzinie.
           </motion.p>
 
@@ -235,36 +235,38 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
             >
               Zaplanuj wyjazd — za darmo →
             </Link>
-            <a
-              href="#jak-to-dziala"
+            <Link
+              href="/quick"
               style={{
-                color: "rgba(255,255,255,0.58)",
-                textDecoration: "none",
-                fontSize: 14,
+                color: "rgba(255,255,255,0.78)",
+                textDecoration: "underline",
+                textUnderlineOffset: 4,
+                fontSize: 15,
                 fontWeight: 600,
+                padding: "12px 0",
               }}
             >
-              Jak to działa? ↓
-            </a>
+              Wiesz już dokąd? 4 kroki →
+            </Link>
           </motion.div>
 
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.82 }}
-            style={{ color: "rgba(255,255,255,0.32)", fontSize: 11, marginTop: 14 }}
+            style={{ color: "rgba(255,255,255,0.72)", fontSize: 13, marginTop: 14 }}
           >
-            Bez karty · 5 planów gratis · 3 minuty
+            6 pytań · darmowe konto · 5 planów gratis, bez karty
           </motion.p>
         </div>
 
-        {/* Photo dots — bottom right */}
+        {/* Photo dots — bottom left, away from the menu button */}
         <div
           aria-hidden="true"
           style={{
             position: "absolute",
-            bottom: 28,
-            right: 24,
+            bottom: 18,
+            left: 24,
             display: "flex",
             gap: 6,
             zIndex: 3,
@@ -275,13 +277,16 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
               key={i}
               onClick={() => setHeroIdx(i)}
               aria-label={`Zdjęcie tła ${i + 1}`}
+              tabIndex={-1}
               style={{
-                width: i === heroIdx ? 24 : 6,
-                height: 4,
+                // 24px hit area, 4px visible bar
+                width: i === heroIdx ? 24 : 12,
+                height: 24,
                 borderRadius: 2,
                 background: i === heroIdx ? GOLD : "rgba(255,255,255,0.3)",
+                backgroundClip: "content-box",
                 border: "none",
-                padding: 0,
+                padding: i === heroIdx ? "10px 0" : "10px 3px",
                 cursor: "pointer",
                 transition: "all 0.35s cubic-bezier(0.4,0,0.2,1)",
               }}
@@ -441,7 +446,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
                 boxShadow: `0 4px 28px rgba(232,160,48,0.22)`,
               }}
             >
-              Zacznij za darmo — 5 pytań →
+              Zacznij za darmo — 6 pytań →
             </Link>
           </motion.div>
         </div>
@@ -885,9 +890,9 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ delay: 0.46 }}
-            style={{ color: "rgba(255,255,255,0.28)", fontSize: 11, marginTop: 14 }}
+            style={{ color: "rgba(255,255,255,0.72)", fontSize: 13, marginTop: 14 }}
           >
-            Bez karty · 5 planów gratis · 3 minuty
+            6 pytań · darmowe konto · 5 planów gratis, bez karty
           </motion.p>
         </div>
       </section>

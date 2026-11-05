@@ -66,9 +66,10 @@ export default function CookieBanner() {
           style={{
             position: "fixed",
             bottom: 80, // above GlobalMenu nav
-            left: "50%",
-            transform: "translateX(-50%)",
-            width: "calc(100% - 32px)",
+            // Centrowanie bez transform: Framer Motion nadpisuje transform animacją y
+            left: 16,
+            right: 16,
+            marginInline: "auto",
             maxWidth: 480,
             zIndex: 100,
             background: "var(--background, #fff)",
@@ -79,7 +80,7 @@ export default function CookieBanner() {
           }}
         >
           <p style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
-            🍪 Używamy plików cookie
+            Używamy plików cookie
           </p>
           <p style={{ margin: "0 0 14px", fontSize: 12, lineHeight: 1.5, color: "var(--text-muted)" }}>
             Niezbędne cookies działają zawsze. Za Twoją zgodą używamy też cookies partnerskich (linki afiliacyjne do lotów).{" "}
@@ -98,7 +99,7 @@ export default function CookieBanner() {
                 padding: "10px 0",
                 borderRadius: 12,
                 border: "none",
-                background: "var(--accent, #FF6B35)",
+                background: "var(--accent, #C4622D)",
                 color: "#fff",
                 fontWeight: 700,
                 fontSize: 13,

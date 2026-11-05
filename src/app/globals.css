@@ -233,6 +233,11 @@ body.is-home main.app-shell > footer {
   box-sizing: border-box;
 }
 
+/* Strona główna jest na całą szerokość, więc przycisk menu wraca do rogu ekranu */
+body.is-home .global-fab {
+  right: 1.25rem !important;
+}
+
 /* 4. Anchor scroll offset for fixed nav */
 body.is-home section[id] {
   scroll-margin-top: 72px;

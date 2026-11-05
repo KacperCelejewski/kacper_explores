@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import HomeClient from "./components/HomeClient";
-import HomeFAQ from "./components/HomeFAQ";
+import HomeFAQ, { FAQS } from "./components/HomeFAQ";
 import SiteNav from "./components/SiteNav";
 import SiteFooter from "./components/SiteFooter";
 import { FEATURED_DESTINATIONS } from "@/lib/cityPhotos";
@@ -17,56 +17,12 @@ export const metadata: Metadata = {
 const faqSchema = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
-  mainEntity: [
-    {
-      "@type": "Question",
-      name: "Czy Włóczykij jest darmowy?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Tak — po rejestracji otrzymujesz 5 planów podróży całkowicie za darmo, bez podawania karty kredytowej. Jeśli chcesz więcej planów, możesz wybrać Pack (5 planów za 14,99 zł) lub Pro (nielimitowane plany za 19,99 zł/mies. lub 149,99 zł/rok).",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Jak działa planowanie podróży z AI?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Odpowiadasz na 6 krótkich pytań o swoje preferencje (budżet, styl, długość wyjazdu). AI analizuje odpowiedzi i generuje szczegółowy plan godzina po godzinie — od śniadania po kolację, z konkretnymi miejscami, trasami na Google Maps i trikami budżetowymi.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Skąd mogę planować wyjazd — tylko z Wrocławia?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Podajesz swoje miasto startowe i AI dopasowuje destynacje do Twojej lokalizacji. Obsługujemy wyjazdy z Wrocławia i okolic — ale plany podróży generujemy dla całej Europy.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Ile trwa generowanie planu podróży?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Zazwyczaj 30–60 sekund. Gemini AI analizuje Twoje preferencje i układa szczegółowy plan godzina po godzinie. Plan możesz potem udostępnić znajomym lub zapisać w swoim profilu.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Na ile dni mogę zaplanować podróż?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Aplikacja obsługuje wyjazdy od 2 do 14 dni. Optymalnie działa dla wyjazdów 4–7-dniowych — tyle czasu potrzeba, żeby w pełni poznać europejskie miasto.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Czy plan podróży można modyfikować?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Aktualnie plan jest generowany jednorazowo i możesz go przeglądać oraz udostępniać. Możliwość edycji planów to funkcja, którą rozwijamy dla użytkowników Pro.",
-      },
-    },
-  ],
+  // Z tej samej tablicy co widoczne FAQ, żeby Google i strona mówiły to samo
+  mainEntity: FAQS.map(({ q, a }) => ({
+    "@type": "Question",
+    name: q,
+    acceptedAnswer: { "@type": "Answer", text: a },
+  })),
 };
 
 const webAppSchema = {

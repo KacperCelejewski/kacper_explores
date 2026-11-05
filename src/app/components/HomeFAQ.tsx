@@ -1,4 +1,4 @@
-const FAQS = [
+export const FAQS = [
   {
     q: "Czy Włóczykij jest darmowy?",
     a: "Tak — po rejestracji otrzymujesz 5 planów podróży całkowicie za darmo, bez podawania karty kredytowej. Jeśli chcesz więcej planów, możesz wybrać Pack (5 planów za 14,99 zł) lub Pro (nielimitowane plany za 19,99 zł/mies. lub 149,99 zł/rok).",
@@ -9,7 +9,7 @@ const FAQS = [
   },
   {
     q: "Skąd mogę planować wyjazd — tylko z Wrocławia?",
-    a: "Podajesz swoje miasto startowe i AI dopasowuje destynacje do Twojej lokalizacji. Obsługujemy wyjazdy z Wrocławia i okolic — plany generujemy dla całej Europy.",
+    a: "Nie. Wybierasz lotnisko wylotu: Wrocław, Katowice, Kraków, Warszawa, Modlin, Poznań albo Gdańsk. Plany układamy dla całej Europy.",
   },
   {
     q: "Ile trwa generowanie planu podróży?",
