@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useRef, useState, useEffect, useCallback } from "react";
 import { getCityPhotoUrl, FEATURED_DESTINATIONS } from "@/lib/cityPhotos";
 
@@ -36,7 +36,7 @@ const EXAMPLE_PLAN = [
 
 // ─── Shared style tokens ─────────────────────────────────────────────────────
 
-const GOLD = "#E8A030";
+const ACCENT = "#C4622D";
 const DARK = "#0D0A07";
 const OVERLINE: React.CSSProperties = {
   fontSize: 10,
@@ -47,6 +47,85 @@ const OVERLINE: React.CSSProperties = {
   marginBottom: 14,
 };
 
+// ─── Hero poster ─────────────────────────────────────────────────────────────
+// Flat railway-poster scene from the brand palette. The walker is the logo's
+// silhouette, standing on the ridge and looking out over the valley.
+
+const WALKER_PATHS = [
+  "M 4 78 C 28 64, 96 58, 154 62 C 168 64, 176 72, 170 78 C 168 82, 156 84, 138 86 C 90 92, 38 92, 14 88 C 4 86, -2 82, 4 78 Z",
+  "M 76 68 C 70 30, 88 12, 104 12 C 124 12, 134 32, 128 68 Z",
+  "M 86 86 L 86 96 C 78 98, 74 102, 78 108 C 80 112, 86 116, 94 118 L 116 118 C 122 118, 126 114, 126 108 L 126 86 Z",
+  "M 88 118 C 80 132, 76 158, 78 184 L 82 208 L 88 220 L 122 220 L 130 210 L 132 134 C 132 124, 126 118, 120 118 L 116 118 Z",
+  "M 130 124 C 148 126, 162 138, 162 156 L 162 196 C 162 206, 156 210, 148 208 L 132 204 L 132 134 C 132 124, 130 124, 130 124 Z",
+  "M 88 220 L 76 264 L 60 290 L 48 296 L 52 300 L 92 300 L 98 268 L 110 220 Z",
+  "M 112 220 L 118 244 L 130 268 L 154 274 L 166 270 L 160 264 L 146 260 L 134 252 L 126 232 L 122 220 Z",
+];
+
+// `crop` picks the window onto the 1440×900 scene: the full sky behind the copy
+// from tablet up, a tight frame on the sun and walker on phones.
+function HeroPoster({ id, crop, className }: { id: string; crop: string; className: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox={crop}
+      preserveAspectRatio="xMaxYMax slice"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <defs>
+        {/* Woodcut cuts through the lower half of the sun */}
+        <mask id={`${id}-sun-cuts`}>
+          <rect width="1440" height="900" fill="white" />
+          {[0, 1, 2, 3, 4].map((i) => (
+            <rect key={i} x="0" y={772 + i * 20} width="1440" height={6 + i * 3} fill="black" />
+          ))}
+        </mask>
+        {/* Grain fades in toward the land so the sky meets the page without a seam */}
+        <linearGradient id={`${id}-grain-fade`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0.6" stopColor="white" stopOpacity="0" />
+          <stop offset="0.8" stopColor="white" stopOpacity="1" />
+        </linearGradient>
+        <mask id={`${id}-grain-mask`}>
+          <rect width="1440" height="900" fill={`url(#${id}-grain-fade)`} />
+        </mask>
+        <filter id={`${id}-grain`}>
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch" />
+          <feColorMatrix type="saturate" values="0" />
+          <feComponentTransfer>
+            <feFuncA type="table" tableValues="0 0.22" />
+          </feComponentTransfer>
+        </filter>
+      </defs>
+
+      <circle cx="1180" cy="760" r="160" fill="var(--accent)" mask={`url(#${id}-sun-cuts)`} />
+
+      {/* Far ridge */}
+      <path
+        d="M0 806 C 220 786, 420 792, 640 774 C 860 760, 1040 792, 1240 786 C 1340 783, 1400 776, 1440 772 L1440 900 L0 900 Z"
+        fill="var(--border)"
+      />
+      {/* Middle ridge */}
+      <path
+        d="M0 846 C 260 828, 520 838, 760 822 C 960 810, 1100 830, 1300 826 C 1370 824, 1420 821, 1440 819 L1440 900 L0 900 Z"
+        fill="var(--text-muted)"
+      />
+      {/* Near ridge the walker stands on */}
+      <path
+        d="M0 886 C 300 876, 620 882, 880 870 C 1000 864, 1060 858, 1140 859 C 1240 860, 1340 868, 1440 872 L1440 900 L0 900 Z"
+        fill="var(--green)"
+      />
+
+      <g transform="translate(1086 650) scale(0.72)" fill="var(--text-primary)">
+        {WALKER_PATHS.map((d) => (
+          <path key={d} d={d} />
+        ))}
+      </g>
+
+      <rect width="1440" height="900" filter={`url(#${id}-grain)`} mask={`url(#${id}-grain-mask)`} />
+    </svg>
+  );
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: string[] }) {
@@ -55,18 +134,6 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
     document.body.classList.add("is-home");
     return () => document.body.classList.remove("is-home");
   }, []);
-
-  /* ── hero rotating background ── */
-  const [heroIdx, setHeroIdx] = useState(0);
-  const heroPhotos =
-    galleryPhotos.length >= 3
-      ? galleryPhotos.slice(0, 5)
-      : FEATURED_DESTINATIONS.slice(0, 5).map((d) => getCityPhotoUrl(d.city, 1400));
-
-  useEffect(() => {
-    const id = setInterval(() => setHeroIdx((i) => (i + 1) % heroPhotos.length), 5500);
-    return () => clearInterval(id);
-  }, [heroPhotos.length]);
 
   /* ── destinations carousel ── */
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -95,85 +162,32 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
     <div>
 
       {/* ════════════════════════════════════════════════════════════════════
-          §1  HERO — Full viewport, cinematic, rotating city photos
+          §1  HERO — sand railway poster: walker, setting sun, flat hills
           ════════════════════════════════════════════════════════════════════ */}
-      <section
-        style={{
-          position: "relative",
-          height: "100dvh",
-          minHeight: 620,
-          overflow: "hidden",
-        }}
-      >
-        {/* Rotating background photo */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={heroIdx}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 1.6, ease: "easeInOut" }}
-            style={{ position: "absolute", inset: 0 }}
-          >
-            <Image
-              src={heroPhotos[heroIdx]}
-              alt="Europejskie miasto"
-              fill
-              sizes="100vw"
-              className="object-cover"
-              priority
-            />
-          </motion.div>
-        </AnimatePresence>
-
-        {/* Deep gradient — bottom heavy so text pops */}
-        <div
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            inset: 0,
-            background:
-              "linear-gradient(to bottom, rgba(8,5,2,0.45) 0%, rgba(8,5,2,0.58) 35%, rgba(8,5,2,0.82) 65%, rgba(8,5,2,0.97) 100%)",
-          }}
-        />
+      <section className="home-hero">
+        <HeroPoster id="hero-wide" crop="0 0 1440 900" className="home-hero-art home-hero-art--wide" />
+        <HeroPoster id="hero-phone" crop="760 560 680 340" className="home-hero-art home-hero-art--phone" />
 
         {/* ── Content ── */}
-        <div
-          style={{
-            position: "relative",
-            zIndex: 2,
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "flex-end",
-            padding: "72px 28px 84px",   /* top pad = fixed nav height */
-            maxWidth: 920,
-          }}
-        >
-          {/* Badge */}
-          <motion.div
+        <div className="home-hero-copy">
+          <motion.p
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.45 }}
             style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              background: "rgba(196,98,45,0.82)",
-              backdropFilter: "blur(10px)",
+              display: "inline-block",
+              background: "var(--accent)",
               color: "white",
               borderRadius: 999,
               padding: "6px 14px",
               fontSize: 12,
               fontWeight: 700,
               marginBottom: 22,
-              width: "fit-content",
               letterSpacing: "0.02em",
-              border: "1px solid rgba(255,255,255,0.1)",
             }}
           >
-            <span>5 planów za darmo · loty z 7 polskich lotnisk</span>
-          </motion.div>
+            5 planów za darmo · loty z 7 polskich lotnisk
+          </motion.p>
 
           {/* Headline — Cormorant Garamond, massive, editorial */}
           <motion.h1
@@ -182,17 +196,17 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
             transition={{ duration: 0.85, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
             style={{
               fontFamily: "var(--font-heading)",
-              fontSize: "clamp(44px, 12vw, 86px)",
+              fontSize: "clamp(44px, min(12vw, 9vh), 86px)",
               lineHeight: 1.02,
               fontWeight: 700,
-              color: "white",
+              color: "var(--text-primary)",
               letterSpacing: "-0.03em",
               marginBottom: 18,
             }}
           >
             Masz wolny weekend<br />
             i trochę kasy?<br />
-            <em style={{ fontStyle: "italic", color: GOLD }}>My mamy plan.</em>
+            <em style={{ fontStyle: "italic", color: ACCENT }}>My mamy plan.</em>
           </motion.h1>
 
           <motion.p
@@ -200,8 +214,8 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.65, delay: 0.3, ease: "easeOut" }}
             style={{
-              color: "rgba(255,255,255,0.66)",
-              fontSize: "clamp(14px, 3.5vw, 17px)",
+              color: "var(--text-secondary)",
+              fontSize: "clamp(15px, 3.5vw, 17px)",
               lineHeight: 1.7,
               maxWidth: 400,
               marginBottom: 30,
@@ -230,7 +244,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
                 textDecoration: "none",
                 fontSize: 16,
                 letterSpacing: "0.01em",
-                boxShadow: "0 4px 28px rgba(196,98,45,0.45)",
+                boxShadow: "0 6px 20px rgba(196,98,45,0.28)",
               }}
             >
               Zaplanuj wyjazd — za darmo →
@@ -238,8 +252,9 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
             <Link
               href="/quick"
               style={{
-                color: "rgba(255,255,255,0.78)",
+                color: "var(--text-primary)",
                 textDecoration: "underline",
+                textDecorationColor: "var(--accent)",
                 textUnderlineOffset: 4,
                 fontSize: 15,
                 fontWeight: 600,
@@ -254,100 +269,12 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.82 }}
-            style={{ color: "rgba(255,255,255,0.72)", fontSize: 13, marginTop: 14 }}
+            style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 14 }}
           >
             6 pytań · darmowe konto · 5 planów gratis, bez karty
           </motion.p>
         </div>
-
-        {/* Photo dots — bottom left, away from the menu button */}
-        <div
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            bottom: 18,
-            left: 24,
-            display: "flex",
-            gap: 6,
-            zIndex: 3,
-          }}
-        >
-          {heroPhotos.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setHeroIdx(i)}
-              aria-label={`Zdjęcie tła ${i + 1}`}
-              tabIndex={-1}
-              style={{
-                // 24px hit area, 4px visible bar
-                width: i === heroIdx ? 24 : 12,
-                height: 24,
-                borderRadius: 2,
-                background: i === heroIdx ? GOLD : "rgba(255,255,255,0.3)",
-                backgroundClip: "content-box",
-                border: "none",
-                padding: i === heroIdx ? "10px 0" : "10px 3px",
-                cursor: "pointer",
-                transition: "all 0.35s cubic-bezier(0.4,0,0.2,1)",
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Scroll bounce indicator */}
-        <motion.div
-          aria-hidden="true"
-          animate={{ y: [0, 9, 0] }}
-          transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
-          style={{
-            position: "absolute",
-            bottom: 22,
-            left: "50%",
-            transform: "translateX(-50%)",
-            color: "rgba(255,255,255,0.28)",
-            fontSize: 18,
-            zIndex: 3,
-            userSelect: "none",
-            pointerEvents: "none",
-          }}
-        >
-          ↓
-        </motion.div>
       </section>
-
-      {/* ════════════════════════════════════════════════════════════════════
-          §2  MARQUEE — accent strip scrolling with destination names
-          ════════════════════════════════════════════════════════════════════ */}
-      <div
-        aria-hidden="true"
-        style={{ background: "var(--accent)", overflow: "hidden", padding: "11px 0" }}
-      >
-        <div className="marquee-track">
-          <div className="marquee-inner">
-            {[...FEATURED_DESTINATIONS, ...FEATURED_DESTINATIONS].map((d, i) => (
-              <span
-                key={i}
-                style={{
-                  flexShrink: 0,
-                  color: "white",
-                  fontSize: 11,
-                  fontWeight: 800,
-                  letterSpacing: "0.07em",
-                  marginRight: 36,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  textTransform: "uppercase",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {d.flag}&nbsp;{d.city}&nbsp;·&nbsp;{d.priceFrom}
-                <span style={{ opacity: 0.32 }}>✦</span>
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
 
       {/* ════════════════════════════════════════════════════════════════════
           §3  HOW IT WORKS — dark, editorial, numbered steps
@@ -381,7 +308,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
             }}
           >
             3 minuty od teraz<br />
-            <em style={{ color: GOLD, fontStyle: "italic" }}>do gotowego planu.</em>
+            <em style={{ color: ACCENT, fontStyle: "italic" }}>do gotowego planu.</em>
           </motion.h2>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 44 }}>
@@ -436,14 +363,14 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
                 display: "block",
                 textAlign: "center",
                 textDecoration: "none",
-                background: GOLD,
+                background: ACCENT,
                 color: DARK,
                 fontWeight: 800,
                 borderRadius: 14,
                 padding: "16px 28px",
                 fontSize: 16,
                 letterSpacing: "0.01em",
-                boxShadow: `0 4px 28px rgba(232,160,48,0.22)`,
+                boxShadow: `0 4px 28px rgba(196,98,45,0.22)`,
               }}
             >
               Zacznij za darmo — 6 pytań →
@@ -480,7 +407,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
               marginBottom: 10,
             }}
           >
-            Barcelona, 5 dni.<br />
+            Barcelona, weekend.<br />
             <em style={{ fontStyle: "italic", color: "var(--accent)" }}>Łącznie 2 200 PLN.</em>
           </motion.h2>
 
@@ -526,7 +453,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
             >
               <div>
                 <p style={{ fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", opacity: 0.68, marginBottom: 4 }}>
-                  Dzień 1 — Wtorek
+                  Dzień 1 — Piątek
                 </p>
                 <p style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-0.01em" }}>
                   Barcelona, Katalonia 🇪🇸
@@ -736,7 +663,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
                   </p>
                   <p
                     style={{
-                      color: GOLD,
+                      color: ACCENT,
                       fontSize: 16,
                       fontWeight: 800,
                       marginTop: 10,
@@ -840,7 +767,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
             }}
           >
             Twój następny wyjazd<br />
-            <em style={{ fontStyle: "italic", color: GOLD }}>zaczyna się tutaj.</em>
+            <em style={{ fontStyle: "italic", color: ACCENT }}>zaczyna się tutaj.</em>
           </motion.h2>
 
           <motion.p
@@ -870,7 +797,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
               href="/quiz"
               style={{
                 display: "inline-block",
-                background: GOLD,
+                background: ACCENT,
                 color: DARK,
                 fontWeight: 800,
                 borderRadius: 14,
@@ -878,7 +805,7 @@ export default function HomeClient({ galleryPhotos = [] }: { galleryPhotos?: str
                 textDecoration: "none",
                 fontSize: 16,
                 letterSpacing: "0.01em",
-                boxShadow: "0 6px 32px rgba(232,160,48,0.28)",
+                boxShadow: "0 6px 32px rgba(196,98,45,0.28)",
               }}
             >
               Zaplanuj wyjazd za darmo →

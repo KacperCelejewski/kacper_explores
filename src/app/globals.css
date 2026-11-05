@@ -197,7 +197,7 @@ h1, h2, h3 {
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
 
 /* ================================================================
-   HOME PAGE — full-width override + cinematic nav + marquee
+   HOME PAGE — full-width override + fixed nav + poster hero
    ================================================================ */
 
 /* 1. Unlock the 448px shell for the landing page */
@@ -206,22 +206,22 @@ body.is-home main.app-shell {
   padding: 0;
 }
 
-/* 2. Fixed, frosted-glass nav over the hero */
+/* 2. Fixed nav over the sand poster hero */
 body.is-home main.app-shell > nav {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 200;
-  background: rgba(8, 5, 2, 0.58) !important;
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07) !important;
+  background: rgba(245, 239, 224, 0.9) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border) !important;
   max-width: none;
 }
 
-body.is-home main.app-shell > nav a {
-  color: rgba(255, 255, 255, 0.78) !important;
+body.is-home main.app-shell > nav a:not([href="/login"]) {
+  color: var(--text-secondary) !important;
 }
 
 /* 3. Keep FAQ + footer centered at comfortable reading width */
@@ -243,23 +243,58 @@ body.is-home section[id] {
   scroll-margin-top: 72px;
 }
 
-/* 5. Continuous marquee animation */
-@keyframes marquee-scroll {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
-}
-
-.marquee-track {
+/* 5. Poster hero: art below the copy on phones, behind it from tablet up */
+.home-hero {
+  position: relative;
+  background: var(--bg-primary);
   overflow: hidden;
-}
-
-.marquee-inner {
   display: flex;
-  width: max-content;
-  animation: marquee-scroll 36s linear infinite;
-  will-change: transform;
+  flex-direction: column;
 }
 
-.marquee-inner:hover {
-  animation-play-state: paused;
+.home-hero-copy {
+  position: relative;
+  z-index: 2;
+  padding: 104px 24px 8px;
+  max-width: 640px;
+}
+
+.home-hero-art {
+  display: block;
+  order: 2;
+  width: 100%;
+  margin-top: 24px;
+}
+
+.home-hero-art--phone {
+  aspect-ratio: 680 / 340;
+  height: auto;
+}
+
+.home-hero-art--wide {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .home-hero {
+    min-height: 100dvh;
+    justify-content: center;
+  }
+
+  .home-hero-copy {
+    /* Bottom room keeps the copy above the hills, which fill the lowest ~14% of the art */
+    padding: 104px 48px max(80px, 18vh);
+  }
+
+  .home-hero-art--phone {
+    display: none;
+  }
+
+  .home-hero-art--wide {
+    display: block;
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    margin-top: 0;
+  }
 }
