@@ -50,7 +50,7 @@ const OVERLINE: React.CSSProperties = {
 
 // ─── Hero poster ─────────────────────────────────────────────────────────────
 // Flat railway-poster scene from the brand palette. The walker is the logo's
-// silhouette, standing on the ridge and looking out over the valley.
+// silhouette, hopping across stepping stones in a stream and back again.
 
 const WALKER_PATHS = [
   "M 4 78 C 28 64, 96 58, 154 62 C 168 64, 176 72, 170 78 C 168 82, 156 84, 138 86 C 90 92, 38 92, 14 88 C 4 86, -2 82, 4 78 Z",
@@ -61,6 +61,17 @@ const WALKER_PATHS = [
   "M 88 220 L 76 264 L 60 290 L 48 296 L 52 300 L 92 300 L 98 268 L 110 220 Z",
   "M 112 220 L 118 244 L 130 268 L 154 274 L 166 270 L 160 264 L 146 260 L 134 252 L 126 232 L 122 220 Z",
 ];
+
+// Stepping stones, right to left. `top` is where the walker's feet land; the
+// hop offsets in globals.css (.hero-hop-*) are measured from the first stone.
+const STONES = [
+  { x: 1300, w: 112, h: 36 },
+  { x: 1150, w: 96, h: 32 },
+  { x: 1000, w: 108, h: 40 },
+  { x: 850, w: 120, h: 34 },
+];
+const STREAM_BED = 882;
+const stoneTop = (h: number) => STREAM_BED - 0.75 * h;
 
 // `crop` picks the window onto the 1440×900 scene: the full sky behind the copy
 // from tablet up, a tight frame on the sun and walker on phones.
@@ -110,16 +121,49 @@ function HeroPoster({ id, crop, className }: { id: string; crop: string; classNa
         d="M0 846 C 260 828, 520 838, 760 822 C 960 810, 1100 830, 1300 826 C 1370 824, 1420 821, 1440 819 L1440 900 L0 900 Z"
         fill="var(--text-muted)"
       />
-      {/* Near ridge the walker stands on */}
+      {/* Near bank */}
       <path
         d="M0 886 C 300 876, 620 882, 880 870 C 1000 864, 1060 858, 1140 859 C 1240 860, 1340 868, 1440 872 L1440 900 L0 900 Z"
         fill="var(--green)"
       />
+      {/* Stream across the foreground */}
+      <path
+        d="M0 888 C 360 880, 720 884, 1000 877 C 1180 873, 1320 875, 1440 879 L1440 900 L0 900 Z"
+        fill="var(--water)"
+      />
 
-      <g transform="translate(1086 650) scale(0.72)" fill="var(--text-primary)">
-        {WALKER_PATHS.map((d) => (
-          <path key={d} d={d} />
-        ))}
+      {STONES.map(({ x, w, h }) => (
+        <g key={x}>
+          <path
+            d={`M${x - w / 2 - 10} ${STREAM_BED + 2} h${w + 20}`}
+            stroke="var(--bg-primary)"
+            strokeOpacity="0.45"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+          <path
+            d={`M${x - w / 2} ${STREAM_BED} C ${x - w / 2} ${STREAM_BED - h}, ${x + w / 2} ${STREAM_BED - h}, ${x + w / 2} ${STREAM_BED} Z`}
+            fill="var(--text-secondary)"
+          />
+          <ellipse cx={x - w * 0.12} cy={stoneTop(h) + 4} rx={w * 0.22} ry="3" fill="var(--text-muted)" />
+        </g>
+      ))}
+
+      {/* Feet sit at the local origin so the squash and the turn pivot on the stone */}
+      <g transform={`translate(${STONES[0].x} ${stoneTop(STONES[0].h)})`} fill="var(--text-primary)">
+        <g className="hero-hop-x">
+          <g className="hero-hop-y">
+            <g className="hero-hop-face">
+              <g className="hero-hop-squash">
+                <g transform="scale(0.72) translate(-88 -300)">
+                  {WALKER_PATHS.map((d) => (
+                    <path key={d} d={d} />
+                  ))}
+                </g>
+              </g>
+            </g>
+          </g>
+        </g>
       </g>
 
       <rect width="1440" height="900" filter={`url(#${id}-grain)`} mask={`url(#${id}-grain-mask)`} />
@@ -227,11 +271,11 @@ export default function HomeClient({
     <div>
 
       {/* ════════════════════════════════════════════════════════════════════
-          §1  HERO — sand railway poster: walker, setting sun, flat hills
+          §1  HERO — sand railway poster: walker hopping stones, setting sun
           ════════════════════════════════════════════════════════════════════ */}
       <section className="home-hero">
         <HeroPoster id="hero-wide" crop="0 0 1440 900" className="home-hero-art home-hero-art--wide" />
-        <HeroPoster id="hero-phone" crop="760 560 680 340" className="home-hero-art home-hero-art--phone" />
+        <HeroPoster id="hero-phone" crop="720 540 720 360" className="home-hero-art home-hero-art--phone" />
 
         {/* ── Content ── */}
         <div className="home-hero-copy">
