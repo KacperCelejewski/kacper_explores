@@ -11,23 +11,23 @@ import { getCityPhotoUrl, FEATURED_DESTINATIONS } from "@/lib/cityPhotos";
 const STEPS = [
   {
     num: "01",
-    title: "6 pytań o Ciebie",
-    desc: "Kto jedzie, kiedy, jaki masz budżet i co lubisz robić. Zajmuje mniej niż 3 minuty.",
+    title: "6 pytań o Ciebie",
+    desc: "Kto jedzie, kiedy, jaki masz budżet i co lubisz robić. Zajmuje mniej niż 3 minuty.",
   },
   {
     num: "02",
     title: "Dostajesz 6 kierunków skrojonych pod Ciebie",
-    desc: "Patrzymy na budżet, styl i termin, i dobieramy 6 miejsc, które mieszczą się w Twoich widełkach. Z cenami lotów z Twojego lotniska.",
+    desc: "Patrzymy na budżet, styl i termin, i dobieramy 6 miejsc, które mieszczą się w Twoich widełkach. Z cenami lotów z Twojego lotniska.",
   },
   {
     num: "03",
     title: "Plan godzina po godzinie",
-    desc: "Śniadania, muzea, restauracje — z cenami, trasami i trikami budżetowymi. Gotowy od razu.",
+    desc: "Śniadania, muzea, restauracje — z cenami, trasami i trikami budżetowymi. Gotowy od razu.",
   },
 ];
 
 const EXAMPLE_PLAN = [
-  { time: "08:30", emoji: "☕", text: "Śniadanie w lokalnej piekarni — croissant + kawa, ~4 EUR" },
+  { time: "08:30", emoji: "☕", text: "Śniadanie w lokalnej piekarni — croissant + kawa, ~4 EUR" },
   { time: "10:00", emoji: "🏛️", text: "Park Güell — wejście 10 EUR, widok na całą Barcelonę" },
   { time: "13:00", emoji: "🥘", text: "Obiad na Mercat de Santa Caterina — 2x tapas za 9 EUR" },
   { time: "16:00", emoji: "🏖️", text: "Plaża Barceloneta — bezpłatna, leżak 3 EUR" },
@@ -40,7 +40,7 @@ const EXAMPLE_PLAN = [
 const ACCENT = "var(--accent-poster)";
 const DARK = "#0D0A07";
 const OVERLINE: React.CSSProperties = {
-  fontSize: 10,
+  fontSize: 12,
   fontWeight: 800,
   textTransform: "uppercase",
   letterSpacing: "0.13em",
@@ -236,9 +236,7 @@ export default function HomeClient({
         {/* ── Content ── */}
         <div className="home-hero-copy">
           <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.45 }}
+            initial={false}
             style={{
               display: "inline-block",
               background: "var(--accent)",
@@ -256,9 +254,7 @@ export default function HomeClient({
 
           {/* Headline — Cormorant Garamond, massive, editorial */}
           <motion.h1
-            initial={{ opacity: 0, y: 36 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.85, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+            initial={false}
             style={{
               fontFamily: "var(--font-heading)",
               fontSize: "clamp(44px, min(12vw, 9vh), 86px)",
@@ -275,9 +271,7 @@ export default function HomeClient({
           </motion.h1>
 
           <motion.p
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.65, delay: 0.3, ease: "easeOut" }}
+            initial={false}
             style={{
               color: "var(--text-secondary)",
               fontSize: "clamp(15px, 3.5vw, 17px)",
@@ -287,14 +281,12 @@ export default function HomeClient({
             }}
           >
             Odpowiedz na 6 pytań. Dostaniesz 6 kierunków
-            dopasowanych do Ciebie i plan godzina po godzinie.
+            dopasowanych do Ciebie i plan godzina po godzinie.
           </motion.p>
 
           {/* CTAs */}
           <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.5, ease: "easeOut" }}
+            initial={false}
             style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}
           >
             <Link
@@ -331,9 +323,7 @@ export default function HomeClient({
           </motion.div>
 
           <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.82 }}
+            initial={false}
             style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 14 }}
           >
             6 pytań · darmowe konto · 5 planów gratis, bez karty
@@ -518,7 +508,7 @@ export default function HomeClient({
               }}
             >
               <div>
-                <p style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", opacity: 0.9, marginBottom: 4 }}>
+                <p style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", opacity: 0.9, marginBottom: 4 }}>
                   Dzień 1 — Piątek
                 </p>
                 <p style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-0.01em" }}>
@@ -526,7 +516,7 @@ export default function HomeClient({
                 </p>
               </div>
               <div style={{ textAlign: "right" }}>
-                <p style={{ fontSize: 11, opacity: 0.9, marginBottom: 3 }}>Budżet dnia</p>
+                <p style={{ fontSize: 12, opacity: 0.9, marginBottom: 3 }}>Budżet dnia</p>
                 <p style={{ fontSize: 19, fontWeight: 800, letterSpacing: "-0.03em" }}>~95 EUR</p>
               </div>
             </div>
@@ -576,6 +566,8 @@ export default function HomeClient({
               <Link
                 href="/quiz"
                 style={{
+                  display: "inline-block",
+                  padding: "6px 0",
                   fontSize: 13,
                   fontWeight: 700,
                   color: "var(--accent)",
@@ -623,13 +615,14 @@ export default function HomeClient({
             <Link
               href="/quiz"
               style={{
+                display: "inline-block",
+                padding: "6px 0",
                 fontSize: 12,
                 fontWeight: 700,
                 color: "var(--accent)",
                 textDecoration: "none",
                 flexShrink: 0,
                 marginLeft: 16,
-                paddingBottom: 4,
               }}
             >
               Dopasuj do siebie →
@@ -699,7 +692,7 @@ export default function HomeClient({
                 <div style={{ position: "absolute", top: 14, left: 14 }}>
                   <span
                     style={{
-                      fontSize: 11,
+                      fontSize: 12,
                       fontWeight: 800,
                       padding: "4px 10px",
                       borderRadius: 999,
@@ -799,7 +792,7 @@ export default function HomeClient({
             }}
           >
             W piątek rano<br />
-            <em style={{ fontStyle: "italic", color: ACCENT }}>możesz już być w drodze.</em>
+            <em style={{ fontStyle: "italic", color: ACCENT }}>możesz już być w drodze.</em>
           </motion.h2>
 
           <motion.div

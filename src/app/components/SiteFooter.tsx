@@ -13,7 +13,7 @@ export default function SiteFooter() {
           </p>
           <a
             href="mailto:hej@wloczykij.me"
-            className="text-xs"
+            className="text-xs inline-block py-1.5"
             style={{ color: "var(--text-muted)", textDecoration: "none" }}
           >
             hej@wloczykij.me
@@ -22,42 +22,42 @@ export default function SiteFooter() {
         <div className="flex items-center flex-wrap gap-x-4 gap-y-2">
           <Link
             href="/"
-            className="text-xs"
+            className="text-xs inline-block py-1.5"
             style={{ color: "var(--text-muted)", textDecoration: "none" }}
           >
             Strona główna
           </Link>
           <Link
             href="/blog"
-            className="text-xs"
+            className="text-xs inline-block py-1.5"
             style={{ color: "var(--text-muted)", textDecoration: "none" }}
           >
             Blog
           </Link>
           <Link
             href="/pricing"
-            className="text-xs"
+            className="text-xs inline-block py-1.5"
             style={{ color: "var(--text-muted)", textDecoration: "none" }}
           >
             Cennik
           </Link>
           <Link
             href="/regulamin"
-            className="text-xs"
+            className="text-xs inline-block py-1.5"
             style={{ color: "var(--text-muted)", textDecoration: "none" }}
           >
             Regulamin
           </Link>
           <Link
             href="/privacy"
-            className="text-xs"
+            className="text-xs inline-block py-1.5"
             style={{ color: "var(--text-muted)", textDecoration: "none" }}
           >
             Prywatność
           </Link>
           <Link
             href="/quiz"
-            className="text-xs font-semibold"
+            className="text-xs font-semibold inline-block py-1.5"
             style={{ color: "var(--accent)", textDecoration: "none" }}
           >
             Zaplanuj podróż →
