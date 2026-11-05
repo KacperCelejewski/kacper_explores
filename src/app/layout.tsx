@@ -5,6 +5,7 @@ import "./globals.css";
 import GlobalMenu from "@/app/components/GlobalMenu";
 import CookieBanner from "@/app/components/CookieBanner";
 import NewsletterPopup from "@/app/components/NewsletterPopup";
+import MotionProvider from "@/app/components/MotionProvider";
 
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-body" });
@@ -55,12 +56,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pl" className={`${geist.variable} ${cormorant.variable}`}>
       <body>
         <a href="#main-content" className="skip-link">Przejdź do treści</a>
-        <main id="main-content" className="app-shell">
-          {children}
-          <GlobalMenu />
-          <CookieBanner />
-          <NewsletterPopup />
-        </main>
+        <MotionProvider>
+          <main id="main-content" className="app-shell">
+            {children}
+            <GlobalMenu />
+            <CookieBanner />
+            <NewsletterPopup />
+          </main>
+        </MotionProvider>
         <Script
           id="sw-register"
           strategy="lazyOnload"
