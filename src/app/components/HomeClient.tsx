@@ -127,6 +127,63 @@ function HeroPoster({ id, crop, className }: { id: string; crop: string; classNa
   );
 }
 
+// Closing scene: same poster world at dusk, the walker heading off toward the sun.
+function DuskPoster() {
+  return (
+    <svg
+      viewBox="0 0 1440 360"
+      preserveAspectRatio="xMidYMax slice"
+      aria-hidden="true"
+      focusable="false"
+      style={{ display: "block", width: "100%", height: "clamp(200px, 24vw, 340px)" }}
+    >
+      <defs>
+        <mask id="dusk-sun-cuts">
+          <rect width="1440" height="360" fill="white" />
+          {[0, 1, 2, 3].map((i) => (
+            <rect key={i} x="0" y={226 + i * 20} width="1440" height={5 + i * 3} fill="black" />
+          ))}
+        </mask>
+        <clipPath id="dusk-ink">
+          <circle cx="720" cy="270" r="150" />
+          <path d="M0 270 C 240 250, 480 262, 700 246 C 900 232, 1120 258, 1440 244 L1440 360 L0 360 Z" />
+        </clipPath>
+        <filter id="dusk-grain">
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch" />
+          <feColorMatrix type="saturate" values="0" />
+          <feComponentTransfer>
+            <feFuncA type="table" tableValues="0 0.18" />
+          </feComponentTransfer>
+        </filter>
+      </defs>
+
+      <circle cx="720" cy="270" r="150" fill="var(--accent-poster)" mask="url(#dusk-sun-cuts)" />
+      <path
+        d="M0 270 C 240 250, 480 262, 700 246 C 900 232, 1120 258, 1440 244 L1440 360 L0 360 Z"
+        fill="var(--text-secondary)"
+      />
+      <path
+        d="M0 312 C 300 296, 560 306, 760 292 C 960 280, 1180 300, 1440 290 L1440 360 L0 360 Z"
+        fill="var(--text-muted)"
+      />
+      <path
+        d="M0 346 C 280 336, 560 340, 780 326 C 900 318, 1000 316, 1120 322 C 1260 328, 1360 336, 1440 338 L1440 360 L0 360 Z"
+        fill="var(--green)"
+      />
+
+      {/* Mirrored so he walks right, toward the sun and off the page */}
+      <g transform="translate(828 158) scale(-0.56 0.56)" fill="var(--text-primary)">
+        {WALKER_PATHS.map((d) => (
+          <path key={d} d={d} />
+        ))}
+      </g>
+
+      {/* Grain only on the sun and land, so the sky meets the section without a seam */}
+      <rect width="1440" height="360" filter="url(#dusk-grain)" clipPath="url(#dusk-ink)" />
+    </svg>
+  );
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function HomeClient({
@@ -626,6 +683,8 @@ export default function HomeClient({
                   fill
                   sizes="360px"
                   className="object-cover"
+                  // Warm, slightly faded print so the photos sit in the poster palette
+                  style={{ filter: "sepia(0.32) saturate(0.82) contrast(1.04)" }}
                 />
                 {/* Gradient overlay */}
                 <div
@@ -717,39 +776,10 @@ export default function HomeClient({
       {faq}
 
       {/* ════════════════════════════════════════════════════════════════════
-          §6  FINAL CTA — full-bleed photo, centered call to action
+          §6  FINAL CTA — dusk poster: the walker heads off over the ridge
           ════════════════════════════════════════════════════════════════════ */}
-      <section
-        style={{
-          position: "relative",
-          minHeight: 460,
-          overflow: "hidden",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Image
-          src={galleryPhotos[2] || getCityPhotoUrl("Santorini", 1400)}
-          alt=""
-          fill
-          sizes="100vw"
-          className="object-cover"
-        />
-        {/* Dark tint */}
-        <div
-          style={{ position: "absolute", inset: 0, background: "rgba(8,5,2,0.78)" }}
-          aria-hidden="true"
-        />
-
-        <div
-          style={{
-            position: "relative",
-            zIndex: 2,
-            textAlign: "center",
-            padding: "88px 28px",
-          }}
-        >
+      <section style={{ background: "var(--text-primary)", overflow: "hidden" }}>
+        <div style={{ textAlign: "center", padding: "96px 28px 8px" }}>
           <motion.h2
             initial={{ opacity: 0, y: 22 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -759,20 +789,20 @@ export default function HomeClient({
               fontSize: "clamp(34px, 11vw, 62px)",
               fontWeight: 700,
               lineHeight: 1.05,
-              color: "white",
+              color: "var(--bg-primary)",
               letterSpacing: "-0.03em",
               marginBottom: 32,
             }}
           >
-            Twój następny wyjazd<br />
-            <em style={{ fontStyle: "italic", color: ACCENT }}>zaczyna się tutaj.</em>
+            W piątek rano<br />
+            <em style={{ fontStyle: "italic", color: ACCENT }}>możesz już być w drodze.</em>
           </motion.h2>
 
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ delay: 0.3 }}
+            transition={{ delay: 0.2 }}
           >
             <Link
               href="/quiz"
@@ -786,23 +816,18 @@ export default function HomeClient({
                 textDecoration: "none",
                 fontSize: 16,
                 letterSpacing: "0.01em",
-                boxShadow: "0 6px 32px rgba(196,98,45,0.28)",
               }}
             >
               Zaplanuj wyjazd za darmo →
             </Link>
           </motion.div>
 
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.46 }}
-            style={{ color: "rgba(255,255,255,0.72)", fontSize: 13, marginTop: 14 }}
-          >
+          <p style={{ color: "rgba(245,239,224,0.78)", fontSize: 13, marginTop: 14 }}>
             6 pytań · darmowe konto · 5 planów gratis, bez karty
-          </motion.p>
+          </p>
         </div>
+
+        <DuskPoster />
       </section>
 
     </div>
