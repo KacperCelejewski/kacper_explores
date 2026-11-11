@@ -21,7 +21,13 @@ export function latestWeeks(weeks: string[], n: number): string[] {
   return [...new Set(weeks)].sort().reverse().slice(0, n);
 }
 
-/** Czy błąd PostgREST/Postgres oznacza brak tabeli (migracja niezastosowana). */
+/**
+ * Czy błąd PostgREST/Postgres oznacza brak tabeli lub kolumny (migracja niezastosowana).
+ * newsletter_subscribers istnieje już przed migracją, więc brakuje tam tylko kolumn drop_enabled/airports (42703).
+ */
 export function isMissingTableError(error: { code?: string } | null | undefined): boolean {
-  return error?.code === "42P01" || error?.code === "PGRST205";
+  const code = error?.code;
+  return (
+    code === "42P01" || code === "PGRST205" || code === "42703" || code === "PGRST204" || code === "PGRST200"
+  );
 }

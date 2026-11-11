@@ -42,6 +42,9 @@ describe("isMissingTableError", () => {
   it("rozpoznaje brak tabeli", () => {
     expect(isMissingTableError({ code: "42P01" })).toBe(true);
     expect(isMissingTableError({ code: "PGRST205" })).toBe(true);
+    expect(isMissingTableError({ code: "42703" })).toBe(true);
+    expect(isMissingTableError({ code: "PGRST204" })).toBe(true);
+    expect(isMissingTableError({ code: "PGRST200" })).toBe(true);
     expect(isMissingTableError({ code: "23505" })).toBe(false);
     expect(isMissingTableError(null)).toBe(false);
   });
