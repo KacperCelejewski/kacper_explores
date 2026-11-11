@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { stripe } from "@/lib/stripe";
 import PurchaseTracker from "./PurchaseTracker";
+import { purchaseFromSession } from "@/lib/analytics";
 
 interface Props {
   searchParams: Promise<{ session_id?: string }>;
@@ -20,14 +21,7 @@ export default async function PaymentSuccessPage({ searchParams }: Props) {
       });
       valid = session.payment_status === "paid" || session.status === "complete";
       isPro = session.mode === "subscription";
-      if (valid && session.amount_total != null) {
-        purchase = {
-          id: session.id,
-          value: session.amount_total / 100,
-          currency: (session.currency ?? "pln").toUpperCase(),
-          plan: session.metadata?.plan_key ?? "unknown",
-        };
-      }
+      purchase = purchaseFromSession(session);
     } catch {
       // invalid or expired session_id — treat as unknown
     }

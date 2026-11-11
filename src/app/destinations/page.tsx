@@ -1,7 +1,8 @@
 "use client";
 
 import { trackEvent } from "@/lib/analytics";
-import { flightLink, partnerLinkProps } from "@/lib/affiliate";
+import { flightLink, partnerLinkProps, type PartnerLink } from "@/lib/affiliate";
+import { PartnerNote } from "@/app/components/PartnerLinks";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -310,6 +311,7 @@ function DestCard({
 }) {
   const highlights = (dest as DestinationRecommendation & { highlights?: string[] }).highlights ?? [];
   const [photoUrl, setPhotoUrl] = useState(() => getCityPhotoUrl(dest.city, 800));
+  const flight: PartnerLink = flightLink(dest.bestOffer) ?? { href: buildSkyscannerUrl(dest, airports), partner: "skyscanner", paid: false };
   const fetchedRef = useRef(false);
 
   useEffect(() => {
@@ -419,14 +421,11 @@ function DestCard({
             <p className="font-bold text-sm" style={{ color: "var(--accent)" }}>
               {dest.estimatedFlightCost ?? "—"}
             </p>
+            <PartnerNote show={flight.paid} />
           </div>
           <div className="flex gap-2">
             <a
-              {...partnerLinkProps(
-                flightLink(dest.bestOffer) ?? { href: buildSkyscannerUrl(dest, airports), partner: "skyscanner", paid: false },
-                "flight",
-                dest.city,
-              )}
+              {...partnerLinkProps(flight, "flight", dest.city)}
               className="text-xs font-medium px-3 py-2 rounded-xl transition-opacity hover:opacity-70"
               style={{ background: "var(--surface)", color: "var(--text-muted)", border: "1px solid var(--border)" }}
             >

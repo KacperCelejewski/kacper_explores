@@ -41,3 +41,20 @@ export function purchaseAction(
 export function rememberPurchase(storage: KeyValueStorage | null, transactionId: string) {
   try { storage?.setItem(purchaseKey(transactionId), "1"); } catch { /* storage zablokowany */ }
 }
+
+// Dane zdarzenia purchase z sesji Stripe; tylko dla opłaconych (status "complete" bywa przed zaksięgowaniem).
+export function purchaseFromSession(session: {
+  id: string;
+  payment_status: string;
+  amount_total: number | null;
+  currency: string | null;
+  metadata?: Record<string, string> | null;
+}): { id: string; value: number; currency: string; plan: string } | null {
+  if (session.payment_status !== "paid" || session.amount_total == null) return null;
+  return {
+    id: session.id,
+    value: session.amount_total / 100,
+    currency: (session.currency ?? "pln").toUpperCase(),
+    plan: session.metadata?.plan_key ?? "unknown",
+  };
+}
