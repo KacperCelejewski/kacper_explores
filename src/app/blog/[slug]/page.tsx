@@ -42,6 +42,7 @@ export async function generateMetadata(
       title: `${post.title} | Włóczykij`,
       description: post.description,
       url: `https://wloczykij.me/blog/${slug}`,
+      images: [{ url: "/opengraph-image", width: 1200, height: 630 }],
       type: "article",
       publishedTime: post.date,
       tags: post.tags,
@@ -97,10 +98,18 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     headline: post.title,
     description: post.description,
     datePublished: post.date,
+    dateModified: post.date,
     inLanguage: "pl",
     url: `https://wloczykij.me/blog/${slug}`,
-    author: { "@type": "Person", name: "Włóczykij", url: "https://wloczykij.me" },
-    publisher: { "@type": "Organization", name: "Włóczykij", url: "https://wloczykij.me" },
+    mainEntityOfPage: `https://wloczykij.me/blog/${slug}`,
+    image: "https://wloczykij.me/opengraph-image",
+    author: { "@type": "Organization", name: "Włóczykij", url: "https://wloczykij.me" },
+    publisher: {
+      "@type": "Organization",
+      name: "Włóczykij",
+      url: "https://wloczykij.me",
+      logo: { "@type": "ImageObject", url: "https://wloczykij.me/logo.svg" },
+    },
     keywords: post.tags.join(", "),
   };
 

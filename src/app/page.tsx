@@ -42,6 +42,22 @@ const webAppSchema = {
   },
 };
 
+const organizationSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Włóczykij",
+  url: "https://wloczykij.me",
+  logo: "https://wloczykij.me/logo.svg",
+};
+
+const webSiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Włóczykij",
+  url: "https://wloczykij.me",
+  inLanguage: "pl",
+};
+
 export default async function HomePage() {
   const galleryPhotos = await Promise.all(
     FEATURED_DESTINATIONS.map((d) => fetchCityPhotoUrl(d.city))
@@ -49,6 +65,14 @@ export default async function HomePage() {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteSchema) }}
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(webAppSchema) }}

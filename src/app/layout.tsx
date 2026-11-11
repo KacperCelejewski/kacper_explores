@@ -25,9 +25,6 @@ export const metadata: Metadata = {
   },
   description: "Odpowiedz na 6 pytań, a dostaniesz 6 kierunków w Twoim budżecie, ceny lotów z polskich lotnisk i plan godzina po godzinie. 5 planów za darmo.",
   metadataBase: new URL("https://wloczykij.me"),
-  alternates: {
-    canonical: "https://wloczykij.me",
-  },
   openGraph: {
     type: "website",
     locale: "pl_PL",
