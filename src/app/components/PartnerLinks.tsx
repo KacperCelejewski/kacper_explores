@@ -1,7 +1,9 @@
 "use client";
 
-import type { FlightOffer } from "@/types";
-import { bookingLink, flightLink, hostelworldLink, partnerLinkProps } from "@/lib/affiliate";
+import type { DayActivity, FlightOffer } from "@/types";
+import {
+  bookingLink, flightLink, hostelworldLink, isFreeCost, luggageLink, partnerLinkProps, ticketsLink,
+} from "@/lib/affiliate";
 
 export function PartnerNote({ show }: { show: boolean }) {
   if (!show) return null;
@@ -81,6 +83,49 @@ export function FlightCard({ offer, city }: { offer: FlightOffer | undefined; ci
         <span className="text-xs font-semibold" style={{ color: "#1A56B0" }}>Sprawdź lot →</span>
       </a>
       <div className="mt-2">
+        <PartnerNote show={link.paid} />
+      </div>
+    </div>
+  );
+}
+
+export function TicketsLink({ activity, city }: { activity: DayActivity; city: string }) {
+  if (activity.type !== "attraction" || isFreeCost(activity.cost)) return null;
+  const link = ticketsLink({ title: activity.title, city });
+  return (
+    <div className="flex items-center gap-2 mt-1.5 no-print">
+      <a
+        {...partnerLinkProps(link, "tickets", city)}
+        onClick={(e) => e.stopPropagation()}
+        className="text-xs font-semibold transition-opacity hover:opacity-70"
+        style={{ color: "#1A73E8", textDecoration: "none" }}
+      >
+        Sprawdź bilety ↗
+      </a>
+      <PartnerNote show={link.paid} />
+    </div>
+  );
+}
+
+export function LuggageTile({ city }: { city: string }) {
+  const link = luggageLink();
+  return (
+    <div
+      className="ml-11 mt-3 rounded-2xl px-4 py-3 no-print"
+      style={{ background: "#F7F7F5", border: "1px solid var(--border)" }}
+    >
+      <p className="text-sm font-semibold">Wymeldowanie przed wylotem?</p>
+      <p className="text-xs mt-1 leading-relaxed" style={{ color: "var(--text-muted)" }}>
+        Zostaw bagaż na kilka godzin i zwiedzaj bez plecaka.
+      </p>
+      <div className="flex items-center gap-2 mt-1.5">
+        <a
+          {...partnerLinkProps(link, "luggage", city)}
+          className="text-xs font-semibold transition-opacity hover:opacity-70"
+          style={{ color: "#1A73E8", textDecoration: "none" }}
+        >
+          Znajdź przechowalnię ↗
+        </a>
         <PartnerNote show={link.paid} />
       </div>
     </div>

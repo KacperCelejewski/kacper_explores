@@ -12,10 +12,11 @@ import FeedbackWidget from "@/app/components/FeedbackWidget";
 import CheckoutButton from "@/app/components/CheckoutButton";
 import DropSignup from "@/app/components/DropSignup";
 import DropProfileButton from "@/app/components/DropProfileButton";
-import { FlightCard, HotelLinks } from "@/app/components/PartnerLinks";
+import { FlightCard, HotelLinks, LuggageTile, TicketsLink } from "@/app/components/PartnerLinks";
 import type { DayPlan, DayActivity, TripPlan, DestinationRecommendation, QuizAnswers } from "@/types";
 import { getCityPhotoUrl } from "@/lib/cityPhotos";
 import { PRICES } from "@/lib/prices";
+import { isFreeCost } from "@/lib/affiliate";
 
 const ACTIVITY_COLORS: Record<string, string> = {
   attraction: "rgba(255,107,53,0.07)",
@@ -647,6 +648,7 @@ export default function PlanPage() {
             swapLoading={swapLoading}
             onSwapActivity={handleSwapActivity}
             onAddActivity={() => setAddModal({ dayIndex: i })}
+            isLastDay={i === plan.days.length - 1}
           />
         </div>
       ))}
@@ -956,6 +958,7 @@ function DayPlanView({
   swapLoading,
   onSwapActivity,
   onAddActivity,
+  isLastDay,
 }: {
   day: DayPlan;
   city: string;
@@ -966,6 +969,7 @@ function DayPlanView({
   swapLoading: Record<string, boolean>;
   onSwapActivity: (dayIndex: number, activityIndex: number) => void;
   onAddActivity: () => void;
+  isLastDay: boolean;
 }) {
   const mapsUrl = buildMapsRouteUrl(day.activities, city);
 
@@ -1027,6 +1031,7 @@ function DayPlanView({
             <ActivityCard
               key={i}
               activity={activity}
+              city={city}
               index={i}
               swapping={!!swapLoading[`${dayIndex}-${i}`]}
               onSwap={() => onSwapActivity(dayIndex, i)}
@@ -1034,6 +1039,8 @@ function DayPlanView({
           ))}
         </div>
       </div>
+
+      {isLastDay && <LuggageTile city={city} />}
 
       {/* Add activity button */}
       <button
@@ -1333,11 +1340,13 @@ function AddActivityModal({
 
 function ActivityCard({
   activity,
+  city,
   index,
   swapping,
   onSwap,
 }: {
   activity: DayActivity;
+  city: string;
   index: number;
   swapping: boolean;
   onSwap: () => void;
@@ -1391,11 +1400,11 @@ function ActivityCard({
               className="text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
               style={{
                 background:
-                  activity.cost === "Free" || activity.cost === "Bezpłatnie"
+                  isFreeCost(activity.cost)
                     ? "rgba(34,197,94,0.12)"
                     : "#F0F0F0",
                 color:
-                  activity.cost === "Free" || activity.cost === "Bezpłatnie"
+                  isFreeCost(activity.cost)
                     ? "#16A34A"
                     : "var(--text-muted)",
               }}
@@ -1424,6 +1433,7 @@ function ActivityCard({
             </a>
           </div>
         )}
+        <TicketsLink activity={activity} city={city} />
       </div>
     </motion.div>
   );
