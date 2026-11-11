@@ -12,7 +12,11 @@ function LoginContent() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(
+    searchParams.get("error") === "link"
+      ? "Ten link nie zadziałał. Wygasł albo otworzyłeś go w innej przeglądarce niż ta, w której go zamówiłeś. Poproś o nowy."
+      : ""
+  );
 
   const supabase = createSupabaseClient();
 
@@ -22,7 +26,7 @@ function LoginContent() {
     setError("");
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${next}` },
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
     });
     setLoading(false);
     if (error) {
@@ -35,7 +39,7 @@ function LoginContent() {
   const handleOAuth = async (provider: "google" | "github") => {
     await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=${next}` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
     });
   };
 
