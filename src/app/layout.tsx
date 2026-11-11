@@ -65,7 +65,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           id="sw-register"
           strategy="lazyOnload"
           dangerouslySetInnerHTML={{
-            __html: `if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{})}`,
+            // W dev SW trzyma stare pliki i psuje HMR, więc tam go tylko wyrejestrowujemy
+            __html: process.env.NODE_ENV === "production"
+              ? `if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{})}`
+              : `if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister()})})}`,
           }}
         />
       </body>
