@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { useRef, useState, useEffect, useCallback } from "react";
+import DropSignup from "@/app/components/DropSignup";
 import { getCityPhotoUrl, FEATURED_DESTINATIONS } from "@/lib/cityPhotos";
 
 // ─── Static data ────────────────────────────────────────────────────────────
@@ -815,6 +816,15 @@ export default function HomeClient({
       </section>
 
       {faq}
+
+      {/* ════════════════════════════════════════════════════════════════════
+          CZWARTKOWY ZRZUT — zapis na tygodniowy mail z lotami na weekend
+          ════════════════════════════════════════════════════════════════════ */}
+      <section id="zrzut" style={{ background: "var(--bg-surface)", padding: "88px 28px 96px", scrollMarginTop: 16 }}>
+        <div style={{ maxWidth: 480, margin: "0 auto" }}>
+          <DropSignup />
+        </div>
+      </section>
 
       {/* ════════════════════════════════════════════════════════════════════
           §6  FINAL CTA — dusk poster: the walker heads off over the ridge

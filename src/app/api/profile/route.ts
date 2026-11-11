@@ -3,6 +3,7 @@ import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { getUserProfile, canGenerate, isPro } from "@/lib/userProfile";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { validateQuizAnswers } from "@/lib/validate";
+import { createServiceClient as createServiceRoleClient } from "@/lib/supabase/service";
 
 export async function GET() {
   const supabase = await createSupabaseServer();
@@ -21,6 +22,17 @@ export async function GET() {
     .order("created_at", { ascending: false })
     .limit(5);
 
+  // Zrzut: tabela newsletter_subscribers jest tylko dla service role. Błąd (np. brak kolumny) = nie zapisany.
+  let dropEnabled = false;
+  if (user.email) {
+    const { data: sub } = await createServiceRoleClient()
+      .from("newsletter_subscribers")
+      .select("drop_enabled")
+      .eq("email", user.email.toLowerCase())
+      .maybeSingle();
+    dropEnabled = sub?.drop_enabled === true;
+  }
+
   return NextResponse.json({
     authenticated: true,
     email: user.email,
@@ -29,6 +41,7 @@ export async function GET() {
     is_pro: isPro(profile),
     can_generate: canGenerate(profile),
     quiz_preferences: profile.quiz_preferences ?? null,
+    drop_enabled: dropEnabled,
     trips: trips ?? [],
   });
 }

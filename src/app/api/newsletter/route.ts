@@ -1,34 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { stripe } from "@/lib/stripe";
 import { sendNewsletterConfirmation } from "@/lib/email";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { getClientIp } from "@/lib/validate";
-import { generatePromoCode } from "@/lib/newsletter";
-import { STRIPE_NEWSLETTER_COUPON_ID } from "@/lib/constants";
-import { randomBytes } from "crypto";
-
-async function ensureCoupon() {
-  try {
-    await stripe.coupons.retrieve(STRIPE_NEWSLETTER_COUPON_ID);
-  } catch {
-    await stripe.coupons.create({
-      id: STRIPE_NEWSLETTER_COUPON_ID,
-      percent_off: 10,
-      duration: "once",
-      name: "Newsletter — 10% na Pro Roczny",
-    });
-  }
-}
-
-async function createStripePromoCode(code: string): Promise<string> {
-  const promo = await stripe.promotionCodes.create({
-    promotion: { type: "coupon", coupon: STRIPE_NEWSLETTER_COUPON_ID },
-    code,
-    max_redemptions: 1,
-  });
-  return promo.id;
-}
+import { createNewsletterPromo, newVerificationToken, newsletterVerifyUrl } from "@/lib/newsletter";
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
@@ -64,15 +39,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ code: existing.discount_code, alreadySubscribed: true });
     }
     // Not yet verified — generate fresh token so expiry window resets
-    const newToken = randomBytes(32).toString("hex");
+    const newToken = newVerificationToken();
     await supabase
       .from("newsletter_subscribers")
       .update({ verification_token: newToken, token_sent_at: new Date().toISOString() })
       .eq("email", email);
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-    const verifyUrl = `${appUrl}/api/newsletter/verify?token=${newToken}`;
     try {
-      await sendNewsletterConfirmation(email, verifyUrl);
+      await sendNewsletterConfirmation(email, newsletterVerifyUrl(newToken));
     } catch {
       // Don't fail the request if resend is misconfigured
     }
@@ -80,35 +53,19 @@ export async function POST(req: NextRequest) {
   }
 
   // New subscriber — create Stripe promo code + store with unverified token
+  let promo: { code: string; stripePromoId: string };
   try {
-    await ensureCoupon();
+    promo = await createNewsletterPromo();
   } catch {
     return NextResponse.json({ error: "Coś poszło nie tak. Spróbuj jeszcze raz — zwykle działa za drugim." }, { status: 500 });
   }
 
-  const code = generatePromoCode();
-  let stripePromoId: string | null = null;
-  let finalCode = code;
-
-  try {
-    stripePromoId = await createStripePromoCode(code);
-  } catch {
-    // Retry with a different code on collision
-    const code2 = generatePromoCode();
-    try {
-      stripePromoId = await createStripePromoCode(code2);
-      finalCode = code2;
-    } catch {
-      return NextResponse.json({ error: "Coś poszło nie tak. Spróbuj jeszcze raz — zwykle działa za drugim." }, { status: 500 });
-    }
-  }
-
-  const token = randomBytes(32).toString("hex");
+  const token = newVerificationToken();
 
   const { error } = await supabase.from("newsletter_subscribers").insert({
     email,
-    discount_code: finalCode,
-    stripe_promo_code_id: stripePromoId,
+    discount_code: promo.code,
+    stripe_promo_code_id: promo.stripePromoId,
     verified: false,
     verification_token: token,
     token_sent_at: new Date().toISOString(),
@@ -116,11 +73,8 @@ export async function POST(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: "Coś poszło nie tak. Spróbuj jeszcze raz — zwykle działa za drugim." }, { status: 500 });
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const verifyUrl = `${appUrl}/api/newsletter/verify?token=${token}`;
-
   try {
-    await sendNewsletterConfirmation(email, verifyUrl);
+    await sendNewsletterConfirmation(email, newsletterVerifyUrl(token));
   } catch (err) {
     console.error("[newsletter] failed to send confirmation email:", err);
   }

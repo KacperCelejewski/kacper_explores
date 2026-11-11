@@ -28,6 +28,13 @@ export default function SiteFooter() {
             Strona główna
           </Link>
           <Link
+            href="/#zrzut"
+            className="text-xs inline-block py-1.5"
+            style={{ color: "var(--text-muted)", textDecoration: "none" }}
+          >
+            Czwartkowy zrzut
+          </Link>
+          <Link
             href="/blog"
             className="text-xs inline-block py-1.5"
             style={{ color: "var(--text-muted)", textDecoration: "none" }}

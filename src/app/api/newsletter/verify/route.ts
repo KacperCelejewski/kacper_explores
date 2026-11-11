@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabase
     .from("newsletter_subscribers")
-    .select("id, discount_code, verified, token_sent_at")
+    .select("id, discount_code, verified, token_sent_at, airports, max_price, unsubscribe_token")
     .eq("verification_token", token)
     .maybeSingle();
 
@@ -34,9 +34,16 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  // Zrzut włącza się tylko, gdy wysyłka ma komplet danych: lotniska, budżet i token wypisu
+  const dropReady = (data.airports?.length ?? 0) > 0 && data.max_price != null && !!data.unsubscribe_token;
+
   await supabase
     .from("newsletter_subscribers")
-    .update({ verified: true, verified_at: new Date().toISOString() })
+    .update({
+      verified: true,
+      verified_at: new Date().toISOString(),
+      ...(dropReady ? { drop_enabled: true, drop_disabled_reason: null } : {}),
+    })
     .eq("id", data.id);
 
   return NextResponse.redirect(`${appUrl}/?newsletter=verified&code=${data.discount_code}`);

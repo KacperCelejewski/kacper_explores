@@ -6,6 +6,8 @@ import { motion } from "framer-motion";
 import { useAppStore } from "@/lib/store";
 import type { QuizAnswers } from "@/types";
 import { PRICES } from "@/lib/prices";
+import { trackEvent } from "@/lib/analytics";
+import { budgetToMaxPrice } from "@/lib/drop/signup";
 
 interface Trip {
   id: string;
@@ -22,6 +24,7 @@ interface ProfileData {
   credits_remaining?: number;
   subscription_tier?: string;
   quiz_preferences?: QuizAnswers | null;
+  drop_enabled?: boolean;
   trips?: Trip[];
 }
 
@@ -64,6 +67,8 @@ export default function ProfilePage() {
   const [portalLoading, setPortalLoading] = useState(false);
   const [deleteStep, setDeleteStep] = useState<"idle" | "confirm">("idle");
   const [deleting, setDeleting] = useState(false);
+  const [dropState, setDropState] = useState<"idle" | "loading" | "done">("idle");
+  const [dropError, setDropError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/profile")
@@ -86,6 +91,28 @@ export default function ProfilePage() {
     if (p.duration) setQuizAnswer("duration", p.duration);
     p.styles.forEach((s) => toggleStyle(s));
     router.push("/destinations");
+  };
+
+  const handleDropSignup = async () => {
+    setDropState("loading");
+    setDropError(null);
+    try {
+      const res = await fetch("/api/drop/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fromProfile: true }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error);
+      const p = data?.quiz_preferences;
+      if (p?.budget) {
+        trackEvent("drop_signup", { airports: Math.min(p.airports.length, 3), max_price: budgetToMaxPrice(p.budget) });
+      }
+      setDropState("done");
+    } catch (err) {
+      setDropError(err instanceof Error && err.message ? err.message : "Coś poszło nie tak. Spróbuj jeszcze raz — zwykle działa za drugim.");
+      setDropState("idle");
+    }
   };
 
   const handleBillingPortal = async () => {
@@ -279,6 +306,54 @@ export default function ProfilePage() {
             </button>
           </div>
         )}
+      </motion.div>
+
+      <div className="mt-6 h-px" style={{ background: "var(--border)" }} />
+
+      {/* Czwartkowy zrzut */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.18 }}
+        className="mt-6"
+      >
+        <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: "var(--text-muted)" }}>
+          Czwartkowy zrzut
+        </p>
+        <div className="glass-card p-4">
+          {data.drop_enabled || dropState === "done" ? (
+            <p className="text-sm font-semibold" style={{ color: "#16A34A" }}>
+              Jesteś zapisany. Zrzut przyjdzie w czwartek.
+            </p>
+          ) : prefs?.airports?.length && prefs.budget ? (
+            <>
+              <p className="text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                Co czwartek 3 wyjazdy z Twojego lotniska, w Twoim budżecie.
+              </p>
+              {dropError && (
+                <p role="alert" className="text-sm mt-3" style={{ color: "#DC2626" }}>{dropError}</p>
+              )}
+              <button
+                className="btn-primary mt-4"
+                onClick={handleDropSignup}
+                disabled={dropState === "loading"}
+              >
+                {dropState === "loading" ? "…" : "Wysyłaj mi zrzut"}
+              </button>
+            </>
+          ) : (
+            <p className="text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>
+              Zrób najpierw quiz, żebyśmy wiedzieli, skąd lecisz i za ile.{" "}
+              <button
+                onClick={() => router.push("/quiz")}
+                className="font-semibold inline-block py-2"
+                style={{ color: "var(--accent)" }}
+              >
+                Zrób quiz →
+              </button>
+            </p>
+          )}
+        </div>
       </motion.div>
 
       <div className="mt-6 h-px" style={{ background: "var(--border)" }} />
