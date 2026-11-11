@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/lib/store";
 import type { TravelStyle, TripDuration, TravelVibe, PlaceType, QuizAnswers } from "@/types";
 import { MONTH_NAMES } from "@/lib/constants";
+import { trackEvent } from "@/lib/analytics";
 import {
   IconBackpack,
   IconSuitcase,
@@ -137,6 +138,7 @@ function QuizPageInner() {
   const sessionId = useRef(crypto.randomUUID());
 
   const track = (event: string, step?: number) => {
+    trackEvent(`quiz_${event}`, { step });
     void fetch("/api/track", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

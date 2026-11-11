@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { setAnalyticsConsent } from "@/lib/analytics";
 
 const STORAGE_KEY = "cookie_consent";
 
@@ -44,12 +45,14 @@ export default function CookieBanner() {
 
   const handleAccept = () => {
     saveConsent("accepted");
+    setAnalyticsConsent(true);
     loadTrackingScript();
     setVisible(false);
   };
 
   const handleReject = () => {
     saveConsent("rejected");
+    setAnalyticsConsent(false);
     setVisible(false);
   };
 
@@ -83,7 +86,7 @@ export default function CookieBanner() {
             Używamy plików cookie
           </p>
           <p style={{ margin: "0 0 14px", fontSize: 12, lineHeight: 1.5, color: "var(--text-muted)" }}>
-            Niezbędne cookies działają zawsze. Za Twoją zgodą używamy też cookies partnerskich (linki afiliacyjne do lotów).{" "}
+            Niezbędne cookies działają zawsze. Za Twoją zgodą używamy też cookies partnerskich (linki afiliacyjne do lotów) i analitycznych (Google Analytics — co klikasz i które strony oglądasz).{" "}
             <a
               href="/cookies"
               style={{ color: "var(--accent)", textDecoration: "underline" }}

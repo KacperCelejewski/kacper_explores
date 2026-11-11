@@ -213,11 +213,13 @@ export default function CookiesPage() {
 
           <Section title="4. Analityczne i marketingowe pliki cookie">
             <P>
-              Aktualnie <strong>nie korzystamy</strong> z żadnych zewnętrznych
-              narzędzi analitycznych (Google Analytics, Meta Pixel itp.) ani
-              śledzenia reklamowego. Jeśli to się zmieni, zaktualizujemy
-              niniejszą politykę i poprosimy o Twoją zgodę przed uruchomieniem
-              takich plików cookie.
+              Za Twoją zgodą korzystamy z <strong>Google Analytics 4</strong>
+              (Google Ireland Ltd.), żeby wiedzieć, które strony oglądasz, w co
+              klikasz i jak głęboko przewijasz. Dane są zbiorcze, bez imienia i
+              e-maila. Bez zgody Google dostaje tylko anonimowe sygnały bez
+              plików cookie (cookies <code>_ga*</code>). Zgodę wycofasz w każdej
+              chwili, czyszcząc dane strony w przeglądarce. Nie używamy Meta
+              Pixel ani reklamowego śledzenia.
             </P>
           </Section>
 

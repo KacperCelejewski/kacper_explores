@@ -1,6 +1,12 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY!);
+// Klient tworzony przy pierwszym wysłaniu, bo build bez klucza (np. preview) inaczej się wywala.
+let client: Resend | undefined;
+const resend = {
+  emails: {
+    send: (...args: Parameters<Resend["emails"]["send"]>) => (client ??= new Resend(process.env.RESEND_API_KEY)).emails.send(...args),
+  },
+};
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "hej@wloczykij.me";
 
 export async function sendNewsletterConfirmation(email: string, verifyUrl: string) {

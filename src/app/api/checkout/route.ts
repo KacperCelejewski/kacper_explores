@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Zaloguj się, żeby kupić." }, { status: 401 });
   }
 
-  const { planKey }: { planKey: PlanKey } = await req.json();
+  const { planKey, returnTo }: { planKey: PlanKey; returnTo?: unknown } = await req.json();
   const plan = PLANS[planKey];
   if (!plan) {
     return NextResponse.json({ error: "Nieprawidłowy plan." }, { status: 400 });
@@ -55,13 +55,18 @@ export async function POST(req: NextRequest) {
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  // Tylko ścieżki w obrębie aplikacji — nie pozwalamy przekierować na obcą domenę
+  const cancelPath =
+    typeof returnTo === "string" && returnTo.startsWith("/") && !returnTo.startsWith("//") && !returnTo.includes("\\")
+      ? returnTo
+      : "/pricing";
 
   const session = await stripe.checkout.sessions.create({
     customer: customerId,
     mode: plan.type === "subscription" ? "subscription" : "payment",
     line_items: [{ price: plan.priceId, quantity: 1 }],
     success_url: `${appUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${appUrl}/pricing`,
+    cancel_url: `${appUrl}${cancelPath}`,
     allow_promotion_codes: true,
     metadata: {
       supabase_user_id: user.id,

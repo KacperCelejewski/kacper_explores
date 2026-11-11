@@ -9,6 +9,7 @@ import { downloadICS } from "@/app/utils/ics-download";
 import ChatPanel from "@/app/components/ChatPanel";
 import BudgetTracker from "@/app/components/BudgetTracker";
 import FeedbackWidget from "@/app/components/FeedbackWidget";
+import CheckoutButton from "@/app/components/CheckoutButton";
 import type { DayPlan, DayActivity, TripPlan, DestinationRecommendation } from "@/types";
 import { getCityPhotoUrl } from "@/lib/cityPhotos";
 import { PRICES } from "@/lib/prices";
@@ -66,6 +67,7 @@ interface Restaurant {
 export default function PlanPage() {
   const router = useRouter();
   const params = useParams<{ tripId: string }>();
+  const planPath = params?.tripId ? `/plan/${params.tripId}` : "/pricing";
   const { currentTrip, setCurrentTrip, updateTripDay, updateTripActivity, addTripActivity, resetQuiz } = useAppStore();
   const [activeDay, setActiveDay] = useState(0);
   const [copied, setCopied] = useState(false);
@@ -446,24 +448,33 @@ export default function PlanPage() {
             {userCredits.credits === 0 ? "To był ostatni plan ✦" : `Zostały Ci ${userCredits.credits} ${userCredits.credits === 1 ? "plan" : "plany"} ✦`}
           </p>
           <p className="text-xs mt-1 mb-3 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-            Kup Pack (5 planów, {PRICES.pack.label}) albo przejdź na Pro z nielimitowanymi planami i historią wyjazdów.
+            Pack to 5 kolejnych planów za {PRICES.pack.label}. Pro Roczny to wyjazdy bez limitu i PDF za {PRICES.proYearly.label} na rok.
           </p>
           <div className="flex gap-2">
-            <a
-              href="/pricing"
-              className="flex-1 text-xs font-bold py-2.5 rounded-xl text-center"
-              style={{ background: "var(--accent)", color: "white", textDecoration: "none" }}
-            >
-              Kup Pack — {PRICES.pack.label} →
-            </a>
-            <a
-              href="/pricing"
-              className="text-xs font-semibold px-3 py-2.5 rounded-xl"
-              style={{ background: "white", color: "var(--accent)", border: "1px solid var(--accent)", textDecoration: "none" }}
-            >
-              Pro
-            </a>
+            <div className="flex-1">
+              <CheckoutButton
+                planKey="pack_5"
+                cta={`Kup Pack — ${PRICES.pack.label} →`}
+                returnTo={planPath}
+                className="w-full min-h-11 text-xs font-bold py-2.5 rounded-xl text-center"
+                style={{ background: "var(--accent)", color: "white" }}
+              />
+            </div>
+            <CheckoutButton
+              planKey="pro_yearly"
+              cta="Pro Roczny"
+              returnTo={planPath}
+              className="min-h-11 text-xs font-semibold px-3 py-2.5 rounded-xl"
+              style={{ background: "white", color: "var(--accent)", border: "1px solid var(--accent)" }}
+            />
           </div>
+          <a
+            href="/pricing"
+            className="inline-block mt-2 py-1 text-xs underline"
+            style={{ color: "var(--text-muted)" }}
+          >
+            Porównaj plany
+          </a>
         </motion.div>
       )}
 
@@ -821,11 +832,13 @@ export default function PlanPage() {
 
       {/* Feedback widget — pokazuj tylko jeśli nie dano jeszcze feedbacku i nie jest Pro */}
       {!feedbackGiven && !userCredits?.isPro && currentTrip && (
-        <FeedbackWidget
-          tripId={currentTrip.id}
-          city={plan.city}
-          onPdfUnlocked={handlePdfUnlocked}
-        />
+        <div id="ocen-plan" className="scroll-mt-20">
+          <FeedbackWidget
+            tripId={currentTrip.id}
+            city={plan.city}
+            onPdfUnlocked={handlePdfUnlocked}
+          />
+        </div>
       )}
 
       {/* PDF Pro gate modal */}
@@ -851,25 +864,27 @@ export default function PlanPage() {
                 <div className="w-10 h-1 rounded-full" style={{ background: "var(--border)" }} />
               </div>
               <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{ color: "var(--accent)" }}>
-                Funkcja Pro
+                PDF na drogę
               </p>
               <h2 className="text-2xl font-bold leading-tight mb-1">
-                Eksport PDF<br />wymaga Pro
+                Pobierz plan<br />do samolotu
               </h2>
               <p className="text-sm mb-6 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                Plan w PDF przyda się w samolocie i wszędzie tam, gdzie nie ma zasięgu.
+                PDF przyda się wszędzie tam, gdzie nie ma zasięgu. W Pro masz go zawsze. Bez Pro odblokujesz go jedną oceną tego planu.
               </p>
               <div className="flex flex-col gap-3 mb-4">
-                <a
-                  href="/pricing"
-                  className="block p-4 rounded-2xl"
-                  style={{ background: "var(--accent)", textDecoration: "none" }}
+                <CheckoutButton
+                  planKey="pro_yearly"
+                  cta={`Zostań Pro Roczny za ${PRICES.proYearly.label}`}
+                  returnTo={planPath}
+                  className="block w-full text-left p-4 rounded-2xl"
+                  style={{ background: "var(--accent)" }}
                 >
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-bold text-sm text-white">✦ Pro Roczny</p>
                       <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.75)" }}>
-                        PDF · nielimitowane plany · historia wyjazdów
+                        PDF · wyjazdy bez limitu
                       </p>
                     </div>
                     <div className="text-right">
@@ -877,20 +892,23 @@ export default function PlanPage() {
                       <p className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>{PRICES.proYearly.perMonth}/mies.</p>
                     </div>
                   </div>
-                </a>
-                <a
-                  href="/pricing"
-                  className="block p-4 rounded-2xl"
-                  style={{ background: "#FFFFFF", border: "1.5px solid var(--border)", textDecoration: "none" }}
+                </CheckoutButton>
+                <button
+                  onClick={() => {
+                    setPdfGate(false);
+                    document.getElementById("ocen-plan")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
+                  className="block w-full text-left p-4 rounded-2xl"
+                  style={{ background: "#FFFFFF", border: "1.5px solid var(--border)" }}
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-bold text-sm">🎒 Pack</p>
-                      <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>5 planów bez wygasania</p>
+                      <p className="font-bold text-sm">Oceń ten plan</p>
+                      <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>Jedna odpowiedź i PDF jest Twój</p>
                     </div>
-                    <p className="font-bold text-sm" style={{ color: "var(--accent)" }}>{PRICES.pack.label}</p>
+                    <p className="font-bold text-sm" style={{ color: "var(--accent)" }}>0 zł</p>
                   </div>
-                </a>
+                </button>
               </div>
               <button
                 onClick={() => setPdfGate(false)}
