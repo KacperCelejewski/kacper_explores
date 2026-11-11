@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe, PLANS, type PlanKey } from "@/lib/stripe";
 import { createSupabaseServer } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { getClientIp } from "@/lib/validate";
 
@@ -48,7 +49,8 @@ export async function POST(req: NextRequest) {
       metadata: { supabase_user_id: user.id },
     });
     customerId = customer.id;
-    await supabase
+    // Profil zmienia tylko klucz serwisowy: RLS nie daje użytkownikowi UPDATE na user_profiles
+    await createServiceClient()
       .from("user_profiles")
       .update({ stripe_customer_id: customerId })
       .eq("id", user.id);

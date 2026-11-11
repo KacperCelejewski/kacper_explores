@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 
 const NOTION_TOKEN = process.env.NOTION_TOKEN;
 const NOTION_FEEDBACK_DB_ID =
@@ -24,10 +25,10 @@ export async function POST(req: NextRequest) {
       await saveToNotion({ tripId, type, rating, text, city, source, answers, userId: user?.id });
     }
 
-    // Pełny feedback → +1 kredyt
+    // Pełny feedback → +1 kredyt. add_credits może wywołać tylko klucz serwisowy.
     let creditAdded = false;
     if (type === "full" && user) {
-      const { error } = await supabase.rpc("add_credits", {
+      const { error } = await createServiceClient().rpc("add_credits", {
         p_user_id: user.id,
         p_credits: 1,
       });
