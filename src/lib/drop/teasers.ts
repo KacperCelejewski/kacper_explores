@@ -1,10 +1,11 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, GoogleGenerativeAIAbortError } from "@google/generative-ai";
 import { logGeminiCall } from "@/lib/geminiLog";
 import type { CityTeaser, WeekKey } from "./types";
 
 const MODEL = "gemini-2.5-flash";
 const ENDPOINT = "drop-teaser";
 const MAX_TEASER_LENGTH = 320;
+const REQUEST_TIMEOUT_MS = 15_000;
 
 export function buildTeaserPrompt(cityName: string, countryCode: string): string {
   return `Jesteś Włóczykijem, znajomym, który opowiada przy kawie o weekendzie w mieście ${cityName} (kraj: ${countryCode}).
@@ -55,14 +56,17 @@ export async function generateTeaser(
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: MODEL,
-      generationConfig: {
-        responseMimeType: "application/json",
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ...({ thinkingConfig: { thinkingBudget: 0 } } as any),
+    const model = genAI.getGenerativeModel(
+      {
+        model: MODEL,
+        generationConfig: {
+          responseMimeType: "application/json",
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ...({ thinkingConfig: { thinkingBudget: 0 } } as any),
+        },
       },
-    });
+      { timeout: REQUEST_TIMEOUT_MS },
+    );
 
     const result = await model.generateContent(buildTeaserPrompt(cityName, countryCode));
     const usage = result.response.usageMetadata;
@@ -85,7 +89,12 @@ export async function generateTeaser(
       endpoint: ENDPOINT,
       model: MODEL,
       success: false,
-      error_code: msg.includes("429") ? "quota" : "error",
+      error_code:
+        err instanceof GoogleGenerativeAIAbortError
+          ? "timeout"
+          : msg.includes("429")
+            ? "quota"
+            : "error",
     });
     return null;
   }
