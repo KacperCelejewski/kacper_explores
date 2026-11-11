@@ -60,27 +60,46 @@ export async function fetchCities(
   return map;
 }
 
+// departure_at jest w czasie lokalnym lotniska ("2026-11-12T06:30:00+01:00"), bez konwersji strefy.
+function isEarlyThursday(departureAt: string): boolean {
+  const [y, m, d] = departureAt.slice(0, 10).split("-").map(Number);
+  if (new Date(Date.UTC(y, m - 1, d)).getUTCDay() !== 4) return false;
+  return departureAt.slice(11, 16) < "19:00";
+}
+
 export function groupDeals(
   offers: TpOffer[],
   variant: WeekendVariant,
   cities: Map<string, CityInfo>,
   week: WeekKey,
   fetchedAt: string,
+  origin: string,
 ): DropDeal[] {
   const best = new Map<string, DropDeal>();
   for (const o of offers) {
+    if (
+      typeof o.departure_at !== "string" ||
+      typeof o.return_at !== "string" ||
+      typeof o.price !== "number" ||
+      !Number.isFinite(o.price)
+    ) {
+      continue;
+    }
     const city = cities.get(o.destination);
     if (!city || city.country_code === "PL") continue;
     if (o.transfers > 1 || o.return_transfers > 1) continue;
     if (o.departure_at.slice(0, 10) !== variant.depart) continue;
     if (o.return_at.slice(0, 10) !== variant.return) continue;
+    // czwartkowy mail wychodzi o 17:00, wylot przed 19:00 zdążyłby odlecieć
+    if (isEarlyThursday(o.departure_at)) continue;
 
-    const key = `${o.origin}|${o.destination}`;
+    // Travelpayouts podaje w origin kod miasta (WAW dla WMI), więc bierzemy zapytane lotnisko
+    const key = `${origin}|${o.destination}`;
     const current = best.get(key);
     if (current && current.price <= o.price) continue;
     best.set(key, {
       week,
-      origin: o.origin,
+      origin,
       city_code: o.destination,
       city_name: city.name,
       price: o.price,

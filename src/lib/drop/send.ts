@@ -22,6 +22,28 @@ export function chunk<T>(items: T[], size: number): T[][] {
   return out;
 }
 
+// Przy batchValidation "permissive" Resend zwraca id tylko dla przyjętych wiadomości (w kolejności),
+// a odrzucone wskazuje przez index w errors.
+export function mapBatchResult(
+  count: number,
+  data: { id: string }[] | null | undefined,
+  errors: { index: number }[] | null | undefined,
+): { sent: { index: number; id: string | null }[]; failed: number[] } {
+  const failedSet = new Set((errors ?? []).map((e) => e.index));
+  const sent: { index: number; id: string | null }[] = [];
+  const failed: number[] = [];
+  let next = 0;
+  for (let i = 0; i < count; i++) {
+    if (failedSet.has(i)) {
+      failed.push(i);
+      continue;
+    }
+    sent.push({ index: i, id: data?.[next]?.id ?? null });
+    next++;
+  }
+  return { sent, failed };
+}
+
 export type BatchErrorKind = "quota" | "rate_limit" | "rejected" | "unknown";
 
 // quota: limit dzienny/miesięczny, na pewno nie wysłane. rate_limit: chwilowy 429, do ponowienia.

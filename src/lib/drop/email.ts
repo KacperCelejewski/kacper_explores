@@ -38,9 +38,11 @@ function transfersLabel(n: number): string {
   return `${n} przesiadki`;
 }
 
-function subjectFor(deals: DropDeal[], originCity: string): string {
+function subjectFor(deals: DropDeal[], originCity: string | null): string {
   if (deals.length === 1) return `${deals[0].city_name} za ${deals[0].price} zł w ten weekend`;
-  return `${deals.length} wyjazdy z ${originCity} na ten weekend`;
+  return originCity
+    ? `${deals.length} wyjazdy z ${originCity} na ten weekend`
+    : `${deals.length} wyjazdy na ten weekend`;
 }
 
 function renderCard(
@@ -71,7 +73,7 @@ function renderCard(
                 <p style="margin:12px 0 0;color:#111827;font-size:14px;line-height:1.6;">
                   ${esc(formatLocal(deal.departure_at))} &rarr; ${esc(formatLocal(deal.return_at))}
                 </p>
-                <p style="margin:2px 0 0;color:#6B7280;font-size:13px;">${esc(airline)} · ${esc(transfersLabel(deal.transfers))}</p>
+                <p style="margin:2px 0 0;color:#6B7280;font-size:13px;">z ${esc(ORIGIN_GENITIVE[deal.origin] ?? deal.origin)} · ${esc(airline)} · ${esc(transfersLabel(deal.transfers))}</p>
                 ${teaserHtml}
                 ${budgetHtml}
                 <table cellpadding="0" cellspacing="0" style="margin-top:16px;"><tr>
@@ -97,7 +99,10 @@ export function renderDropEmail(input: {
   marker: string;
   unsubscribeToken: string;
 }): { subject: string; html: string } {
-  const subject = subjectFor(input.deals, input.originCity);
+  // przy kilku lotniskach jedno miasto w temacie i nagłówku byłoby mylące
+  const multiOrigin = new Set(input.deals.map((d) => d.origin)).size > 1;
+  const originCity = multiOrigin ? null : input.originCity;
+  const subject = subjectFor(input.deals, originCity);
   const cards = input.deals
     .map((d) => renderCard(d, input.teasers.get(d.city_code), input))
     .join("\n");
@@ -118,7 +123,7 @@ export function renderDropEmail(input: {
           <td style="background:#FF6B35;padding:28px 32px;">
             <p style="margin:0;color:white;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">Włóczykij</p>
             <h1 style="margin:8px 0 0;color:white;font-size:22px;font-weight:800;line-height:1.3;">
-              Weekend z ${esc(input.originCity)}
+              ${originCity ? `Weekend z ${esc(originCity)}` : "Weekend z wyjazdami"}
             </h1>
           </td>
         </tr>

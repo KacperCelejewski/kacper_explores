@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { chunk, classifyBatchError, selectRecipients } from "./send";
+import { chunk, classifyBatchError, mapBatchResult, selectRecipients } from "./send";
 import type { DropDeal, DropSubscriber } from "./types";
 
 function deal(code: string, price: number, origin = "KRK"): DropDeal {
@@ -69,5 +69,27 @@ describe("classifyBatchError", () => {
     expect(classifyBatchError({ name: "application_error", statusCode: null })).toBe("unknown");
     expect(classifyBatchError({ name: "internal_server_error", statusCode: 503 })).toBe("unknown");
     expect(classifyBatchError({})).toBe("unknown");
+  });
+});
+
+describe("mapBatchResult", () => {
+  it("maps ids to successful indices and reports failed ones", () => {
+    const out = mapBatchResult(4, [{ id: "a" }, { id: "b" }, { id: "c" }], [{ index: 1 }]);
+    expect(out.failed).toEqual([1]);
+    expect(out.sent).toEqual([
+      { index: 0, id: "a" },
+      { index: 2, id: "b" },
+      { index: 3, id: "c" },
+    ]);
+  });
+
+  it("treats a batch without errors as fully sent", () => {
+    const out = mapBatchResult(2, [{ id: "a" }, { id: "b" }], undefined);
+    expect(out.failed).toEqual([]);
+    expect(out.sent.map((s) => s.id)).toEqual(["a", "b"]);
+  });
+
+  it("returns a null id when Resend returned fewer ids than expected", () => {
+    expect(mapBatchResult(2, [{ id: "a" }], []).sent[1]).toEqual({ index: 1, id: null });
   });
 });

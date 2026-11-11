@@ -6,7 +6,8 @@ import { isAuthorizedCron } from "@/lib/drop/cronAuth";
 import { weekKey } from "@/lib/drop/dates";
 import { renderDropEmail, ORIGIN_GENITIVE } from "@/lib/drop/email";
 import { buildUnsubscribeUrl } from "@/lib/drop/links";
-import { chunk, classifyBatchError, selectRecipients } from "@/lib/drop/send";
+import { chunk, classifyBatchError, mapBatchResult, selectRecipients } from "@/lib/drop/send";
+import { DROP_MAX_PRICES } from "@/lib/drop/signup";
 import type { CityTeaser, DropDeal, DropSubscriber } from "@/lib/drop/types";
 
 export const maxDuration = 60;
@@ -16,6 +17,7 @@ const BATCH_SIZE = 100; // limit Resend batch.send
 const PAGE = 1000; // domyślny limit wierszy w Supabase
 const RATE_LIMIT_WAIT_MS = 1000;
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+const MAX_BUDGET = Math.max(...DROP_MAX_PRICES);
 const FROM = "Włóczykij <zrzut@wloczykij.me>";
 
 type Db = ReturnType<typeof createServiceClient>;
@@ -60,9 +62,16 @@ export async function GET(req: NextRequest) {
   let subs: DropSubscriber[];
   let alreadySent: Set<string>;
   try {
-    const { data: dealRows, error: dealsError } = await db.from("drop_deals").select("*").eq("week", week);
-    if (dealsError) throw new Error(dealsError.message);
-    deals = (dealRows ?? []) as DropDeal[];
+    deals = await fetchAllPages<DropDeal>((from, to) =>
+      db
+        .from("drop_deals")
+        .select("*")
+        .eq("week", week)
+        .lte("price", MAX_BUDGET)
+        .order("origin")
+        .order("city_code")
+        .range(from, to),
+    );
     if (deals.length === 0) {
       await sendSlack(`Zrzut ${week}: brak okazji, nic nie wysłano`);
       return NextResponse.json({ week, sent: 0, deals: 0 });
@@ -159,7 +168,8 @@ export async function GET(req: NextRequest) {
     const ids = mine.map((r) => r.sub.id);
     const idempotencyKey = `drop-${week}-${ids[0]}-${ids.length}`;
 
-    const sendBatch = () => resend.batch.send(payload, { idempotencyKey });
+    const sendBatch = () =>
+      resend.batch.send(payload, { idempotencyKey, batchValidation: "permissive" });
     let result: Awaited<ReturnType<typeof sendBatch>> | null = null;
     let thrown: string | null = null;
     for (let attempt = 0; attempt < 2; attempt++) {
@@ -200,21 +210,27 @@ export async function GET(req: NextRequest) {
       continue;
     }
 
-    // Resend zwraca id w kolejności wysłanych wiadomości
+    // odrzucone adresy (permissive): zwalniamy rezerwację, reszta partii poszła
+    const { sent: accepted, failed } = mapBatchResult(mine.length, result.data.data, result.data.errors);
+    if (failed.length > 0) {
+      await releaseRows(db, week, failed.map((i) => mine[i].sub.id));
+      errors += failed.length;
+      const rejected = result.data.errors?.[0]?.message;
+      firstError ??= `odrzucony adres w partii${rejected ? `: ${rejected}` : ""}`;
+    }
     const sentAt = new Date().toISOString();
     const updates = await Promise.all(
-      mine.map(async (r, i) => {
-        const id = result.data?.data?.[i]?.id ?? null;
+      accepted.map(async ({ index, id }) => {
         const { error } = await db
           .from("drop_sends")
           .update({ sent_at: sentAt, resend_id: id })
           .eq("week", week)
-          .eq("subscriber_id", r.sub.id);
+          .eq("subscriber_id", mine[index].sub.id);
         return !error && id !== null;
       }),
     );
     updateFailures += updates.filter((ok) => !ok).length;
-    sent += mine.length;
+    sent += accepted.length;
   }
 
   const parts = [`Zrzut ${week}: wysłane ${sent}, bez dopasowania ${unmatched}, błędy ${errors}`];

@@ -30,8 +30,8 @@ function offer(over: Partial<TpOffer> = {}): TpOffer {
   };
 }
 
-const group = (offers: TpOffer[], v = ptNd) =>
-  groupDeals(offers, v, cities, "2026-W46", "2026-11-11T21:00:00Z");
+const group = (offers: TpOffer[], v = ptNd, origin = "WRO") =>
+  groupDeals(offers, v, cities, "2026-W46", "2026-11-11T21:00:00Z", origin);
 
 describe("groupDeals", () => {
   it("keeps the cheapest offer per origin and destination", () => {
@@ -58,6 +58,31 @@ describe("groupDeals", () => {
     expect(group([offer({ return_at: "2026-11-16T08:00:00+01:00" })])).toEqual([]);
   });
 
+  it("stamps the queried origin, not the city code from the offer", () => {
+    const deals = group([offer({ origin: "WAW" })], ptNd, "WMI");
+    expect(deals).toHaveLength(1);
+    expect(deals[0].origin).toBe("WMI");
+  });
+
+  it("drops Thursday departures before 19:00 local, keeps later ones", () => {
+    const early = offer({ departure_at: "2026-11-12T06:30:00+01:00", price: 150 });
+    const late = offer({ departure_at: "2026-11-12T20:15:00+01:00", price: 190 });
+    expect(group([early], czwNd)).toEqual([]);
+    const kept = group([early, late], czwNd);
+    expect(kept).toHaveLength(1);
+    expect(kept[0].price).toBe(190);
+  });
+
+  it("skips malformed rows instead of throwing", () => {
+    const bad = [
+      offer({ departure_at: undefined as unknown as string }),
+      offer({ return_at: null as unknown as string }),
+      offer({ price: Number.NaN }),
+      offer({ price: "201" as unknown as number }),
+    ];
+    expect(group([...bad, offer()])).toHaveLength(1);
+  });
+
   it("fills city name, week and fetched_at", () => {
     const [d] = group([offer()]);
     expect(d).toMatchObject({
@@ -75,7 +100,7 @@ describe("mergeVariants", () => {
   it("keeps the cheapest deal per origin and city across variants", () => {
     const a = group([offer({ price: 201 })], ptNd);
     const b = group(
-      [offer({ price: 189, departure_at: "2026-11-12T18:35:00+01:00" })],
+      [offer({ price: 189, departure_at: "2026-11-12T20:35:00+01:00" })],
       czwNd,
     );
     const merged = mergeVariants([...a, ...b]);

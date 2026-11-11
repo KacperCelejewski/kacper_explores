@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
     const all: DropDeal[] = [];
     for (const variant of variants) {
       const offers = await fetchWeekendOffers(origin, variant, token);
-      all.push(...groupDeals(offers, variant, cities, week, fetchedAt));
+      all.push(...groupDeals(offers, variant, cities, week, fetchedAt, origin));
       await sleep(PAUSE_MS);
     }
     const deals = mergeVariants(all);

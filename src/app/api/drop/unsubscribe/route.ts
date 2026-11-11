@@ -62,7 +62,8 @@ export async function POST(req: NextRequest) {
       const { error } = await db
         .from("newsletter_subscribers")
         .update({ drop_enabled: false, drop_disabled_reason: "user" })
-        .eq("unsubscribe_token", token);
+        .eq("unsubscribe_token", token)
+        .or("drop_disabled_reason.is.null,drop_disabled_reason.not.in.(complaint,bounce)");
       if (error) {
         console.error("[drop] unsubscribe failed:", error);
         return page("Wypis ze zrzutu", "<p>Coś poszło nie tak. Spróbuj jeszcze raz.</p>", 500);

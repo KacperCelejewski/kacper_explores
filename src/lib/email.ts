@@ -133,12 +133,12 @@ export async function sendDropConfirmation(
   opts: { airports: string[]; maxPrice: number },
 ) {
   await resend.emails.send({
-    from: "Włóczykij <onboarding@resend.dev>",
+    from: "Włóczykij <zrzut@wloczykij.me>",
     to: email,
     subject: "Potwierdź zapis na czwartkowy zrzut",
     html: dropMailLayout(
       "Potwierdź zapis<br>na czwartkowy zrzut",
-      `Co czwartek dostaniesz jeden mail z maksymalnie 3 wyjazdami z ${airportsLabel(opts.airports)} do ${opts.maxPrice} zł. Wypiszesz się jednym kliknięciem.<br><br>Na start dorzucamy <strong style="color:#FF6B35;">kod na 10% zniżki</strong> na Pro Roczny. Odbierzesz go po potwierdzeniu.`,
+      `Co czwartek dostaniesz jeden mail z maksymalnie 3 wyjazdami z ${airportsLabel(opts.airports)} do ${opts.maxPrice} zł. Wypiszesz się w każdej chwili.<br><br>Na start dorzucamy <strong style="color:#FF6B35;">kod na 10% zniżki</strong> na Pro Roczny. Odbierzesz go po potwierdzeniu.`,
       verifyUrl,
       "Potwierdź zapis →",
       "Link jest ważny przez 48 godzin. Jeśli nie zapisywałeś się na zrzut, zignoruj tę wiadomość.",
@@ -149,7 +149,7 @@ export async function sendDropConfirmation(
 /** Mail dla potwierdzonego adresu, który zapisał się ponownie bez logowania. */
 export async function sendDropManageLink(email: string, manageUrl: string) {
   await resend.emails.send({
-    from: "Włóczykij <onboarding@resend.dev>",
+    from: "Włóczykij <zrzut@wloczykij.me>",
     to: email,
     subject: "Twój czwartkowy zrzut: ustawienia",
     html: dropMailLayout(

@@ -47,6 +47,24 @@ describe("renderDropEmail", () => {
     expect(subject).not.toContain("!");
   });
 
+  it("kilka lotnisk: temat i nagłówek bez miasta, karty z lotniskiem", () => {
+    const { subject, html } = renderDropEmail({
+      ...base,
+      deals: [deal("MIL", "Mediolan", 201), deal("BCN", "Barcelona", 220, { origin: "WRO" })],
+      teasers: new Map(),
+    });
+    expect(subject).toBe("2 wyjazdy na ten weekend");
+    expect(html).not.toContain("Weekend z Krakowa");
+    expect(html).toContain("z Krakowa");
+    expect(html).toContain("z Wrocławia");
+  });
+
+  it("jedno lotnisko: nagłówek z miastem, karta z lotniskiem", () => {
+    const { html } = renderDropEmail({ ...base, deals: [deal("MIL", "Mediolan", 201)], teasers: new Map() });
+    expect(html).toContain("Weekend z Krakowa");
+    expect(html).toContain("z Krakowa · Ryanair");
+  });
+
   it("html zawiera dane okazji, linki i stopkę", () => {
     const d = deal("MIL", "Mediolan", 201);
     const { html } = renderDropEmail({

@@ -37,10 +37,15 @@ export async function POST(req: NextRequest) {
   const result = computeSettingsUpdate(row, body);
   if ("error" in result) return NextResponse.json({ error: result.error }, { status: result.status });
 
-  const { error } = await supabase
+  let query = supabase
     .from("newsletter_subscribers")
     .update(result.update)
     .eq("unsubscribe_token", token);
+  // zmiana powodu wyłączenia nie może nadpisać skargi ani odbicia, które wpadły po odczycie wiersza
+  if ("drop_disabled_reason" in result.update) {
+    query = query.or("drop_disabled_reason.is.null,drop_disabled_reason.not.in.(complaint,bounce)");
+  }
+  const { error } = await query;
   if (error) {
     console.error("[drop] settings update failed:", error);
     return NextResponse.json({ error: GENERIC_ERROR }, { status: 500 });
