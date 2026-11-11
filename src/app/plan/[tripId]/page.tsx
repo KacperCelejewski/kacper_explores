@@ -11,7 +11,8 @@ import BudgetTracker from "@/app/components/BudgetTracker";
 import FeedbackWidget from "@/app/components/FeedbackWidget";
 import CheckoutButton from "@/app/components/CheckoutButton";
 import DropSignup from "@/app/components/DropSignup";
-import type { DayPlan, DayActivity, TripPlan, DestinationRecommendation } from "@/types";
+import DropProfileButton from "@/app/components/DropProfileButton";
+import type { DayPlan, DayActivity, TripPlan, DestinationRecommendation, QuizAnswers } from "@/types";
 import { getCityPhotoUrl } from "@/lib/cityPhotos";
 import { PRICES } from "@/lib/prices";
 
@@ -76,6 +77,7 @@ export default function PlanPage() {
   const [userCredits, setUserCredits] = useState<{ credits: number; isPro: boolean } | null>(null);
   // null = jeszcze nie wiemy; formularz zrzutu pokazujemy dopiero po sprawdzeniu profilu
   const [dropSubscribed, setDropSubscribed] = useState<boolean | null>(null);
+  const [dropAccount, setDropAccount] = useState<{ prefs: QuizAnswers | null } | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfGate, setPdfGate] = useState(false);
   const [feedbackGiven, setFeedbackGiven] = useState(() => {
@@ -314,6 +316,7 @@ export default function PlanPage() {
           setUserCredits({ credits: d.credits_remaining ?? 0, isPro: d.is_pro ?? false });
         }
         setDropSubscribed(d.authenticated ? d.drop_enabled === true : false);
+        if (d.authenticated) setDropAccount({ prefs: d.quiz_preferences ?? null });
       })
       .catch(() => {});
   }, []);
@@ -488,7 +491,16 @@ export default function PlanPage() {
           className="mx-5 mb-4 p-5 rounded-2xl no-print"
           style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
         >
-          <DropSignup />
+          {dropAccount ? (
+            <>
+              <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: "var(--text-muted)" }}>
+                Czwartkowy zrzut
+              </p>
+              <DropProfileButton prefs={dropAccount.prefs} />
+            </>
+          ) : (
+            <DropSignup />
+          )}
         </div>
       )}
 

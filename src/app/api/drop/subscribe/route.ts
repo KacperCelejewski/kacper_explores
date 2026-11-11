@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { getUserProfile } from "@/lib/userProfile";
-import { sendNewsletterConfirmation } from "@/lib/email";
+import { sendDropConfirmation, sendDropManageLink } from "@/lib/email";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { getClientIp } from "@/lib/validate";
 import { createNewsletterPromo, newVerificationToken, newsletterVerifyUrl } from "@/lib/newsletter";
-import { buildSubscriberUpsert, budgetToMaxPrice, normalizeSignup, DROP_MAX_AIRPORTS } from "@/lib/drop/signup";
+import {
+  buildSubscriberUpsert, budgetToMaxPrice, decideSubscribeAction, newUnsubscribeToken, normalizeSignup, DROP_MAX_AIRPORTS,
+} from "@/lib/drop/signup";
+import { buildSettingsUrl } from "@/lib/drop/links";
 import { POLISH_AIRPORTS } from "@/lib/airports";
 
 const GENERIC_ERROR = "Coś poszło nie tak. Spróbuj jeszcze raz — zwykle działa za drugim.";
@@ -55,33 +58,54 @@ export async function POST(req: NextRequest) {
     .eq("email", signup.email)
     .maybeSingle();
 
-  const fields = buildSubscriberUpsert(existing, signup);
+  const action = decideSubscribeAction(existing, { fromProfile });
   const now = new Date().toISOString();
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const mailOpts = { airports: signup.airports, maxPrice: signup.max_price };
 
-  if (existing) {
-    if (existing.verified) {
-      const { error } = await supabase.from("newsletter_subscribers").update(fields).eq("email", signup.email);
-      if (error) return NextResponse.json({ error: GENERIC_ERROR }, { status: 500 });
-      return NextResponse.json({ enabled: true });
-    }
-    if (fromProfile) {
-      // Adres z zalogowanego konta uznajemy za potwierdzony
+  // Anonim zawsze dostaje { pending: true }, żeby nie dało się sprawdzić, kto jest zapisany.
+  if (action === "blocked") return NextResponse.json({ pending: true });
+
+  if (action === "send_manage_link" && existing) {
+    // Potwierdzonego wiersza nie ruszamy; najwyżej dopisujemy brakujący token wypisu.
+    let token = existing.unsubscribe_token;
+    if (!token) {
+      token = newUnsubscribeToken();
       const { error } = await supabase
         .from("newsletter_subscribers")
-        .update({ ...buildSubscriberUpsert({ ...existing, verified: true }, signup), verified: true, verified_at: now })
+        .update({ unsubscribe_token: token })
         .eq("email", signup.email);
       if (error) return NextResponse.json({ error: GENERIC_ERROR }, { status: 500 });
-      return NextResponse.json({ enabled: true });
     }
+    try {
+      await sendDropManageLink(signup.email, buildSettingsUrl(appUrl, token));
+    } catch (err) {
+      console.error("[drop] failed to send manage link:", err);
+    }
+    return NextResponse.json({ pending: true });
+  }
+
+  if (action === "update_profile" && existing) {
+    // Adres z zalogowanego konta uznajemy za potwierdzony
+    const fields = buildSubscriberUpsert({ ...existing, verified: true }, signup);
+    const { error } = await supabase
+      .from("newsletter_subscribers")
+      .update({ ...fields, verified: true, ...(existing.verified ? {} : { verified_at: now }) })
+      .eq("email", signup.email);
+    if (error) return NextResponse.json({ error: GENERIC_ERROR }, { status: 500 });
+    return NextResponse.json({ enabled: true });
+  }
+
+  if (action === "resend_verification") {
     // Niepotwierdzony: świeży token resetuje okno ważności linku
     const token = newVerificationToken();
     const { error } = await supabase
       .from("newsletter_subscribers")
-      .update({ ...fields, verification_token: token, token_sent_at: now })
+      .update({ ...buildSubscriberUpsert(existing, signup), verification_token: token, token_sent_at: now })
       .eq("email", signup.email);
     if (error) return NextResponse.json({ error: GENERIC_ERROR }, { status: 500 });
     try {
-      await sendNewsletterConfirmation(signup.email, newsletterVerifyUrl(token));
+      await sendDropConfirmation(signup.email, newsletterVerifyUrl(token), mailOpts);
     } catch (err) {
       console.error("[drop] failed to send confirmation email:", err);
     }
@@ -98,7 +122,7 @@ export async function POST(req: NextRequest) {
   const token = newVerificationToken();
   const row = fromProfile
     ? { ...buildSubscriberUpsert({ verified: true, drop_disabled_reason: null, unsubscribe_token: null }, signup), verified: true, verified_at: now }
-    : { ...fields, verified: false, verification_token: token, token_sent_at: now };
+    : { ...buildSubscriberUpsert(null, signup), verified: false, verification_token: token, token_sent_at: now };
 
   const { error } = await supabase.from("newsletter_subscribers").insert({
     email: signup.email,
@@ -111,7 +135,7 @@ export async function POST(req: NextRequest) {
   if (fromProfile) return NextResponse.json({ enabled: true });
 
   try {
-    await sendNewsletterConfirmation(signup.email, newsletterVerifyUrl(token));
+    await sendDropConfirmation(signup.email, newsletterVerifyUrl(token), mailOpts);
   } catch (err) {
     console.error("[drop] failed to send confirmation email:", err);
   }

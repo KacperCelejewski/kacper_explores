@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { POLISH_AIRPORTS } from "@/lib/airports";
 import { DROP_MAX_AIRPORTS, DROP_MAX_PRICES } from "@/lib/drop/signup";
 import { trackEvent } from "@/lib/analytics";
@@ -180,6 +181,10 @@ export default function DropSignup() {
         >
           {state === "loading" ? "…" : "Zapisz mnie"}
         </button>
+        <p className="text-xs leading-relaxed -mt-2" style={{ color: "var(--text-muted)" }}>
+          Raz w tygodniu mail z okazjami. Wypiszesz się jednym kliknięciem. Szczegóły w{" "}
+          <Link href="/privacy" className="underline">polityce prywatności</Link>.
+        </p>
       </form>
     </div>
   );

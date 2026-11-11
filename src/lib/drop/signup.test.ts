@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { normalizeSignup, budgetToMaxPrice, buildSubscriberUpsert } from "./signup";
+import { normalizeSignup, budgetToMaxPrice, buildSubscriberUpsert, decideSubscribeAction } from "./signup";
 
 describe("normalizeSignup", () => {
   it("normalizuje e-mail i zwraca dane", () => {
@@ -89,5 +89,40 @@ describe("buildSubscriberUpsert", () => {
     const r = buildSubscriberUpsert(
       { verified: false, drop_disabled_reason: null, unsubscribe_token: "t" }, s);
     expect(r).toMatchObject({ drop_enabled: false, unsubscribe_token: "t" });
+  });
+
+  it.each(["complaint", "bounce"])("powód %s nie jest zdejmowany", (reason) => {
+    const r = buildSubscriberUpsert(
+      { verified: true, drop_disabled_reason: reason, unsubscribe_token: "t" }, s);
+    expect(r.drop_enabled).toBe(false);
+    expect(r).not.toHaveProperty("drop_disabled_reason");
+  });
+});
+
+describe("decideSubscribeAction", () => {
+  const row = (verified: boolean, reason: string | null = null) =>
+    ({ verified, drop_disabled_reason: reason, unsubscribe_token: "t" });
+
+  it("brak wiersza: insert", () => {
+    expect(decideSubscribeAction(null, { fromProfile: false })).toBe("insert");
+    expect(decideSubscribeAction(null, { fromProfile: true })).toBe("insert");
+  });
+
+  it("niepotwierdzony: anonim dostaje nowy link, konto aktualizuje", () => {
+    expect(decideSubscribeAction(row(false), { fromProfile: false })).toBe("resend_verification");
+    expect(decideSubscribeAction(row(false), { fromProfile: true })).toBe("update_profile");
+  });
+
+  it("potwierdzony anonim: tylko link do ustawień, także po skardze", () => {
+    expect(decideSubscribeAction(row(true), { fromProfile: false })).toBe("send_manage_link");
+    expect(decideSubscribeAction(row(true, "user"), { fromProfile: false })).toBe("send_manage_link");
+    expect(decideSubscribeAction(row(true, "complaint"), { fromProfile: false })).toBe("send_manage_link");
+  });
+
+  it("potwierdzony z konta: aktualizuje, z blokadą dla skargi i odbicia", () => {
+    expect(decideSubscribeAction(row(true), { fromProfile: true })).toBe("update_profile");
+    expect(decideSubscribeAction(row(true, "user"), { fromProfile: true })).toBe("update_profile");
+    expect(decideSubscribeAction(row(true, "complaint"), { fromProfile: true })).toBe("blocked");
+    expect(decideSubscribeAction(row(true, "bounce"), { fromProfile: true })).toBe("blocked");
   });
 });
