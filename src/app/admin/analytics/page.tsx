@@ -1,4 +1,5 @@
 import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { countAirports, isMissingTableError, latestWeeks } from "@/lib/drop/adminStats";
 
 function getServiceClient() {
   return createServiceClient(
@@ -36,6 +37,76 @@ interface AuthUser {
   last_sign_in_at: string | null;
 }
 
+const PAGE_SIZE = 1000;
+
+type DropStats =
+  | { status: "ok"; active: number; airports: { airport: string; count: number }[]; weeks: { week: string; sent: number }[] }
+  | { status: "missing" }
+  | { status: "error" };
+
+async function getDropStats(sb: ReturnType<typeof getServiceClient>): Promise<DropStats> {
+  try {
+    const activeRes = await sb
+      .from("newsletter_subscribers")
+      .select("id", { count: "exact", head: true })
+      .eq("verified", true)
+      .eq("drop_enabled", true);
+    if (activeRes.error) {
+      return isMissingTableError(activeRes.error) ? { status: "missing" } : { status: "error" };
+    }
+
+    // Lotniska: strony po 1000, bo odczyt Supabase po cichu ucina wyniki
+    const airportRows: { airports: string[] | null }[] = [];
+    for (let from = 0; ; from += PAGE_SIZE) {
+      const { data, error } = await sb
+        .from("newsletter_subscribers")
+        .select("airports")
+        .eq("verified", true)
+        .eq("drop_enabled", true)
+        .order("id")
+        .range(from, from + PAGE_SIZE - 1);
+      if (error) return isMissingTableError(error) ? { status: "missing" } : { status: "error" };
+      airportRows.push(...(data ?? []));
+      if (!data || data.length < PAGE_SIZE) break;
+    }
+
+    // 4 najnowsze tygodnie: idziemy od najnowszych rekordów, aż zbierzemy 4 różne
+    const seenWeeks: string[] = [];
+    for (let from = 0; ; from += PAGE_SIZE) {
+      const { data, error } = await sb
+        .from("drop_sends")
+        .select("week")
+        .order("week", { ascending: false })
+        .range(from, from + PAGE_SIZE - 1);
+      if (error) return isMissingTableError(error) ? { status: "missing" } : { status: "error" };
+      seenWeeks.push(...(data ?? []).map((r) => r.week as string));
+      if (latestWeeks(seenWeeks, 5).length > 4 || !data || data.length < PAGE_SIZE) break;
+    }
+    const weeks = latestWeeks(seenWeeks, 4);
+
+    // Wysłane = sent_at nie jest null (null to tylko rezerwacja)
+    const counts = await Promise.all(
+      weeks.map((week) =>
+        sb
+          .from("drop_sends")
+          .select("id", { count: "exact", head: true })
+          .eq("week", week)
+          .not("sent_at", "is", null)
+      )
+    );
+    if (counts.some((c) => c.error)) return { status: "error" };
+
+    return {
+      status: "ok",
+      active: activeRes.count ?? 0,
+      airports: countAirports(airportRows),
+      weeks: weeks.map((week, i) => ({ week, sent: counts[i].count ?? 0 })),
+    };
+  } catch {
+    return { status: "error" };
+  }
+}
+
 async function getAnalytics() {
   const sb = getServiceClient();
 
@@ -49,11 +120,12 @@ async function getAnalytics() {
   const sevenDaysAgo = new Date(todayStart);
   sevenDaysAgo.setUTCDate(sevenDaysAgo.getUTCDate() - 6);
 
-  const [authRes, profilesRes, tripsRes, paymentsRes] = await Promise.all([
+  const [authRes, profilesRes, tripsRes, paymentsRes, drop] = await Promise.all([
     sb.auth.admin.listUsers({ perPage: 1000 }),
     sb.from("user_profiles").select("id,subscription_tier,credits_remaining,created_at,stripe_customer_id"),
     sb.from("trips").select("user_id,city,country,created_at").gte("created_at", thirtyDaysAgo.toISOString()),
     sb.from("payments").select("user_id,amount_cents,plan_type,created_at"),
+    getDropStats(sb),
   ]);
 
   const authUsers: AuthUser[] = (authRes.data?.users ?? []).map((u) => ({
@@ -189,6 +261,7 @@ async function getAnalytics() {
     planBreakdown,
     topDests,
     recentSignups,
+    drop,
   };
 }
 
@@ -414,6 +487,48 @@ export default async function AnalyticsPage() {
           </div>
         </div>
       </div>
+
+      {/* Czwartkowy zrzut */}
+      <p style={{ margin: "0 0 12px", fontSize: 11, color: "#666", textTransform: "uppercase", letterSpacing: 2 }}>Czwartkowy zrzut</p>
+      {s.drop.status !== "ok" ? (
+        <p style={{ margin: "0 0 24px", color: "#555", fontSize: 12 }}>
+          {s.drop.status === "missing"
+            ? "Brak danych zrzutu — migracja nie jest jeszcze zastosowana."
+            : "Brak danych zrzutu — nie udało się ich pobrać."}
+        </p>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 24 }}>
+          <Stat label="Aktywni subskrybenci" value={s.drop.active} sub="zweryfikowani, zrzut włączony" accent="#6366F1" />
+
+          <div style={{ background: "#1A1A1A", border: "1px solid #2A2A2A", borderRadius: 12, padding: "20px 24px" }}>
+            <p style={{ margin: "0 0 16px", fontSize: 11, color: "#666", textTransform: "uppercase", letterSpacing: 2 }}>Lotniska</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {s.drop.airports.length === 0 && <p style={{ margin: 0, color: "#555", fontSize: 12 }}>Brak danych</p>}
+              {s.drop.airports.map(({ airport, count }) => (
+                <div key={airport} style={{ display: "flex", justifyContent: "space-between", padding: "6px 10px", background: "#111", borderRadius: 6 }}>
+                  <span style={{ fontSize: 12, color: "#CCC", fontFamily: "monospace" }}>{airport}</span>
+                  <span style={{ fontSize: 12, color: "#6366F1", fontWeight: 700 }}>{count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ background: "#1A1A1A", border: "1px solid #2A2A2A", borderRadius: 12, padding: "20px 24px" }}>
+            <p style={{ margin: "0 0 16px", fontSize: 11, color: "#666", textTransform: "uppercase", letterSpacing: 2 }}>
+              Wysłane — ostatnie 4 tygodnie
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {s.drop.weeks.length === 0 && <p style={{ margin: 0, color: "#555", fontSize: 12 }}>Brak danych</p>}
+              {s.drop.weeks.map(({ week, sent }) => (
+                <div key={week} style={{ display: "flex", justifyContent: "space-between", padding: "6px 10px", background: "#111", borderRadius: 6 }}>
+                  <span style={{ fontSize: 12, color: "#CCC", fontFamily: "monospace" }}>{week}</span>
+                  <span style={{ fontSize: 12, color: "#22C55E", fontWeight: 700 }}>{sent}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

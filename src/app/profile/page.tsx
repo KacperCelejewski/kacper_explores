@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { useAppStore } from "@/lib/store";
 import type { QuizAnswers } from "@/types";
 import { PRICES } from "@/lib/prices";
+import DropProfileButton from "@/app/components/DropProfileButton";
 
 interface Trip {
   id: string;
@@ -22,6 +23,7 @@ interface ProfileData {
   credits_remaining?: number;
   subscription_tier?: string;
   quiz_preferences?: QuizAnswers | null;
+  drop_enabled?: boolean;
   trips?: Trip[];
 }
 
@@ -279,6 +281,23 @@ export default function ProfilePage() {
             </button>
           </div>
         )}
+      </motion.div>
+
+      <div className="mt-6 h-px" style={{ background: "var(--border)" }} />
+
+      {/* Czwartkowy zrzut */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.18 }}
+        className="mt-6"
+      >
+        <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: "var(--text-muted)" }}>
+          Czwartkowy zrzut
+        </p>
+        <div className="glass-card p-4">
+          <DropProfileButton prefs={prefs} alreadyEnabled={data.drop_enabled === true} />
+        </div>
       </motion.div>
 
       <div className="mt-6 h-px" style={{ background: "var(--border)" }} />

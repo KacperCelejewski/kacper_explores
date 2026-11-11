@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { isHardDisabled } from "@/lib/drop/signup";
 
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get("token");
@@ -13,7 +14,7 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabase
     .from("newsletter_subscribers")
-    .select("id, discount_code, verified, token_sent_at")
+    .select("id, discount_code, verified, token_sent_at, airports, max_price, unsubscribe_token, drop_disabled_reason")
     .eq("verification_token", token)
     .maybeSingle();
 
@@ -34,9 +35,17 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  // Zrzut włącza się tylko, gdy wysyłka ma komplet danych: lotniska, budżet i token wypisu
+  const dropReady = (data.airports?.length ?? 0) > 0 && data.max_price != null && !!data.unsubscribe_token
+    && !isHardDisabled(data.drop_disabled_reason);
+
   await supabase
     .from("newsletter_subscribers")
-    .update({ verified: true, verified_at: new Date().toISOString() })
+    .update({
+      verified: true,
+      verified_at: new Date().toISOString(),
+      ...(dropReady ? { drop_enabled: true } : {}),
+    })
     .eq("id", data.id);
 
   return NextResponse.redirect(`${appUrl}/?newsletter=verified&code=${data.discount_code}`);

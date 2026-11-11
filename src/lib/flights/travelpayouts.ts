@@ -3,14 +3,9 @@ import { MOCK_DESTINATIONS } from "@/lib/mockFlights";
 import { buildSkyscannerUrl } from "./search-url";
 import { CATALOG } from "@/lib/destinations/catalog";
 import { AIRPORT_BY_CODE, DEFAULT_AIRPORTS } from "@/lib/airports";
+import { AIRLINE_NAMES } from "./airlines";
 
 const BASE = "https://api.travelpayouts.com";
-
-const AIRLINE_NAMES: Record<string, string> = {
-  FR: "Ryanair", W6: "Wizz Air", U2: "easyJet", LO: "LOT",
-  VY: "Vueling", IB: "Iberia", TP: "TAP Air Portugal",
-  OS: "Austrian", LH: "Lufthansa", KL: "KLM", AF: "Air France",
-};
 
 interface TpOffer {
   price: number;

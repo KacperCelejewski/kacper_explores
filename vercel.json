@@ -3,6 +3,18 @@
     {
       "path": "/api/cron/pre-trip-email",
       "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/drop-prepare",
+      "schedule": "0 21 * * 3"
+    },
+    {
+      "path": "/api/cron/drop-teasers",
+      "schedule": "0 22 * * 3"
+    },
+    {
+      "path": "/api/cron/drop-send",
+      "schedule": "0 16 * * 4"
     }
   ]
 }
