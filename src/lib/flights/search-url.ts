@@ -27,3 +27,18 @@ export function buildSkyscannerUrl(
 
   return `https://www.skyscanner.pl/transport/loty/${origin}/${dest}/${datePart}?adultsv2=1&cabin_class=economy`;
 }
+
+// Format wyszukiwania Aviasales: WRO0512BCN08121 = z WRO 5.12, powrót 8.12, 1 dorosły.
+// Dzień i miesiąc bierzemy z tekstu daty, żeby lot po północy nie wypadał dzień wcześniej.
+export function buildAviasalesUrl(
+  originCode: string,
+  destCode: string,
+  departIso: string,
+  returnIso: string,
+  marker: string
+): string {
+  const ddmm = (iso: string) => `${iso.slice(8, 10)}${iso.slice(5, 7)}`;
+  const path = `${originCode.toUpperCase()}${ddmm(departIso)}${destCode.toUpperCase()}${ddmm(returnIso)}1`;
+  const query = marker ? `?marker=${encodeURIComponent(marker)}` : "";
+  return `https://www.aviasales.com/search/${path}${query}`;
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSkyscannerUrl } from "./search-url";
+import { buildAviasalesUrl, buildSkyscannerUrl } from "./search-url";
 
 describe("buildSkyscannerUrl", () => {
   it("maps airports to Skyscanner ids and formats dates as YYMMDD", () => {
@@ -16,5 +16,29 @@ describe("buildSkyscannerUrl", () => {
     expect(buildSkyscannerUrl("WRO", "KRK", "2026-06-12", null)).toBe(
       "https://www.skyscanner.pl/transport/loty/wro/krk/?adultsv2=1&cabin_class=economy",
     );
+  });
+});
+
+describe("buildAviasalesUrl", () => {
+  it("builds ORIGIN+DDMM+DEST+DDMM+1 with the marker", () => {
+    expect(
+      buildAviasalesUrl("wro", "bcn", "2026-12-05T06:30:00+01:00", "2026-12-08T21:10:00+01:00", "abc123"),
+    ).toBe("https://www.aviasales.com/search/WRO0512BCN08121?marker=abc123");
+  });
+
+  it("takes day and month from the date text, not from UTC", () => {
+    expect(
+      buildAviasalesUrl("WRO", "BCN", "2026-12-05T00:30:00+01:00", "2026-12-08T23:50:00+01:00", "m"),
+    ).toContain("/search/WRO0512BCN08121");
+  });
+
+  it("omits the query without a marker", () => {
+    expect(buildAviasalesUrl("WRO", "BCN", "2026-12-05", "2026-12-08", "")).toBe(
+      "https://www.aviasales.com/search/WRO0512BCN08121",
+    );
+  });
+
+  it("encodes the marker", () => {
+    expect(buildAviasalesUrl("WRO", "BCN", "2026-12-05", "2026-12-08", "a b&c")).toContain("?marker=a%20b%26c");
   });
 });
