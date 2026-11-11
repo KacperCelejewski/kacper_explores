@@ -22,9 +22,15 @@ export function chunk<T>(items: T[], size: number): T[][] {
   return out;
 }
 
-const QUOTA_ERRORS = new Set(["daily_quota_exceeded", "monthly_quota_exceeded", "rate_limit_exceeded"]);
+export type BatchErrorKind = "quota" | "rate_limit" | "rejected" | "unknown";
 
-// Limit dzienny/miesięczny albo 429 z Resend: dalsze partie i tak nie przejdą
-export function isQuotaError(err: { name?: string; statusCode?: number | null }): boolean {
-  return err.statusCode === 429 || (err.name !== undefined && QUOTA_ERRORS.has(err.name));
+// quota: limit dzienny/miesięczny, na pewno nie wysłane. rate_limit: chwilowy 429, do ponowienia.
+// rejected: Resend odrzucił żądanie (4xx), nie wysłane. unknown: brak statusu albo 5xx,
+// Resend mógł przyjąć partię, więc nie wolno zwalniać rezerwacji.
+export function classifyBatchError(err: { name?: string; statusCode?: number | null }): BatchErrorKind {
+  if (err.name?.includes("quota")) return "quota";
+  if (err.name === "rate_limit_exceeded") return "rate_limit";
+  const status = err.statusCode;
+  if (typeof status === "number" && status >= 400 && status < 500) return "rejected";
+  return "unknown";
 }

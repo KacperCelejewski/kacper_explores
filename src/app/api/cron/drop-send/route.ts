@@ -6,7 +6,7 @@ import { isAuthorizedCron } from "@/lib/drop/cronAuth";
 import { weekKey } from "@/lib/drop/dates";
 import { renderDropEmail, ORIGIN_GENITIVE } from "@/lib/drop/email";
 import { buildUnsubscribeUrl } from "@/lib/drop/links";
-import { chunk, isQuotaError, selectRecipients } from "@/lib/drop/send";
+import { chunk, classifyBatchError, selectRecipients } from "@/lib/drop/send";
 import type { CityTeaser, DropDeal, DropSubscriber } from "@/lib/drop/types";
 
 export const maxDuration = 60;
@@ -14,6 +14,8 @@ export const maxDuration = 60;
 const BUDGET_MS = 50_000; // zapas do limitu 60 s
 const BATCH_SIZE = 100; // limit Resend batch.send
 const PAGE = 1000; // domyślny limit wierszy w Supabase
+const RATE_LIMIT_WAIT_MS = 1000;
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 const FROM = "Włóczykij <zrzut@wloczykij.me>";
 
 type Db = ReturnType<typeof createServiceClient>;
@@ -102,6 +104,7 @@ export async function GET(req: NextRequest) {
   let leftover = 0; // nie wysłane przez limit Resend albo czasu
   let quotaHit = false;
   let timedOut = false;
+  let uncertain = 0; // błąd bez pewności, czy Resend wysłał
   let updateFailures = 0;
   let firstError: string | null = null;
 
@@ -154,29 +157,46 @@ export async function GET(req: NextRequest) {
       };
     });
     const ids = mine.map((r) => r.sub.id);
+    const idempotencyKey = `drop-${week}-${ids[0]}-${ids.length}`;
 
-    let result;
-    try {
-      result = await resend.batch.send(payload);
-    } catch (err) {
-      // nie wiadomo, czy Resend przyjął partię; wiersze zostają, żeby nie wysłać dwa razy
-      errors += mine.length;
-      firstError ??= `wyjątek przy wysyłce (wiersze zostawione): ${err instanceof Error ? err.message : String(err)}`;
-      console.error("[drop-send] batch.send threw", err);
-      continue;
+    const sendBatch = () => resend.batch.send(payload, { idempotencyKey });
+    let result: Awaited<ReturnType<typeof sendBatch>> | null = null;
+    let thrown: string | null = null;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        result = await sendBatch();
+      } catch (err) {
+        result = null;
+        thrown = err instanceof Error ? err.message : String(err);
+        console.error("[drop-send] batch.send threw", err);
+        break;
+      }
+      // chwilowy limit 2 zapytań/s: jedno ponowienie tej samej partii z zachowanymi rezerwacjami
+      if (attempt === 0 && result.error && classifyBatchError(result.error) === "rate_limit") {
+        await sleep(RATE_LIMIT_WAIT_MS);
+        continue;
+      }
+      break;
     }
 
-    if (result.error || !result.data) {
-      const err = result.error;
+    if (!result || result.error || !result.data) {
+      const err = result?.error ?? null;
+      const kind = err ? classifyBatchError(err) : "unknown";
+      const label = err ? `${err.name}: ${err.message}` : (thrown ?? "brak danych z Resend");
+      firstError ??= label;
+      if (kind === "unknown") {
+        // Resend mógł przyjąć partię: rezerwacje zostają, żeby rerun nie wysłał drugi raz
+        errors += mine.length;
+        uncertain += mine.length;
+        continue;
+      }
       await releaseRows(db, week, ids);
-      if (err && isQuotaError(err)) {
+      if (kind === "quota") {
         quotaHit = true;
         leftover = rest();
-        firstError ??= `${err.name}: ${err.message}`;
         break;
       }
       errors += mine.length;
-      firstError ??= err ? `${err.name}: ${err.message}` : "brak danych z Resend";
       continue;
     }
 
@@ -200,6 +220,7 @@ export async function GET(req: NextRequest) {
   const parts = [`Zrzut ${week}: wysłane ${sent}, bez dopasowania ${unmatched}, błędy ${errors}`];
   if (quotaHit) parts.push(`limit Resend, niewysłane: ${leftover}, bez ponawiania`);
   if (timedOut) parts.push(`limit czasu, zostało do wysłania: ${leftover}`);
+  if (uncertain) parts.push(`nie wiadomo, czy wysłane: ${uncertain}`);
   if (updateFailures) parts.push(`nie zapisano resend_id dla ${updateFailures}`);
   if (firstError) parts.push(`pierwszy błąd: ${firstError}`);
   if (!marker) parts.push("brak TRAVELPAYOUTS_MARKER, linki bez partnera");

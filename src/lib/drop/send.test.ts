@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { chunk, isQuotaError, selectRecipients } from "./send";
+import { chunk, classifyBatchError, selectRecipients } from "./send";
 import type { DropDeal, DropSubscriber } from "./types";
 
 function deal(code: string, price: number, origin = "KRK"): DropDeal {
@@ -50,16 +50,24 @@ describe("chunk", () => {
   });
 });
 
-describe("isQuotaError", () => {
-  it("rozpoznaje limity dzienny, miesięczny i 429", () => {
-    expect(isQuotaError({ name: "daily_quota_exceeded", statusCode: 429 })).toBe(true);
-    expect(isQuotaError({ name: "monthly_quota_exceeded", statusCode: 429 })).toBe(true);
-    expect(isQuotaError({ name: "rate_limit_exceeded", statusCode: 429 })).toBe(true);
-    expect(isQuotaError({ name: "application_error", statusCode: 429 })).toBe(true);
+describe("classifyBatchError", () => {
+  it("limity dzienny i miesięczny to quota", () => {
+    expect(classifyBatchError({ name: "daily_quota_exceeded", statusCode: 429 })).toBe("quota");
+    expect(classifyBatchError({ name: "monthly_quota_exceeded", statusCode: 429 })).toBe("quota");
   });
 
-  it("nie myli innych błędów z limitem", () => {
-    expect(isQuotaError({ name: "validation_error", statusCode: 422 })).toBe(false);
-    expect(isQuotaError({ name: "application_error", statusCode: null })).toBe(false);
+  it("rate_limit_exceeded to rate_limit", () => {
+    expect(classifyBatchError({ name: "rate_limit_exceeded", statusCode: 429 })).toBe("rate_limit");
+  });
+
+  it("inne 4xx to rejected", () => {
+    expect(classifyBatchError({ name: "validation_error", statusCode: 422 })).toBe("rejected");
+    expect(classifyBatchError({ name: "invalid_api_key", statusCode: 403 })).toBe("rejected");
+  });
+
+  it("brak statusu i 5xx to unknown", () => {
+    expect(classifyBatchError({ name: "application_error", statusCode: null })).toBe("unknown");
+    expect(classifyBatchError({ name: "internal_server_error", statusCode: 503 })).toBe("unknown");
+    expect(classifyBatchError({})).toBe("unknown");
   });
 });
