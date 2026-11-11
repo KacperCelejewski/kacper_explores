@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useRef } from "react";
+import { createContext, useContext, useState, useEffect, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,6 +8,7 @@ import { useAppStore } from "@/lib/store";
 import type { TravelStyle, TripDuration, TravelVibe, PlaceType, QuizAnswers } from "@/types";
 import { MONTH_NAMES } from "@/lib/constants";
 import { trackEvent } from "@/lib/analytics";
+import { parseDropParams } from "@/lib/drop/quizParams";
 import QuizProgress from "@/components/quiz/QuizProgress";
 import {
   IconBackpack,
@@ -38,6 +39,8 @@ import type { Companion } from "@/types";
 type IconFC = React.FC<{ size?: number }>;
 
 const TOTAL_STEPS = 6;
+// Link ze zrzutu zna już miesiąc, długość i lotnisko, więc pomija kroki 4 i 5
+const DROP_TOTAL_STEPS = 4;
 // Single-choice steps move on by themselves right after the tap
 const AUTO_ADVANCE_STEPS = [0, 1, 2];
 const AUTO_ADVANCE_MS = 340;
@@ -197,7 +200,9 @@ function QuizPageInner() {
   const [hasMoved, setHasMoved] = useState(false);
   const { quizAnswers, currentQuizStep, setQuizAnswer, toggleStyle, nextQuizStep, prevQuizStep, setCurrentQuizStep, resetQuiz } =
     useAppStore();
-  const [maxVisitedStep, setMaxVisitedStep] = useState(currentQuizStep);
+  const dropPrefill = useMemo(() => parseDropParams(searchParams), [searchParams]);
+  const totalSteps = dropPrefill ? DROP_TOTAL_STEPS : TOTAL_STEPS;
+  const [maxVisitedStep, setMaxVisitedStep] = useState(dropPrefill ? 0 : currentQuizStep);
 
   // Stable session ID for this quiz attempt (not persisted — resets on page refresh)
   const sessionId = useRef(crypto.randomUUID());
@@ -217,8 +222,18 @@ function QuizPageInner() {
   };
 
   useEffect(() => {
-    const cityParam = searchParams.get("city");
-    setQuizAnswer("preferredCity", cityParam ?? undefined);
+    if (dropPrefill) {
+      setQuizAnswer("preferredCity", dropPrefill.preferredCity);
+      setQuizAnswer("airports", dropPrefill.airports);
+      setQuizAnswer("month", dropPrefill.month);
+      setQuizAnswer("duration", dropPrefill.duration);
+      // store trzyma krok z poprzedniej wizyty, a tu są tylko kroki 0-3
+      setCurrentQuizStep(0);
+      trackEvent("drop_plan_started", { city: dropPrefill.preferredCity });
+    } else if (searchParams.get("afterLogin") !== "1") {
+      // po powrocie z logowania zostaje miasto zapisane w store
+      setQuizAnswer("preferredCity", searchParams.get("city") ?? undefined);
+    }
     track("step_view", 0);
 
     fetch("/api/profile")
@@ -265,7 +280,7 @@ function QuizPageInner() {
     router.push("/destinations");
   };
 
-  const isLast = currentQuizStep === TOTAL_STEPS - 1;
+  const isLast = currentQuizStep === totalSteps - 1;
   const autoStep = AUTO_ADVANCE_STEPS.includes(currentQuizStep);
 
   const canProceed = () => {
@@ -283,7 +298,7 @@ function QuizPageInner() {
     setHasMoved(true);
     setDir(1);
     track("step_complete", currentQuizStep);
-    if (currentQuizStep < TOTAL_STEPS - 1) {
+    if (currentQuizStep < totalSteps - 1) {
       nextQuizStep();
     } else {
       track("quiz_complete");
@@ -348,11 +363,11 @@ function QuizPageInner() {
             className="text-sm font-semibold"
             style={{ color: isLast ? "var(--accent)" : "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}
           >
-            {isLast ? "Ostatnie pytanie" : `Pytanie ${currentQuizStep + 1} z ${TOTAL_STEPS}`}
+            {isLast ? "Ostatnie pytanie" : `Pytanie ${currentQuizStep + 1} z ${totalSteps}`}
           </p>
         </div>
         <QuizProgress
-          total={TOTAL_STEPS}
+          total={totalSteps}
           current={currentQuizStep}
           maxVisited={maxVisitedStep}
           onJump={jumpToStep}
