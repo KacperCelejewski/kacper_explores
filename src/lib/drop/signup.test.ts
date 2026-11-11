@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { normalizeSignup, budgetToMaxPrice, buildSubscriberUpsert, decideSubscribeAction, disableReasonFor, computeSettingsUpdate } from "./signup";
+import { normalizeSignup, budgetToMaxPrice, buildSubscriberUpsert, decideSubscribeAction, disableReasonFor, computeSettingsUpdate, countsTowardUnsubscribeLimit } from "./signup";
 
 describe("normalizeSignup", () => {
   it("normalizuje e-mail i zwraca dane", () => {
@@ -128,10 +128,28 @@ describe("decideSubscribeAction", () => {
 });
 
 describe("disableReasonFor", () => {
-  it("mapuje odbicie i skargę, resztę ignoruje", () => {
-    expect(disableReasonFor("email.bounced")).toBe("bounce");
-    expect(disableReasonFor("email.complained")).toBe("complaint");
-    expect(disableReasonFor("email.delivered")).toBeNull();
+  it("trwałe odbicie i skarga wyłączają zrzut", () => {
+    expect(disableReasonFor({ type: "email.bounced", data: { bounce: { type: "Permanent" } } })).toBe("bounce");
+    expect(disableReasonFor({ type: "email.complained", data: {} })).toBe("complaint");
+  });
+
+  it("chwilowe lub nieznane odbicie jest ignorowane", () => {
+    expect(disableReasonFor({ type: "email.bounced", data: { bounce: { type: "Transient" } } })).toBeNull();
+    expect(disableReasonFor({ type: "email.bounced", data: { bounce: { type: "Undetermined" } } })).toBeNull();
+    expect(disableReasonFor({ type: "email.bounced", data: {} })).toBeNull();
+    expect(disableReasonFor({ type: "email.bounced" })).toBeNull();
+  });
+
+  it("inne zdarzenia są ignorowane", () => {
+    expect(disableReasonFor({ type: "email.delivered", data: {} })).toBeNull();
+  });
+});
+
+describe("countsTowardUnsubscribeLimit", () => {
+  it("liczy tylko nieprawidłowy lub nieznany token", () => {
+    expect(countsTowardUnsubscribeLimit(true, true)).toBe(false);
+    expect(countsTowardUnsubscribeLimit(true, false)).toBe(true);
+    expect(countsTowardUnsubscribeLimit(false, false)).toBe(true);
   });
 });
 

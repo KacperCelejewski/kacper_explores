@@ -105,11 +105,21 @@ export function decideSubscribeAction(
   return existing.verified ? "send_manage_link" : "resend_verification";
 }
 
-// Typ zdarzenia Resend -> powód wyłączenia zrzutu (inne zdarzenia ignorujemy).
-export function disableReasonFor(eventType: string): "bounce" | "complaint" | null {
-  if (eventType === "email.bounced") return "bounce";
-  if (eventType === "email.complained") return "complaint";
+// Zdarzenie Resend -> powód wyłączenia zrzutu. Odbicie liczy się tylko trwałe (Permanent):
+// chwilowe (np. pełna skrzynka) nie może na stałe blokować kogoś, kto o nic nie prosił.
+export function disableReasonFor(event: { type: string; data?: unknown }): "bounce" | "complaint" | null {
+  if (event.type === "email.complained") return "complaint";
+  if (event.type === "email.bounced") {
+    const bounce = (event.data as { bounce?: { type?: unknown } } | undefined)?.bounce;
+    return bounce?.type === "Permanent" ? "bounce" : null;
+  }
   return null;
+}
+
+// Do limitu wypisu liczą się tylko próby z nieprawidłowym lub nieznanym tokenem;
+// poprawny token (np. one-click z serwerów Gmaila) nigdy nie jest limitowany.
+export function countsTowardUnsubscribeLimit(tokenValid: boolean, rowMatched: boolean): boolean {
+  return !tokenValid || !rowMatched;
 }
 
 export const HARD_DISABLED_MESSAGE =

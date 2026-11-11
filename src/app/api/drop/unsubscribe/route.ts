@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { getClientIp } from "@/lib/validate";
 import { buildSettingsUrl } from "@/lib/drop/links";
+import { countsTowardUnsubscribeLimit, isHardDisabled } from "@/lib/drop/signup";
 
 export const maxDuration = 60;
 
@@ -37,26 +38,45 @@ export async function GET(req: NextRequest) {
 }
 
 // Dla nieznanego tokenu odpowiedź jest taka sama jak dla znanego.
+// Limit liczy tylko nieudane próby (zły lub nieznany token), żeby one-click z serwerów
+// pocztowych współdzielących IP nigdy nie dostał 429.
 export async function POST(req: NextRequest) {
-  const rl = checkRateLimit(`drop-unsub:${getClientIp(req)}`, 30, 60 * 60 * 1000);
-  if (!rl.allowed) return page("Wypis ze zrzutu", "<p>Za dużo prób. Spróbuj za godzinę.</p>", 429);
-
   const token = req.nextUrl.searchParams.get("token") ?? "";
-  if (TOKEN_RE.test(token)) {
-    // Skargi i odbicia zostają: nie nadpisujemy ich powodem "user"
-    const { error } = await createServiceClient()
+  const tokenValid = TOKEN_RE.test(token);
+  let rowMatched = false;
+
+  if (tokenValid) {
+    const db = createServiceClient();
+    const { data: row, error: findError } = await db
       .from("newsletter_subscribers")
-      .update({ drop_enabled: false, drop_disabled_reason: "user" })
+      .select("drop_disabled_reason")
       .eq("unsubscribe_token", token)
-      .or("drop_disabled_reason.is.null,drop_disabled_reason.eq.user");
-    if (error) {
-      console.error("[drop] unsubscribe failed:", error);
+      .maybeSingle();
+    if (findError) {
+      console.error("[drop] unsubscribe lookup failed:", findError);
       return page("Wypis ze zrzutu", "<p>Coś poszło nie tak. Spróbuj jeszcze raz.</p>", 500);
+    }
+    rowMatched = !!row;
+    // Skargi i odbicia zostają: nie nadpisujemy ich powodem "user"
+    if (row && !isHardDisabled(row.drop_disabled_reason)) {
+      const { error } = await db
+        .from("newsletter_subscribers")
+        .update({ drop_enabled: false, drop_disabled_reason: "user" })
+        .eq("unsubscribe_token", token);
+      if (error) {
+        console.error("[drop] unsubscribe failed:", error);
+        return page("Wypis ze zrzutu", "<p>Coś poszło nie tak. Spróbuj jeszcze raz.</p>", 500);
+      }
     }
   }
 
+  if (countsTowardUnsubscribeLimit(tokenValid, rowMatched)) {
+    const rl = checkRateLimit(`drop-unsub-miss:${getClientIp(req)}`, 20, 60 * 60 * 1000);
+    if (!rl.allowed) return page("Wypis ze zrzutu", "<p>Za dużo prób. Spróbuj za godzinę.</p>", 429);
+  }
+
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const settings = TOKEN_RE.test(token) ? buildSettingsUrl(appUrl, token) : appUrl;
+  const settings = tokenValid ? buildSettingsUrl(appUrl, token) : appUrl;
   return page(
     "Wypisany",
     `<h1 style="font-size:24px;margin:0 0 20px;">Wypisany. Zrzut już nie przyjdzie.</h1>

@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  const reason = disableReasonFor(event.type);
+  const reason = disableReasonFor(event);
   if (!reason) return NextResponse.json({ ok: true });
 
   const to = (event.data as { to?: unknown }).to;
