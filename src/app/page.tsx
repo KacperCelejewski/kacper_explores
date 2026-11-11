@@ -7,7 +7,8 @@ import { FEATURED_DESTINATIONS } from "@/lib/cityPhotos";
 import { fetchCityPhotoUrl } from "@/lib/unsplashApi";
 
 export const metadata: Metadata = {
-  title: "Budżetowy weekend solo w Europie — lot i plan w 3 minuty",
+  // absolute, bo szablon "%s | Włóczykij" z layoutu nie obejmuje strony głównej
+  title: { absolute: "Włóczykij — budżetowy weekend solo w Europie w 3 minuty" },
   description: "Odpowiedz na 6 pytań, a dostaniesz 6 kierunków w Twoim budżecie, ceny lotów z polskich lotnisk i plan godzina po godzinie. 5 planów za darmo.",
   alternates: {
     canonical: "https://wloczykij.me",
@@ -46,14 +47,16 @@ const organizationSchema = {
   "@context": "https://schema.org",
   "@type": "Organization",
   name: "Włóczykij",
+  alternateName: ["Wloczykij", "wloczykij.me"],
   url: "https://wloczykij.me",
-  logo: "https://wloczykij.me/logo.svg",
+  logo:"https://wloczykij.me/logo.svg",
 };
 
 const webSiteSchema = {
   "@context": "https://schema.org",
   "@type": "WebSite",
   name: "Włóczykij",
+  alternateName: ["Wloczykij", "wloczykij.me"],
   url: "https://wloczykij.me",
   inLanguage: "pl",
 };
