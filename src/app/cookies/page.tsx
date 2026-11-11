@@ -4,7 +4,7 @@ import SiteNav from "../components/SiteNav";
 import SiteFooter from "../components/SiteFooter";
 
 export const metadata: Metadata = {
-  title: "Polityka Cookies | Włóczykij",
+  title: "Polityka Cookies",
   description:
     "Informacje o plikach cookie używanych przez Włóczykij — co to są cookies, jakie stosujemy i jak nimi zarządzać.",
   alternates: { canonical: "https://wloczykij.me/cookies" },
