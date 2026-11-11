@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/drop-teasers",
       "schedule": "0 22 * * 3"
+    },
+    {
+      "path": "/api/cron/drop-send",
+      "schedule": "0 16 * * 4"
     }
   ]
 }
