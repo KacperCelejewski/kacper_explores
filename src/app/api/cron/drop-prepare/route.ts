@@ -8,6 +8,7 @@ import type { DropDeal } from "@/lib/drop/types";
 
 export const maxDuration = 60;
 
+const BUDGET_MS = 50_000; // zapas do limitu 60 s
 const PAUSE_MS = 300; // limit Travelpayouts: 100 zapytań/h
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
@@ -56,10 +57,15 @@ export async function GET(req: NextRequest) {
   const fetchedAt = new Date().toISOString();
   const withData: string[] = [];
   const empty: string[] = [];
+  const skipped: string[] = [];
   let total = 0;
   let dbError: string | null = null;
 
   for (const origin of airports) {
+    if (Date.now() - started > BUDGET_MS) {
+      skipped.push(origin);
+      continue;
+    }
     const all: DropDeal[] = [];
     for (const variant of variants) {
       const offers = await fetchWeekendOffers(origin, variant, token);
@@ -88,10 +94,11 @@ export async function GET(req: NextRequest) {
 
   await sendSlack(
     `Zrzut ${week}: ${total} okazji z ${withData.join(", ") || "-"}; puste: ${empty.join(", ") || "-"}; ${Date.now() - started} ms` +
+      (skipped.length ? `; nieprzetworzone (limit czasu): ${skipped.join(", ")}` : "") +
       (dbError ? `; błąd bazy: ${dbError}` : ""),
   );
   return NextResponse.json(
-    { week, deals: total, airports: withData, empty },
-    { status: dbError ? 500 : 200 },
+    { week, deals: total, airports: withData, empty, skipped },
+    { status: dbError || skipped.length ? 500 : 200 },
   );
 }
