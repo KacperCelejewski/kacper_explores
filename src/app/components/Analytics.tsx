@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Script from "next/script";
 import { GA_ID, trackEvent } from "@/lib/analytics";
+import { affiliateClickParams } from "@/lib/affiliate";
 
 const SCROLL_STEPS = [25, 50, 75, 90];
 
@@ -45,6 +46,8 @@ export default function Analytics() {
           ?? el.closest("section[id]")?.id ?? el.closest("nav, footer, header")?.tagName.toLowerCase(), 40) || undefined,
         page_path: window.location.pathname,
       });
+      const aff = link ? affiliateClickParams(link.dataset) : null;
+      if (aff) trackEvent("affiliate_click", { ...aff, page_path: window.location.pathname });
     };
     document.addEventListener("click", onClick, { capture: true });
     return () => document.removeEventListener("click", onClick, { capture: true });

@@ -1,5 +1,6 @@
 "use client";
 
+import { flightLink, partnerLinkProps } from "@/lib/affiliate";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -420,9 +421,11 @@ function DestCard({
           </div>
           <div className="flex gap-2">
             <a
-              href={buildSkyscannerUrl(dest, airports)}
-              target="_blank"
-              rel="noopener noreferrer"
+              {...partnerLinkProps(
+                flightLink(dest.bestOffer) ?? { href: buildSkyscannerUrl(dest, airports), partner: "skyscanner", paid: false },
+                "flight",
+                dest.city,
+              )}
               className="text-xs font-medium px-3 py-2 rounded-xl transition-opacity hover:opacity-70"
               style={{ background: "var(--surface)", color: "var(--text-muted)", border: "1px solid var(--border)" }}
             >

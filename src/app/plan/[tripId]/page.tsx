@@ -12,20 +12,10 @@ import FeedbackWidget from "@/app/components/FeedbackWidget";
 import CheckoutButton from "@/app/components/CheckoutButton";
 import DropSignup from "@/app/components/DropSignup";
 import DropProfileButton from "@/app/components/DropProfileButton";
+import { FlightCard, HotelLinks } from "@/app/components/PartnerLinks";
 import type { DayPlan, DayActivity, TripPlan, DestinationRecommendation, QuizAnswers } from "@/types";
 import { getCityPhotoUrl } from "@/lib/cityPhotos";
 import { PRICES } from "@/lib/prices";
-
-function buildBookingUrl(city: string, country: string, checkin?: string, checkout?: string): string {
-  const params = new URLSearchParams({ ss: `${city}, ${country}`, group_adults: "1", no_rooms: "1" });
-  if (checkin) params.set("checkin", checkin);
-  if (checkout) params.set("checkout", checkout);
-  return `https://www.booking.com/search.html?${params}`;
-}
-
-function buildHostelworldUrl(city: string): string {
-  return `https://www.hostelworld.com/search?search=${encodeURIComponent(city)}`;
-}
 
 const ACTIVITY_COLORS: Record<string, string> = {
   attraction: "rgba(255,107,53,0.07)",
@@ -504,49 +494,14 @@ export default function PlanPage() {
         </div>
       )}
 
-      {/* Hotel suggestions */}
-      <div className="px-5 mb-4 no-print">
-        <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: "var(--text-muted)" }}>
-          Noclegi w {plan.city}
-        </p>
-        <div className="flex flex-col gap-2">
-          {[
-            {
-              label: "🛏️ Booking.com",
-              sub: "Hotele i apartamenty",
-              url: buildBookingUrl(
-                plan.city, plan.country,
-                dest?.bestOffer?.departureDate,
-                dest?.bestOffer?.returnDate,
-              ),
-              color: "#003580",
-              bg: "#EEF3FF",
-            },
-            {
-              label: "🏕️ Hostelworld",
-              sub: "Hostele dla backpackerów",
-              url: buildHostelworldUrl(plan.city),
-              color: "#FF6C2F",
-              bg: "#FFF0E8",
-            },
-          ].map((opt) => (
-            <a
-              key={opt.label}
-              href={opt.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between p-4 rounded-2xl transition-opacity hover:opacity-80"
-              style={{ background: opt.bg, textDecoration: "none", border: `1px solid ${opt.color}22` }}
-            >
-              <div>
-                <p className="text-sm font-bold" style={{ color: opt.color }}>{opt.label}</p>
-                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{opt.sub}</p>
-              </div>
-              <span className="text-xs font-semibold" style={{ color: opt.color }}>Szukaj →</span>
-            </a>
-          ))}
-        </div>
-      </div>
+      {/* Lot i noclegi */}
+      <FlightCard offer={dest?.bestOffer} city={plan.city} />
+      <HotelLinks
+        city={plan.city}
+        country={plan.country}
+        checkin={dest?.bestOffer?.departureDate}
+        checkout={dest?.bestOffer?.returnDate}
+      />
 
       {/* Restaurants */}
       <div className="px-5 mb-4 no-print">
