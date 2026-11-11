@@ -6,6 +6,7 @@ import GlobalMenu from "@/app/components/GlobalMenu";
 import CookieBanner from "@/app/components/CookieBanner";
 import NewsletterPopup from "@/app/components/NewsletterPopup";
 import MotionProvider from "@/app/components/MotionProvider";
+import Analytics from "@/app/components/Analytics";
 
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-body" });
@@ -62,6 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <NewsletterPopup />
           </main>
         </MotionProvider>
+        <Analytics />
         <Script
           id="sw-register"
           strategy="lazyOnload"
