@@ -198,9 +198,12 @@ function QuizPageInner() {
   const autoStarted = useRef(false);
   const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [hasMoved, setHasMoved] = useState(false);
-  const { quizAnswers, currentQuizStep, setQuizAnswer, toggleStyle, nextQuizStep, prevQuizStep, setCurrentQuizStep, resetQuiz } =
+  const { quizAnswers, currentQuizStep: storeStep, setQuizAnswer, toggleStyle, nextQuizStep, prevQuizStep, setCurrentQuizStep, resetQuiz } =
     useAppStore();
   const dropPrefill = useMemo(() => parseDropParams(searchParams), [searchParams]);
+  // Do czasu zresetowania kroku z poprzedniej wizyty link ze zrzutu zaczyna od pytania 0
+  const [dropStepReset, setDropStepReset] = useState(false);
+  const currentQuizStep = dropPrefill && !dropStepReset ? 0 : storeStep;
   const totalSteps = dropPrefill ? DROP_TOTAL_STEPS : TOTAL_STEPS;
   const [maxVisitedStep, setMaxVisitedStep] = useState(dropPrefill ? 0 : currentQuizStep);
 
@@ -229,6 +232,7 @@ function QuizPageInner() {
       setQuizAnswer("duration", dropPrefill.duration);
       // store trzyma krok z poprzedniej wizyty, a tu są tylko kroki 0-3
       setCurrentQuizStep(0);
+      setDropStepReset(true);
       trackEvent("drop_plan_started", { city: dropPrefill.preferredCity });
     } else if (searchParams.get("afterLogin") !== "1") {
       // po powrocie z logowania zostaje miasto zapisane w store
@@ -413,7 +417,7 @@ function QuizPageInner() {
 
       {/* Saved prefs shortcut */}
       <AnimatePresence>
-        {savedPrefs && currentQuizStep === 0 && (
+        {savedPrefs && !dropPrefill && currentQuizStep === 0 && (
           <motion.button
             key="saved-prefs"
             type="button"
