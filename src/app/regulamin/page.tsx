@@ -5,7 +5,7 @@ import SiteFooter from "../components/SiteFooter";
 import { PRICES } from "@/lib/prices";
 
 export const metadata: Metadata = {
-  title: "Regulamin | Włóczykij",
+  title: "Regulamin",
   description:
     "Regulamin serwisu Włóczykij — warunki korzystania, zasady płatności, prawo do odstąpienia od umowy i reklamacje.",
   alternates: { canonical: "https://wloczykij.me/regulamin" },

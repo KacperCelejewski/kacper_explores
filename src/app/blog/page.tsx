@@ -29,6 +29,7 @@ export const metadata: Metadata = {
     title: "Blog o podróżach solo | Włóczykij",
     description: "Praktyczne przewodniki po budżetowych podróżach solo po Europie.",
     url: "https://wloczykij.me/blog",
+    images: [{ url: "/opengraph-image", width: 1200, height: 630 }],
   },
 };
 
