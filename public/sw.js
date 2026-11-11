@@ -33,8 +33,11 @@ self.addEventListener("fetch", (event) => {
   if (url.pathname.match(/\.(js|css|png|jpg|svg|webp|ico|woff2?)$/)) {
     event.respondWith(
       caches.match(request).then((cached) => cached || fetch(request).then((res) => {
-        const clone = res.clone();
-        caches.open(CACHE).then((c) => c.put(request, clone));
+        // Cache only good responses; an error page cached under a chunk URL would break the app
+        if (res.ok) {
+          const clone = res.clone();
+          caches.open(CACHE).then((c) => c.put(request, clone));
+        }
         return res;
       }))
     );
