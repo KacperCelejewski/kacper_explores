@@ -28,6 +28,7 @@ export async function generateMetadata(
       return {
         title,
         description,
+        alternates: { canonical: `https://wloczykij.me/share/${tripId}` },
         openGraph: {
           title: `${title} | Włóczykij`,
           description,
@@ -47,6 +48,8 @@ export async function generateMetadata(
   return {
     title: "Plan podróży",
     description: "Plan podróży wygenerowany przez Włóczykij — budżetowe podróże solo z AI.",
+    // Nieistniejący lub prywatny plan nie ma czego robić w indeksie
+    robots: { index: false, follow: false },
   };
 }
 
