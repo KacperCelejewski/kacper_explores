@@ -4,7 +4,7 @@ import SiteNav from "../components/SiteNav";
 import SiteFooter from "../components/SiteFooter";
 
 export const metadata: Metadata = {
-  title: "Polityka Prywatności | Włóczykij",
+  title: "Polityka Prywatności",
   description:
     "Polityka prywatności serwisu Włóczykij — informacje o przetwarzaniu danych osobowych, cookies i Twoich prawach zgodnie z RODO.",
   alternates: { canonical: "https://wloczykij.me/privacy" },

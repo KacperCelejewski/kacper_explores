@@ -12,7 +12,7 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "hej@wloczykij.me";
 
 export async function sendNewsletterConfirmation(email: string, verifyUrl: string) {
   await resend.emails.send({
-    from: "Włóczykij <onboarding@resend.dev>",
+    from: "Włóczykij <hej@wloczykij.me>",
     to: email,
     subject: "Potwierdź zapis — odbierz 10% na Pro Roczny",
     html: `
@@ -167,7 +167,7 @@ export async function sendApiAlert(callsToday: number, cap: number): Promise<voi
   const remaining = cap - callsToday;
 
   await resend.emails.send({
-    from: "Włóczykij Admin <onboarding@resend.dev>",
+    from: "Włóczykij Admin <alerty@wloczykij.me>",
     to: ADMIN_EMAIL,
     subject: `⚠️ RapidAPI — ${pct}% limitu dziennego wykorzystane`,
     html: `

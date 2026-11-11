@@ -59,6 +59,7 @@ export const metadata: Metadata = {
     title: "Plany cenowe | Włóczykij",
     description: `5 wyjazdów za darmo. Potem Pack za ${PRICES.pack.label} albo Pro za ${PRICES.proMonthly.label}/mies.`,
     url: "https://wloczykij.me/pricing",
+    images: [{ url: "/opengraph-image", width: 1200, height: 630 }],
   },
 };
 
