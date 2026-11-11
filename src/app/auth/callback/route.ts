@@ -8,7 +8,9 @@ export async function GET(req: NextRequest) {
   const code = url.searchParams.get("code");
   const token_hash = url.searchParams.get("token_hash");
   const type = url.searchParams.get("type") as EmailOtpType | null;
-  const next = url.searchParams.get("next") ?? "/";
+  const rawNext = url.searchParams.get("next") ?? "/";
+  // Tylko ścieżki wewnątrz serwisu — "//evil.com" czy "https://..." dałyby open redirect.
+  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
 
   const redirectUrl = new URL(next, req.url);
 
@@ -30,10 +32,16 @@ export async function GET(req: NextRequest) {
       }
     );
 
-    if (code) {
-      await supabase.auth.exchangeCodeForSession(code);
-    } else if (token_hash && type) {
-      await supabase.auth.verifyOtp({ token_hash, type });
+    const { error } = code
+      ? await supabase.auth.exchangeCodeForSession(code)
+      : await supabase.auth.verifyOtp({ token_hash: token_hash!, type: type! });
+
+    if (error) {
+      // Bez tego nieudana wymiana kodu wygląda jak sukces: użytkownik ląduje na stronie niezalogowany.
+      console.error("[auth/callback]", error.message);
+      return NextResponse.redirect(
+        new URL(`/login?error=link&next=${encodeURIComponent(next)}`, req.url)
+      );
     }
 
     // Notify on new registration (created_at within last 60s)
