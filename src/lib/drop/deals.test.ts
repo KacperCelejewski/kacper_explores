@@ -1,8 +1,13 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fetchCities, fetchWeekendOffers, groupDeals, mergeVariants } from "./deals";
 import type { CityInfo, TpOffer, WeekendVariant } from "./types";
 
-const ptNd: WeekendVariant = { label: "pt-nd", depart: "2026-11-13", return: "2026-11-15" };
+beforeEach(() => {
+  vi.spyOn(console, "warn").mockImplementation(() => {});
+});
+afterEach(() => vi.restoreAllMocks());
+
+const ptNd:WeekendVariant = { label: "pt-nd", depart: "2026-11-13", return: "2026-11-15" };
 const czwNd: WeekendVariant = { label: "czw-nd", depart: "2026-11-12", return: "2026-11-15" };
 
 const cities = new Map<string, CityInfo>([
@@ -109,6 +114,39 @@ describe("fetchWeekendOffers", () => {
       .mockResolvedValueOnce(res(200, { data: [offer()] }));
     const out = await fetchWeekendOffers("WRO", ptNd, "tok", f as unknown as typeof fetch, 0);
     expect(out).toHaveLength(1);
+  });
+});
+
+describe("fetchWeekendOffers resilience", () => {
+  it("retries after timeout aborts and passes an abort signal", async () => {
+    const abort = () => Object.assign(new Error("aborted"), { name: "AbortError" });
+    const f = vi
+      .fn()
+      .mockRejectedValueOnce(abort())
+      .mockRejectedValueOnce(abort())
+      .mockResolvedValueOnce(res(200, { data: [offer()] }));
+    const out = await fetchWeekendOffers("WRO", ptNd, "tok", f as unknown as typeof fetch, 0);
+    expect(out).toHaveLength(1);
+    expect(f).toHaveBeenCalledTimes(3);
+    expect(f.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("retries on 429", async () => {
+    const f = vi
+      .fn()
+      .mockResolvedValueOnce(res(429))
+      .mockResolvedValueOnce(res(200, { data: [offer()] }));
+    const out = await fetchWeekendOffers("WRO", ptNd, "tok", f as unknown as typeof fetch, 0);
+    expect(out).toHaveLength(1);
+    expect(f).toHaveBeenCalledTimes(2);
+  });
+
+  it("returns [] after one call on other 4xx and warns", async () => {
+    const warn = vi.mocked(console.warn);
+    const f = vi.fn().mockResolvedValue(res(401));
+    expect(await fetchWeekendOffers("WRO", ptNd, "tok", f as unknown as typeof fetch, 0)).toEqual([]);
+    expect(f).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("WRO"));
   });
 });
 

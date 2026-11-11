@@ -2,6 +2,7 @@ import type { CityInfo, DropDeal, TpOffer, WeekendVariant, WeekKey } from "./typ
 
 const API = "https://api.travelpayouts.com";
 const MAX_ATTEMPTS = 3;
+const TIMEOUT_MS = 8000;
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
@@ -20,13 +21,20 @@ export async function fetchWeekendOffers(
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     if (attempt > 0 && retryDelayMs > 0) await sleep(retryDelayMs * attempt);
     try {
-      const res = await fetchImpl(url);
-      if (res.status >= 500) continue;
-      if (!res.ok) return [];
+      const res = await fetchImpl(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+      if (res.status >= 500 || res.status === 429) {
+        console.warn(`[drop] ${origin}: status ${res.status} (próba ${attempt + 1}/${MAX_ATTEMPTS})`);
+        continue;
+      }
+      if (!res.ok) {
+        console.warn(`[drop] ${origin}: status ${res.status}, bez ponowienia`);
+        return [];
+      }
       const body = (await res.json()) as { data?: TpOffer[] };
       return Array.isArray(body.data) ? body.data : [];
-    } catch {
-      // błąd sieci: kolejna próba
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`[drop] ${origin}: ${msg} (próba ${attempt + 1}/${MAX_ATTEMPTS})`);
     }
   }
   return [];
@@ -36,7 +44,9 @@ export async function fetchCities(
   fetchImpl: typeof fetch = fetch,
 ): Promise<Map<string, CityInfo>> {
   const map = new Map<string, CityInfo>();
-  const res = await fetchImpl(`${API}/data/pl/cities.json`);
+  const res = await fetchImpl(`${API}/data/pl/cities.json`, {
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+  });
   if (!res.ok) throw new Error(`cities.json: ${res.status}`);
   const rows = (await res.json()) as Array<{
     code: string;
