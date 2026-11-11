@@ -1,5 +1,6 @@
 "use client";
 
+import { trackEvent } from "@/lib/analytics";
 import { flightLink, partnerLinkProps } from "@/lib/affiliate";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -782,6 +783,7 @@ export default function DestinationsPage() {
             }
           }
           if (msg.done) {
+            trackEvent("plan_generated", { city: dest.city, days: (msg.plan as import("@/types").TripPlan).days?.length ?? 0 });
             setCurrentTrip({
               id: msg.tripId as string,
               destination: dest,

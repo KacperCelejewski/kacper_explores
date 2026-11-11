@@ -452,6 +452,7 @@ export default function PlanPage() {
             <div className="flex-1">
               <CheckoutButton
                 planKey="pack_5"
+                gate="plan_banner"
                 cta={`Kup Pack — ${PRICES.pack.label} →`}
                 returnTo={planPath}
                 className="w-full min-h-11 text-xs font-bold py-2.5 rounded-xl text-center"
@@ -460,6 +461,7 @@ export default function PlanPage() {
             </div>
             <CheckoutButton
               planKey="pro_yearly"
+              gate="plan_banner"
               cta="Pro Roczny"
               returnTo={planPath}
               className="min-h-11 text-xs font-semibold px-3 py-2.5 rounded-xl"
@@ -858,6 +860,7 @@ export default function PlanPage() {
               <div className="flex flex-col gap-3 mb-4">
                 <CheckoutButton
                   planKey="pro_yearly"
+                  gate="pdf"
                   cta={`Zostań Pro Roczny za ${PRICES.proYearly.label}`}
                   returnTo={planPath}
                   className="block w-full text-left p-4 rounded-2xl"

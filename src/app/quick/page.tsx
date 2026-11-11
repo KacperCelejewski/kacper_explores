@@ -1,5 +1,6 @@
 "use client";
 
+import { trackEvent } from "@/lib/analytics";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -359,6 +360,7 @@ export default function QuickPage() {
             }
           }
           if (msg.done) {
+            trackEvent("plan_generated", { city: dest.city, days: (msg.plan as import("@/types").TripPlan).days?.length ?? 0 });
             setCurrentTrip({
               id: msg.tripId as string,
               destination: dest,

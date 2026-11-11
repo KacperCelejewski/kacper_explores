@@ -3,10 +3,13 @@
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { trackEvent } from "@/lib/analytics";
+import { planPrice } from "@/lib/prices";
 
 interface Props {
   planKey: string;
   cta: string;
+  // Skąd przyszło kliknięcie (pricing, plan_banner, pdf), do analityki.
+  gate?: string;
   // Gdzie wrócić po logowaniu albo po anulowaniu płatności. Domyślnie cennik.
   returnTo?: string;
   className?: string;
@@ -15,13 +18,13 @@ interface Props {
   children?: ReactNode;
 }
 
-export default function CheckoutButton({ planKey, cta, returnTo = "/pricing", className = "btn-primary mt-5", style, children }: Props) {
+export default function CheckoutButton({ planKey, cta, gate, returnTo = "/pricing", className = "btn-primary mt-5", style, children }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleCheckout = async () => {
-    trackEvent("begin_checkout", { plan: planKey });
+    trackEvent("begin_checkout", { plan: planKey, gate, value: planPrice(planKey), currency: "PLN" });
     setLoading(true);
     setError(null);
     try {
