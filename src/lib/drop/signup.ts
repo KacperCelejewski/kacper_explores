@@ -8,14 +8,11 @@ export const DROP_MAX_AIRPORTS = 3;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const POLISH_CODES = new Set(POLISH_AIRPORTS.map((a) => a.code));
 
-export function normalizeSignup(
+export function normalizePrefs(
   input: unknown,
-): { email: string; airports: string[]; max_price: DropMaxPrice } | { error: string } {
+): { airports: string[]; max_price: DropMaxPrice } | { error: string } {
   if (!input || typeof input !== "object") return { error: "Nieprawidłowe dane." };
   const d = input as Record<string, unknown>;
-
-  const email = typeof d.email === "string" ? d.email.trim().toLowerCase() : "";
-  if (!EMAIL_RE.test(email)) return { error: "Podaj prawidłowy adres e-mail." };
 
   if (!Array.isArray(d.airports) || d.airports.length === 0) {
     return { error: "Wybierz przynajmniej jedno lotnisko." };
@@ -33,7 +30,21 @@ export function normalizeSignup(
   const maxPrice = DROP_MAX_PRICES.find((p) => p === d.max_price);
   if (maxPrice === undefined) return { error: "Wybierz budżet: 200, 300 albo 500 zł." };
 
-  return { email, airports, max_price: maxPrice };
+  return { airports, max_price: maxPrice };
+}
+
+export function normalizeSignup(
+  input: unknown,
+): { email: string; airports: string[]; max_price: DropMaxPrice } | { error: string } {
+  if (!input || typeof input !== "object") return { error: "Nieprawidłowe dane." };
+  const d = input as Record<string, unknown>;
+
+  const email = typeof d.email === "string" ? d.email.trim().toLowerCase() : "";
+  if (!EMAIL_RE.test(email)) return { error: "Podaj prawidłowy adres e-mail." };
+
+  const prefs = normalizePrefs(d);
+  if ("error" in prefs) return prefs;
+  return { email, ...prefs };
 }
 
 // Web Crypto zamiast node:crypto, bo plik importuje też formularz po stronie klienta
@@ -92,4 +103,42 @@ export function decideSubscribeAction(
   if (!existing) return "insert";
   if (opts.fromProfile) return isHardDisabled(existing.drop_disabled_reason) ? "blocked" : "update_profile";
   return existing.verified ? "send_manage_link" : "resend_verification";
+}
+
+// Typ zdarzenia Resend -> powód wyłączenia zrzutu (inne zdarzenia ignorujemy).
+export function disableReasonFor(eventType: string): "bounce" | "complaint" | null {
+  if (eventType === "email.bounced") return "bounce";
+  if (eventType === "email.complained") return "complaint";
+  return null;
+}
+
+export const HARD_DISABLED_MESSAGE =
+  "Ten adres jest wyłączony po zgłoszeniu spamu lub odbiciu maila. Napisz do nas: hej@wloczykij.me.";
+export const NOT_VERIFIED_MESSAGE = "Najpierw potwierdź zapis z maila.";
+
+// Token to dowód własności: ustawienia zmieniają lotniska, budżet i przełącznik zrzutu.
+// Włączenie zdejmuje tylko powód "user"; skarga i odbicie zostają, a niepotwierdzony adres nie dostaje maili.
+export function computeSettingsUpdate(
+  row: { verified: boolean; drop_disabled_reason: string | null },
+  input: unknown,
+): { update: Record<string, unknown> } | { error: string; status: number } {
+  const prefs = normalizePrefs(input);
+  if ("error" in prefs) return { error: prefs.error, status: 400 };
+
+  const enabled = (input as Record<string, unknown>).drop_enabled;
+  if (enabled !== undefined && typeof enabled !== "boolean") {
+    return { error: "Nieprawidłowe dane.", status: 400 };
+  }
+
+  const update: Record<string, unknown> = { airports: prefs.airports, max_price: prefs.max_price };
+  if (enabled === true) {
+    if (isHardDisabled(row.drop_disabled_reason)) return { error: HARD_DISABLED_MESSAGE, status: 403 };
+    if (!row.verified) return { error: NOT_VERIFIED_MESSAGE, status: 403 };
+    update.drop_enabled = true;
+    update.drop_disabled_reason = null;
+  } else if (enabled === false) {
+    update.drop_enabled = false;
+    if (!isHardDisabled(row.drop_disabled_reason)) update.drop_disabled_reason = "user";
+  }
+  return { update };
 }

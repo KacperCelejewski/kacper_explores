@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { normalizeSignup, budgetToMaxPrice, buildSubscriberUpsert, decideSubscribeAction } from "./signup";
+import { normalizeSignup, budgetToMaxPrice, buildSubscriberUpsert, decideSubscribeAction, disableReasonFor, computeSettingsUpdate } from "./signup";
 
 describe("normalizeSignup", () => {
   it("normalizuje e-mail i zwraca dane", () => {
@@ -124,5 +124,58 @@ describe("decideSubscribeAction", () => {
     expect(decideSubscribeAction(row(true, "user"), { fromProfile: true })).toBe("update_profile");
     expect(decideSubscribeAction(row(true, "complaint"), { fromProfile: true })).toBe("blocked");
     expect(decideSubscribeAction(row(true, "bounce"), { fromProfile: true })).toBe("blocked");
+  });
+});
+
+describe("disableReasonFor", () => {
+  it("mapuje odbicie i skargę, resztę ignoruje", () => {
+    expect(disableReasonFor("email.bounced")).toBe("bounce");
+    expect(disableReasonFor("email.complained")).toBe("complaint");
+    expect(disableReasonFor("email.delivered")).toBeNull();
+  });
+});
+
+describe("computeSettingsUpdate", () => {
+  const base = { airports: ["WRO"], max_price: 300 };
+  const ok = { verified: true, drop_disabled_reason: null };
+
+  it("zmienia lotniska i budżet bez ruszania przełącznika", () => {
+    expect(computeSettingsUpdate(ok, { ...base, max_price: 500 })).toEqual({
+      update: { airports: ["WRO"], max_price: 500 },
+    });
+  });
+
+  it("włączenie zdejmuje powód user", () => {
+    expect(computeSettingsUpdate({ verified: true, drop_disabled_reason: "user" }, { ...base, drop_enabled: true })).toEqual({
+      update: { airports: ["WRO"], max_price: 300, drop_enabled: true, drop_disabled_reason: null },
+    });
+  });
+
+  it("nie włącza po skardze ani odbiciu", () => {
+    for (const reason of ["complaint", "bounce"]) {
+      expect(computeSettingsUpdate({ verified: true, drop_disabled_reason: reason }, { ...base, drop_enabled: true })).toMatchObject({
+        status: 403,
+      });
+    }
+  });
+
+  it("nie włącza niepotwierdzonego adresu", () => {
+    expect(computeSettingsUpdate({ verified: false, drop_disabled_reason: null }, { ...base, drop_enabled: true })).toEqual({
+      error: "Najpierw potwierdź zapis z maila.",
+      status: 403,
+    });
+  });
+
+  it("wyłączenie ustawia powód user, ale nie nadpisuje skargi", () => {
+    expect(computeSettingsUpdate(ok, { ...base, drop_enabled: false })).toMatchObject({
+      update: { drop_enabled: false, drop_disabled_reason: "user" },
+    });
+    const r = computeSettingsUpdate({ verified: true, drop_disabled_reason: "complaint" }, { ...base, drop_enabled: false });
+    expect(r).toEqual({ update: { airports: ["WRO"], max_price: 300, drop_enabled: false } });
+  });
+
+  it("odrzuca złe dane", () => {
+    expect(computeSettingsUpdate(ok, { airports: [], max_price: 300 })).toMatchObject({ status: 400 });
+    expect(computeSettingsUpdate(ok, { ...base, drop_enabled: "tak" })).toMatchObject({ status: 400 });
   });
 });
