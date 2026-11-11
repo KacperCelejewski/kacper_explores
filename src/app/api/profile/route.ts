@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { getUserProfile, canGenerate, isPro } from "@/lib/userProfile";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { validateQuizAnswers } from "@/lib/validate";
@@ -62,7 +61,8 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Invalid quiz_preferences" }, { status: 400 });
   }
 
-  const { error } = await supabase
+  // Profil zmienia tylko klucz serwisowy: RLS nie daje użytkownikowi UPDATE na user_profiles
+  const { error } = await createServiceRoleClient()
     .from("user_profiles")
     .update({ quiz_preferences, updated_at: new Date().toISOString() })
     .eq("id", user.id);
@@ -77,17 +77,9 @@ export async function DELETE() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // Delete user-owned data (trips cascade-delete related rows via FK)
-  await supabase.from("trips").delete().eq("user_id", user.id);
-  await supabase.from("payments").delete().eq("user_id", user.id);
-  await supabase.from("user_profiles").delete().eq("id", user.id);
-
-  // Delete the auth user — requires service role
-  const admin = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-  const { error } = await admin.auth.admin.deleteUser(user.id);
+  // Profil, wyjazdy i płatności usuwa ON DELETE CASCADE razem z kontem w auth.users.
+  // Osobne usuwanie sesją użytkownika nic nie robiło: RLS nie ma polityk DELETE.
+  const { error } = await createServiceRoleClient().auth.admin.deleteUser(user.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({ ok: true });

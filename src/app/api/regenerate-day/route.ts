@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createSupabaseServer } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { logGeminiCall } from "@/lib/geminiLog";
 import type { DayPlan, TripPlan } from "@/types";
 
@@ -107,7 +108,8 @@ Zachowaj pole "day": ${existingDay.day} i "date": "${existingDay.date}" bez zmia
   updatedDays[dayIndex] = newDay;
   const updatedPlan = { ...plan, days: updatedDays };
 
-  await supabase
+  // Sesją użytkownika zapis nic nie robił (trips nie ma polityki UPDATE); user_id pilnuje właściciela
+  await createServiceClient()
     .from("trips")
     .update({ ai_plan_json: updatedPlan })
     .eq("id", tripId)

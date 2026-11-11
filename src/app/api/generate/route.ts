@@ -7,7 +7,7 @@ import { buildPlanPrompt, parseNdjsonStream, validateAndFixPlan } from "@/lib/ge
 import { checkRateLimit, LIMITS } from "@/lib/rateLimit";
 import { validateQuizAnswers, validateDestination, getClientIp } from "@/lib/validate";
 import { getUserProfile, canGenerate, isPro } from "@/lib/userProfile";
-import { createSupabaseServer } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import type { QuizAnswers, DestinationRecommendation, FlightDetails } from "@/types";
 
 export async function POST(req: NextRequest) {
@@ -143,29 +143,28 @@ export async function POST(req: NextRequest) {
 
         const tripId = `${(destination as DestinationRecommendation).city.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`;
 
-        const supabase = await createSupabaseServer();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user && !isPro(profile)) {
+        // Kredyty i wyjazdy zapisuje tylko klucz serwisowy. profile.id pochodzi
+        // z getUser() w kroku 1, więc sesji nie sprawdzamy drugi raz.
+        const supabase = createServiceClient();
+        if (!isPro(profile)) {
           await supabase
             .from("user_profiles")
             .update({
               credits_remaining: Math.max(0, profile.credits_remaining - 1),
               updated_at: new Date().toISOString(),
             })
-            .eq("id", user.id);
+            .eq("id", profile.id);
         }
-        if (user) {
-          await supabase.from("trips").insert({
-            id: tripId,
-            user_id: user.id,
-            city: (destination as DestinationRecommendation).city,
-            country: (destination as DestinationRecommendation).country,
-            flight_data: (destination as DestinationRecommendation).bestOffer,
-            ai_plan_json: plan,
-            quiz_answers: quizAnswers,
-            destination_data: destination,
-          });
-        }
+        await supabase.from("trips").insert({
+          id: tripId,
+          user_id: profile.id,
+          city: (destination as DestinationRecommendation).city,
+          country: (destination as DestinationRecommendation).country,
+          flight_data: (destination as DestinationRecommendation).bestOffer,
+          ai_plan_json: plan,
+          quiz_answers: quizAnswers,
+          destination_data: destination,
+        });
 
         send(controller, {
           done: true,

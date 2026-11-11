@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 
 export async function GET(
   _req: NextRequest,
@@ -60,12 +61,16 @@ export async function PATCH(
     return NextResponse.json({ error: "Brak pól do aktualizacji." }, { status: 400 });
   }
 
-  const { error } = await supabase
+  // Sesją użytkownika zapis nic nie robił (trips nie ma polityki UPDATE); user_id pilnuje właściciela
+  const { data, error } = await createServiceClient()
     .from("trips")
     .update(updates)
     .eq("id", tripId)
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .select("id")
+    .maybeSingle();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({ ok: true, ...updates });
 }

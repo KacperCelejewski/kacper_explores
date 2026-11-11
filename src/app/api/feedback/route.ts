@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 
 const NOTION_TOKEN = process.env.NOTION_TOKEN;
 const NOTION_FEEDBACK_DB_ID =
@@ -24,14 +25,26 @@ export async function POST(req: NextRequest) {
       await saveToNotion({ tripId, type, rating, text, city, source, answers, userId: user?.id });
     }
 
-    // Pełny feedback → +1 kredyt
+    // Pełny feedback → +1 kredyt, raz na własny wyjazd. Najpierw zajmujemy wyjazd (warunek
+    // IS NULL przepuszcza jedno żądanie), potem add_credits, które woła tylko klucz serwisowy.
     let creditAdded = false;
     if (type === "full" && user) {
-      const { error } = await supabase.rpc("add_credits", {
-        p_user_id: user.id,
-        p_credits: 1,
-      });
-      if (!error) creditAdded = true;
+      const db = createServiceClient();
+      const { data: claimed } = await db
+        .from("trips")
+        .update({ feedback_credited_at: new Date().toISOString() })
+        .eq("id", tripId)
+        .eq("user_id", user.id)
+        .is("feedback_credited_at", null)
+        .select("id")
+        .maybeSingle();
+      if (claimed) {
+        const { error } = await db.rpc("add_credits", {
+          p_user_id: user.id,
+          p_credits: 1,
+        });
+        if (!error) creditAdded = true;
+      }
     }
 
     return NextResponse.json({ success: true, creditAdded });
