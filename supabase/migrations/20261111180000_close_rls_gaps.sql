@@ -30,3 +30,10 @@ GRANT EXECUTE ON FUNCTION public.add_credits(UUID, INT) TO service_role;
 -- tę kolumnę warunkiem IS NULL i dopiero wtedy woła add_credits.
 ALTER TABLE public.trips
   ADD COLUMN IF NOT EXISTS feedback_credited_at TIMESTAMPTZ;
+
+-- Analityka quizu i log Gemini: tylko klucz serwisowy (RLS bez polityk, jak api_usage_log).
+-- Kluczem anon dało się je czytać, dopisywać i kasować; /api/track zapisuje kluczem serwisowym.
+ALTER TABLE public.quiz_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.gemini_usage_log ENABLE ROW LEVEL SECURITY;
+-- Widok liczony z uprawnieniami pytającego, więc nie omija RLS na quiz_events
+ALTER VIEW public.quiz_funnel SET (security_invoker = true);
