@@ -12,20 +12,11 @@ import FeedbackWidget from "@/app/components/FeedbackWidget";
 import CheckoutButton from "@/app/components/CheckoutButton";
 import DropSignup from "@/app/components/DropSignup";
 import DropProfileButton from "@/app/components/DropProfileButton";
+import { FlightCard, HotelLinks, LuggageTile, TicketsLink } from "@/app/components/PartnerLinks";
 import type { DayPlan, DayActivity, TripPlan, DestinationRecommendation, QuizAnswers } from "@/types";
 import { getCityPhotoUrl } from "@/lib/cityPhotos";
 import { PRICES } from "@/lib/prices";
-
-function buildBookingUrl(city: string, country: string, checkin?: string, checkout?: string): string {
-  const params = new URLSearchParams({ ss: `${city}, ${country}`, group_adults: "1", no_rooms: "1" });
-  if (checkin) params.set("checkin", checkin);
-  if (checkout) params.set("checkout", checkout);
-  return `https://www.booking.com/search.html?${params}`;
-}
-
-function buildHostelworldUrl(city: string): string {
-  return `https://www.hostelworld.com/search?search=${encodeURIComponent(city)}`;
-}
+import { isFreeCost } from "@/lib/affiliate";
 
 const ACTIVITY_COLORS: Record<string, string> = {
   attraction: "rgba(255,107,53,0.07)",
@@ -461,6 +452,7 @@ export default function PlanPage() {
             <div className="flex-1">
               <CheckoutButton
                 planKey="pack_5"
+                gate="plan_banner"
                 cta={`Kup Pack — ${PRICES.pack.label} →`}
                 returnTo={planPath}
                 className="w-full min-h-11 text-xs font-bold py-2.5 rounded-xl text-center"
@@ -469,6 +461,7 @@ export default function PlanPage() {
             </div>
             <CheckoutButton
               planKey="pro_yearly"
+              gate="plan_banner"
               cta="Pro Roczny"
               returnTo={planPath}
               className="min-h-11 text-xs font-semibold px-3 py-2.5 rounded-xl"
@@ -504,49 +497,14 @@ export default function PlanPage() {
         </div>
       )}
 
-      {/* Hotel suggestions */}
-      <div className="px-5 mb-4 no-print">
-        <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: "var(--text-muted)" }}>
-          Noclegi w {plan.city}
-        </p>
-        <div className="flex flex-col gap-2">
-          {[
-            {
-              label: "🛏️ Booking.com",
-              sub: "Hotele i apartamenty",
-              url: buildBookingUrl(
-                plan.city, plan.country,
-                dest?.bestOffer?.departureDate,
-                dest?.bestOffer?.returnDate,
-              ),
-              color: "#003580",
-              bg: "#EEF3FF",
-            },
-            {
-              label: "🏕️ Hostelworld",
-              sub: "Hostele dla backpackerów",
-              url: buildHostelworldUrl(plan.city),
-              color: "#FF6C2F",
-              bg: "#FFF0E8",
-            },
-          ].map((opt) => (
-            <a
-              key={opt.label}
-              href={opt.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between p-4 rounded-2xl transition-opacity hover:opacity-80"
-              style={{ background: opt.bg, textDecoration: "none", border: `1px solid ${opt.color}22` }}
-            >
-              <div>
-                <p className="text-sm font-bold" style={{ color: opt.color }}>{opt.label}</p>
-                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{opt.sub}</p>
-              </div>
-              <span className="text-xs font-semibold" style={{ color: opt.color }}>Szukaj →</span>
-            </a>
-          ))}
-        </div>
-      </div>
+      {/* Lot i noclegi */}
+      <FlightCard offer={dest?.bestOffer} city={plan.city} />
+      <HotelLinks
+        city={plan.city}
+        country={plan.country}
+        checkin={dest?.bestOffer?.departureDate}
+        checkout={dest?.bestOffer?.returnDate}
+      />
 
       {/* Restaurants */}
       <div className="px-5 mb-4 no-print">
@@ -692,6 +650,7 @@ export default function PlanPage() {
             swapLoading={swapLoading}
             onSwapActivity={handleSwapActivity}
             onAddActivity={() => setAddModal({ dayIndex: i })}
+            isLastDay={i === plan.days.length - 1}
           />
         </div>
       ))}
@@ -901,6 +860,7 @@ export default function PlanPage() {
               <div className="flex flex-col gap-3 mb-4">
                 <CheckoutButton
                   planKey="pro_yearly"
+                  gate="pdf"
                   cta={`Zostań Pro Roczny za ${PRICES.proYearly.label}`}
                   returnTo={planPath}
                   className="block w-full text-left p-4 rounded-2xl"
@@ -1001,6 +961,7 @@ function DayPlanView({
   swapLoading,
   onSwapActivity,
   onAddActivity,
+  isLastDay,
 }: {
   day: DayPlan;
   city: string;
@@ -1011,6 +972,7 @@ function DayPlanView({
   swapLoading: Record<string, boolean>;
   onSwapActivity: (dayIndex: number, activityIndex: number) => void;
   onAddActivity: () => void;
+  isLastDay: boolean;
 }) {
   const mapsUrl = buildMapsRouteUrl(day.activities, city);
 
@@ -1072,6 +1034,7 @@ function DayPlanView({
             <ActivityCard
               key={i}
               activity={activity}
+              city={city}
               index={i}
               swapping={!!swapLoading[`${dayIndex}-${i}`]}
               onSwap={() => onSwapActivity(dayIndex, i)}
@@ -1079,6 +1042,8 @@ function DayPlanView({
           ))}
         </div>
       </div>
+
+      {isLastDay && <LuggageTile city={city} />}
 
       {/* Add activity button */}
       <button
@@ -1378,11 +1343,13 @@ function AddActivityModal({
 
 function ActivityCard({
   activity,
+  city,
   index,
   swapping,
   onSwap,
 }: {
   activity: DayActivity;
+  city: string;
   index: number;
   swapping: boolean;
   onSwap: () => void;
@@ -1436,11 +1403,11 @@ function ActivityCard({
               className="text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
               style={{
                 background:
-                  activity.cost === "Free" || activity.cost === "Bezpłatnie"
+                  isFreeCost(activity.cost)
                     ? "rgba(34,197,94,0.12)"
                     : "#F0F0F0",
                 color:
-                  activity.cost === "Free" || activity.cost === "Bezpłatnie"
+                  isFreeCost(activity.cost)
                     ? "#16A34A"
                     : "var(--text-muted)",
               }}
@@ -1469,6 +1436,7 @@ function ActivityCard({
             </a>
           </div>
         )}
+        <TicketsLink activity={activity} city={city} />
       </div>
     </motion.div>
   );

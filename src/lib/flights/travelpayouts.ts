@@ -1,6 +1,6 @@
 import type { DestinationRecommendation, FlightOffer } from "@/types";
 import { MOCK_DESTINATIONS } from "@/lib/mockFlights";
-import { buildSkyscannerUrl } from "./search-url";
+import { buildAviasalesUrl, buildSkyscannerUrl } from "./search-url";
 import { CATALOG } from "@/lib/destinations/catalog";
 import { AIRPORT_BY_CODE, DEFAULT_AIRPORTS } from "@/lib/airports";
 import { AIRLINE_NAMES } from "./airlines";
@@ -71,7 +71,8 @@ async function fetchCheapFlights(origin: string, month: number): Promise<Record<
 function formatDate(iso: string) { return iso.slice(0, 10); }
 
 function buildBuyLink(origin: string, dest: string, depIso: string, retIso?: string): string {
-  return buildSkyscannerUrl(origin, dest, depIso, retIso ?? null);
+  if (retIso) return buildAviasalesUrl(origin, dest, depIso, retIso, process.env.TRAVELPAYOUTS_MARKER ?? "");
+  return buildSkyscannerUrl(origin, dest, depIso, null);
 }
 
 function enrichFlight(base: FlightOffer, offer: TpOffer, originCode: string): FlightOffer {

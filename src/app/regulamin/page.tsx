@@ -184,13 +184,15 @@ export default function ReguaminPage() {
         {/* §7 */}
         <Section title="§7. Linki afiliacyjne">
           <P>
-            Serwis zawiera linki partnerskie (afiliacyjne) do zewnętrznych serwisów rezerwacji lotów,
-            w tym do Skyscannera, realizowane za pośrednictwem sieci Travelpayouts. Kliknięcie takiego
-            linku i dokonanie zakupu może skutkować otrzymaniem przez Operatora prowizji od partnera.
-            Linki afiliacyjne nie wpływają na cenę lotu dla Użytkownika.
+            Serwis zawiera linki partnerskie (afiliacyjne) do zewnętrznych serwisów: wyszukiwarki lotów Aviasales
+            (za pośrednictwem sieci Travelpayouts), serwisów z noclegami (Booking.com, Hostelworld), biletów na
+            atrakcje (GetYourGuide, Tiqets) i przechowalni bagażu (Radical Storage, Bounce). Kliknięcie takiego
+            linku i dokonanie zakupu może skutkować otrzymaniem przez Operatora prowizji od partnera. Linki
+            afiliacyjne nie wpływają na cenę dla Użytkownika.
           </P>
           <P>
-            Linki partnerskie są oznaczone atrybutem <code>{'rel="sponsored"'}</code> w kodzie strony.
+            Linki partnerskie są oznaczone w Serwisie dopiskiem „link partnerski”, a w kodzie strony atrybutem{" "}
+            <code>{'rel="sponsored"'}</code>.
           </P>
         </Section>
 

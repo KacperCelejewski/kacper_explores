@@ -209,7 +209,7 @@ export default function PricingPage() {
                 ))}
               </div>
 
-              <CheckoutButton planKey={plan.key} cta={plan.cta} />
+              <CheckoutButton planKey={plan.key} cta={plan.cta} gate="pricing" />
             </div>
           </div>
         ))}
