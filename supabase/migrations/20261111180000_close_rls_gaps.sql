@@ -25,3 +25,8 @@ DROP POLICY IF EXISTS "update_own_profile" ON public.user_profiles;
 -- dało się dopisać kredyty dowolnemu kontu. Wołają ją tylko trasy serwera.
 REVOKE EXECUTE ON FUNCTION public.add_credits(UUID, INT) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.add_credits(UUID, INT) TO service_role;
+
+-- Kredyt za pełny feedback raz na wyjazd i tylko za własny: /api/feedback zajmuje
+-- tę kolumnę warunkiem IS NULL i dopiero wtedy woła add_credits.
+ALTER TABLE public.trips
+  ADD COLUMN IF NOT EXISTS feedback_credited_at TIMESTAMPTZ;
