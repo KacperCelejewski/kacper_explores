@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { createContext, useContext, useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,6 +8,7 @@ import { useAppStore } from "@/lib/store";
 import type { TravelStyle, TripDuration, TravelVibe, PlaceType, QuizAnswers } from "@/types";
 import { MONTH_NAMES } from "@/lib/constants";
 import { trackEvent } from "@/lib/analytics";
+import QuizProgress from "@/components/quiz/QuizProgress";
 import {
   IconBackpack,
   IconSuitcase,
@@ -27,12 +28,19 @@ import {
   IconPin,
   IconCar,
   IconGlobe,
+  IconPlane,
+  IconArrowLeft,
+  IconArrowRight,
+  IconCheck,
 } from "@/app/components/Icons";
 import type { Companion } from "@/types";
 
 type IconFC = React.FC<{ size?: number }>;
 
 const TOTAL_STEPS = 6;
+// Single-choice steps move on by themselves right after the tap
+const AUTO_ADVANCE_STEPS = [0, 1, 2];
+const AUTO_ADVANCE_MS = 340;
 
 // ── Region definitions ────────────────────────────────────────────────────────
 
@@ -116,11 +124,65 @@ const DURATION_PRESETS: { value: number; label: string; sub?: string }[] = [
   { value: 14, label: "2 tygodnie",    sub: "14 dni" },
 ];
 
-const slideVariants = {
-  enter:  (dir: number) => ({ x: dir > 0 ? 60 : -60, opacity: 0 }),
-  center: { x: 0, opacity: 1 },
-  exit:   (dir: number) => ({ x: dir > 0 ? -60 : 60, opacity: 0 }),
+const COMPANION_LABELS: Record<Companion, string> = {
+  solo: "Sam/a", couple: "Para", family: "Rodzina", friends: "Znajomi",
 };
+const BUDGET_LABELS = { low: "Backpacker", medium: "Komfortowy" } as const;
+const VIBE_LABELS: Record<TravelVibe, string> = {
+  chill: "Reset", intense: "Full program", social: "Towarzyski", active: "Aktywny",
+};
+const MONTH_SHORT = ["sty","lut","mar","kwi","maj","cze","lip","sie","wrz","paź","lis","gru"];
+
+// Once the visitor has moved between questions, each new title takes focus so keyboard
+// and screen-reader users land on the question instead of a stale button
+const TitleFocusContext = createContext(false);
+
+const slideVariants = {
+  enter:  (dir: number) => ({ x: dir > 0 ? 48 : -48, opacity: 0 }),
+  center: { x: 0, opacity: 1 },
+  exit:   (dir: number) => ({ x: dir > 0 ? -48 : 48, opacity: 0 }),
+};
+const slideTransition = { duration: 0.3, ease: [0.22, 1, 0.36, 1] as const };
+
+// What the visitor has told us so far, in the order they told it
+function answeredLabels(a: QuizAnswers, upTo: number): string[] {
+  const out: string[] = [];
+  if (upTo > 0 && a.companion) out.push(COMPANION_LABELS[a.companion]);
+  if (upTo > 1 && a.budget)    out.push(BUDGET_LABELS[a.budget]);
+  if (upTo > 2 && a.vibe)      out.push(VIBE_LABELS[a.vibe]);
+  if (upTo > 3 && a.styles.length > 0) {
+    out.push(
+      a.styles.length <= 2
+        ? a.styles.map((s) => STYLE_OPTIONS.find((o) => o.value === s)?.label ?? s).join(" + ")
+        : `${a.styles.length} zainteresowań`,
+    );
+  }
+  if (upTo > 4 && a.month) out.push(`${MONTH_SHORT[a.month - 1]} · ${a.duration ?? 5} dni`);
+  return out;
+}
+
+function OptionCard({
+  selected, onClick, className = "", style, children,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  className?: string;
+  style?: React.CSSProperties;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      className={`quiz-option ${selected ? "selected" : ""} ${className}`}
+      style={style}
+      onClick={onClick}
+      aria-pressed={selected}
+    >
+      {children}
+      <span className="quiz-check" aria-hidden="true"><IconCheck size={13} /></span>
+    </button>
+  );
+}
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
@@ -129,7 +191,10 @@ function QuizPageInner() {
   const searchParams = useSearchParams();
   const [dir, setDir] = useState(1);
   const [savedPrefs, setSavedPrefs] = useState<QuizAnswers | null>(null);
+  const [authed, setAuthed] = useState<boolean | null>(null);
   const autoStarted = useRef(false);
+  const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [hasMoved, setHasMoved] = useState(false);
   const { quizAnswers, currentQuizStep, setQuizAnswer, toggleStyle, nextQuizStep, prevQuizStep, setCurrentQuizStep, resetQuiz } =
     useAppStore();
   const [maxVisitedStep, setMaxVisitedStep] = useState(currentQuizStep);
@@ -146,6 +211,11 @@ function QuizPageInner() {
     });
   };
 
+  const cancelAdvance = () => {
+    if (advanceTimer.current) clearTimeout(advanceTimer.current);
+    advanceTimer.current = null;
+  };
+
   useEffect(() => {
     const cityParam = searchParams.get("city");
     setQuizAnswer("preferredCity", cityParam ?? undefined);
@@ -154,6 +224,7 @@ function QuizPageInner() {
     fetch("/api/profile")
       .then((r) => r.json())
       .then((d) => {
+        setAuthed(Boolean(d.authenticated));
         if (d.authenticated && d.quiz_preferences) setSavedPrefs(d.quiz_preferences);
         if (d.authenticated && searchParams.get("afterLogin") === "1" && !autoStarted.current) {
           autoStarted.current = true;
@@ -161,6 +232,8 @@ function QuizPageInner() {
         }
       })
       .catch(() => {});
+
+    return cancelAdvance;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -173,6 +246,8 @@ function QuizPageInner() {
 
   const jumpToStep = (step: number) => {
     if (step === currentQuizStep || step > maxVisitedStep) return;
+    cancelAdvance();
+    setHasMoved(true);
     setDir(step > currentQuizStep ? 1 : -1);
     setCurrentQuizStep(step);
   };
@@ -190,7 +265,8 @@ function QuizPageInner() {
     router.push("/destinations");
   };
 
-  const progress = ((currentQuizStep + 1) / TOTAL_STEPS) * 100;
+  const isLast = currentQuizStep === TOTAL_STEPS - 1;
+  const autoStep = AUTO_ADVANCE_STEPS.includes(currentQuizStep);
 
   const canProceed = () => {
     if (currentQuizStep === 0) return quizAnswers.companion !== null;
@@ -203,6 +279,8 @@ function QuizPageInner() {
   };
 
   const handleNext = async () => {
+    cancelAdvance();
+    setHasMoved(true);
     setDir(1);
     track("step_complete", currentQuizStep);
     if (currentQuizStep < TOTAL_STEPS - 1) {
@@ -218,74 +296,100 @@ function QuizPageInner() {
     }
   };
 
+  const handleNextRef = useRef(handleNext);
+  const stepRef = useRef(currentQuizStep);
+  useEffect(() => {
+    handleNextRef.current = handleNext;
+    stepRef.current = currentQuizStep;
+  });
+
+  // Tap an answer, see it land, move on. Tapping another one inside the window restarts it.
+  // forStep guards against a tap on a card that is still sliding out of the previous question
+  const pick = (forStep: number, apply: () => void) => {
+    if (forStep !== stepRef.current) return;
+    apply();
+    cancelAdvance();
+    advanceTimer.current = setTimeout(() => { void handleNextRef.current(); }, AUTO_ADVANCE_MS);
+  };
+
   const handleBack = () => {
+    cancelAdvance();
+    setHasMoved(true);
     setDir(-1);
     if (currentQuizStep === 0) router.push("/");
     else prevQuizStep();
   };
 
+  const trail = answeredLabels(quizAnswers, currentQuizStep);
+
+  const ctaLabel = isLast
+    ? quizAnswers.preferredCity
+      ? `Zaplanuj wyjazd do ${quizAnswers.preferredCity}`
+      : "Dobierz kierunki"
+    : currentQuizStep === 3 && quizAnswers.styles.length === 0
+    ? "Pomiń to pytanie"
+    : "Dalej";
+
   return (
-    <div className="flex flex-col flex-1 px-5 pb-8" suppressHydrationWarning>
+    <div className="quiz-root flex flex-col flex-1 px-5" suppressHydrationWarning>
       {/* Top bar */}
-      <div className="pt-6 pb-4">
-        <div className="flex items-center justify-between mb-4">
+      <div className="pt-3">
+        <div className="flex items-center justify-between">
           <button
+            type="button"
             onClick={handleBack}
-            className="text-sm font-medium transition-opacity hover:opacity-60"
-            style={{ color: "var(--text-muted)" }}
+            className="flex items-center gap-1.5 -ml-2 px-2 text-sm font-medium transition-opacity hover:opacity-60"
+            style={{ color: "var(--text-muted)", minHeight: 44 }}
           >
-            ← Wstecz
+            <IconArrowLeft size={16} />
+            Wstecz
           </button>
-          <div className="flex items-center gap-1.5">
-            {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
-              <button
-                key={i}
-                onClick={() => jumpToStep(i)}
-                disabled={i > maxVisitedStep}
-                aria-label={`Krok ${i + 1}`}
-                style={{
-                  width: i === currentQuizStep ? 20 : 8,
-                  height: 8,
-                  borderRadius: 4,
-                  transition: "all 0.2s",
-                  background: i === currentQuizStep
-                    ? "var(--accent)"
-                    : i <= maxVisitedStep
-                    ? "rgba(196,98,45,0.35)"
-                    : "var(--border)",
-                  cursor: i > maxVisitedStep ? "default" : "pointer",
-                  border: "none",
-                  padding: 0,
-                  flexShrink: 0,
-                }}
-              />
-            ))}
-          </div>
+          <p
+            className="text-sm font-semibold"
+            style={{ color: isLast ? "var(--accent)" : "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}
+          >
+            {isLast ? "Ostatnie pytanie" : `Pytanie ${currentQuizStep + 1} z ${TOTAL_STEPS}`}
+          </p>
         </div>
-        <div
-          className="progress-bar"
-          role="progressbar"
-          aria-valuenow={currentQuizStep + 1}
-          aria-valuemin={1}
-          aria-valuemax={TOTAL_STEPS}
-          aria-label={`Postęp quizu: krok ${currentQuizStep + 1} z ${TOTAL_STEPS}`}
-        >
-          <motion.div
-            className="progress-fill"
-            initial={false}
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.4, ease: "easeInOut" }}
-          />
+        <QuizProgress
+          total={TOTAL_STEPS}
+          current={currentQuizStep}
+          maxVisited={maxVisitedStep}
+          onJump={jumpToStep}
+        />
+
+        {/* What you've told us so far, or what you get at the end */}
+        <div className="mt-2 flex flex-wrap items-center gap-1.5" style={{ minHeight: 28 }} aria-live="polite">
+          {trail.length === 0 ? (
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+              Na końcu: kierunki w Twoim budżecie i prawdziwe ceny lotów.
+            </p>
+          ) : (
+            <AnimatePresence initial={false}>
+              {trail.map((item) => (
+                <motion.span
+                  key={item}
+                  initial={{ opacity: 0, scale: 0.85 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                  className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                  style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}
+                >
+                  {item}
+                </motion.span>
+              ))}
+            </AnimatePresence>
+          )}
         </div>
       </div>
 
       {/* Preferred city banner */}
       {quizAnswers.preferredCity && (
         <div
-          className="flex items-center gap-2 px-4 py-2.5 rounded-2xl mb-4"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-2xl mt-3"
           style={{ background: "var(--accent-light)", border: "1px solid rgba(196,98,45,0.25)" }}
         >
-          <span>✈️</span>
+          <span style={{ color: "var(--accent)" }}><IconPlane size={16} /></span>
           <p className="text-sm font-semibold" style={{ color: "var(--accent)" }}>
             Kierunek: {quizAnswers.preferredCity}
           </p>
@@ -297,58 +401,66 @@ function QuizPageInner() {
         {savedPrefs && currentQuizStep === 0 && (
           <motion.button
             key="saved-prefs"
+            type="button"
             initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.25 }}
             onClick={handleUseSaved}
-            className="w-full mb-4 p-4 rounded-2xl text-left transition-opacity hover:opacity-90"
+            className="w-full mt-3 p-4 rounded-2xl text-left transition-opacity hover:opacity-90"
             style={{ background: "var(--accent-light)", border: "1px solid rgba(196,98,45,0.25)" }}
           >
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>Użyj poprzednich ustawień ↗</p>
+                <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>Użyj poprzednich ustawień</p>
                 <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
                   Pomiń quiz — załaduj zapisane preferencje i przejdź do lotów
                 </p>
               </div>
-              <span className="text-xl ml-3" style={{ color: "var(--accent)" }}>✦</span>
+              <span style={{ color: "var(--accent)" }}><IconArrowRight size={18} /></span>
             </div>
           </motion.button>
         )}
       </AnimatePresence>
 
       {/* Steps */}
-      <div className="flex-1 relative overflow-hidden">
+      <div className="flex-1 relative overflow-hidden pt-4 -mx-1 px-1">
+        <TitleFocusContext.Provider value={hasMoved}>
         <AnimatePresence mode="wait" custom={dir}>
           {currentQuizStep === 0 && (
             <motion.div key="step-companion" custom={dir} variants={slideVariants}
-              initial="enter" animate="center" exit="exit" transition={{ duration: 0.28, ease: "easeInOut" }}>
+              initial="enter" animate="center" exit="exit" transition={slideTransition}>
               <StepCompanion
                 companion={quizAnswers.companion}
-                setCompanion={(v) => setQuizAnswer("companion", v)}
+                onPick={(v) => pick(0, () => setQuizAnswer("companion", v))}
               />
             </motion.div>
           )}
           {currentQuizStep === 1 && (
             <motion.div key="step-budget" custom={dir} variants={slideVariants}
-              initial="enter" animate="center" exit="exit" transition={{ duration: 0.28, ease: "easeInOut" }}>
-              <StepBudget />
+              initial="enter" animate="center" exit="exit" transition={slideTransition}>
+              <StepBudget
+                budget={quizAnswers.budget}
+                onPick={(v) => pick(1, () => setQuizAnswer("budget", v))}
+              />
             </motion.div>
           )}
           {currentQuizStep === 2 && (
             <motion.div key="step-vibe" custom={dir} variants={slideVariants}
-              initial="enter" animate="center" exit="exit" transition={{ duration: 0.28, ease: "easeInOut" }}>
-              <StepVibe />
+              initial="enter" animate="center" exit="exit" transition={slideTransition}>
+              <StepVibe
+                vibe={quizAnswers.vibe}
+                onPick={(v) => pick(2, () => setQuizAnswer("vibe", v))}
+              />
             </motion.div>
           )}
           {currentQuizStep === 3 && (
             <motion.div key="step-style" custom={dir} variants={slideVariants}
-              initial="enter" animate="center" exit="exit" transition={{ duration: 0.28, ease: "easeInOut" }}>
+              initial="enter" animate="center" exit="exit" transition={slideTransition}>
               <StepStyle styles={quizAnswers.styles} toggleStyle={toggleStyle} />
             </motion.div>
           )}
           {currentQuizStep === 4 && (
             <motion.div key="step-when" custom={dir} variants={slideVariants}
-              initial="enter" animate="center" exit="exit" transition={{ duration: 0.28, ease: "easeInOut" }}>
+              initial="enter" animate="center" exit="exit" transition={slideTransition}>
               <StepWhen
                 month={quizAnswers.month}
                 setMonth={(m) => setQuizAnswer("month", m)}
@@ -359,7 +471,7 @@ function QuizPageInner() {
           )}
           {currentQuizStep === 5 && (
             <motion.div key="step-departure" custom={dir} variants={slideVariants}
-              initial="enter" animate="center" exit="exit" transition={{ duration: 0.28, ease: "easeInOut" }}>
+              initial="enter" animate="center" exit="exit" transition={slideTransition}>
               <StepDeparture
                 airports={quizAnswers.airports}
                 setAirports={(v) => setQuizAnswer("airports", v)}
@@ -367,22 +479,31 @@ function QuizPageInner() {
             </motion.div>
           )}
         </AnimatePresence>
+        </TitleFocusContext.Provider>
       </div>
 
-      <motion.div layout className="mt-6">
-        <button className="btn-primary" disabled={!canProceed()} onClick={handleNext}>
-          {currentQuizStep < TOTAL_STEPS - 1
-            ? "Dalej →"
-            : quizAnswers.preferredCity
-            ? `Zaplanuj wyjazd do ${quizAnswers.preferredCity} →`
-            : "Dobierz destynacje →"}
-        </button>
-        {currentQuizStep === 0 && (
+      <div className="quiz-actions">
+        {autoStep && !canProceed() ? (
+          <p className="text-center text-sm" style={{ color: "var(--text-muted)", minHeight: 52, lineHeight: "52px" }}>
+            Dotknij odpowiedzi — resztą zajmiemy się sami.
+          </p>
+        ) : (
+          <button type="button" className="btn-primary" disabled={!canProceed()} onClick={handleNext}>
+            {ctaLabel}
+            <IconArrowRight size={18} />
+          </button>
+        )}
+        {isLast && authed === false && (
           <p className="text-center text-xs mt-3" style={{ color: "var(--text-muted)" }}>
-            Krok 1 z {TOTAL_STEPS} — zajmie Ci ok. 2 minuty
+            Zaraz poprosimy o założenie konta — 5 planów dostajesz za darmo.
           </p>
         )}
-      </motion.div>
+        {currentQuizStep === 0 && (
+          <p className="text-center text-xs mt-3" style={{ color: "var(--text-muted)" }}>
+            6 pytań, ok. 2 minuty. Nic nie kosztuje.
+          </p>
+        )}
+      </div>
     </div>
   );
 }
@@ -397,27 +518,42 @@ export default function QuizPage() {
 
 // ── Step components ───────────────────────────────────────────────────────────
 
+function StepHeader({ title, hint }: { title: string; hint: string }) {
+  const focusOnMount = useContext(TitleFocusContext);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (focusOnMount) titleRef.current?.focus({ preventScroll: true });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return (
+    <>
+      <h2 ref={titleRef} className="quiz-title" tabIndex={-1}>{title}</h2>
+      <p className="text-[15px] mt-2 mb-5 leading-snug" style={{ color: "var(--text-muted)" }}>{hint}</p>
+    </>
+  );
+}
+
 type CompanionIconFC = React.FC<{ size?: number }>;
 
 const IconSolo: CompanionIconFC = ({ size = 24 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
     <circle cx="12" cy="7" r="4" /><path d="M5 21a7 7 0 0 1 14 0" />
   </svg>
 );
 const IconCouple: CompanionIconFC = ({ size = 24 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
     <circle cx="9" cy="7" r="3.5" /><path d="M2 20a7 7 0 0 1 14 0" />
     <circle cx="17" cy="8" r="3" /><path d="M14 20h8" />
   </svg>
 );
 const IconFamily: CompanionIconFC = ({ size = 24 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
     <circle cx="8" cy="6" r="3" /><circle cx="16" cy="6" r="3" /><circle cx="12" cy="16" r="2.5" />
     <path d="M2 19a6 6 0 0 1 12 0" /><path d="M10 19a6 6 0 0 1 12 0" />
   </svg>
 );
 const IconGroupFriends: CompanionIconFC = ({ size = 24 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
     <circle cx="6" cy="7" r="3" /><circle cx="12" cy="5" r="3" /><circle cx="18" cy="7" r="3" />
     <path d="M0 21a6 6 0 0 1 12 0" /><path d="M12 21a6 6 0 0 1 12 0" />
   </svg>
@@ -432,40 +568,36 @@ const COMPANION_OPTIONS: { value: Companion; label: string; Icon: CompanionIconF
 
 function StepCompanion({
   companion,
-  setCompanion,
+  onPick,
 }: {
   companion: Companion | null;
-  setCompanion: (v: Companion) => void;
+  onPick: (v: Companion) => void;
 }) {
   return (
     <div>
-      <h2 className="text-2xl font-bold mt-2">Kto jedzie?</h2>
-      <p className="text-sm mt-2 mb-6" style={{ color: "var(--text-muted)" }}>
-        AI dopasuje atrakcje, restauracje i wskazówki do Twojej grupy.
-      </p>
+      <StepHeader title="Kto jedzie?" hint="AI dopasuje atrakcje, restauracje i wskazówki do Twojej grupy." />
       <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Wybierz kto podróżuje">
         {COMPANION_OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            className={`option-card ${companion === opt.value ? "selected" : ""}`}
-            onClick={() => setCompanion(opt.value)}
-            aria-pressed={companion === opt.value}
-          >
+          <OptionCard key={opt.value} selected={companion === opt.value} onClick={() => onPick(opt.value)}>
             <span style={{ color: companion === opt.value ? "var(--accent)" : "var(--text-muted)" }}>
-              <opt.Icon size={24} />
+              <opt.Icon size={26} />
             </span>
-            <p className="font-semibold text-sm mt-2">{opt.label}</p>
-            <p className="text-xs mt-0.5 leading-tight" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
-          </button>
+            <p className="font-semibold text-[15px] mt-2">{opt.label}</p>
+            <p className="text-xs mt-0.5 leading-snug" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
+          </OptionCard>
         ))}
       </div>
     </div>
   );
 }
 
-function StepBudget() {
-  const { quizAnswers, setQuizAnswer } = useAppStore();
-
+function StepBudget({
+  budget,
+  onPick,
+}: {
+  budget: "low" | "medium" | null;
+  onPick: (v: "low" | "medium") => void;
+}) {
   const opts: { value: "low" | "medium"; Icon: IconFC; label: string; desc: string }[] = [
     { value: "low",    Icon: IconBackpack,  label: "Backpacker",  desc: "Do 1500 zł · hostele, street food, darmowe atrakcje" },
     { value: "medium", Icon: IconSuitcase,  label: "Komfortowy",  desc: "1500–3000 zł · Airbnb lub 3★ hotel, restauracje" },
@@ -473,56 +605,45 @@ function StepBudget() {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mt-2">Jaki masz budżet?</h2>
-      <p className="text-sm mt-2 mb-6" style={{ color: "var(--text-muted)" }}>
-        Całkowity koszt wyjazdu — loty, noclegi, jedzenie.
-      </p>
+      <StepHeader title="Jaki masz budżet?" hint="Całkowity koszt wyjazdu — loty, noclegi, jedzenie." />
       <div className="flex flex-col gap-3" role="radiogroup" aria-label="Wybierz budżet">
         {opts.map((opt) => (
-          <button
-            key={opt.value}
-            className={`option-card ${quizAnswers.budget === opt.value ? "selected" : ""}`}
-            onClick={() => setQuizAnswer("budget", opt.value)}
-            aria-pressed={quizAnswers.budget === opt.value}
-          >
+          <OptionCard key={opt.value} className="quiz-option--roomy" selected={budget === opt.value} onClick={() => onPick(opt.value)}>
             <div className="flex items-center gap-3">
-              <span style={{ color: quizAnswers.budget === opt.value ? "var(--accent)" : "var(--text-muted)" }}>
-                <opt.Icon size={24} />
+              <span style={{ color: budget === opt.value ? "var(--accent)" : "var(--text-muted)" }}>
+                <opt.Icon size={26} />
               </span>
               <div>
-                <p className="font-semibold text-sm">{opt.label}</p>
-                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
+                <p className="font-semibold text-[15px]">{opt.label}</p>
+                <p className="text-xs mt-0.5 leading-snug" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
               </div>
             </div>
-          </button>
+          </OptionCard>
         ))}
       </div>
     </div>
   );
 }
 
-function StepVibe() {
-  const { quizAnswers, setQuizAnswer } = useAppStore();
+function StepVibe({
+  vibe,
+  onPick,
+}: {
+  vibe: TravelVibe | null;
+  onPick: (v: TravelVibe) => void;
+}) {
   return (
     <div>
-      <h2 className="text-2xl font-bold mt-2">Jaka energia wyjazdu?</h2>
-      <p className="text-sm mt-2 mb-6" style={{ color: "var(--text-muted)" }}>
-        Jak wyobrażasz sobie typowy dzień na miejscu.
-      </p>
+      <StepHeader title="Jaka energia wyjazdu?" hint="Jak wyobrażasz sobie typowy dzień na miejscu." />
       <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Wybierz energię wyjazdu">
         {VIBE_OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            className={`option-card ${quizAnswers.vibe === opt.value ? "selected" : ""}`}
-            onClick={() => setQuizAnswer("vibe", opt.value)}
-            aria-pressed={quizAnswers.vibe === opt.value}
-          >
-            <span style={{ color: quizAnswers.vibe === opt.value ? "var(--accent)" : "var(--text-muted)" }}>
-              <opt.Icon size={24} />
+          <OptionCard key={opt.value} selected={vibe === opt.value} onClick={() => onPick(opt.value)}>
+            <span style={{ color: vibe === opt.value ? "var(--accent)" : "var(--text-muted)" }}>
+              <opt.Icon size={26} />
             </span>
-            <p className="font-semibold text-sm mt-2">{opt.label}</p>
-            <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
-          </button>
+            <p className="font-semibold text-[15px] mt-2">{opt.label}</p>
+            <p className="text-xs mt-0.5 leading-snug" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
+          </OptionCard>
         ))}
       </div>
     </div>
@@ -532,24 +653,19 @@ function StepVibe() {
 function StepStyle({ styles, toggleStyle }: { styles: TravelStyle[]; toggleStyle: (s: TravelStyle) => void }) {
   return (
     <div>
-      <h2 className="text-2xl font-bold mt-2">Czym się interesujesz?</h2>
-      <p className="text-sm mt-2 mb-6" style={{ color: "var(--text-muted)" }}>
-        Opcjonalne — AI lepiej dopasuje kierunki.
-      </p>
+      <StepHeader
+        title="Czym się interesujesz?"
+        hint="Wybierz ile chcesz albo pomiń — AI lepiej dopasuje kierunki, gdy coś zaznaczysz."
+      />
       <div className="grid grid-cols-2 gap-3" role="group" aria-label="Wybierz zainteresowania">
         {STYLE_OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            className={`option-card ${styles.includes(opt.value) ? "selected" : ""}`}
-            onClick={() => toggleStyle(opt.value)}
-            aria-pressed={styles.includes(opt.value)}
-          >
+          <OptionCard key={opt.value} selected={styles.includes(opt.value)} onClick={() => toggleStyle(opt.value)}>
             <span style={{ color: styles.includes(opt.value) ? "var(--accent)" : "var(--text-muted)" }}>
-              <opt.Icon size={24} />
+              <opt.Icon size={26} />
             </span>
-            <p className="font-semibold text-sm mt-2">{opt.label}</p>
-            <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
-          </button>
+            <p className="font-semibold text-[15px] mt-2">{opt.label}</p>
+            <p className="text-xs mt-0.5 leading-snug" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
+          </OptionCard>
         ))}
       </div>
     </div>
@@ -560,28 +676,25 @@ function StepPlaceType() {
   const { quizAnswers, setQuizAnswer } = useAppStore();
   return (
     <div>
-      <h2 className="text-2xl font-bold mt-2">Jaki typ miejsca?</h2>
-      <p className="text-sm mt-2 mb-6" style={{ color: "var(--text-muted)" }}>
-        Gdzie czujesz się najlepiej.
-      </p>
+      <StepHeader title="Jaki typ miejsca?" hint="Gdzie czujesz się najlepiej." />
       <div className="flex flex-col gap-3" role="radiogroup" aria-label="Wybierz typ miejsca">
         {PLACE_OPTIONS.map((opt) => (
-          <button
+          <OptionCard
             key={opt.value}
-            className={`option-card ${quizAnswers.placeType === opt.value ? "selected" : ""}`}
+            className="quiz-option--roomy"
+            selected={quizAnswers.placeType === opt.value}
             onClick={() => setQuizAnswer("placeType", opt.value)}
-            aria-pressed={quizAnswers.placeType === opt.value}
           >
             <div className="flex items-center gap-3">
               <span style={{ color: quizAnswers.placeType === opt.value ? "var(--accent)" : "var(--text-muted)" }}>
-                <opt.Icon size={24} />
+                <opt.Icon size={26} />
               </span>
               <div>
-                <p className="font-semibold text-sm">{opt.label}</p>
-                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
+                <p className="font-semibold text-[15px]">{opt.label}</p>
+                <p className="text-xs mt-0.5 leading-snug" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
               </div>
             </div>
-          </button>
+          </OptionCard>
         ))}
       </div>
     </div>
@@ -595,8 +708,6 @@ function durationNote(d: number): string {
   return `${full} pełne dni na miejscu + przylot i powrót`;
 }
 
-const MONTH_SHORT = ["sty","lut","mar","kwi","maj","cze","lip","sie","wrz","paź","lis","gru"];
-
 function StepWhen({
   month, setMonth, duration, setDuration,
 }: {
@@ -606,45 +717,59 @@ function StepWhen({
   setDuration: (d: TripDuration) => void;
 }) {
   const value = duration ?? 5;
+  const [monthPrefilled, setMonthPrefilled] = useState(false);
 
   useEffect(() => {
     if (duration === null) setDuration(5);
+    // Thursday-night decision: start from this month so the step is already answerable
+    if (month === null) {
+      setMonth(new Date().getMonth() + 1);
+      setMonthPrefilled(true);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mt-2">Kiedy i jak długo?</h2>
-      <p className="text-sm mt-2 mb-5" style={{ color: "var(--text-muted)" }}>
-        Pogoda, sezon, ceny — wszystko pod uwagę.
-      </p>
+      <StepHeader
+        title="Kiedy i jak długo?"
+        hint={
+          monthPrefilled
+            ? "Zaznaczyłem bieżący miesiąc — zmień go, jeśli jedziesz później."
+            : "Pogoda, sezon, ceny — wszystko pod uwagę."
+        }
+      />
 
       {/* Month grid */}
-      <p className="text-xs font-semibold mb-2" style={{ color: "var(--text-muted)" }}>Miesiąc wyjazdu</p>
+      <p className="text-sm font-semibold mb-2" style={{ color: "var(--text-secondary)" }}>Miesiąc wyjazdu</p>
       <div className="grid grid-cols-4 gap-2 mb-6" role="radiogroup" aria-label="Wybierz miesiąc">
         {MONTH_NAMES.map((name, i) => (
           <button
             key={name}
-            className={`option-card text-center ${month === i + 1 ? "selected" : ""}`}
-            style={{ padding: "10px 4px", textAlign: "center" }}
+            type="button"
+            className={`quiz-option quiz-option--center ${month === i + 1 ? "selected" : ""}`}
+            style={{ padding: "0 4px", minHeight: 48, textAlign: "center" }}
             onClick={() => setMonth(i + 1)}
             aria-pressed={month === i + 1}
+            aria-label={name}
           >
-            <p className="font-semibold text-xs">{MONTH_SHORT[i]}</p>
+            <span className="font-semibold text-sm">{MONTH_SHORT[i]}</span>
           </button>
         ))}
       </div>
 
       {/* Duration presets */}
-      <p className="text-xs font-semibold mb-2" style={{ color: "var(--text-muted)" }}>Długość wyjazdu</p>
+      <p className="text-sm font-semibold mb-2" style={{ color: "var(--text-secondary)" }}>Długość wyjazdu</p>
       <div className="flex flex-wrap gap-2 mb-4">
         {DURATION_PRESETS.map((p) => {
           const sel = value === p.value;
           return (
             <button
               key={p.value}
+              type="button"
               onClick={() => setDuration(p.value)}
-              className="px-3 py-1.5 rounded-full text-sm font-medium transition-all"
+              aria-pressed={sel}
+              className="quiz-chip"
               style={sel ? {
                 background: "var(--accent)",
                 color: "#fff",
@@ -655,14 +780,14 @@ function StepWhen({
                 border: "1.5px solid var(--border)",
               }}
             >
-              {p.label}{p.sub && <span className="ml-1 opacity-70 text-xs">{p.sub}</span>}
+              {p.label}{p.sub && <span className="ml-1.5 text-xs" style={{ opacity: 0.8 }}>{p.sub}</span>}
             </button>
           );
         })}
       </div>
 
       {/* Slider */}
-      <div className="mb-4">
+      <div className="mb-3">
         <input
           type="range"
           min={2}
@@ -671,49 +796,19 @@ function StepWhen({
           value={value}
           onChange={(e) => setDuration(Number(e.target.value))}
           className="w-full"
-          style={{ accentColor: "var(--accent)" }}
+          style={{ accentColor: "var(--accent)", minHeight: 44 }}
           aria-label="Liczba dni"
         />
-        <div className="flex justify-between text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+        <div className="flex justify-between text-xs" style={{ color: "var(--text-muted)" }}>
           <span>2 dni</span>
           <span>21 dni</span>
         </div>
       </div>
 
-      {/* Live readout */}
-      <div className="p-3 rounded-2xl text-center" style={{ background: "var(--accent-light)", border: "1px solid rgba(196,98,45,0.2)" }}>
-        <p className="text-2xl font-bold" style={{ color: "var(--accent)" }}>{value} dni</p>
-        <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{durationNote(value)}</p>
-      </div>
-    </div>
-  );
-}
-
-function QuizSummary() {
-  const { quizAnswers } = useAppStore();
-  const { budget, vibe, styles, placeType, month, duration } = quizAnswers;
-
-  const items = [
-    budget     && (budget === "low" ? "Backpacker" : "Komfortowy"),
-    vibe       && ({ chill: "Reset", intense: "Full program", social: "Towarzyski", active: "Aktywny" }[vibe]),
-    styles.length > 0 && `${styles.length} ${styles.length === 1 ? "zainteresowanie" : styles.length <= 4 ? "zainteresowania" : "zainteresowań"}`,
-    placeType  && ({ big_city: "Duże miasto", charming: "Kameralne", beach_sun: "Słońce i woda" }[placeType]),
-    month      && MONTH_SHORT[month - 1],
-    duration   && `${duration} dni`,
-  ].filter(Boolean) as string[];
-
-  if (items.length === 0) return null;
-
-  return (
-    <div className="mb-5 p-3 rounded-2xl" style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}>
-      <p className="text-xs font-semibold mb-2" style={{ color: "var(--text-muted)" }}>Twoje wybory</p>
-      <div className="flex flex-wrap gap-1.5">
-        {items.map((item) => (
-          <span key={item} className="text-xs px-2 py-0.5 rounded-full" style={{ background: "var(--bg-primary)", border: "1px solid var(--border)" }}>
-            {item}
-          </span>
-        ))}
-      </div>
+      <p className="text-sm" style={{ color: "var(--text-secondary)" }} aria-live="polite">
+        <span className="font-bold" style={{ color: "var(--accent)", fontVariantNumeric: "tabular-nums" }}>{value} dni</span>
+        {" · "}{durationNote(value)}
+      </p>
     </div>
   );
 }
@@ -756,33 +851,27 @@ function StepDeparture({
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mt-2">Skąd startujesz?</h2>
-      <p className="text-sm mt-2 mb-4" style={{ color: "var(--text-muted)" }}>
-        Dobiorę lotniska i porównam wszystkie opcje.
-      </p>
-      <QuizSummary />
+      <StepHeader title="Skąd startujesz?" hint="Dobiorę lotniska i porównam wszystkie opcje." />
 
       {/* Region grid */}
       <div className="grid grid-cols-3 gap-2 mb-6" role="radiogroup" aria-label="Wybierz miasto">
         {REGIONS.map((r) => (
           <button
             key={r.id}
+            type="button"
             onClick={() => select(r.id, willingness)}
             aria-pressed={regionId === r.id}
-            className="option-card text-center py-3 px-2"
-            style={regionId === r.id ? {
-              background: "var(--accent-light)",
-              border: "1.5px solid var(--accent)",
-            } : {}}
+            className={`quiz-option quiz-option--center ${regionId === r.id ? "selected" : ""}`}
+            style={{ padding: "10px 6px", textAlign: "center", minHeight: 68 }}
           >
             <p
-              className="font-bold text-xs tracking-widest"
-              style={{ color: regionId === r.id ? "var(--accent)" : "var(--text-muted)", fontFamily: "var(--font-heading), Georgia, serif", fontSize: "11px" }}
+              className="font-bold tracking-widest"
+              style={{ color: regionId === r.id ? "var(--accent)" : "var(--text-muted)", fontFamily: "var(--font-heading), Georgia, serif", fontSize: 13 }}
             >
               {r.code}
             </p>
-            <p className="font-semibold text-xs mt-1 leading-tight">{r.label}</p>
-            <p className="text-xs mt-0.5 leading-tight" style={{ color: "var(--text-muted)", fontSize: "10px" }}>
+            <p className="font-semibold text-[13px] mt-0.5 leading-tight">{r.label}</p>
+            <p className="mt-0.5 leading-tight" style={{ color: "var(--text-muted)", fontSize: 11 }}>
               {r.subLabel}
             </p>
           </button>
@@ -790,40 +879,31 @@ function StepDeparture({
       </div>
 
       {/* Willingness */}
-      <p className="text-sm font-semibold mb-3">Jak daleko dojedziesz do lotniska?</p>
+      <p className="text-sm font-semibold mb-3" style={{ color: "var(--text-secondary)" }}>Jak daleko dojedziesz do lotniska?</p>
       <div className="flex flex-col gap-2" role="radiogroup" aria-label="Gotowość do dojazdu">
         {WILLINGNESS_OPTIONS.map((opt) => (
-          <button
+          <OptionCard
             key={opt.value}
+            className="quiz-option--roomy"
+            selected={willingness === opt.value}
             onClick={() => select(regionId, opt.value)}
-            aria-pressed={willingness === opt.value}
-            className="option-card"
-            style={willingness === opt.value ? {
-              background: "var(--accent-light)",
-              border: "1.5px solid var(--accent)",
-            } : {}}
           >
             <div className="flex items-center gap-3">
               <span className="flex-shrink-0" style={{ color: willingness === opt.value ? "var(--accent)" : "var(--text-muted)" }}>
-                <opt.Icon size={20} />
+                <opt.Icon size={22} />
               </span>
-              <div className="text-left">
-                <p className="font-semibold text-sm">{opt.label}</p>
-                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
+              <div>
+                <p className="font-semibold text-[15px]">{opt.label}</p>
+                <p className="text-xs mt-0.5 leading-snug" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
               </div>
-              {willingness === opt.value && (
-                <span className="ml-auto text-xs font-bold flex-shrink-0" style={{ color: "var(--accent)" }}>✓</span>
-              )}
             </div>
-          </button>
+          </OptionCard>
         ))}
       </div>
 
-      {/* Summary chip */}
-      <div className="mt-4 px-3 py-2 rounded-xl text-xs" style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}>
-        <span style={{ color: "var(--text-muted)" }}>Będę porównywać: </span>
-        <span className="font-semibold">{airports.join(", ")}</span>
-      </div>
+      <p className="mt-4 text-xs" style={{ color: "var(--text-muted)" }}>
+        Będę porównywać: <span className="font-semibold" style={{ color: "var(--text-secondary)" }}>{airports.join(", ")}</span>
+      </p>
     </div>
   );
 }

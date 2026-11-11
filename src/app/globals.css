@@ -399,3 +399,133 @@ body.is-home section[id] {
     margin-top: 0;
   }
 }
+
+/* ================================================================
+   QUIZ — answer cards, sticky action bar
+   ================================================================ */
+
+.quiz-root ::selection {
+  background: var(--accent-light);
+  color: var(--text-primary);
+}
+
+.quiz-title {
+  font-family: var(--font-heading), Georgia, serif;
+  font-size: 2.125rem;
+  line-height: 1.05;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.quiz-title:focus,
+.quiz-title:focus-visible {
+  outline: none;
+}
+
+.quiz-option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  width: 100%;
+  min-height: 56px;
+  padding: 14px 16px;
+  background: var(--bg-surface);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    border-color 0.15s,
+    background-color 0.15s,
+    transform 0.14s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (hover: hover) {
+  .quiz-option:hover {
+    border-color: var(--accent);
+    background: var(--accent-light);
+  }
+}
+
+.quiz-option:active {
+  transform: scale(0.975);
+}
+
+.quiz-option.selected {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.quiz-option--center {
+  align-items: center;
+  justify-content: center;
+}
+
+.quiz-option--roomy {
+  padding-right: 44px;
+}
+
+.quiz-check {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  opacity: 0;
+  transform: scale(0.4);
+  transition:
+    opacity 0.15s,
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.quiz-option.selected .quiz-check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.quiz-chip {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s, transform 0.14s;
+}
+
+.quiz-chip:active {
+  transform: scale(0.96);
+}
+
+/* Action bar stays under the thumb on long steps */
+.quiz-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  margin: 0 -20px;
+  padding: 20px 20px max(20px, env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg-primary) 72%, rgba(245, 239, 224, 0));
+}
+
+.quiz-actions .btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 52px;
+}
+
+/* Focus mode: the quiz has its own Back and the action bar owns the thumb zone */
+body:has(.quiz-root) .global-fab {
+  display: none;
+}
