@@ -417,9 +417,9 @@ function DestCard({
           style={{ borderTop: "1px solid var(--border)" }}
         >
           <div>
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>Szacowany lot</p>
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>Cena lotu</p>
             <p className="font-bold text-sm" style={{ color: "var(--accent)" }}>
-              {dest.estimatedFlightCost ?? "—"}
+              Sprawdź na żywo
             </p>
             <PartnerNote show={flight.paid} />
           </div>

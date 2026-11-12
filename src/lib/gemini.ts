@@ -12,7 +12,6 @@ export function buildPlanPrompt(
   const budgetLabel = quiz.budget === "low" ? "niski (backpacker)" : "średni (komfortowy)";
   const vibeLabel = quiz.vibe ? VIBE_LABELS[quiz.vibe] : null;
   const placeLabel = quiz.placeType ? PLACE_LABELS[quiz.placeType] : null;
-  const estimatedCost = destination.estimatedFlightCost ?? "nieznany";
   const duration = quiz.duration ?? 3;
 
   const vibeInstruction = vibeLabel ? `- Energia wyjazdu: ${vibeLabel}` : "";
@@ -60,7 +59,7 @@ PROFIL PODRÓŻNIKA:
 ${vibeInstruction}
 ${placeInstruction}
 - Miesiąc: ${monthName}
-- Szacowany koszt lotów: ${estimatedCost}
+- Cena lotu jest NIEZNANA (użytkownik sprawdzi ją sam w wyszukiwarce). Nie zgaduj jej i policz totalBudgetEstimate BEZ lotów: tylko nocleg, jedzenie, atrakcje i transport na miejscu.
 
 INSTRUKCJE DLA KAŻDEGO DNIA (${duration} dni łącznie):
 
@@ -85,7 +84,7 @@ KRYTYCZNE WYMAGANIA DOTYCZĄCE LICZBY DNI:
 Odpowiedz w formacie NDJSON — każdy obiekt na OSOBNEJ LINII, bez żadnego dodatkowego tekstu.
 
 Linia 1 — nagłówek (jeden obiekt):
-{"type":"header","city":"${destination.city}","country":"${destination.country}","duration":${duration},"totalBudgetEstimate":"np. 1200-1500 PLN","budgetBreakdown":{"flights":"${estimatedCost}","accommodation":"np. 300-400 PLN","food":"np. 200-250 PLN","attractions":"np. 100-150 PLN"},"generalTips":["tip1","tip2","tip3","tip4","tip5"]}
+{"type":"header","city":"${destination.city}","country":"${destination.country}","duration":${duration},"totalBudgetEstimate":"np. 1200-1500 PLN","budgetBreakdown":{"flights":"Sprawdź w wyszukiwarce","accommodation":"np. 300-400 PLN","food":"np. 200-250 PLN","attractions":"np. 100-150 PLN"},"generalTips":["tip1","tip2","tip3","tip4","tip5"]}
 
 Linie 2–${duration + 1} — każdy dzień osobno (jeden obiekt na linię):
 {"type":"day","day":1,"date":"Dzień 1 – [dzień tygodnia jeśli znany]","theme":"krótki motyw dnia","activities":[{"time":"10:00","title":"Nazwa aktywności","description":"2-3 zdania z konkretnymi wskazówkami","type":"attraction|food|transport|tip|accommodation","cost":"Free lub ~15 PLN","location":"Nazwa miejsca lub adres","emoji":"emoji"}]}

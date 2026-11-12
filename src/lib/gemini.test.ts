@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { parseNdjsonStream, parsePlanResponse, validateAndFixPlan } from "./gemini";
+import { buildPlanPrompt, parseNdjsonStream, parsePlanResponse, validateAndFixPlan } from "./gemini";
 import type { DayPlan, TripPlan } from "@/types";
 
 const day = (n: number): DayPlan => ({ day: n, date: `Dzień ${n}`, theme: "", activities: [] });
@@ -76,5 +76,31 @@ describe("validateAndFixPlan", () => {
 
     expect(fixed.days.map((d) => d.day)).toEqual([1, 2, 3, 4]);
     expect(fixed.days[3].theme).toBe("Czas wolny");
+  });
+});
+
+describe("buildPlanPrompt", () => {
+  const destination = {
+    city: "Rzym",
+    country: "Włochy",
+    countryFlag: "🇮🇹",
+    tags: ["history"],
+    budgetLevel: "low",
+    coverImage: "🏛️",
+    description: "Wieczne miasto",
+    estimatedFlightCost: "350–550 PLN",
+  } as unknown as Parameters<typeof buildPlanPrompt>[0];
+  const quiz = { budget: "low", styles: ["history"], duration: 3, month: 6 } as unknown as Parameters<typeof buildPlanPrompt>[1];
+
+  it("does not hand the model a flight price nobody checked", () => {
+    const prompt = buildPlanPrompt(destination, quiz, null);
+    expect(prompt).not.toContain("350–550");
+    expect(prompt).not.toContain("Szacowany koszt lotów");
+  });
+
+  it("tells the model the flight price is unknown and keeps flights out of the total", () => {
+    const prompt = buildPlanPrompt(destination, quiz, null);
+    expect(prompt).toContain('"flights":"Sprawdź w wyszukiwarce"');
+    expect(prompt).toMatch(/BEZ lotów/);
   });
 });
