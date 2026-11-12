@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { logGeminiCall } from "@/lib/geminiLog";
+import { guardAiCall } from "@/lib/aiGuard";
 import { checkRateLimit, LIMITS } from "@/lib/rateLimit";
 import { getClientIp } from "@/lib/validate";
 import { CHAT_MAX_OUTPUT_TOKENS } from "@/lib/constants";
@@ -50,6 +51,10 @@ export async function POST(req: NextRequest) {
     .maybeSingle();
 
   if (!trip) return NextResponse.json({ error: "Nie znaleźliśmy tego wyjazdu." }, { status: 404 });
+
+  // Dzienny limit wywołań AI na konto i globalny bezpiecznik
+  const blocked = await guardAiCall(user.id);
+  if (blocked) return blocked;
 
   const plan = trip.ai_plan_json as TripPlan;
   const planSummary = JSON.stringify({

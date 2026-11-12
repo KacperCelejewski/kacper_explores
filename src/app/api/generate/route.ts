@@ -9,6 +9,7 @@ import { validateQuizAnswers, validateDestination, getClientIp } from "@/lib/val
 import { getUserProfile, canGenerate, isPro } from "@/lib/userProfile";
 import { createServiceClient } from "@/lib/supabase/service";
 import { FREE_PLANS_PER_MONTH, plansAvailable } from "@/lib/credits";
+import { guardGlobalFuse } from "@/lib/aiGuard";
 import type { QuizAnswers, DestinationRecommendation, FlightDetails } from "@/types";
 
 export async function POST(req: NextRequest) {
@@ -61,6 +62,10 @@ export async function POST(req: NextRequest) {
   if (!apiKey) {
     return NextResponse.json({ error: "Coś poszło nie tak. Spróbuj jeszcze raz — zwykle działa za drugim." }, { status: 500 });
   }
+
+  // Globalny bezpiecznik kosztów: przy skoku ruchu darmowe konta czekają do jutra
+  const fuse = await guardGlobalFuse(profile.id);
+  if (fuse) return fuse;
 
   // Plan zajmujemy atomowo przed wywołaniem AI: równoległe żądania nie zużyją tego samego planu.
   // Pro nie zużywa niczego. Gdy generowanie się nie uda, plan wraca w catch poniżej.

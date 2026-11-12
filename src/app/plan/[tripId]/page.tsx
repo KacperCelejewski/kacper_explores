@@ -241,6 +241,12 @@ export default function PlanPage() {
     });
   };
 
+  // Komunikat z serwera pokazujemy tylko przy limitach; inne błędy zostają ogólne
+  const limitMessage = (e: unknown): string | null => {
+    const code = (e as { code?: string })?.code;
+    return (code === "AI_DAILY_LIMIT" || code === "AI_BUSY") && e instanceof Error ? e.message : null;
+  };
+
   const showActionError = (msg: string) => {
     setActionError(msg);
     setTimeout(() => setActionError(null), 5000);
@@ -271,10 +277,10 @@ export default function PlanPage() {
         body: JSON.stringify({ tripId: currentTrip.id, dayIndex, activityIndex }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) throw Object.assign(new Error(data.error), { code: data.code });
       updateTripActivity(dayIndex, activityIndex, data.activity);
-    } catch {
-      showActionError("Zamiana nie wyszła. Kliknij jeszcze raz — zwykle działa za drugim.");
+    } catch (e) {
+      showActionError(limitMessage(e) ?? "Zamiana nie wyszła. Kliknij jeszcze raz — zwykle działa za drugim.");
     } finally {
       setSwapLoading((prev) => ({ ...prev, [key]: false }));
     }
@@ -290,10 +296,10 @@ export default function PlanPage() {
         body: JSON.stringify({ tripId: currentTrip.id, dayIndex }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) throw Object.assign(new Error(data.error), { code: data.code });
       updateTripDay(dayIndex, data.day);
-    } catch {
-      showActionError("Ten dzień się nie ułożył. Kliknij jeszcze raz — zwykle działa za drugim.");
+    } catch (e) {
+      showActionError(limitMessage(e) ?? "Ten dzień się nie ułożył. Kliknij jeszcze raz — zwykle działa za drugim.");
     } finally {
       setRegenLoading((prev) => ({ ...prev, [dayIndex]: false }));
     }

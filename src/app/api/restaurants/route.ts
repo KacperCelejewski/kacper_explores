@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { logGeminiCall } from "@/lib/geminiLog";
+import { guardAiCall } from "@/lib/aiGuard";
 
 export const maxDuration = 30;
 
@@ -26,6 +27,10 @@ export async function POST(req: NextRequest) {
 
   const { city, country } = body as { city: string; country: string };
   if (!city || !country) return NextResponse.json({ error: "Brak danych destynacji." }, { status: 400 });
+
+  // Dzienny limit wywołań AI na konto i globalny bezpiecznik
+  const blocked = await guardAiCall(user.id);
+  if (blocked) return blocked;
 
   const prompt = `Jesteś lokalnym przewodnikiem kulinarnym. Podaj 5 naprawdę istniejących, sprawdzonych restauracji w mieście ${city}, ${country}.
 Wybierz różnorodne miejsca: lokalna kuchnia, street food, kawiarnia, coś wyjątkowego.

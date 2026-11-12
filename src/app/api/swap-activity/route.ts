@@ -3,6 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { logGeminiCall } from "@/lib/geminiLog";
+import { guardAiCall } from "@/lib/aiGuard";
 import type { DayActivity, TripPlan } from "@/types";
 
 export const maxDuration = 30;
@@ -47,6 +48,10 @@ export async function POST(req: NextRequest) {
 
   const current = day.activities[activityIndex] as DayActivity | undefined;
   if (!current) return NextResponse.json({ error: "Nieprawidłowy indeks aktywności." }, { status: 400 });
+
+  // Dzienny limit wywołań AI na konto i globalny bezpiecznik
+  const blocked = await guardAiCall(user.id);
+  if (blocked) return blocked;
 
   const otherTitles = day.activities
     .map((a) => a.title)
