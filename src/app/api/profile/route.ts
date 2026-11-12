@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserProfile, canGenerate, isPro } from "@/lib/userProfile";
+import { freePlansLeft, plansAvailable } from "@/lib/credits";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { validateQuizAnswers } from "@/lib/validate";
 import { createServiceClient as createServiceRoleClient } from "@/lib/supabase/service";
@@ -35,7 +36,10 @@ export async function GET() {
   return NextResponse.json({
     authenticated: true,
     email: user.email,
-    credits_remaining: profile.credits_remaining,
+    // Łącznie plany do wykorzystania teraz: darmowe z tego miesiąca plus kredyty (Pack, feedback, stare konta)
+    credits_remaining: plansAvailable(profile),
+    free_plans_left: freePlansLeft(profile),
+    purchased_credits: profile.credits_remaining,
     subscription_tier: profile.subscription_tier,
     is_pro: isPro(profile),
     can_generate: canGenerate(profile),

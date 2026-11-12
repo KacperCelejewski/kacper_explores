@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     default: "Włóczykij — budżetowe weekendy solo w Europie",
     template: "%s | Włóczykij",
   },
-  description: "Odpowiedz na 6 pytań, a dostaniesz 6 kierunków w Twoim budżecie, ceny lotów z polskich lotnisk i plan godzina po godzinie. 5 planów za darmo.",
+  description: "Odpowiedz na 6 pytań, a dostaniesz 6 kierunków w Twoim budżecie, ceny lotów z polskich lotnisk i plan godzina po godzinie. 2 plany za darmo co miesiąc.",
   metadataBase: new URL("https://wloczykij.me"),
   openGraph: {
     type: "website",

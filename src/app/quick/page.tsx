@@ -279,7 +279,7 @@ export default function QuickPage() {
       return;
     }
     if (!profile.can_generate) {
-      setGenError("Brak kredytów. Kup Pack lub przejdź na Pro.");
+      setGenError("Plany na ten miesiąc się skończyły. Kup Pack lub przejdź na Pro.");
       return;
     }
 

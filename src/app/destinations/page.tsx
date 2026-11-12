@@ -598,10 +598,10 @@ function UpgradeModal({ onClose }: { onClose: () => void }) {
       >
         <div className="text-4xl mb-3">✈️</div>
         <h3 className="font-bold text-lg mb-2" style={{ color: "var(--text-primary)" }}>
-          Skończyły się kredyty
+          Plany na ten miesiąc się skończyły
         </h3>
         <p className="text-sm mb-5" style={{ color: "var(--text-muted)" }}>
-          Kup Pack lub przejdź na Pro, żeby generować kolejne plany.
+          Kup Pack lub przejdź na Pro. Darmowe plany wracają pierwszego dnia miesiąca.
         </p>
         <div className="flex gap-2">
           <button

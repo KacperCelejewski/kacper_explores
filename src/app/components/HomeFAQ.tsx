@@ -3,7 +3,7 @@ import { PRICES } from "@/lib/prices";
 export const FAQS = [
   {
     q: "Czy Włóczykij jest darmowy?",
-    a: `Pierwsze 5 planów tak. Dostajesz je po rejestracji, bez podawania karty. Potem możesz dokupić Pack (5 planów za ${PRICES.pack.label}) albo wziąć Pro bez limitu za ${PRICES.proMonthly.label}/mies. lub ${PRICES.proYearly.label}/rok.`,
+    a: `Dwa plany w miesiącu tak. Odnawiają się co miesiąc i nie wymagają karty. Gdy ich zabraknie, możesz dokupić Pack (5 planów za ${PRICES.pack.label}) albo wziąć Pro bez limitu za ${PRICES.proMonthly.label}/mies. lub ${PRICES.proYearly.label}/rok.`,
   },
   {
     q: "Jak działa planowanie podróży z AI?",

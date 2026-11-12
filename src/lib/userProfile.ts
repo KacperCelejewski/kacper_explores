@@ -1,9 +1,12 @@
 import { createSupabaseServer } from "@/lib/supabase/server";
+import { plansAvailable } from "@/lib/credits";
 import type { QuizAnswers } from "@/types";
 
 export interface UserProfile {
   id: string;
   credits_remaining: number;
+  free_plans_used: number;
+  free_plans_period: string | null;
   subscription_tier: "free" | "pro";
   subscription_expires_at: string | null;
   stripe_customer_id: string | null;
@@ -31,5 +34,5 @@ export function isPro(profile: UserProfile): boolean {
 }
 
 export function canGenerate(profile: UserProfile): boolean {
-  return isPro(profile) || profile.credits_remaining > 0;
+  return isPro(profile) || plansAvailable(profile) > 0;
 }

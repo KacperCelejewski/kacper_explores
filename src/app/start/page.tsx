@@ -162,7 +162,7 @@ export default function StartPage() {
           className="text-center text-xs mt-6"
           style={{ color: "var(--text-muted)" }}
         >
-          5 planów za darmo · bez karty
+          2 plany co miesiąc za darmo · bez karty
         </motion.p>
       </div>
     </div>
