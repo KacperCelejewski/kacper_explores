@@ -1,4 +1,5 @@
 import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { plansAvailable } from "@/lib/credits";
 import { countAirports, isMissingTableError, latestWeeks } from "@/lib/drop/adminStats";
 
 function getServiceClient() {
@@ -12,6 +13,8 @@ interface ProfileRow {
   id: string;
   subscription_tier: string;
   credits_remaining: number;
+  free_plans_used: number;
+  free_plans_period: string | null;
   created_at: string;
   stripe_customer_id: string | null;
 }
@@ -122,7 +125,7 @@ async function getAnalytics() {
 
   const [authRes, profilesRes, tripsRes, paymentsRes, drop] = await Promise.all([
     sb.auth.admin.listUsers({ perPage: 1000 }),
-    sb.from("user_profiles").select("id,subscription_tier,credits_remaining,created_at,stripe_customer_id"),
+    sb.from("user_profiles").select("id,subscription_tier,credits_remaining,free_plans_used,free_plans_period,created_at,stripe_customer_id"),
     sb.from("trips").select("user_id,city,country,created_at").gte("created_at", thirtyDaysAgo.toISOString()),
     sb.from("payments").select("user_id,amount_cents,plan_type,created_at"),
     getDropStats(sb),
@@ -143,10 +146,10 @@ async function getAnalytics() {
   const totalUsers = authUsers.length;
   const proUsers = profiles.filter((p) => p.subscription_tier === "pro").length;
   const freeNoCredits = profiles.filter(
-    (p) => p.subscription_tier === "free" && p.credits_remaining === 0
+    (p) => p.subscription_tier === "free" && plansAvailable(p) === 0
   ).length;
   const freeWithCredits = profiles.filter(
-    (p) => p.subscription_tier === "free" && p.credits_remaining > 0
+    (p) => p.subscription_tier === "free" && plansAvailable(p) > 0
   ).length;
   const conversionRate = totalUsers > 0 ? ((proUsers / totalUsers) * 100).toFixed(1) : "0";
 
@@ -233,7 +236,7 @@ async function getAnalytics() {
         email: u.email,
         created_at: u.created_at,
         tier: profile?.subscription_tier ?? "free",
-        credits: profile?.credits_remaining ?? 0,
+        credits: profile ? plansAvailable(profile) : 0,
         tripsCount: trips.filter((t) => t.user_id === u.id).length,
       };
     });
@@ -386,8 +389,8 @@ export default async function AnalyticsPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {[
               { label: "Pro", value: s.proUsers, color: "#FF6B35" },
-              { label: "Free z kredytami", value: s.freeWithCredits, color: "#22C55E" },
-              { label: "Free bez kredytów", value: s.freeNoCredits, color: "#EF4444", note: "do konwersji" },
+              { label: "Free z planami", value: s.freeWithCredits, color: "#22C55E" },
+              { label: "Free bez planów", value: s.freeNoCredits, color: "#EF4444", note: "do konwersji" },
             ].map(({ label, value, color, note }) => (
               <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", background: "#111", borderRadius: 8 }}>
                 <div>
