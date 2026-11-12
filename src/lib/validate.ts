@@ -1,4 +1,4 @@
-import type { QuizAnswers, DestinationRecommendation } from "@/types";
+import type { QuizAnswers, DestinationRecommendation, TripPlan } from "@/types";
 
 const VALID_BUDGETS = new Set(["low", "medium"]);
 const VALID_STYLES = new Set(["nature", "history", "architecture", "food", "beach", "nightlife"]);
@@ -50,4 +50,38 @@ export function getClientIp(req: Request): string {
   const xff = req.headers.get("x-forwarded-for");
   if (xff) return xff.split(",")[0].trim();
   return "unknown";
+}
+
+// Plan zapisywany z przeglądarki (PATCH wyjazdu): sprawdzamy kształt, typy i rozmiary, nie treść.
+// Pola opcjonalne mogą nie istnieć, bo plany z Gemini nie zawsze je mają, a lista typów aktywności nie jest sztywna.
+const MAX_PLAN_JSON = 200_000;
+const MAX_DAYS = 21;
+const MAX_ACTIVITIES_PER_DAY = 40;
+
+export function validatePlan(data: unknown): data is TripPlan {
+  if (!data || typeof data !== "object") return false;
+  const d = data as Record<string, unknown>;
+  if (!Array.isArray(d.days) || d.days.length < 1 || d.days.length > MAX_DAYS) return false;
+
+  for (const day of d.days) {
+    if (!day || typeof day !== "object") return false;
+    const activities = (day as Record<string, unknown>).activities;
+    if (!Array.isArray(activities) || activities.length > MAX_ACTIVITIES_PER_DAY) return false;
+    for (const a of activities) {
+      if (!a || typeof a !== "object") return false;
+      const act = a as Record<string, unknown>;
+      if (typeof act.title !== "string" || act.title.length < 1 || act.title.length > 300) return false;
+      if (typeof act.time !== "string" || act.time.length > 20) return false;
+      for (const key of ["description", "type", "cost", "location", "emoji"]) {
+        const v = act[key];
+        if (v !== undefined && (typeof v !== "string" || v.length > 2000)) return false;
+      }
+    }
+  }
+
+  try {
+    return JSON.stringify(data).length <= MAX_PLAN_JSON;
+  } catch {
+    return false;
+  }
 }

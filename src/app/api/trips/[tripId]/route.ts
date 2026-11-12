@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { validatePlan } from "@/lib/validate";
 
 export async function GET(
   _req: NextRequest,
@@ -55,7 +56,12 @@ export async function PATCH(
 
   const updates: Record<string, unknown> = {};
   if (typeof is_public === "boolean") updates.is_public = is_public;
-  if (ai_plan_json !== undefined) updates.ai_plan_json = ai_plan_json;
+  if (ai_plan_json !== undefined) {
+    if (!validatePlan(ai_plan_json)) {
+      return NextResponse.json({ error: "Nieprawidłowy plan." }, { status: 400 });
+    }
+    updates.ai_plan_json = ai_plan_json;
+  }
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: "Brak pól do aktualizacji." }, { status: 400 });
