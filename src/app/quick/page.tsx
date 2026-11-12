@@ -295,7 +295,6 @@ export default function QuickPage() {
       budgetLevel: "medium",
       coverImage: "🌍",
       description: `Podróż do ${city.trim()}, ${country.trim()}`,
-      estimatedFlightCost: "—",
     };
 
     const quiz: QuizAnswers = {

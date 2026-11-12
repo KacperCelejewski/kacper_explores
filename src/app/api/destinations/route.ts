@@ -53,7 +53,6 @@ Zwróć tablicę JSON "destinations" z dokładnie 6 obiektami. Każdy obiekt MUS
 - description (string): 1-2 zdania dlaczego warto
 - tags (array of strings): max 3, wybierz z: nature, history, architecture, food, beach, nightlife
 - budgetLevel (string): "low" lub "medium"
-- estimatedFlightCost (string): szacowany koszt lotu w obie strony, np. "350–550 PLN"
 - highlights (array of strings): dokładnie 3 konkretne powody
 
 Format odpowiedzi (wyłącznie JSON, bez markdown):
@@ -67,7 +66,6 @@ Format odpowiedzi (wyłącznie JSON, bez markdown):
       "description": "...",
       "tags": ["..."],
       "budgetLevel": "low",
-      "estimatedFlightCost": "...",
       "highlights": ["...", "...", "..."]
     }
   ]
@@ -150,7 +148,6 @@ export async function POST(req: NextRequest) {
           description: String(d.description ?? ""),
           tags: ((d.tags ?? []) as string[]).filter(Boolean) as TravelStyle[],
           budgetLevel: (d.budgetLevel === "medium" ? "medium" : "low") as "low" | "medium",
-          estimatedFlightCost: String(d.estimatedFlightCost ?? ""),
           highlights: ((d.highlights ?? []) as string[]).filter(Boolean),
           vibes: ((d.vibes ?? []) as string[]) as TravelVibe[],
           placeTypes: ((d.placeTypes ?? []) as string[]) as PlaceType[],
