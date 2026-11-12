@@ -27,7 +27,7 @@ export async function getUserProfile(): Promise<UserProfile | null> {
   return data as UserProfile | null;
 }
 
-export function isPro(profile: UserProfile): boolean {
+export function isPro(profile: Pick<UserProfile, "subscription_tier" | "subscription_expires_at">): boolean {
   if (profile.subscription_tier !== "pro") return false;
   if (!profile.subscription_expires_at) return false;
   return new Date(profile.subscription_expires_at) > new Date();

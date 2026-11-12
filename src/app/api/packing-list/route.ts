@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { logGeminiCall } from "@/lib/geminiLog";
+import { guardAiCall } from "@/lib/aiGuard";
 import { MONTH_NAMES } from "@/lib/constants";
 import type { QuizAnswers } from "@/types";
 
@@ -24,6 +25,10 @@ export async function POST(req: NextRequest) {
   };
 
   if (!city || !country) return NextResponse.json({ error: "Brak danych destynacji." }, { status: 400 });
+
+  // Dzienny limit wywołań AI na konto i globalny bezpiecznik
+  const blocked = await guardAiCall(user.id);
+  if (blocked) return blocked;
 
   const duration = quizAnswers?.duration ?? 3;
   const month = quizAnswers?.month ? MONTH_NAMES[quizAnswers.month - 1] : "nieznany";
