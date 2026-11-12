@@ -44,7 +44,7 @@ export function bookingLink(
   input: { city: string; country: string; checkin?: string; checkout?: string },
   config: PartnerConfig = PARTNER_CONFIG,
 ): PartnerLink {
-  const params = new URLSearchParams({ ss: `${input.city}, ${input.country}`, group_adults: "1", no_rooms: "1" });
+  const params = new URLSearchParams({ ss: input.country ? `${input.city}, ${input.country}` : input.city, group_adults: "1", no_rooms: "1" });
   if (input.checkin) params.set("checkin", input.checkin);
   if (input.checkout) params.set("checkout", input.checkout);
   return link(`https://www.booking.com/search.html?${params}`, "booking", config.booking);

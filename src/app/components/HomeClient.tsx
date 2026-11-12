@@ -5,6 +5,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { useRef, useState, useEffect, useCallback } from "react";
 import DropSignup from "@/app/components/DropSignup";
+import DealsStrip from "@/app/components/DealsStrip";
 import { getCityPhotoUrl, FEATURED_DESTINATIONS } from "@/lib/cityPhotos";
 
 // ─── Static data ────────────────────────────────────────────────────────────
@@ -375,6 +376,8 @@ export default function HomeClient({
           </motion.p>
         </div>
       </section>
+
+      <DealsStrip />
 
       {/* ════════════════════════════════════════════════════════════════════
           §3  HOW IT WORKS — dark, editorial, numbered steps

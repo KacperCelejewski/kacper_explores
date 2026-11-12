@@ -16,6 +16,8 @@ export interface TpOffer {
   transfers: number;
   return_transfers: number;
   link: string;
+  duration_to?: number; // minuty lotu tam
+  duration_back?: number; // minuty lotu z powrotem
 }
 
 export interface CityInfo {
@@ -35,6 +37,8 @@ export interface DropDeal {
   airline: string;
   transfers: number;
   link: string;
+  duration_to?: number | null;
+  duration_back?: number | null;
   fetched_at: string;
 }
 

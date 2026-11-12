@@ -128,3 +128,11 @@ describe("affiliateClickParams", () => {
     expect(affiliateClickParams({})).toBeNull();
   });
 });
+
+describe("bookingLink bez kraju", () => {
+  it("szuka samego miasta, gdy kraju nie znamy", () => {
+    const link = bookingLink({ city: "Rzym", country: "" }, {});
+    const q = new URL(link.href).searchParams.get("ss");
+    expect(q).toBe("Rzym");
+  });
+});
