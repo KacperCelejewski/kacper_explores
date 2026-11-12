@@ -1,9 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { redirectsToCanonical } from "@/lib/canonicalHost";
 
 export async function proxy(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
-  if (host.endsWith(".vercel.app")) {
+  if (redirectsToCanonical(host, request.nextUrl.pathname)) {
     const url = request.nextUrl.clone();
     url.protocol = "https:";
     url.host = "wloczykij.me";
