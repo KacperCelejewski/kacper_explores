@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { sendSlack } from "@/lib/slack";
 import { isAuthorizedCron } from "@/lib/drop/cronAuth";
 import { weekKey, weekendDates } from "@/lib/drop/dates";
+import { dropOrigins } from "@/lib/drop/origins";
 import { fetchCities, fetchWeekendOffers, groupDeals, mergeVariants } from "@/lib/drop/deals";
 import type { DropDeal } from "@/lib/drop/types";
 
@@ -39,11 +40,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: subsError.message }, { status: 500 });
   }
 
-  const airports = [...new Set((subs ?? []).flatMap((s) => (s.airports as string[]) ?? []))];
-  if (airports.length === 0) {
-    await sendSlack(`Zrzut ${week}: brak lotnisk subskrybentów, nic do pobrania`);
-    return NextResponse.json({ week, airports: [], deals: 0 });
-  }
+  // Okazje pobieramy też dla polskich lotnisk bez subskrybentów: strona główna i /okazje pokazują je każdemu
+  const airports = dropOrigins((subs ?? []).map((s) => s.airports as string[]));
 
   let cities;
   try {
