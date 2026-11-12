@@ -188,3 +188,22 @@ describe("fetchCities", () => {
     expect(map.has("ZZZ")).toBe(false);
   });
 });
+
+describe("groupDeals flight durations", () => {
+  it("keeps the flight durations of the cheapest offer", () => {
+    const deals = group([offer({ price: 260, duration_to: 200, duration_back: 210 }), offer({ price: 201, duration_to: 150, duration_back: 160 })]);
+    expect(deals[0]).toMatchObject({ duration_to: 150, duration_back: 160 });
+  });
+
+  it("stores null when the API does not give a duration", () => {
+    const deals = group([offer()]);
+    expect(deals[0].duration_to).toBeNull();
+    expect(deals[0].duration_back).toBeNull();
+  });
+
+  it("ignores a duration that is not a positive number", () => {
+    const deals = group([offer({ duration_to: -5, duration_back: Number.NaN as unknown as number })]);
+    expect(deals[0].duration_to).toBeNull();
+    expect(deals[0].duration_back).toBeNull();
+  });
+});

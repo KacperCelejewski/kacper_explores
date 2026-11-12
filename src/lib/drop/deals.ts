@@ -60,6 +60,10 @@ export async function fetchCities(
   return map;
 }
 
+function positiveMinutes(v: unknown): number | null {
+  return typeof v === "number" && Number.isFinite(v) && v > 0 ? Math.round(v) : null;
+}
+
 // departure_at jest w czasie lokalnym lotniska ("2026-11-12T06:30:00+01:00"), bez konwersji strefy.
 function isEarlyThursday(departureAt: string): boolean {
   const [y, m, d] = departureAt.slice(0, 10).split("-").map(Number);
@@ -108,6 +112,8 @@ export function groupDeals(
       airline: o.airline,
       transfers: Math.max(o.transfers, o.return_transfers),
       link: o.link,
+      duration_to: positiveMinutes(o.duration_to),
+      duration_back: positiveMinutes(o.duration_back),
       fetched_at: fetchedAt,
     });
   }

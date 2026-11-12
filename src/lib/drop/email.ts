@@ -1,4 +1,5 @@
 import { AIRLINE_NAMES } from "@/lib/flights/airlines";
+import { dealNotes, hoursInCity } from "./stay";
 import { buildAffiliateUrl, buildPlanUrl, buildSettingsUrl, buildUnsubscribeUrl } from "./links";
 import type { CityTeaser, DropDeal, WeekKey } from "./types";
 
@@ -24,7 +25,7 @@ function esc(value: string | number): string {
 }
 
 // Z lokalnego ISO ("2026-11-13T19:05:00+01:00") → "pt 13.11, 19:05", bez konwersji strefy.
-function formatLocal(iso: string): string {
+export function formatLocal(iso: string): string {
   const [y, m, d] = iso.slice(0, 10).split("-").map(Number);
   const weekday = WEEKDAYS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
   const dd = String(d).padStart(2, "0");
@@ -32,7 +33,7 @@ function formatLocal(iso: string): string {
   return `${weekday} ${dd}.${mm}, ${iso.slice(11, 16)}`;
 }
 
-function transfersLabel(n: number): string {
+export function transfersLabel(n: number): string {
   if (n === 0) return "bez przesiadek";
   if (n === 1) return "1 przesiadka";
   return `${n} przesiadki`;
@@ -56,6 +57,13 @@ function renderCard(
   const teaserHtml = teaser?.teaser
     ? `<p style="margin:12px 0 0;color:#4B5563;font-size:14px;line-height:1.6;">${esc(teaser.teaser)}</p>`
     : "";
+  const hours = hoursInCity(deal);
+  const stayHtml = hours
+    ? `<p style="margin:6px 0 0;color:#111827;font-size:13px;font-weight:600;">ok. ${esc(hours)} h na miejscu</p>`
+    : "";
+  const notesHtml = dealNotes(deal)
+    .map((n) => `<p style="margin:6px 0 0;color:#6B7280;font-size:12px;line-height:1.5;">${esc(n)}</p>`)
+    .join("");
   const budgetHtml = teaser?.local_budget
     ? `<p style="margin:8px 0 0;color:#6B7280;font-size:13px;line-height:1.5;">${esc(teaser.local_budget)}</p>`
     : "";
@@ -74,6 +82,8 @@ function renderCard(
                   ${esc(formatLocal(deal.departure_at))} &rarr; ${esc(formatLocal(deal.return_at))}
                 </p>
                 <p style="margin:2px 0 0;color:#6B7280;font-size:13px;">z ${esc(ORIGIN_GENITIVE[deal.origin] ?? deal.origin)} · ${esc(airline)} · ${esc(transfersLabel(deal.transfers))}</p>
+                ${stayHtml}
+                ${notesHtml}
                 ${teaserHtml}
                 ${budgetHtml}
                 <table cellpadding="0" cellspacing="0" style="margin-top:16px;"><tr>

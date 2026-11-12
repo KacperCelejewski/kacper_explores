@@ -111,3 +111,25 @@ describe("renderDropEmail", () => {
     expect(html).toContain("&quot;b&quot; &lt;i&gt;c&lt;/i&gt; &amp; &#39;d&#39;");
   });
 });
+
+describe("renderDropEmail: czas na miejscu i bagaż", () => {
+  it("pokazuje godziny na miejscu, gdy znamy czas lotu", () => {
+    const { html } = renderDropEmail({
+      ...base, deals: [deal("MIL", "Mediolan", 201, { duration_to: 110 })], teasers: new Map(),
+    });
+    // wylot pt 19:05 CET + 110 min = 20:55 CET, powrót nd 21:40 CET: 48,75 h, czyli 49
+    expect(html).toContain("ok. 49 h na miejscu");
+  });
+
+  it("nie zgaduje godzin bez czasu lotu", () => {
+    const { html } = renderDropEmail({ ...base, deals: [deal("MIL", "Mediolan", 201)], teasers: new Map() });
+    expect(html).not.toContain("h na miejscu");
+  });
+
+  it("ostrzega o bagażu u Ryanaira i nie robi tego u LOT-u", () => {
+    const fr = renderDropEmail({ ...base, deals: [deal("MIL", "Mediolan", 201)], teasers: new Map() }).html;
+    const lo = renderDropEmail({ ...base, deals: [deal("MIL", "Mediolan", 201, { airline: "LO" })], teasers: new Map() }).html;
+    expect(fr).toContain("Bagaż:");
+    expect(lo).not.toContain("Bagaż:");
+  });
+});
