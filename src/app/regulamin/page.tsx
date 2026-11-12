@@ -78,7 +78,11 @@ export default function ReguaminPage() {
         <Section title="§2. Rodzaje i zakres świadczonych usług">
           <P>Operator świadczy następujące usługi drogą elektroniczną:</P>
           <ul className="list-disc pl-5 mb-4 space-y-1">
-            <Li><strong>Konto darmowe</strong> — 5 planów podróży AI po rejestracji, bez opłat.</Li>
+            <Li>
+              <strong>Konto darmowe</strong> — 2 plany podróży AI w każdym miesiącu kalendarzowym, bez opłat.
+              Niewykorzystane plany darmowe nie przechodzą na kolejny miesiąc. Plany z Packa i przyznane wcześniej
+              na koncie nie wygasają i są wykorzystywane po planach darmowych.
+            </Li>
             <Li>
               <strong>Pack (5 planów)</strong> — jednorazowy zakup 5 planów podróży AI za{" "}
               <strong>{PRICES.pack.label}</strong>. Plany nie wygasają.

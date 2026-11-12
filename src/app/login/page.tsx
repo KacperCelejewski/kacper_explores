@@ -78,7 +78,7 @@ function LoginContent() {
                 Zaloguj się,<br />żeby planować.
               </h1>
               <p className="text-sm mt-3 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                Po rejestracji dostaniesz 5 kompletnych planów podróży za darmo — bez karty.
+                Co miesiąc dostajesz 2 kompletne plany podróży za darmo — bez karty.
               </p>
             </>
           )}

@@ -16,7 +16,7 @@ const pricingSchema = {
       item: {
         "@type": "Product",
         name: "Free",
-        description: "5 planów podróży po rejestracji, bez karty kredytowej.",
+        description: "2 plany podróży co miesiąc, bez karty kredytowej.",
         offers: { "@type": "Offer", price: "0", priceCurrency: "PLN", availability: "https://schema.org/InStock" },
       },
     },
@@ -51,13 +51,13 @@ const pricingSchema = {
 
 export const metadata: Metadata = {
   title: "Plany cenowe",
-  description: `5 wyjazdów za darmo po rejestracji. Potem Pack za ${PRICES.pack.label} (5 planów) albo Pro za ${PRICES.proMonthly.label}/mies. bez limitu.`,
+  description: `2 wyjazdy w miesiącu za darmo. Potem Pack za ${PRICES.pack.label} (5 planów) albo Pro za ${PRICES.proMonthly.label}/mies. bez limitu.`,
   alternates: {
     canonical: "https://wloczykij.me/pricing",
   },
   openGraph: {
     title: "Plany cenowe | Włóczykij",
-    description: `5 wyjazdów za darmo. Potem Pack za ${PRICES.pack.label} albo Pro za ${PRICES.proMonthly.label}/mies.`,
+    description: `2 wyjazdy w miesiącu za darmo. Potem Pack za ${PRICES.pack.label} albo Pro za ${PRICES.proMonthly.label}/mies.`,
     url: "https://wloczykij.me/pricing",
     images: [{ url: "/opengraph-image", width: 1200, height: 630 }],
   },
@@ -129,10 +129,10 @@ export default function PricingPage() {
           Plany
         </p>
         <h1 className="text-3xl font-bold leading-tight">
-          5 wyjazdów masz za darmo. Potem wybierz, ile chcesz latać.
+          2 wyjazdy w miesiącu masz za darmo. Potem wybierz, ile chcesz latać.
         </h1>
         <p className="text-sm mt-2 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-          Darmowe plany dostajesz po rejestracji, bez podawania karty.
+          Darmowe plany odnawiają się co miesiąc, bez podawania karty.
         </p>
       </div>
 
@@ -145,14 +145,14 @@ export default function PricingPage() {
           <div>
             <p className="font-bold text-sm">Free</p>
             <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-              Po rejestracji · bez karty · bez limitu czasu
+              Co miesiąc od nowa · bez karty
             </p>
           </div>
           <span
             className="text-sm font-bold px-3 py-1 rounded-full"
             style={{ background: "var(--border)", color: "var(--text-secondary)" }}
           >
-            5 planów
+            2 plany / mies.
           </span>
         </div>
 

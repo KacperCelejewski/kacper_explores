@@ -371,7 +371,7 @@ export default function HomeClient({
             initial={false}
             style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 14 }}
           >
-            6 pytań · darmowe konto · 5 planów gratis, bez karty
+            6 pytań · darmowe konto · 2 plany gratis co miesiąc, bez karty
           </motion.p>
         </div>
       </section>
@@ -874,7 +874,7 @@ export default function HomeClient({
           </motion.div>
 
           <p style={{ color: "rgba(245,239,224,0.78)", fontSize: 13, marginTop: 14 }}>
-            6 pytań · darmowe konto · 5 planów gratis, bez karty
+            6 pytań · darmowe konto · 2 plany gratis co miesiąc, bez karty
           </p>
         </div>
 

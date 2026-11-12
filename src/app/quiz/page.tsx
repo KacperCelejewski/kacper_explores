@@ -514,7 +514,7 @@ function QuizPageInner() {
         )}
         {isLast && authed === false && (
           <p className="text-center text-xs mt-3" style={{ color: "var(--text-muted)" }}>
-            Zaraz poprosimy o założenie konta — 5 planów dostajesz za darmo.
+            Zaraz poprosimy o założenie konta — 2 plany w miesiącu dostajesz za darmo.
           </p>
         )}
         {currentQuizStep === 0 && (

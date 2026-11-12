@@ -8,7 +8,7 @@ import { fetchCityPhotoUrl } from "@/lib/unsplashApi";
 
 export const metadata: Metadata = {
   title: "Budżetowy weekend solo w Europie — lot i plan w 3 minuty",
-  description: "Odpowiedz na 6 pytań, a dostaniesz 6 kierunków w Twoim budżecie, ceny lotów z polskich lotnisk i plan godzina po godzinie. 5 planów za darmo.",
+  description: "Odpowiedz na 6 pytań, a dostaniesz 6 kierunków w Twoim budżecie, ceny lotów z polskich lotnisk i plan godzina po godzinie. 2 plany za darmo co miesiąc.",
   alternates: {
     canonical: "https://wloczykij.me",
   },
@@ -38,7 +38,7 @@ const webAppSchema = {
     "@type": "Offer",
     price: "0",
     priceCurrency: "PLN",
-    description: "5 planów podróży za darmo po rejestracji",
+    description: "2 plany podróży za darmo co miesiąc",
   },
 };
 
