@@ -8,6 +8,7 @@ import { checkRateLimit, LIMITS } from "@/lib/rateLimit";
 import { validateQuizAnswers, validateDestination, getClientIp } from "@/lib/validate";
 import { getUserProfile, canGenerate, isPro } from "@/lib/userProfile";
 import { createServiceClient } from "@/lib/supabase/service";
+import { FREE_PLANS_PER_MONTH, plansAvailable } from "@/lib/credits";
 import type { QuizAnswers, DestinationRecommendation, FlightDetails } from "@/types";
 
 export async function POST(req: NextRequest) {
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
   // 3. Sprawdź kredyty / subskrypcję
   if (!canGenerate(profile)) {
     return NextResponse.json(
-      { error: "Darmowe plany się skończyły. Dokup Pack albo przejdź na Pro.", code: "NO_CREDITS" },
+      { error: "Plany na ten miesiąc się skończyły. Dokup Pack albo przejdź na Pro.", code: "NO_CREDITS" },
       { status: 402 }
     );
   }
@@ -59,6 +60,28 @@ export async function POST(req: NextRequest) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: "Coś poszło nie tak. Spróbuj jeszcze raz — zwykle działa za drugim." }, { status: 500 });
+  }
+
+  // Plan zajmujemy atomowo przed wywołaniem AI: równoległe żądania nie zużyją tego samego planu.
+  // Pro nie zużywa niczego. Gdy generowanie się nie uda, plan wraca w catch poniżej.
+  const supabase = createServiceClient();
+  let planSource: string | null = null;
+  if (!isPro(profile)) {
+    const { data, error } = await supabase.rpc("consume_plan_credit", {
+      p_user_id: profile.id,
+      p_free_limit: FREE_PLANS_PER_MONTH,
+    });
+    if (error) {
+      console.error("Generate: consume_plan_credit", error.message);
+      return NextResponse.json({ error: "Coś poszło nie tak. Spróbuj jeszcze raz — zwykle działa za drugim." }, { status: 500 });
+    }
+    planSource = data as string | null;
+    if (!planSource) {
+      return NextResponse.json(
+        { error: "Plany na ten miesiąc się skończyły. Dokup Pack albo przejdź na Pro.", code: "NO_CREDITS" },
+        { status: 402 }
+      );
+    }
   }
 
   const encoder = new TextEncoder();
@@ -143,19 +166,9 @@ export async function POST(req: NextRequest) {
 
         const tripId = `${(destination as DestinationRecommendation).city.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`;
 
-        // Kredyty i wyjazdy zapisuje tylko klucz serwisowy. profile.id pochodzi
-        // z getUser() w kroku 1, więc sesji nie sprawdzamy drugi raz.
-        const supabase = createServiceClient();
-        if (!isPro(profile)) {
-          await supabase
-            .from("user_profiles")
-            .update({
-              credits_remaining: Math.max(0, profile.credits_remaining - 1),
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", profile.id);
-        }
-        await supabase.from("trips").insert({
+        // Wyjazd zapisuje tylko klucz serwisowy. profile.id pochodzi z getUser() w kroku 1,
+        // więc sesji nie sprawdzamy drugi raz.
+        const { error: tripError } = await supabase.from("trips").insert({
           id: tripId,
           user_id: profile.id,
           city: (destination as DestinationRecommendation).city,
@@ -165,16 +178,23 @@ export async function POST(req: NextRequest) {
           quiz_answers: quizAnswers,
           destination_data: destination,
         });
+        // Plan i tak trafia do użytkownika w odpowiedzi, więc plan nie wraca; błąd zostaje w logach
+        if (tripError) console.error("Generate: zapis wyjazdu", tripError.message);
+        planSource = null;
 
         send(controller, {
           done: true,
           tripId,
           plan,
-          credits_remaining: isPro(profile) ? "unlimited" : Math.max(0, profile.credits_remaining - 1),
+          credits_remaining: isPro(profile) ? "unlimited" : Math.max(0, plansAvailable(profile) - 1),
         });
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         console.error("Generate error:", message);
+        if (planSource) {
+          const { error } = await supabase.rpc("refund_plan_credit", { p_user_id: profile.id, p_source: planSource });
+          if (error) console.error("Generate: refund_plan_credit", error.message);
+        }
         if (message.includes("429") || message.includes("quota") || message.includes("Too Many Requests")) {
           send(controller, { error: "Na dziś wyczerpaliśmy limit planowania. Wróć za kilka minut albo jutro.", code: "QUOTA_EXCEEDED" });
         } else {
