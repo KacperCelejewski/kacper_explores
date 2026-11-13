@@ -47,3 +47,9 @@ export function cityAudience(c: CatalogEntry): string[] {
   if (places.length) out.push(`Charakter miejsca: ${list(places)}.`);
   return out;
 }
+
+// Slugi miast z listy weekendowej, dla których w danych są okazje (nazwy z Travelpayouts); do sitemap
+export function slugsWithDeals(cityNames: string[]): string[] {
+  const have = new Set(cityNames);
+  return weekendCities().filter((c) => have.has(c.city)).map(citySlug);
+}

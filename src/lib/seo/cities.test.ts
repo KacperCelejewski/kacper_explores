@@ -37,3 +37,14 @@ describe("cityAudience", () => {
     expect(lines.every((l) => l.endsWith("."))).toBe(true);
   });
 });
+
+describe("slugsWithDeals", () => {
+  it("zwraca tylko miasta z listy weekendowej, które mają okazje", async () => {
+    const { slugsWithDeals } = await import("./cities");
+    expect(slugsWithDeals(["Lizbona", "Bali", "Nieznane"])).toEqual(["lizbona"]);
+  });
+  it("dla pustych danych zwraca pustą listę", async () => {
+    const { slugsWithDeals } = await import("./cities");
+    expect(slugsWithDeals([])).toEqual([]);
+  });
+});
