@@ -34,7 +34,7 @@ const PLACE_TEXT: Record<string, string> = {
   beach_sun: "słońce i wodę",
 };
 
-const list = (xs: string[]) => (xs.length <= 1 ? xs.join("") : `${xs.slice(0, -1).join(", ")} i ${xs[xs.length - 1]}`);
+const list = (xs: string[]) => (xs.length <= 1 ? xs.join("") : `${xs.slice(0, -1).join(", ")} oraz ${xs[xs.length - 1]}`);
 
 // Zdania „dla kogo” składane wyłącznie z pól katalogu, bez dopowiadania faktów
 export function cityAudience(c: CatalogEntry): string[] {
