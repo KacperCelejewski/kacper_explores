@@ -26,7 +26,7 @@ export async function sendNewsletterConfirmation(email: string, verifyUrl: strin
 
         <!-- Header -->
         <tr>
-          <td style="background:#FF6B35;padding:28px 32px;">
+          <td style="background:#A04B20;padding:28px 32px;">
             <p style="margin:0;color:white;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">Włóczykij</p>
             <h1 style="margin:8px 0 0;color:white;font-size:22px;font-weight:800;line-height:1.3;">
               Potwierdź zapis<br>i odbierz 10% na Pro Roczny
@@ -39,14 +39,14 @@ export async function sendNewsletterConfirmation(email: string, verifyUrl: strin
           <td style="padding:32px;">
             <p style="margin:0 0 20px;color:#4B5563;font-size:15px;line-height:1.6;">
               Dzięki za zapisanie się do newslettera!<br>
-              Kliknij poniżej, żeby potwierdzić swój adres e-mail i dostać <strong style="color:#FF6B35;">unikalny kod na 10% zniżki</strong> na subskrypcję Pro Roczny.
+              Kliknij poniżej, żeby potwierdzić swój adres e-mail i dostać <strong style="color:#A04B20;">unikalny kod na 10% zniżki</strong> na subskrypcję Pro Roczny.
             </p>
 
             <table width="100%" cellpadding="0" cellspacing="0">
               <tr>
                 <td align="center" style="padding:8px 0 24px;">
                   <a href="${verifyUrl}"
-                    style="display:inline-block;background:#FF6B35;color:white;text-decoration:none;font-size:15px;font-weight:700;padding:14px 32px;border-radius:14px;">
+                    style="display:inline-block;background:#A04B20;color:white;text-decoration:none;font-size:15px;font-weight:700;padding:14px 32px;border-radius:14px;">
                     Potwierdź i odbierz kod →
                   </a>
                 </td>
@@ -63,7 +63,7 @@ export async function sendNewsletterConfirmation(email: string, verifyUrl: strin
         <tr>
           <td style="padding:16px 32px 24px;border-top:1px solid #EBEBEB;">
             <p style="margin:0;color:#9CA3AF;font-size:11px;text-align:center;">
-              © 2026 Włóczykij · <a href="https://wloczykij.me" style="color:#FF6B35;text-decoration:none;">wloczykij.me</a>
+              © 2026 Włóczykij · <a href="https://wloczykij.me" style="color:#A04B20;text-decoration:none;">wloczykij.me</a>
             </p>
           </td>
         </tr>
@@ -86,7 +86,7 @@ function dropMailLayout(title: string, body: string, ctaUrl: string, cta: string
     <tr><td align="center">
       <table width="100%" style="max-width:480px;background:#FFFFFF;border-radius:20px;overflow:hidden;border:1px solid #EBEBEB;">
         <tr>
-          <td style="background:#FF6B35;padding:28px 32px;">
+          <td style="background:#A04B20;padding:28px 32px;">
             <p style="margin:0;color:white;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">Włóczykij</p>
             <h1 style="margin:8px 0 0;color:white;font-size:22px;font-weight:800;line-height:1.3;">${title}</h1>
           </td>
@@ -98,7 +98,7 @@ function dropMailLayout(title: string, body: string, ctaUrl: string, cta: string
               <tr>
                 <td align="center" style="padding:8px 0 24px;">
                   <a href="${ctaUrl}"
-                    style="display:inline-block;background:#FF6B35;color:white;text-decoration:none;font-size:15px;font-weight:700;padding:14px 32px;border-radius:14px;">
+                    style="display:inline-block;background:#A04B20;color:white;text-decoration:none;font-size:15px;font-weight:700;padding:14px 32px;border-radius:14px;">
                     ${cta}
                   </a>
                 </td>
@@ -110,7 +110,7 @@ function dropMailLayout(title: string, body: string, ctaUrl: string, cta: string
         <tr>
           <td style="padding:16px 32px 24px;border-top:1px solid #EBEBEB;">
             <p style="margin:0;color:#9CA3AF;font-size:11px;text-align:center;">
-              © 2026 Włóczykij · <a href="https://wloczykij.me" style="color:#FF6B35;text-decoration:none;">wloczykij.me</a>
+              © 2026 Włóczykij · <a href="https://wloczykij.me" style="color:#A04B20;text-decoration:none;">wloczykij.me</a>
             </p>
           </td>
         </tr>
@@ -138,7 +138,7 @@ export async function sendDropConfirmation(
     subject: "Potwierdź zapis na czwartkowy zrzut",
     html: dropMailLayout(
       "Potwierdź zapis<br>na czwartkowy zrzut",
-      `Co czwartek dostaniesz jeden mail z maksymalnie 3 wyjazdami z ${airportsLabel(opts.airports)} do ${opts.maxPrice} zł. Wypiszesz się w każdej chwili.<br><br>Na start dorzucamy <strong style="color:#FF6B35;">kod na 10% zniżki</strong> na Pro Roczny. Odbierzesz go po potwierdzeniu.`,
+      `Co czwartek dostaniesz jeden mail z maksymalnie 3 wyjazdami z ${airportsLabel(opts.airports)} do ${opts.maxPrice} zł. Wypiszesz się w każdej chwili.<br><br>Na start dorzucamy <strong style="color:#A04B20;">kod na 10% zniżki</strong> na Pro Roczny. Odbierzesz go po potwierdzeniu.`,
       verifyUrl,
       "Potwierdź zapis →",
       "Link jest ważny przez 48 godzin. Jeśli nie zapisywałeś się na zrzut, zignoruj tę wiadomość.",

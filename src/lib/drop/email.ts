@@ -75,7 +75,7 @@ function renderCard(
               <tr><td style="padding:20px;">
                 <table width="100%" cellpadding="0" cellspacing="0"><tr>
                   <td style="color:#111827;font-size:20px;font-weight:800;">${esc(deal.city_name)}</td>
-                  <td align="right" style="color:#FF6B35;font-size:20px;font-weight:800;">${esc(deal.price)} zł</td>
+                  <td align="right" style="color:#A04B20;font-size:20px;font-weight:800;">${esc(deal.price)} zł</td>
                 </tr></table>
                 <p style="margin:2px 0 0;color:#9CA3AF;font-size:11px;">cena ze środy 22:00, może się zmienić</p>
                 <p style="margin:12px 0 0;color:#111827;font-size:14px;line-height:1.6;">
@@ -88,10 +88,10 @@ function renderCard(
                 ${budgetHtml}
                 <table cellpadding="0" cellspacing="0" style="margin-top:16px;"><tr>
                   <td style="padding-right:8px;">
-                    <a href="${esc(checkUrl)}" style="display:inline-block;background:#FF6B35;color:white;text-decoration:none;font-size:14px;font-weight:700;padding:12px 20px;border-radius:12px;">Sprawdź cenę</a>
+                    <a href="${esc(checkUrl)}" style="display:inline-block;background:#A04B20;color:white;text-decoration:none;font-size:14px;font-weight:700;padding:12px 20px;border-radius:12px;">Sprawdź cenę</a>
                   </td>
                   <td>
-                    <a href="${esc(planUrl)}" style="display:inline-block;color:#FF6B35;text-decoration:none;font-size:14px;font-weight:700;padding:11px 19px;border-radius:12px;border:1px solid #FF6B35;">Ułóż mi plan</a>
+                    <a href="${esc(planUrl)}" style="display:inline-block;color:#A04B20;text-decoration:none;font-size:14px;font-weight:700;padding:11px 19px;border-radius:12px;border:1px solid #A04B20;">Ułóż mi plan</a>
                   </td>
                 </tr></table>
               </td></tr>
@@ -130,7 +130,7 @@ export function renderDropEmail(input: {
 
         <!-- Header -->
         <tr>
-          <td style="background:#FF6B35;padding:28px 32px;">
+          <td style="background:#A04B20;padding:28px 32px;">
             <p style="margin:0;color:white;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">Włóczykij</p>
             <h1 style="margin:8px 0 0;color:white;font-size:22px;font-weight:800;line-height:1.3;">
               ${originCity ? `Weekend z ${esc(originCity)}` : "Weekend z wyjazdami"}
@@ -154,8 +154,8 @@ ${cards}
               Chcesz alert na konkretne miasto? To będzie w Pro.
             </p>
             <p style="margin:0;color:#9CA3AF;font-size:11px;text-align:center;">
-              <a href="${esc(settingsUrl)}" style="color:#FF6B35;text-decoration:none;">Zmień lotnisko lub budżet</a>
-              · <a href="${esc(unsubscribeUrl)}" style="color:#FF6B35;text-decoration:none;">Wypisz się ze zrzutu</a>
+              <a href="${esc(settingsUrl)}" style="color:#A04B20;text-decoration:none;">Zmień lotnisko lub budżet</a>
+              · <a href="${esc(unsubscribeUrl)}" style="color:#A04B20;text-decoration:none;">Wypisz się ze zrzutu</a>
             </p>
           </td>
         </tr>
