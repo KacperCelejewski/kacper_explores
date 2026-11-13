@@ -81,18 +81,17 @@ export default function ShareClient() {
   if (notPublic) {
     return (
       <div className="flex flex-col flex-1 items-center justify-center px-5 text-center gap-4">
-        <span className="text-4xl">🔒</span>
-        <h1 className="text-xl font-bold">Plan prywatny</h1>
+        <h1 className="text-xl font-bold">Tego planu nie da się otworzyć</h1>
         <p className="text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>
-          Właściciel nie udostępnił tego planu publicznie.<br />
-          Poproś go o włączenie opcji &ldquo;Udostępnij w galerii&rdquo;.
+          Plan został usunięty, link jest niepoprawny albo autor nie udostępnił go publicznie.<br />
+          Możesz za to ułożyć własny w kilka minut.
         </p>
         <Link
-          href="/"
+          href="/quiz"
           className="btn-primary"
           style={{ display: "block", textAlign: "center", textDecoration: "none", fontSize: "0.875rem", marginTop: "0.5rem" }}
         >
-          Wygeneruj własny plan →
+          Ułóż własny plan →
         </Link>
       </div>
     );

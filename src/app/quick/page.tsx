@@ -267,7 +267,7 @@ export default function QuickPage() {
   };
 
   const back = () => {
-    if (step === 0) { router.push("/start"); return; }
+    if (step === 0) { router.push("/"); return; }
     setDir(-1);
     setStep((s) => s - 1);
   };

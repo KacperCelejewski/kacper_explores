@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { IconBackpack } from "@/app/components/Icons";
 import { stripe } from "@/lib/stripe";
 import PurchaseTracker from "./PurchaseTracker";
 import { purchaseFromSession } from "@/lib/analytics";
@@ -9,6 +11,8 @@ interface Props {
 
 export default async function PaymentSuccessPage({ searchParams }: Props) {
   const { session_id } = await searchParams;
+  // Bez identyfikatora sesji nie ma czego potwierdzać; człowiek trafił tu z zakładki albo ze starego linku
+  if (!session_id) redirect("/pricing");
 
   let isPro = false;
   let valid = false;
@@ -32,7 +36,7 @@ export default async function PaymentSuccessPage({ searchParams }: Props) {
       {purchase && (
         <PurchaseTracker transactionId={purchase.id} value={purchase.value} currency={purchase.currency} plan={purchase.plan} />
       )}
-      <span className="text-6xl" aria-hidden="true">🎒</span>
+      <span style={{ color: "var(--accent)" }}><IconBackpack size={56} /></span>
       <h1 className="text-2xl font-bold mt-4">
         {!valid ? "Prawie gotowe." : isPro ? "Pro działa." : "Pack jest Twój."}
       </h1>

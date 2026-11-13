@@ -10,7 +10,9 @@ const SHOW_DELAY_MS = 10000;
 
 type NewsletterState = "idle" | "loading" | "pending" | "success" | "error" | "expired" | "invalid";
 
-const ALLOWED_PATHS = ["/pricing"];
+// Popup nie wyskakuje nigdzie: zapis na e-mail jest w formularzu Czwartkowego zrzutu.
+// Lista zostaje, bo linki potwierdzające ze starych maili nadal wracają tu z parametrami.
+const ALLOWED_PATHS: string[] = [];
 
 function NewsletterPopupInner() {
   const searchParams = useSearchParams();

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import CheckoutButton from "../components/CheckoutButton";
 import SiteNav from "../components/SiteNav";
 import SiteFooter from "../components/SiteFooter";
-import PriceAlertSignup from "../components/PriceAlertSignup";
+import DropSignup from "../components/DropSignup";
 import { PRICES } from "@/lib/prices";
 
 const pricingSchema = {
@@ -228,7 +228,12 @@ export default function PricingPage() {
         </p>
       </div>
 
-      <PriceAlertSignup />
+      <div className="mt-10">
+        <DropSignup
+          title="Nie chcesz płacić? Okazje co czwartek są za darmo"
+          lead="Bez konta i bez karty: co czwartek 3 najtańsze wyjazdy z Twojego lotniska. Wypiszesz się jednym kliknięciem."
+        />
+      </div>
 
       <p className="text-xs text-center mt-5" style={{ color: "var(--text-muted)" }}>
         Płatności obsługuje Stripe. Nie widzimy ani nie przechowujemy danych Twojej karty.
