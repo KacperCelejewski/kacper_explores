@@ -58,3 +58,31 @@ export async function getDealsForOrigin(origin: string, limit = 12): Promise<Dea
   const teasers = new Map<string, CityTeaser>(((teaserRows ?? []) as CityTeaser[]).map((t) => [t.city_code, t]));
   return { deals, teasers, week };
 }
+
+// Najtańsza oferta z każdego lotniska, od najtańszej; do bloku „loty w tym tygodniu” na stronie miasta
+export function bestPerOrigin(deals: DropDeal[]): DropDeal[] {
+  const best = new Map<string, DropDeal>();
+  for (const d of deals) {
+    const cur = best.get(d.origin);
+    if (!cur || d.price < cur.price) best.set(d.origin, d);
+  }
+  return [...best.values()].sort((a, b) => a.price - b.price);
+}
+
+// Oferty do jednego miasta (po nazwie z Travelpayouts) z ostatniego tygodnia; przy błędzie bazy pusto,
+// żeby strona miasta nadal się renderowała
+export async function getDealsForCity(cityName: string): Promise<DropDeal[]> {
+  try {
+    const { data, error } = await createServiceClient()
+      .from("drop_deals")
+      .select("*")
+      .eq("city_name", cityName)
+      .order("week", { ascending: false })
+      .limit(60);
+    if (error || !data) return [];
+    return bestPerOrigin(upcomingDeals(pickLatestWeek(data as DropDeal[])));
+  } catch (err) {
+    console.error("[drop/read] city", err instanceof Error ? err.message : err);
+    return [];
+  }
+}
