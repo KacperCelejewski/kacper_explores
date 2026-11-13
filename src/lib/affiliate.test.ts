@@ -136,3 +136,14 @@ describe("bookingLink bez kraju", () => {
     expect(q).toBe("Rzym");
   });
 });
+
+describe("affiliateServerEvent", () => {
+  it("składa nazwę z partnera i miejsca", async () => {
+    const { affiliateServerEvent } = await import("./affiliate");
+    expect(affiliateServerEvent({ placement: "hotel", partner: "booking", paid: true })).toBe("affiliate_click:booking:hotel");
+  });
+  it("dopisuje :unpaid dla linku bez prowizji", async () => {
+    const { affiliateServerEvent } = await import("./affiliate");
+    expect(affiliateServerEvent({ placement: "flight", partner: "aviasales", paid: false })).toBe("affiliate_click:aviasales:flight:unpaid");
+  });
+});

@@ -106,6 +106,12 @@ export function partnerLinkProps(link: PartnerLink, placement: Placement, city: 
   };
 }
 
+// Nazwa zdarzenia do licznika po stronie serwera (tabela quiz_events), niezależnego od zgody na GA:
+// "affiliate_click:booking:hotel" albo z dopiskiem ":unpaid", gdy link nie jest partnerski.
+export function affiliateServerEvent(aff: { placement: string; partner: string; paid: boolean }): string {
+  return `affiliate_click:${aff.partner}:${aff.placement}${aff.paid ? "" : ":unpaid"}`.slice(0, 80);
+}
+
 export function affiliateClickParams(
   dataset: Record<string, string | undefined>,
 ): { placement: string; partner: string; paid: boolean; city?: string } | null {
