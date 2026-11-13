@@ -21,6 +21,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: BASE, changeFrequency: "weekly", priority: 1 },
     { url: `${BASE}/pricing`, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/okazje`, changeFrequency: "weekly", priority: 0.9 },
     // Modlin odpowiada danymi z Okęcia (Travelpayouts zwraca kod miasta WAW), więc nie dublujemy go w indeksie
     ...POLISH_AIRPORTS.filter((a) => a.code !== "WMI").map((a) => ({
       url: `${BASE}/okazje/${a.code.toLowerCase()}`,
