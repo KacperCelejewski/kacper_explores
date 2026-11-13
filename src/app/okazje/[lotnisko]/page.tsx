@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Fragment } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import SiteNav from "@/app/components/SiteNav";
@@ -35,6 +36,7 @@ export default async function DealsPage({ params }: { params: Params }) {
   const from = ORIGIN_GENITIVE[origin] ?? origin;
   const { deals, teasers } = await getDealsForOrigin(origin);
   const marker = process.env.TRAVELPAYOUTS_MARKER;
+  const hint = deals[0] ? { from, price: deals[0].price } : null;
   const seen = deals[0]
     ? new Date(deals[0].fetched_at).toLocaleDateString("pl-PL", { timeZone: "Europe/Warsaw", day: "numeric", month: "long" })
     : null;
@@ -78,7 +80,7 @@ export default async function DealsPage({ params }: { params: Params }) {
           </div>
         ) : (
           <ul className="flex flex-col gap-4 list-none p-0">
-            {deals.map((deal) => {
+            {deals.map((deal, index) => {
               const hours = hoursInCity(deal);
               const teaser = teasers.get(deal.city_code);
               const flight = buildFlightLink(deal, marker, deal.week, "web");
@@ -87,7 +89,8 @@ export default async function DealsPage({ params }: { params: Params }) {
                 checkin: deal.departure_at.slice(0, 10), checkout: deal.return_at.slice(0, 10),
               });
               return (
-                <li key={deal.city_code} className="rounded-2xl p-5" style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}>
+                <Fragment key={deal.city_code}>
+                <li id={deal.city_code} className="rounded-2xl p-5 scroll-mt-4" style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}>
                   <div className="flex items-baseline justify-between gap-3">
                     <h2 className="text-xl font-bold">{deal.city_name}</h2>
                     <p className="text-xl font-bold" style={{ color: "var(--accent)" }}>{deal.price} zł</p>
@@ -101,31 +104,37 @@ export default async function DealsPage({ params }: { params: Params }) {
                     <p key={n} className="text-xs mt-1.5 leading-relaxed" style={{ color: "var(--text-muted)" }}>{n}</p>
                   ))}
                   {teaser?.teaser && <p className="text-sm mt-3 leading-relaxed" style={{ color: "var(--text-secondary)" }}>{teaser.teaser}</p>}
-                  <div className="flex flex-wrap items-center gap-2 mt-4">
+                  <div className="grid grid-cols-2 gap-2 mt-4">
                     <a
                       {...partnerLinkProps(flight, "flight", deal.city_name)}
-                      className="text-sm font-bold px-4 py-2.5 rounded-xl"
-                      style={{ background: "var(--accent)", color: "#fff" }}
+                      className="text-sm font-bold px-3 py-3 rounded-xl text-center"
+                      style={{ background: "var(--accent)", color: "#fff", minHeight: 44 }}
                     >
-                      Sprawdź cenę lotu ↗
+                      Lot {deal.price} zł ↗
                     </a>
                     <a
                       {...partnerLinkProps(hotel, "hotel", deal.city_name)}
-                      className="text-sm font-semibold px-4 py-2.5 rounded-xl"
-                      style={{ border: "1px solid var(--border)", color: "var(--text-secondary)" }}
+                      className="text-sm font-bold px-3 py-3 rounded-xl text-center"
+                      style={{ background: "var(--accent)", color: "#fff", minHeight: 44 }}
                     >
-                      Nocleg ↗
+                      Nocleg na 2 noce ↗
                     </a>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3">
                     <Link
                       href={buildPlanUrl(deal, "", deal.week, "web")}
-                      className="text-sm font-semibold px-4 py-2.5 rounded-xl"
-                      style={{ border: "1px solid var(--accent)", color: "var(--accent)" }}
+                      className="text-sm font-semibold py-2"
+                      style={{ color: "var(--accent)" }}
                     >
-                      Plan na 48 h →
+                      Plan na ten weekend →
                     </Link>
                     <PartnerNote show={flight.paid || hotel.paid} />
                   </div>
                 </li>
+                {index === 2 && deals.length > 4 && (
+                  <li className="list-none"><DropSignup collapsed defaultAirports={[origin]} cheapestHint={hint} /></li>
+                )}
+                </Fragment>
               );
             })}
           </ul>
@@ -138,7 +147,7 @@ export default async function DealsPage({ params }: { params: Params }) {
           </p>
         )}
 
-        <div className="mt-10"><DropSignup /></div>
+        <div className="mt-10"><DropSignup defaultAirports={[origin]} cheapestHint={hint} /></div>
       </main>
       <SiteFooter />
     </>
