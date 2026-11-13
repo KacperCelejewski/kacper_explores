@@ -31,6 +31,16 @@ export interface DealsForOrigin {
 
 // Najtańsze okazje z ostatniego tygodnia, w którym cron coś zapisał dla tego lotniska
 export async function getDealsForOrigin(origin: string, limit = 12): Promise<DealsForOrigin> {
+  try {
+    return await loadDealsForOrigin(origin, limit);
+  } catch (err) {
+    // Brak połączenia albo zmiennych środowiskowych nie wywraca strony: pokazuje się stan „brak okazji”
+    console.error("[drop/read] origin", err instanceof Error ? err.message : err);
+    return { deals: [], teasers: new Map(), week: null };
+  }
+}
+
+async function loadDealsForOrigin(origin: string, limit: number): Promise<DealsForOrigin> {
   const db = createServiceClient();
   const { data, error } = await db
     .from("drop_deals")
