@@ -157,3 +157,10 @@ describe("bookingLink label", () => {
     expect(new URL(bookingLink({ city: "Rzym", country: "" }, {}).href).searchParams.has("label")).toBe(false);
   });
 });
+
+describe("bookingLink label z szablonem partnera", () => {
+  it("label zostaje w adresie przekazanym do szablonu {url}", () => {
+    const l = bookingLink({ city: "Rzym", country: "", label: "okazje-wro" }, { booking: "https://partner.example/go?u={url}" });
+    expect(decodeURIComponent(l.href)).toContain("label=okazje-wro");
+  });
+});
