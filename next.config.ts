@@ -24,6 +24,17 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "64kb",
     },
   },
+  // Krótki link do bio na Instagramie: dopisuje UTM, żeby ruch z IG był widoczny w GA4.
+  // Tymczasowy (307), żeby dało się go później skierować gdzie indziej bez cache'u w przeglądarkach.
+  async redirects() {
+    return [
+      {
+        source: "/ig",
+        destination: "/?utm_source=instagram&utm_medium=social&utm_campaign=bio",
+        permanent: false,
+      },
+    ];
+  },
   async headers() {
     return [
       {
