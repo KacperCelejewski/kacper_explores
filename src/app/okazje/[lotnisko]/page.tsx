@@ -32,6 +32,8 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     title: `Tanie loty na weekend z ${from}`,
     description: `Najtańsze wyjazdy na najbliższy weekend z ${from}: cena lotu, daty i ile godzin zostaje na miejscu. Ceny z wyszukiwań z ostatnich dni.`,
     alternates: { canonical: `https://wloczykij.me/okazje/${origin.toLowerCase()}` },
+    // Modlin zwraca dane z Okęcia (kod miasta WAW), więc jego strona nie trafia do indeksu jako duplikat
+    ...(origin === "WMI" ? { robots: { index: false, follow: true } } : {}),
   };
 }
 

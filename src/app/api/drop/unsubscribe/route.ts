@@ -15,7 +15,7 @@ const esc = (s: string) =>
 function page(title: string, body: string, status = 200): Response {
   const html = `<!doctype html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex"><title>${esc(title)} | Włóczykij</title></head>
+<meta name="robots" content="noindex"><link rel="icon" href="/icon"><title>${esc(title)} | Włóczykij</title></head>
 <body style="margin:0;background:#FFFBF7;color:#1A1A1A;font-family:system-ui,-apple-system,Segoe UI,sans-serif;">
 <main style="max-width:420px;margin:0 auto;padding:64px 24px;">${body}</main></body></html>`;
   return new Response(html, {
