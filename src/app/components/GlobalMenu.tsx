@@ -116,7 +116,7 @@ export default function GlobalMenu() {
         aria-label="Otwórz menu"
         aria-haspopup="dialog"
         aria-expanded={open}
-        className="global-fab no-print fixed z-50 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-transform active:scale-95"
+        className="global-fab no-print fixed z-50 h-12 px-4 gap-2 rounded-full flex items-center justify-center shadow-lg transition-transform active:scale-95 text-sm font-semibold"
         style={{
           bottom: "1.5rem",
           right: "max(1.25rem, calc(50vw - 224px + 1.25rem))",
@@ -125,6 +125,7 @@ export default function GlobalMenu() {
         }}
       >
         <IconCompass size={20} />
+        Menu
       </button>
 
       <AnimatePresence>

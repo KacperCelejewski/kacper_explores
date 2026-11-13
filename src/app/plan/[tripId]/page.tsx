@@ -19,19 +19,19 @@ import { PRICES } from "@/lib/prices";
 import { isFreeCost } from "@/lib/affiliate";
 
 const ACTIVITY_COLORS: Record<string, string> = {
-  attraction: "rgba(255,107,53,0.07)",
-  food: "rgba(255,107,53,0.05)",
-  transport: "#F7F7F5",
-  tip: "rgba(255,107,53,0.06)",
-  accommodation: "rgba(59,130,246,0.07)",
+  attraction: "var(--accent-light)",
+  food: "var(--accent-light)",
+  transport: "var(--bg-surface)",
+  tip: "var(--accent-light)",
+  accommodation: "var(--bg-surface)",
 };
 
 const ACTIVITY_BORDER: Record<string, string> = {
-  attraction: "rgba(255,107,53,0.25)",
-  food: "rgba(255,107,53,0.2)",
-  transport: "#EBEBEB",
-  tip: "rgba(255,107,53,0.2)",
-  accommodation: "rgba(59,130,246,0.25)",
+  attraction: "var(--border)",
+  food: "var(--border)",
+  transport: "var(--bg-surface)",
+  tip: "var(--border)",
+  accommodation: "var(--border)",
 };
 
 const ACTIVITY_LABELS: Record<string, string> = {
@@ -454,7 +454,7 @@ export default function PlanPage() {
           onClick={handleRestaurants}
           disabled={restaurantsLoading}
           className="w-full py-3 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 transition-opacity hover:opacity-80 mb-3"
-          style={{ background: "rgba(255,107,53,0.08)", color: "var(--accent)", border: "1px solid rgba(255,107,53,0.2)" }}
+          style={{ background: "var(--accent-light)", color: "var(--accent)", border: "1px solid var(--border)" }}
         >
           {restaurantsLoading ? (
             <>
@@ -503,7 +503,7 @@ export default function PlanPage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.05 + i * 0.06 }}
                 className="flex items-start gap-3 px-4 py-3 rounded-2xl"
-                style={{ background: "var(--accent-light)", border: "1px solid rgba(255,107,53,0.15)" }}
+                style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
               >
                 <span style={{ color: "var(--accent)", fontWeight: 700, fontSize: 14, lineHeight: "20px", flexShrink: 0 }}>✦</span>
                 <p className="text-xs leading-relaxed">{tip}</p>
@@ -521,13 +521,13 @@ export default function PlanPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             className="mx-5 mb-3 px-4 py-3 rounded-2xl flex items-center justify-between gap-3 no-print"
-            style={{ background: "#FEF2F2", border: "1px solid #FECACA" }}
+            style={{ background: "var(--error-bg)", border: "1px solid var(--error)" }}
           >
-            <p className="text-sm" style={{ color: "#DC2626" }}>{actionError}</p>
+            <p className="text-sm" style={{ color: "var(--error)" }}>{actionError}</p>
             <button
               onClick={() => setActionError(null)}
               className="flex-shrink-0 text-xs font-bold transition-opacity hover:opacity-70"
-              style={{ color: "#DC2626" }}
+              style={{ color: "var(--error)" }}
               aria-label="Zamknij"
             >
               ✕
@@ -562,7 +562,7 @@ export default function PlanPage() {
               }}
               className="flex-shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200"
               style={{
-                background: activeDay === i ? "var(--accent)" : "#F0F0F0",
+                background: activeDay === i ? "var(--accent)" : "var(--bg-surface)",
                 color: activeDay === i ? "white" : "var(--text-secondary)",
               }}
             >
@@ -611,7 +611,7 @@ export default function PlanPage() {
           onClick={handlePackingList}
           disabled={packingLoading}
           className="w-full py-3 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 transition-opacity hover:opacity-80"
-          style={{ background: "var(--accent-light)", color: "var(--accent)", border: "1px solid rgba(196,98,45,0.2)" }}
+          style={{ background: "var(--accent-light)", color: "var(--accent)", border: "1px solid var(--border)" }}
         >
           {packingLoading ? (
             <>
@@ -699,7 +699,7 @@ export default function PlanPage() {
         {/* Saved indicator */}
         <div
           className="flex items-center justify-center gap-2 py-2.5 rounded-2xl text-sm font-semibold"
-          style={{ background: "#DCFCE7", color: "#16A34A" }}
+          style={{ background: "var(--success-bg)", color: "var(--success)" }}
         >
           <span>✓</span>
           <span>Plan zapisany na Twoim koncie</span>
@@ -710,8 +710,8 @@ export default function PlanPage() {
             onClick={handleShare}
             className="py-3 rounded-2xl text-xs font-semibold flex items-center justify-center gap-1 transition-all"
             style={{
-              background: copied && !isPublic ? "#FEF3C7" : copied ? "#DCFCE7" : "#F0F0F0",
-              color: copied && !isPublic ? "#92400E" : copied ? "#16A34A" : "var(--text-secondary)",
+              background: copied && !isPublic ? "var(--accent-light)" : copied ? "var(--success-bg)" : "var(--bg-surface)",
+              color: copied && !isPublic ? "var(--accent)" : copied ? "var(--success)" : "var(--text-secondary)",
             }}
           >
             {copied && !isPublic ? "↓ Najpierw udostępnij plan" : copied ? "✓ Skopiowano" : "🔗 Udostępnij"}
@@ -721,7 +721,7 @@ export default function PlanPage() {
             disabled={pdfLoading}
             className="py-3 rounded-2xl text-xs font-semibold flex items-center justify-center gap-1 transition-all hover:opacity-80 relative"
             style={{
-              background: userCredits?.isPro || feedbackGiven ? "#F0F0F0" : "var(--accent-light)",
+              background: userCredits?.isPro || feedbackGiven ? "var(--bg-surface)" : "var(--accent-light)",
               color: userCredits?.isPro || feedbackGiven ? "var(--text-secondary)" : "var(--accent)",
             }}
           >
@@ -730,7 +730,7 @@ export default function PlanPage() {
           <button
             onClick={handleICS}
             className="py-3 rounded-2xl text-xs font-semibold flex items-center justify-center gap-1 transition-all hover:opacity-80"
-            style={{ background: "#F0F0F0", color: "var(--text-secondary)" }}
+            style={{ background: "var(--bg-surface)", color: "var(--text-secondary)" }}
           >
             📅 Kalendarz
           </button>
@@ -742,8 +742,8 @@ export default function PlanPage() {
           disabled={publicToggling}
           className="py-3 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 transition-opacity hover:opacity-80 no-print disabled:opacity-40"
           style={{
-            background: isPublic ? "#DCFCE7" : "#F0F0F0",
-            color: isPublic ? "#16A34A" : "var(--text-secondary)",
+            background: isPublic ? "var(--success-bg)" : "var(--bg-surface)",
+            color: isPublic ? "var(--success)" : "var(--text-secondary)",
           }}
         >
           {publicToggling ? "…" : isPublic ? "✓ Plan widoczny w galerii" : "🌍 Udostępnij w galerii Odkryj"}
@@ -853,7 +853,7 @@ export default function PlanPage() {
               exit={{ y: 60, opacity: 0 }}
               transition={{ type: "spring", damping: 28, stiffness: 280 }}
               className="w-full max-w-lg rounded-t-3xl px-5 pb-8 pt-5"
-              style={{ background: "#F5EFE0" }}
+              style={{ background: "var(--bg-primary)" }}
             >
               <div className="flex justify-center mb-4">
                 <div className="w-10 h-1 rounded-full" style={{ background: "var(--border)" }} />
@@ -895,7 +895,7 @@ export default function PlanPage() {
                     document.getElementById("ocen-plan")?.scrollIntoView({ behavior: "smooth", block: "start" });
                   }}
                   className="block w-full text-left p-4 rounded-2xl"
-                  style={{ background: "#FFFFFF", border: "1.5px solid var(--border)" }}
+                  style={{ background: "var(--bg-primary)", border: "1.5px solid var(--border)" }}
                 >
                   <div className="flex items-center justify-between">
                     <div>
@@ -996,7 +996,7 @@ function DayPlanView({
     >
       <div
         className="px-4 py-3 mb-3 rounded-2xl flex items-center justify-between gap-3"
-        style={{ background: "#F7F7F5", border: "1px solid var(--border)" }}
+        style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
       >
         <div>
           <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>{day.date}</p>
@@ -1009,7 +1009,7 @@ function DayPlanView({
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-opacity hover:opacity-70 no-print"
-              style={{ background: "#E8F4FD", color: "#1A73E8", textDecoration: "none" }}
+              style={{ background: "var(--bg-surface)", color: "var(--accent)", textDecoration: "none" }}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
@@ -1059,7 +1059,7 @@ function DayPlanView({
       <button
         onClick={onAddActivity}
         className="mt-3 ml-11 flex items-center gap-2 text-xs font-semibold px-3 py-2 rounded-full transition-opacity hover:opacity-70 no-print"
-        style={{ background: "var(--accent-light)", color: "var(--accent)", border: "1px solid rgba(196,98,45,0.25)" }}
+        style={{ background: "var(--accent-light)", color: "var(--accent)", border: "1px solid var(--border)" }}
       >
         <span className="text-base leading-none">+</span>
         Dodaj aktywność
@@ -1069,9 +1069,9 @@ function DayPlanView({
 }
 
 const PRICE_COLORS: Record<string, { bg: string; color: string }> = {
-  "€":   { bg: "rgba(34,197,94,0.1)",  color: "#16A34A" },
-  "€€":  { bg: "rgba(234,179,8,0.1)",  color: "#A16207" },
-  "€€€": { bg: "rgba(239,68,68,0.1)",  color: "#DC2626" },
+  "€":   { bg: "var(--success-bg)",  color: "var(--success)" },
+  "€€":  { bg: "var(--accent-light)",  color: "var(--accent)" },
+  "€€€": { bg: "var(--error-bg)",  color: "var(--error)" },
 };
 
 function RestaurantCard({ restaurant: r, city, index }: { restaurant: Restaurant; city: string; index: number }) {
@@ -1097,7 +1097,7 @@ function RestaurantCard({ restaurant: r, city, index }: { restaurant: Restaurant
 
       <span
         className="inline-block text-xs px-2 py-0.5 rounded-md font-medium mb-2"
-        style={{ background: "rgba(0,0,0,0.06)", color: "var(--text-secondary)" }}
+        style={{ background: "var(--bg-surface)", color: "var(--text-secondary)" }}
       >
         {r.cuisine}
       </span>
@@ -1108,7 +1108,7 @@ function RestaurantCard({ restaurant: r, city, index }: { restaurant: Restaurant
 
       <div
         className="flex items-center gap-2 px-3 py-2 rounded-xl mb-2"
-        style={{ background: "rgba(255,107,53,0.06)", border: "1px solid rgba(255,107,53,0.15)" }}
+        style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
       >
         <span style={{ color: "var(--accent)", fontSize: 13, fontWeight: 700, flexShrink: 0 }}>✦</span>
         <p className="text-xs" style={{ color: "var(--text-secondary)" }}>{r.highlight}</p>
@@ -1123,7 +1123,7 @@ function RestaurantCard({ restaurant: r, city, index }: { restaurant: Restaurant
           target="_blank"
           rel="noopener noreferrer"
           className="text-xs font-semibold ml-2 flex-shrink-0 transition-opacity hover:opacity-70"
-          style={{ color: "#1A73E8", textDecoration: "none" }}
+          style={{ color: "var(--accent)", textDecoration: "none" }}
         >
           Nawiguj →
         </a>
@@ -1392,7 +1392,7 @@ function ActivityCard({
             <p className="text-sm font-semibold leading-tight">{activity.title}</p>
             <span
               className="inline-block text-xs mt-0.5 px-1.5 py-0.5 rounded-md font-medium"
-              style={{ background: "rgba(0,0,0,0.06)", color: "var(--text-secondary)" }}
+              style={{ background: "var(--bg-surface)", color: "var(--text-secondary)" }}
             >
               {ACTIVITY_LABELS[activity.type] ?? activity.type}
             </span>
@@ -1403,7 +1403,7 @@ function ActivityCard({
               disabled={swapping}
               title="Zamień na inną aktywność"
               className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full transition-opacity hover:opacity-70 disabled:opacity-40 no-print"
-              style={{ background: "rgba(0,0,0,0.06)", color: "var(--text-secondary)" }}
+              style={{ background: "var(--bg-surface)", color: "var(--text-secondary)" }}
             >
               {swapping ? (
                 <span className="w-3 h-3 rounded-full border border-t-transparent animate-spin inline-block" style={{ borderColor: "var(--text-secondary)", borderTopColor: "transparent" }} />
@@ -1414,11 +1414,11 @@ function ActivityCard({
               style={{
                 background:
                   isFreeCost(activity.cost)
-                    ? "rgba(34,197,94,0.12)"
-                    : "#F0F0F0",
+                    ? "var(--success-bg)"
+                    : "var(--bg-surface)",
                 color:
                   isFreeCost(activity.cost)
-                    ? "#16A34A"
+                    ? "var(--success)"
                     : "var(--text-muted)",
               }}
             >
@@ -1440,7 +1440,7 @@ function ActivityCard({
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
               className="text-xs font-semibold ml-2 flex-shrink-0 transition-opacity hover:opacity-70 no-print"
-              style={{ color: "#1A73E8", textDecoration: "none" }}
+              style={{ color: "var(--accent)", textDecoration: "none" }}
             >
               Nawiguj →
             </a>

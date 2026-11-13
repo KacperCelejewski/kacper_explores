@@ -136,7 +136,7 @@ function GeneratingOverlay({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               className="w-full max-w-xs rounded-2xl px-4 py-3"
-              style={{ background: "var(--accent-light)", border: "1px solid rgba(196,98,45,0.2)" }}
+              style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
             >
               <p className="text-xs font-bold mb-2" style={{ color: "var(--accent)" }}>📍 Dzień 1 gotowy</p>
               <div className="flex flex-col gap-1.5">
@@ -156,7 +156,7 @@ function GeneratingOverlay({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
               className="w-full max-w-xs px-4 py-3 rounded-2xl"
-              style={{ background: "var(--accent-light)", border: "1px solid rgba(196,98,45,0.2)" }}
+              style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
             >
               <p className="text-xs font-bold mb-1" style={{ color: "var(--accent)" }}>💡 Czy wiesz, że…</p>
               <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
@@ -415,7 +415,7 @@ export default function QuickPage() {
                   background: i === step
                     ? "var(--accent)"
                     : i < step
-                    ? "rgba(196,98,45,0.35)"
+                    ? "var(--border)"
                     : "var(--border)",
                 }}
               />
@@ -480,7 +480,7 @@ export default function QuickPage() {
 
       {/* Error */}
       {genError && (
-        <div className="mb-3 px-4 py-3 rounded-2xl text-sm" style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)" }}>
+        <div className="mb-3 px-4 py-3 rounded-2xl text-sm" style={{ background: "var(--error-bg)", color: "var(--error)", border: "1px solid var(--error-bg)" }}>
           {genError}
         </div>
       )}
@@ -555,7 +555,7 @@ function StepDestination({
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           className="mt-5 p-4 rounded-2xl flex items-center gap-3"
-          style={{ background: "var(--accent-light)", border: "1px solid rgba(196,98,45,0.25)" }}
+          style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
         >
           <img
             src={getCityPhotoUrl(city, 400)}
@@ -643,7 +643,7 @@ function StepDates({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="p-4 rounded-2xl text-center"
-            style={{ background: "var(--accent-light)", border: "1px solid rgba(196,98,45,0.25)" }}
+            style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
           >
             <p className="text-3xl font-bold" style={{ color: "var(--accent)" }}>{duration} {duration === 1 ? "dzień" : duration <= 4 ? "dni" : "dni"}</p>
             <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>

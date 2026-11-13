@@ -126,8 +126,8 @@ function NewsletterPopupInner() {
             width: "calc(100% - 32px)",
             maxWidth: 480,
             zIndex: 99,
-            background: "var(--background, #fff)",
-            border: "1.5px solid var(--border, #e5e5e5)",
+            background: "var(--bg-primary)",
+            border: "1.5px solid var(--border)",
             borderRadius: 20,
             padding: "20px 18px 18px",
             boxShadow: "0 8px 32px rgba(0,0,0,0.14)",
@@ -171,14 +171,14 @@ function NewsletterPopupInner() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="mt-5 p-4 rounded-2xl"
-                style={{ background: "var(--accent-light)", border: "1px solid rgba(255,107,53,0.25)" }}
+                style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
               >
                 <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>
                   Twój kod na 10% taniej
                 </p>
                 <div
                   className="mt-3 flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
-                  style={{ background: "#FFFFFF", border: "1.5px solid rgba(255,107,53,0.3)" }}
+                  style={{ background: "var(--bg-primary)", border: "1.5px solid var(--border)" }}
                 >
                   <span className="font-mono font-bold text-lg tracking-widest" style={{ color: "var(--accent)" }}>
                     {code}
@@ -187,8 +187,8 @@ function NewsletterPopupInner() {
                     onClick={handleCopy}
                     className="text-xs font-semibold px-3 py-1.5 rounded-full transition-all"
                     style={{
-                      background: copied ? "#DCFCE7" : "var(--accent)",
-                      color: copied ? "#16A34A" : "white",
+                      background: copied ? "var(--success-bg)" : "var(--accent)",
+                      color: copied ? "var(--success)" : "white",
                     }}
                   >
                     {copied ? "Skopiowano ✓" : "Kopiuj"}
@@ -213,16 +213,16 @@ function NewsletterPopupInner() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="mt-5 p-4 rounded-2xl"
-                style={{ background: "#F0FDF4", border: "1px solid #BBF7D0" }}
+                style={{ background: "var(--success-bg)", border: "1px solid var(--border)" }}
               >
-                <p className="text-sm font-bold" style={{ color: "#16A34A" }}>
+                <p className="text-sm font-bold" style={{ color: "var(--success)" }}>
                   Sprawdź skrzynkę
                 </p>
-                <p className="text-sm mt-2 leading-relaxed" style={{ color: "#4B5563" }}>
+                <p className="text-sm mt-2 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
                   Wysłaliśmy e-mail na <strong>{email}</strong>.<br />
                   Kliknij link w wiadomości — odbierzesz kod od razu.
                 </p>
-                <p className="text-xs mt-3" style={{ color: "#9CA3AF" }}>
+                <p className="text-xs mt-3" style={{ color: "var(--text-muted)" }}>
                   Nie ma e-maila? Sprawdź spam lub{" "}
                   <button
                     onClick={handleRetry}
@@ -241,12 +241,12 @@ function NewsletterPopupInner() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="mt-5 p-4 rounded-2xl"
-                style={{ background: "#FEF9C3", border: "1px solid #FDE68A" }}
+                style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
               >
-                <p className="text-sm font-bold" style={{ color: "#92400E" }}>
+                <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>
                   Link wygasł
                 </p>
-                <p className="text-sm mt-1" style={{ color: "#4B5563" }}>
+                <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
                   Linki są ważne 48 godzin. Zapisz się ponownie, żeby dostać nowy.
                 </p>
                 <button
@@ -265,12 +265,12 @@ function NewsletterPopupInner() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="mt-5 p-4 rounded-2xl"
-                style={{ background: "#FEF2F2", border: "1px solid #FECACA" }}
+                style={{ background: "var(--error-bg)", border: "1px solid var(--border)" }}
               >
-                <p className="text-sm font-bold" style={{ color: "#DC2626" }}>
+                <p className="text-sm font-bold" style={{ color: "var(--error)" }}>
                   Nieprawidłowy link
                 </p>
-                <p className="text-sm mt-1" style={{ color: "#4B5563" }}>
+                <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
                   Ten link nie jest prawidłowy. Spróbuj zapisać się ponownie.
                 </p>
                 <button
@@ -303,7 +303,7 @@ function NewsletterPopupInner() {
                     aria-invalid={state === "error" ? "true" : undefined}
                     className="flex-1 px-4 py-3 rounded-2xl text-sm outline-none transition-all"
                     style={{
-                      background: "#F7F7F5",
+                      background: "var(--bg-surface)",
                       border: `1.5px solid ${state === "error" ? "var(--error)" : "var(--border)"}`,
                       color: "var(--text-primary)",
                     }}

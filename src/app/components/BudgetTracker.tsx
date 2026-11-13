@@ -62,7 +62,7 @@ export default function BudgetTracker({ tripId, plannedBreakdown, plannedTotal }
       <button
         onClick={() => setOpen((o) => !o)}
         className="w-full py-3 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 transition-opacity hover:opacity-80"
-        style={{ background: "#F0F0F0", color: "var(--text-secondary)" }}
+        style={{ background: "var(--bg-surface)", color: "var(--text-secondary)" }}
       >
         💰 {open ? "Ukryj tracker budżetu ↑" : "Śledź wydatki vs plan"}
       </button>
@@ -80,7 +80,7 @@ export default function BudgetTracker({ tripId, plannedBreakdown, plannedTotal }
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>WYDANO</p>
-                  <p className="text-2xl font-bold" style={{ color: overBudget ? "#B91C1C" : "var(--text-primary)" }}>
+                  <p className="text-2xl font-bold" style={{ color: overBudget ? "var(--error)" : "var(--text-primary)" }}>
                     {totalSpent.toLocaleString("pl-PL")} zł
                   </p>
                 </div>
@@ -96,8 +96,8 @@ export default function BudgetTracker({ tripId, plannedBreakdown, plannedTotal }
               <div
                 className="flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-semibold"
                 style={{
-                  background: overBudget ? "#FEF2F2" : "#DCFCE7",
-                  color: overBudget ? "#B91C1C" : "#16A34A",
+                  background: overBudget ? "var(--error-bg)" : "var(--success-bg)",
+                  color: overBudget ? "var(--error)" : "var(--success)",
                 }}
               >
                 <span>{overBudget ? "⚠️" : "✓"}</span>
@@ -135,7 +135,7 @@ export default function BudgetTracker({ tripId, plannedBreakdown, plannedTotal }
                         <button
                           onClick={() => update(key, expenses[key] - 10)}
                           className="w-8 h-8 rounded-lg text-sm font-bold flex items-center justify-center flex-shrink-0 transition-opacity hover:opacity-70"
-                          style={{ background: "#F0F0F0", color: "var(--text-secondary)" }}
+                          style={{ background: "var(--bg-surface)", color: "var(--text-secondary)" }}
                         >
                           −
                         </button>
@@ -163,7 +163,7 @@ export default function BudgetTracker({ tripId, plannedBreakdown, plannedTotal }
                         <button
                           onClick={() => update(key, expenses[key] + 10)}
                           className="w-8 h-8 rounded-lg text-sm font-bold flex items-center justify-center flex-shrink-0 transition-opacity hover:opacity-70"
-                          style={{ background: "#F0F0F0", color: "var(--text-secondary)" }}
+                          style={{ background: "var(--bg-surface)", color: "var(--text-secondary)" }}
                         >
                           +
                         </button>

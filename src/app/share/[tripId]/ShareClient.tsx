@@ -7,19 +7,19 @@ import type { TripPlan, DayPlan, DayActivity, DestinationRecommendation } from "
 import Link from "next/link";
 
 const ACTIVITY_COLORS: Record<string, string> = {
-  attraction: "rgba(255,107,53,0.07)",
-  food: "rgba(255,107,53,0.05)",
-  transport: "#F7F7F5",
-  tip: "rgba(255,107,53,0.06)",
-  accommodation: "rgba(59,130,246,0.07)",
+  attraction: "var(--accent-light)",
+  food: "var(--accent-light)",
+  transport: "var(--bg-surface)",
+  tip: "var(--accent-light)",
+  accommodation: "var(--bg-surface)",
 };
 
 const ACTIVITY_BORDER: Record<string, string> = {
-  attraction: "rgba(255,107,53,0.25)",
-  food: "rgba(255,107,53,0.2)",
-  transport: "#EBEBEB",
-  tip: "rgba(255,107,53,0.2)",
-  accommodation: "rgba(59,130,246,0.25)",
+  attraction: "var(--border)",
+  food: "var(--border)",
+  transport: "var(--bg-surface)",
+  tip: "var(--border)",
+  accommodation: "var(--border)",
 };
 
 function buildMapsRouteUrl(activities: DayActivity[], city: string): string | null {
@@ -108,7 +108,7 @@ export default function ShareClient() {
         {/* Share banner */}
         <div
           className="mb-5 px-4 py-3 rounded-2xl flex items-center justify-between gap-3"
-          style={{ background: "var(--accent-light)", border: "1px solid rgba(255,107,53,0.2)" }}
+          style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
         >
           <p className="text-xs font-medium leading-relaxed" style={{ color: "var(--accent)" }}>
             Plan wygenerowany przez <strong>Włóczykij</strong> · AI podróże budżetowe
@@ -117,8 +117,8 @@ export default function ShareClient() {
             onClick={handleCopy}
             className="flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full transition-all"
             style={{
-              background: copied ? "#DCFCE7" : "var(--accent)",
-              color: copied ? "#16A34A" : "white",
+              background: copied ? "var(--success-bg)" : "var(--accent)",
+              color: copied ? "var(--success)" : "white",
             }}
           >
             {copied ? "Skopiowano ✓" : "Kopiuj link"}
@@ -176,7 +176,7 @@ export default function ShareClient() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.05 + i * 0.06 }}
                 className="flex items-start gap-3 px-4 py-3 rounded-2xl"
-                style={{ background: "var(--accent-light)", border: "1px solid rgba(255,107,53,0.15)" }}
+                style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
               >
                 <span style={{ color: "var(--accent)", fontWeight: 700, fontSize: 14, lineHeight: "20px", flexShrink: 0 }}>✦</span>
                 <p className="text-xs leading-relaxed">{tip}</p>
@@ -198,7 +198,7 @@ export default function ShareClient() {
               onClick={() => setActiveDay(i)}
               className="flex-shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200"
               style={{
-                background: activeDay === i ? "var(--accent)" : "#F0F0F0",
+                background: activeDay === i ? "var(--accent)" : "var(--bg-surface)",
                 color: activeDay === i ? "white" : "var(--text-secondary)",
               }}
             >
@@ -214,7 +214,7 @@ export default function ShareClient() {
       <div className="px-5 mt-8">
         <div
           className="p-5 rounded-2xl text-center"
-          style={{ background: "var(--accent-light)", border: "1px solid rgba(255,107,53,0.2)" }}
+          style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
         >
           <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>
             Wygeneruj swój plan z AI →
@@ -248,7 +248,7 @@ function SharedDayPlanView({ day, city }: { day: DayPlan; city: string }) {
     >
       <div
         className="px-4 py-3 mb-3 rounded-2xl flex items-center justify-between gap-3"
-        style={{ background: "#F7F7F5", border: "1px solid var(--border)" }}
+        style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
       >
         <div>
           <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>{day.date}</p>
@@ -260,7 +260,7 @@ function SharedDayPlanView({ day, city }: { day: DayPlan; city: string }) {
             target="_blank"
             rel="noopener noreferrer"
             className="flex-shrink-0 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-opacity hover:opacity-70"
-            style={{ background: "#E8F4FD", color: "#1A73E8", textDecoration: "none" }}
+            style={{ background: "var(--bg-surface)", color: "var(--accent)", textDecoration: "none" }}
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
@@ -304,8 +304,8 @@ function SharedActivityCard({ activity, index }: { activity: DayActivity; index:
           <span
             className="flex-shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
             style={{
-              background: activity.cost === "Free" || activity.cost === "Bezpłatnie" ? "rgba(34,197,94,0.12)" : "#F0F0F0",
-              color: activity.cost === "Free" || activity.cost === "Bezpłatnie" ? "#16A34A" : "var(--text-muted)",
+              background: activity.cost === "Free" || activity.cost === "Bezpłatnie" ? "var(--success-bg)" : "var(--bg-surface)",
+              color: activity.cost === "Free" || activity.cost === "Bezpłatnie" ? "var(--success)" : "var(--text-muted)",
             }}
           >
             {activity.cost}
@@ -320,7 +320,7 @@ function SharedActivityCard({ activity, index }: { activity: DayActivity; index:
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs font-semibold ml-2 flex-shrink-0 transition-opacity hover:opacity-70"
-              style={{ color: "#1A73E8", textDecoration: "none" }}
+              style={{ color: "var(--accent)", textDecoration: "none" }}
             >
               Nawiguj →
             </a>

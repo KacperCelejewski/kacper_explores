@@ -48,7 +48,7 @@ export default function DropProfileButton({
 
   if (alreadyEnabled || state === "enabled") {
     return (
-      <p className="text-sm font-semibold" style={{ color: "#16A34A" }}>
+      <p className="text-sm font-semibold" style={{ color: "var(--success)" }}>
         Jesteś zapisany. Zrzut przyjdzie w czwartek.
       </p>
     );
@@ -83,7 +83,7 @@ export default function DropProfileButton({
         Co czwartek 3 wyjazdy z Twojego lotniska, w Twoim budżecie.
       </p>
       {error && (
-        <p role="alert" className="text-sm mt-3" style={{ color: "#DC2626" }}>{error}</p>
+        <p role="alert" className="text-sm mt-3" style={{ color: "var(--error)" }}>{error}</p>
       )}
       <button className="btn-primary mt-4" onClick={handleClick} disabled={state === "loading"}>
         {state === "loading" ? "…" : "Wysyłaj mi zrzut"}

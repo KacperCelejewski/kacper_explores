@@ -406,7 +406,7 @@ function QuizPageInner() {
       {quizAnswers.preferredCity && (
         <div
           className="flex items-center gap-2 px-4 py-2.5 rounded-2xl mt-3"
-          style={{ background: "var(--accent-light)", border: "1px solid rgba(196,98,45,0.25)" }}
+          style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
         >
           <span style={{ color: "var(--accent)" }}><IconPlane size={16} /></span>
           <p className="text-sm font-semibold" style={{ color: "var(--accent)" }}>
@@ -425,7 +425,7 @@ function QuizPageInner() {
             transition={{ duration: 0.25 }}
             onClick={handleUseSaved}
             className="w-full mt-3 p-4 rounded-2xl text-left transition-opacity hover:opacity-90"
-            style={{ background: "var(--accent-light)", border: "1px solid rgba(196,98,45,0.25)" }}
+            style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
           >
             <div className="flex items-center justify-between gap-3">
               <div>

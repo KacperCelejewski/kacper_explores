@@ -69,10 +69,10 @@ export function FlightCard({ offer, city }: { offer: FlightOffer | undefined; ci
       <a
         {...partnerLinkProps(link, "flight", city)}
         className="flex items-center justify-between p-4 rounded-2xl transition-opacity hover:opacity-80"
-        style={{ background: "#F0F7FF", textDecoration: "none", border: "1px solid #1A73E822" }}
+        style={{ background: "var(--bg-surface)", textDecoration: "none", border: "1px solid var(--border)" }}
       >
         <div>
-          <p className="text-sm font-bold" style={{ color: "#1A56B0" }}>✈️ Lot do {city}</p>
+          <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>✈️ Lot do {city}</p>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
             {offer.origin.city} ({offer.origin.code}) · {offer.price} zł{dates}
           </p>
@@ -80,7 +80,7 @@ export function FlightCard({ offer, city }: { offer: FlightOffer | undefined; ci
             cena z ostatnich wyszukiwań, może się zmienić
           </p>
         </div>
-        <span className="text-xs font-semibold" style={{ color: "#1A56B0" }}>Sprawdź lot →</span>
+        <span className="text-xs font-semibold" style={{ color: "var(--accent)" }}>Sprawdź lot →</span>
       </a>
       <div className="mt-2">
         <PartnerNote show={link.paid} />
@@ -98,7 +98,7 @@ export function TicketsLink({ activity, city }: { activity: DayActivity; city: s
         {...partnerLinkProps(link, "tickets", city)}
         onClick={(e) => e.stopPropagation()}
         className="text-xs font-semibold transition-opacity hover:opacity-70"
-        style={{ color: "#1A73E8", textDecoration: "none" }}
+        style={{ color: "var(--accent)", textDecoration: "none" }}
       >
         Sprawdź bilety ↗
       </a>
@@ -112,7 +112,7 @@ export function LuggageTile({ city }: { city: string }) {
   return (
     <div
       className="ml-11 mt-3 rounded-2xl px-4 py-3 no-print"
-      style={{ background: "#F7F7F5", border: "1px solid var(--border)" }}
+      style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
     >
       <p className="text-sm font-semibold">Wymeldowanie przed wylotem?</p>
       <p className="text-xs mt-1 leading-relaxed" style={{ color: "var(--text-muted)" }}>
@@ -122,7 +122,7 @@ export function LuggageTile({ city }: { city: string }) {
         <a
           {...partnerLinkProps(link, "luggage", city)}
           className="text-xs font-semibold transition-opacity hover:opacity-70"
-          style={{ color: "#1A73E8", textDecoration: "none" }}
+          style={{ color: "var(--accent)", textDecoration: "none" }}
         >
           Znajdź przechowalnię ↗
         </a>

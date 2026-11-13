@@ -140,7 +140,7 @@ export default function PricingPage() {
         {/* Free tier */}
         <div
           className="p-5 rounded-2xl flex items-center justify-between"
-          style={{ background: "#F7F7F5", border: "1px solid var(--border)" }}
+          style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
         >
           <div>
             <p className="font-bold text-sm">Free</p>
@@ -162,9 +162,9 @@ export default function PricingPage() {
             key={plan.key}
             className="rounded-2xl overflow-hidden"
             style={{
-              background: "#FFFFFF",
+              background: "var(--bg-primary)",
               border: plan.highlight ? `2px solid var(--accent)` : "1px solid var(--border)",
-              boxShadow: plan.highlight ? "0 4px 20px rgba(255,107,53,0.12)" : "0 1px 8px rgba(0,0,0,0.04)",
+              boxShadow: plan.highlight ? "0 4px 20px var(--border)" : "0 1px 8px rgba(0,0,0,0.04)",
             }}
           >
             {plan.highlight && (
@@ -218,13 +218,13 @@ export default function PricingPage() {
       {/* Zasady zwrotu, zgodnie z regulaminem §5 */}
       <div
         className="mt-5 p-4 rounded-2xl"
-        style={{ background: "#F0FDF4", border: "1px solid #BBF7D0" }}
+        style={{ background: "var(--success-bg)", border: "1px solid var(--border)" }}
       >
-        <p className="text-sm font-bold" style={{ color: "#15803D" }}>Zwroty</p>
-        <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "#4B5563" }}>
+        <p className="text-sm font-bold" style={{ color: "var(--success)" }}>Zwroty</p>
+        <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
           Pro możesz zwrócić w ciągu 14 dni, dopóki nie wygenerujesz na nim planu. Wygenerowany plan
           jest już Twój, więc Packa po użyciu nie zwracamy. Szczegóły w{" "}
-          <a href="/regulamin" style={{ color: "#15803D", textDecoration: "underline" }}>regulaminie</a>.
+          <a href="/regulamin" style={{ color: "var(--success)", textDecoration: "underline" }}>regulaminie</a>.
         </p>
       </div>
 

@@ -95,10 +95,10 @@ export default function DropSettingsForm({ token, initial }: Props) {
       )}
 
       {error && (
-        <p role="alert" className="text-sm" style={{ color: "#DC2626" }}>{error}</p>
+        <p role="alert" className="text-sm" style={{ color: "var(--error)" }}>{error}</p>
       )}
       {saved && (
-        <p role="status" className="text-sm font-bold" style={{ color: "#16A34A" }}>Zapisane.</p>
+        <p role="status" className="text-sm font-bold" style={{ color: "var(--success)" }}>Zapisane.</p>
       )}
 
       <button type="submit" disabled={loading} className="btn-primary disabled:opacity-50" style={{ minHeight: 48 }}>

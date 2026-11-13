@@ -193,7 +193,7 @@ function GeneratingOverlay({
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.4 }}
               className="w-full max-w-xs px-4 py-3 rounded-2xl"
-              style={{ background: "var(--accent-light)", border: "1px solid rgba(196,98,45,0.2)" }}
+              style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
             >
               <p className="text-xs font-bold mb-2" style={{ color: "var(--accent)" }}>📍 Dzień 1 gotowy</p>
               <div className="flex flex-col gap-1.5">
@@ -214,7 +214,7 @@ function GeneratingOverlay({
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.4 }}
               className="w-full max-w-xs px-4 py-3 rounded-2xl"
-              style={{ background: "var(--accent-light)", border: "1px solid rgba(196,98,45,0.2)" }}
+              style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
             >
               <p className="text-xs font-bold mb-1" style={{ color: "var(--accent)" }}>💡 Czy wiesz, że…</p>
               <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
@@ -388,7 +388,7 @@ function DestCard({
             <span
               key={tag}
               className="text-xs font-medium px-2 py-0.5 rounded-full"
-              style={{ background: "rgba(255,107,53,0.1)", color: "var(--accent)" }}
+              style={{ background: "var(--border)", color: "var(--accent)" }}
             >
               {TAG_LABELS[tag] ?? tag}
             </span>
@@ -880,7 +880,7 @@ export default function DestinationsPage() {
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.25 }}
             className="rounded-2xl px-4 py-3 mb-4 flex items-center justify-between gap-3"
-            style={{ background: "var(--accent-light)", border: "1px solid rgba(196,98,45,0.25)" }}
+            style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
           >
             <p className="text-xs font-medium" style={{ color: "var(--accent)" }}>
               Zapisać te preferencje? Następnym razem pominiesz quiz.
@@ -916,7 +916,7 @@ export default function DestinationsPage() {
       {generateError && (
         <div
           className="rounded-xl px-4 py-3 mb-4 text-sm font-medium"
-          style={{ background: "rgba(239,68,68,0.1)", color: "var(--error)", border: "1px solid rgba(239,68,68,0.2)" }}
+          style={{ background: "var(--error-bg)", color: "var(--error)", border: "1px solid var(--error-bg)" }}
         >
           {generateError}
         </div>
