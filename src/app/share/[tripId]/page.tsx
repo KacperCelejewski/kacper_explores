@@ -23,7 +23,7 @@ export async function generateMetadata(
       const title = duration && budget
         ? `${duration} dni w ${data.city} za ${budget}`
         : `Plan podróży do ${data.city}`;
-      const description = `Plan podróży do ${data.city}, ${data.country} wygenerowany przez Włóczykij — budżetowe podróże solo z AI.`;
+      const description = `Plan podróży do ${data.city}, ${data.country} wygenerowany przez Włóczykij — budżetowe weekendy w Europie.`;
 
       return {
         title,
@@ -47,7 +47,7 @@ export async function generateMetadata(
 
   return {
     title: "Plan podróży",
-    description: "Plan podróży wygenerowany przez Włóczykij — budżetowe podróże solo z AI.",
+    description: "Plan podróży wygenerowany przez Włóczykij — budżetowe weekendy w Europie.",
     // Nieistniejący lub prywatny plan nie ma czego robić w indeksie
     robots: { index: false, follow: false },
   };

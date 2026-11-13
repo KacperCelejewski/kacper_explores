@@ -116,7 +116,7 @@ function LoginContent() {
         <ul className="mb-6 flex flex-col gap-1.5 text-sm list-none p-0" style={{ color: "var(--text-secondary)" }}>
           <li>2 plany co miesiąc za darmo, bez karty</li>
           <li>Historia wyjazdów zawsze pod ręką</li>
-          <li>Mail z przypomnieniem dzień przed wylotem</li>
+          <li>Mail z przypomnieniem 3 dni przed wylotem</li>
         </ul>
 
         {sent ? (
