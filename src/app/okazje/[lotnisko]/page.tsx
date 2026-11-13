@@ -15,8 +15,7 @@ import { getDealsForOrigin, originFromSlug } from "@/lib/drop/read";
 import { dealNotes, hoursInCity } from "@/lib/drop/stay";
 import { AIRPORT_FACTS } from "@/lib/seo/airportFacts";
 import { breadcrumbLd, faqLd, itemListLd, jsonLdScript } from "@/lib/seo/jsonld";
-import { cityFromSlug } from "@/lib/seo/cities";
-import { slugify } from "@/lib/seo/slug";
+import { cityFromDealName, citySlug } from "@/lib/seo/cities";
 
 // Noce liczymy z dat lotu (pobyty trwają od 47 do 73 godzin), nie zakładamy na sztywno dwóch
 function nightsLabel(dep: string, ret: string): string {
@@ -35,9 +34,12 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   // Najniższa cena w opisie tylko wtedy, gdy ją mamy: opis nie obiecuje liczby, której nie ma
   const { deals } = await getDealsForOrigin(origin, 1);
   const lowest = deals[0] ? ` Teraz najtaniej: ${deals[0].city_name} od ${deals[0].price} zł w obie strony.` : "";
+  const title = `Tanie loty na weekend z ${from}`;
+  const description = `Najtańsze wyjazdy na najbliższy weekend z ${from}: cena lotu, daty i ile godzin zostaje na miejscu.${lowest} Ceny z wyszukiwań z ostatnich dni.`;
   return {
-    title: `Tanie loty na weekend z ${from}`,
-    description: `Najtańsze wyjazdy na najbliższy weekend z ${from}: cena lotu, daty i ile godzin zostaje na miejscu.${lowest} Ceny z wyszukiwań z ostatnich dni.`,
+    title,
+    description,
+    openGraph: { title, description, url: `https://wloczykij.me/okazje/${origin.toLowerCase()}`, type: "website" },
     alternates: { canonical: `https://wloczykij.me/okazje/${origin.toLowerCase()}` },
     // Modlin zwraca dane z Okęcia (kod miasta WAW), więc jego strona nie trafia do indeksu jako duplikat
     ...(origin === "WMI" ? { robots: { index: false, follow: true } } : {}),
@@ -64,7 +66,7 @@ export default async function DealsPage({ params }: { params: Params }) {
     },
     {
       q: "Co znaczy „najbliższy weekend”?",
-      a: "Lot tam i z powrotem z wylotem od czwartku wieczorem do piątku i powrotem w niedzielę albo poniedziałek. Pobyt na miejscu trwa zwykle od 47 do 73 godzin.",
+      a: "Lot tam i z powrotem z wylotem od czwartku wieczorem do piątku i powrotem w niedzielę albo poniedziałek. Pobyt na miejscu trwa zwykle dwa, góra trzy dni, a dokładną liczbę godzin podajemy przy każdej okazji.",
     },
     {
       q: "Czy cena zawiera bagaż i nocleg?",
@@ -72,7 +74,7 @@ export default async function DealsPage({ params }: { params: Params }) {
     },
     {
       q: "Jak często okazje się odświeżają?",
-      a: "Raz w tygodniu, w środę wieczorem. W czwartek rano trzy najlepsze lądują w mailu Czwartkowego zrzutu.",
+      a: "Raz w tygodniu, w środę wieczorem. W czwartek po południu trzy najlepsze lądują w mailu Czwartkowego zrzutu.",
     },
   ];
   const ld = [
@@ -200,14 +202,14 @@ export default async function DealsPage({ params }: { params: Params }) {
 
         <div className="mt-10"><DropSignup defaultAirports={[origin]} cheapestHint={hint} /></div>
 
-        {deals.some((d) => cityFromSlug(slugify(d.city_name))) && (
+        {deals.some((d) => cityFromDealName(d.city_name)) && (
           <section className="mt-12" aria-label="Przewodniki po miastach">
             <h2 className="text-xl font-bold mb-3">Dokąd teraz z {from}</h2>
             <ul className="flex flex-wrap gap-2 list-none p-0">
-              {deals.filter((d) => cityFromSlug(slugify(d.city_name))).map((d) => (
+              {deals.filter((d) => cityFromDealName(d.city_name)).map((d) => (
                 <li key={d.city_code}>
                   <Link
-                    href={`/weekend/${slugify(d.city_name)}`}
+                    href={`/weekend/${citySlug(cityFromDealName(d.city_name)!)}`}
                     className="text-sm font-semibold px-3 py-2 rounded-full inline-block"
                     style={{ border: "1px solid var(--border)", color: "var(--accent)", background: "var(--bg-surface)" }}
                   >

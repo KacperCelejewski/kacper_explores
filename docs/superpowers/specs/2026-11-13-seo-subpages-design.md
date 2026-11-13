@@ -42,9 +42,9 @@ Włóczykij ma dziś jedno realne wejście z Google: 5 artykułów na blogu i 7 
 
 - Miasto dostaje stronę tylko, gdy jest w katalogu **i** jest osiągalne na weekend z Polski (wyłączamy m.in. Bali, Bangkok, Dubaj, Nowy Jork, Tokio, Singapur, Kair, Tel Awiw, Marrakesz, Antalya).
 - Treść stała: opis z katalogu, dla kogo (z `vibes` i `tags`), kiedy warto (z `placeTypes`), plus FAQ. Treść żywa: najniższe ceny z każdego lotniska z `drop_deals`, jeśli są; jeśli ich nie ma, blok mówi o tym wprost i oferuje zapis na zrzut.
-- Strona bez żywych danych zostaje indeksowalna (stabilność adresu), ale nie wchodzi do sitemap, dopóki nie ma danych w chwili generowania. To moja decyzja do zweryfikowania w Search Console.
+- Strona bez żywych danych ma `noindex, follow` i nie wchodzi do sitemap; wraca do indeksu, gdy dane się pojawią (adres zostaje stały). Poprawka po review kodu, bo taka strona jest cienka.
 
 ## Czego nie rozstrzygam (zostaje do decyzji)
 
 - Czy dopisywać artykuły (podejście D) i kto sprawdza fakty.
-- Czy Search Console pokaże, że strony miast bez danych lepiej schować `noindex`.
+- Czy po kilku tygodniach `noindex` na stronach bez danych nie powoduje zbyt częstego „migania” w indeksie (do sprawdzenia w Search Console).

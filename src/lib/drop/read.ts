@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { POLISH_AIRPORTS } from "@/lib/airports";
 import { createServiceClient } from "@/lib/supabase/service";
 import type { CityTeaser, DropDeal } from "./types";
@@ -30,7 +31,8 @@ export interface DealsForOrigin {
 }
 
 // Najtańsze okazje z ostatniego tygodnia, w którym cron coś zapisał dla tego lotniska
-export async function getDealsForOrigin(origin: string, limit = 12): Promise<DealsForOrigin> {
+// cache: generateMetadata i strona w jednym żądaniu dzielą jedno zapytanie
+export const getDealsForOrigin = cache(async (origin: string, limit = 12): Promise<DealsForOrigin> => {
   try {
     return await loadDealsForOrigin(origin, limit);
   } catch (err) {
@@ -38,7 +40,7 @@ export async function getDealsForOrigin(origin: string, limit = 12): Promise<Dea
     console.error("[drop/read] origin", err instanceof Error ? err.message : err);
     return { deals: [], teasers: new Map(), week: null };
   }
-}
+});
 
 async function loadDealsForOrigin(origin: string, limit: number): Promise<DealsForOrigin> {
   const db = createServiceClient();

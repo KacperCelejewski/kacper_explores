@@ -6,7 +6,7 @@ import SiteFooter from "@/app/components/SiteFooter";
 import DropSignup from "@/app/components/DropSignup";
 import { ORIGIN_GENITIVE, formatLocal } from "@/lib/drop/email";
 import { getDealsForCity } from "@/lib/drop/read";
-import { cityAudience, cityFromSlug, citySlug, weekendCities } from "@/lib/seo/cities";
+import { cityAudience, cityFromSlug, citySlug, dealCityName, weekendCities } from "@/lib/seo/cities";
 import { breadcrumbLd, faqLd, jsonLdScript } from "@/lib/seo/jsonld";
 
 // Strony powstają dla wszystkich miast z listy, a ceny odświeżają się co godzinę (dane w bazie zmieniają się raz w tygodniu)
@@ -21,7 +21,14 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const city = cityFromSlug((await params).miasto);
   if (!city) return { title: "Weekend w europejskim mieście" };
+  const hasDeals = (await getDealsForCity(dealCityName(city))).length > 0;
+  const title = `${city.city} na weekend: loty z Polski i plan`;
+  const description = `${city.description} Sprawdź ceny lotów z polskich lotnisk (kierunek: ${city.city}) i ułóż plan na weekend.`;
+  const url = `https://wloczykij.me/weekend/${citySlug(city)}`;
   return {
+    // Bez świeżych cen strona jest cienka, więc nie trafia do indeksu; wraca, gdy dane się pojawią
+    ...(hasDeals ? {} : { robots: { index: false, follow: true } }),
+    openGraph: { title, description, url, type: "website" },
     title: `${city.city} na weekend: loty z Polski i plan`,
     description: `${city.description} Sprawdź ceny lotów z polskich lotnisk (kierunek: ${city.city}) i ułóż plan na weekend.`,
     alternates: { canonical: `https://wloczykij.me/weekend/${citySlug(city)}` },
@@ -32,7 +39,7 @@ export default async function WeekendCityPage({ params }: { params: Params }) {
   const city = cityFromSlug((await params).miasto);
   if (!city) notFound();
 
-  const deals = await getDealsForCity(city.city);
+  const deals = await getDealsForCity(dealCityName(city));
   const audience = cityAudience(city);
   const slug = citySlug(city);
   const cheapest = deals[0];
@@ -52,7 +59,7 @@ export default async function WeekendCityPage({ params }: { params: Params }) {
     },
     {
       q: "Ile godzin zostaje na miejscu w weekend?",
-      a: "Przy typowych wyjazdach od czwartku wieczorem do niedzieli albo poniedziałku pobyt na miejscu trwa od 47 do 73 godzin. Dokładny czas podajemy przy każdej okazji.",
+      a: "Przy typowych wyjazdach od czwartku wieczorem do niedzieli albo poniedziałku pobyt na miejscu trwa dwa, góra trzy dni. Dokładną liczbę godzin podajemy przy każdej okazji.",
     },
   ];
 

@@ -16,6 +16,12 @@ export const metadata: Metadata = {
   title: "Tanie loty na weekend z polskich lotnisk",
   description: "Najtańsze wyjazdy na najbliższy weekend z Wrocławia, Katowic, Krakowa, Warszawy, Poznania i Gdańska. Ceny lotów, daty i ile godzin zostaje na miejscu, odświeżane co tydzień.",
   alternates: { canonical: "https://wloczykij.me/okazje" },
+  openGraph: {
+    title: "Tanie loty na weekend z polskich lotnisk",
+    description: "Najtańsze wyjazdy na najbliższy weekend z polskich lotnisk, odświeżane co tydzień.",
+    url: "https://wloczykij.me/okazje",
+    type: "website",
+  },
 };
 
 // Modlin pokazuje dane z Okęcia (kod miasta WAW), więc nie jest tu osobną pozycją

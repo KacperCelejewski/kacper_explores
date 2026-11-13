@@ -48,3 +48,12 @@ describe("slugsWithDeals", () => {
     expect(slugsWithDeals([])).toEqual([]);
   });
 });
+
+describe("nazwy z Travelpayouts", () => {
+  it("Tallin i Reykjavik pasują do nazw z danych o lotach", async () => {
+    const { cityFromDealName, slugsWithDeals } = await import("./cities");
+    expect(cityFromDealName("Tallinn")?.city).toBe("Tallin");
+    expect(cityFromDealName("Reykjavík")?.city).toBe("Reykjavik");
+    expect(slugsWithDeals(["Tallinn"])).toEqual(["tallin"]);
+  });
+});

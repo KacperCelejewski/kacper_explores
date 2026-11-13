@@ -7,6 +7,9 @@ import { slugsWithDeals } from "@/lib/seo/cities";
 
 const BASE = "https://wloczykij.me";
 
+// Lista miast zależy od danych, które zmieniają się co tydzień, więc sitemap odświeża się co godzinę
+export const revalidate = 3600;
+
 // Miasta z żywymi okazjami w ostatnim tygodniu; bez bazy sitemap działa dalej, tylko bez stron miast
 async function citySlugsWithDeals(): Promise<string[]> {
   try {
