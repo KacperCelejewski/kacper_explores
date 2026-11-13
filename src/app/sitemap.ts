@@ -1,5 +1,6 @@
 import { MetadataRoute } from "next";
 import { getAllPosts } from "@/lib/blog";
+import { POLISH_AIRPORTS } from "@/lib/airports";
 
 const BASE = "https://wloczykij.me";
 
@@ -20,7 +21,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: BASE, changeFrequency: "weekly", priority: 1 },
     { url: `${BASE}/pricing`, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${BASE}/odkryj`, changeFrequency: "weekly", priority: 0.7 },
+    ...POLISH_AIRPORTS.map((a) => ({
+      url: `${BASE}/okazje/${a.code.toLowerCase()}`,
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+    })),
     { url: `${BASE}/blog`, lastModified: latestPost, changeFrequency: "weekly", priority: 0.9 },
     ...blogEntries,
     { url: `${BASE}/privacy`, changeFrequency: "yearly", priority: 0.2 },

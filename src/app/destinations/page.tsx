@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/lib/store";
 import type { DestinationRecommendation, FlightDetails } from "@/types";
 import { getCityPhotoUrl } from "@/lib/cityPhotos";
+import { formatPlans } from "@/lib/formatPlans";
 
 interface UserStatus {
   authenticated: boolean;
@@ -848,7 +849,7 @@ export default function DestinationsPage() {
                 background: userStatus.is_pro
                   ? "var(--accent)"
                   : (userStatus.credits_remaining ?? 0) === 0
-                  ? "#ef4444"
+                  ? "var(--error)"
                   : "var(--bg-surface)",
                 color: userStatus.is_pro || (userStatus.credits_remaining ?? 0) === 0
                   ? "#fff"
@@ -857,8 +858,8 @@ export default function DestinationsPage() {
               }}
             >
               {userStatus.is_pro
-                ? "Pro ✨"
-                : `${userStatus.credits_remaining ?? 0} planów`}
+                ? "Pro"
+                : formatPlans(userStatus.credits_remaining ?? 0)}
             </button>
           )}
         </div>
@@ -915,7 +916,7 @@ export default function DestinationsPage() {
       {generateError && (
         <div
           className="rounded-xl px-4 py-3 mb-4 text-sm font-medium"
-          style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)" }}
+          style={{ background: "rgba(239,68,68,0.1)", color: "var(--error)", border: "1px solid rgba(239,68,68,0.2)" }}
         >
           {generateError}
         </div>

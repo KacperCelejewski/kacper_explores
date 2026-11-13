@@ -5,12 +5,15 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { createSupabaseClient } from "@/lib/supabase/client";
+import { resolveOrigin } from "@/lib/drop/defaults";
 import {
   IconHome,
   IconCompass,
   IconPerson,
   IconTag,
   IconBook,
+  IconPlane,
+  IconMail,
 } from "@/app/components/Icons";
 
 type IconComponent = React.FC<{ size?: number }>;
@@ -36,6 +39,7 @@ function MenuItem({ href, Icon, label, onClick }: {
 export default function GlobalMenu() {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
+  const [dealsOrigin, setDealsOrigin] = useState("WRO");
   const router = useRouter();
   const supabase = createSupabaseClient();
   const fabRef = useRef<HTMLButtonElement>(null);
@@ -49,6 +53,10 @@ export default function GlobalMenu() {
     return () => subscription.unsubscribe();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    try { setDealsOrigin(resolveOrigin(window.localStorage.getItem("deals_origin"))); } catch { /* storage zablokowany */ }
+  }, [open]);
 
   // Focus first element in sheet when opened
   useEffect(() => {
@@ -162,6 +170,8 @@ export default function GlobalMenu() {
               <nav className="px-5 mt-2">
                 <MenuItem href="/"        Icon={IconHome}    label="Strona główna"  onClick={close} />
                 <MenuItem href="/quiz"    Icon={IconCompass} label="Planuj wyjazd"  onClick={close} />
+                <MenuItem href={`/okazje/${dealsOrigin.toLowerCase()}`} Icon={IconPlane} label="Okazje na weekend" onClick={close} />
+                <MenuItem href="/#zrzut"  Icon={IconMail}    label="Czwartkowy zrzut" onClick={close} />
                 {email && <MenuItem href="/profile" Icon={IconPerson} label="Moje konto" onClick={close} />}
                 <MenuItem href="/pricing" Icon={IconTag}     label="Cennik"         onClick={close} />
                 <MenuItem href="/blog"    Icon={IconBook}    label="Blog"           onClick={close} />

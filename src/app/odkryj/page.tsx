@@ -183,13 +183,12 @@ export default function OdkryjPage() {
           </motion.div>
         ) : trips.length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-4xl mb-4">🗺️</p>
-            <p className="text-sm font-medium">Brak publicznych planów</p>
+            <p className="text-sm font-medium">Galeria planów dopiero się zapełnia</p>
             <p className="text-xs mt-1 mb-6" style={{ color: "var(--text-muted)" }}>
-              Bądź pierwszy — udostępnij swój plan z planu podróży
+              Na razie najlepiej sprawdzają się świeże okazje na weekend z Twojego lotniska.
             </p>
-            <Link href="/quiz" className="btn-primary" style={{ display: "inline-block", width: "auto", padding: "12px 24px", textDecoration: "none" }}>
-              Stwórz plan →
+            <Link href="/okazje/wro" className="btn-primary" style={{ display: "inline-block", width: "auto", padding: "12px 24px", textDecoration: "none" }}>
+              Zobacz okazje na weekend →
             </Link>
           </div>
         ) : (

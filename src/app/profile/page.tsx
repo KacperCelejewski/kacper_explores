@@ -7,6 +7,7 @@ import { useAppStore } from "@/lib/store";
 import type { QuizAnswers } from "@/types";
 import { PRICES } from "@/lib/prices";
 import DropProfileButton from "@/app/components/DropProfileButton";
+import { formatPlans } from "@/lib/formatPlans";
 
 interface Trip {
   id: string;
@@ -192,7 +193,7 @@ export default function ProfilePage() {
                 className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
                 style={{ background: "#F0F0F0", color: "var(--text-secondary)" }}
               >
-                {data.credits_remaining ?? 0} {(data.credits_remaining ?? 0) === 1 ? "plan" : (data.credits_remaining ?? 0) <= 4 ? "plany" : "planów"} pozostało
+                {formatPlans(data.credits_remaining ?? 0)} pozostało
               </span>
             )}
           </div>
