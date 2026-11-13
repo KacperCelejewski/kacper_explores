@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import DropSignup from "@/app/components/DropSignup";
+import { splitAtHeading } from "@/lib/blogSplit";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { getAllPosts, getPost } from "@/lib/blog";
 import SiteNav from "../../components/SiteNav";
@@ -63,14 +65,14 @@ const mdxComponents = {
     <h3 className="text-base font-bold mt-6 mb-2" style={{ color: "var(--text-primary)" }} {...props} />
   ),
   p: (props: React.HTMLAttributes<HTMLParagraphElement>) => (
-    <p className="text-sm leading-relaxed mb-4" style={{ color: "var(--text-primary)" }} {...props} />
+    <p className="text-base leading-[1.7] mb-5" style={{ color: "var(--text-primary)" }} {...props} />
   ),
   ul: (props: React.HTMLAttributes<HTMLUListElement>) => (
     <ul className="flex flex-col gap-2 mb-4 pl-1" {...props} />
   ),
   li: (props: React.HTMLAttributes<HTMLLIElement>) => (
-    <li className="flex items-start gap-2 text-sm leading-relaxed" style={{ color: "var(--text-primary)" }}>
-      <span style={{ color: "var(--accent)", flexShrink: 0, marginTop: 2 }}>✦</span>
+    <li className="flex items-start gap-2 text-base leading-[1.7]" style={{ color: "var(--text-primary)" }}>
+      <span aria-hidden="true" style={{ color: "var(--accent)", flexShrink: 0, marginTop: 11, width: 6, height: 6, borderRadius: 999, background: "var(--accent)" }} />
       <span {...props} />
     </li>
   ),
@@ -79,7 +81,7 @@ const mdxComponents = {
   ),
   blockquote: (props: React.HTMLAttributes<HTMLQuoteElement>) => (
     <blockquote
-      className="px-4 py-3 rounded-2xl my-4 text-sm leading-relaxed italic"
+      className="px-4 py-3 rounded-2xl my-4 text-base leading-relaxed italic"
       style={{ background: "var(--accent-light)", borderLeft: "3px solid var(--accent)", color: "var(--text-primary)" }}
       {...props}
     />
@@ -91,6 +93,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   const { slug } = await params;
   const post = getPost(slug);
   if (!post) notFound();
+
+  // Zapis na zrzut w okolicy 40% artykułu; zimny czytelnik z Google dostaje najpierw coś mniejszego niż konto
+  const [introPart, restPart] = splitAtHeading(post.content, 0.4);
 
   const articleSchema = {
     "@context": "https://schema.org",
@@ -178,7 +183,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                 Włóczykij
               </p>
               <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                Założyciel Włóczykij · solo traveler od 6 lat
+                Założyciel Włóczykij · podróżuje solo od 6 lat
               </p>
             </div>
           </div>
@@ -188,21 +193,36 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
         {/* Content */}
         <div className="flex flex-col">
-          <MDXRemote source={post.content} components={mdxComponents} />
+          <MDXRemote source={introPart} components={mdxComponents} />
         </div>
+        {restPart && (
+          <>
+            <div className="my-8">
+              <DropSignup collapsed defaultAirports={["WRO"]} title="Takie okazje co czwartek w skrzynce" />
+            </div>
+            <div className="flex flex-col">
+              <MDXRemote source={restPart} components={mdxComponents} />
+            </div>
+          </>
+        )}
 
         <div className="h-px mt-6 mb-8" style={{ background: "var(--border)" }} />
 
-        {/* CTA */}
+        {/* Zapis na zrzut: najlżejsza oferta dla czytelnika, który jeszcze nic nie planuje */}
+        <DropSignup defaultAirports={["WRO"]} />
+        <p className="text-sm mt-3">
+          <Link href="/okazje/wro" className="font-semibold" style={{ color: "var(--accent)" }}>Zobacz teraz okazje z Wrocławia →</Link>
+        </p>
+
         <div
-          className="p-5 rounded-2xl text-center"
-          style={{ background: "var(--accent-light)", border: "1px solid rgba(255,107,53,0.2)" }}
+          className="mt-8 p-5 rounded-2xl text-center"
+          style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
         >
           <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>
-            Gotowy na swoją podróż? →
+            Gotowe na wyjazd?
           </p>
           <p className="text-xs mt-1 mb-4" style={{ color: "var(--text-muted)" }}>
-            AI zaplanuje Twój wyjazd godzina po godzinie
+            Twój weekend w 3 minuty: lot i plan z cenami
           </p>
           <Link
             href="/quiz"

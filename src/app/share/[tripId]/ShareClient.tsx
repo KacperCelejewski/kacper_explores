@@ -3,23 +3,24 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { IconPlane, IconBed, IconFork, IconTicket, IconCheck, IconPin } from "@/app/components/Icons";
 import type { TripPlan, DayPlan, DayActivity, DestinationRecommendation } from "@/types";
 import Link from "next/link";
 
 const ACTIVITY_COLORS: Record<string, string> = {
-  attraction: "rgba(255,107,53,0.07)",
-  food: "rgba(255,107,53,0.05)",
-  transport: "#F7F7F5",
-  tip: "rgba(255,107,53,0.06)",
-  accommodation: "rgba(59,130,246,0.07)",
+  attraction: "var(--accent-light)",
+  food: "var(--accent-light)",
+  transport: "var(--bg-surface)",
+  tip: "var(--accent-light)",
+  accommodation: "var(--bg-surface)",
 };
 
 const ACTIVITY_BORDER: Record<string, string> = {
-  attraction: "rgba(255,107,53,0.25)",
-  food: "rgba(255,107,53,0.2)",
-  transport: "#EBEBEB",
-  tip: "rgba(255,107,53,0.2)",
-  accommodation: "rgba(59,130,246,0.25)",
+  attraction: "var(--border)",
+  food: "var(--border)",
+  transport: "var(--bg-surface)",
+  tip: "var(--border)",
+  accommodation: "var(--border)",
 };
 
 function buildMapsRouteUrl(activities: DayActivity[], city: string): string | null {
@@ -72,7 +73,7 @@ export default function ShareClient() {
   if (loading) {
     return (
       <div className="flex flex-col flex-1 items-center justify-center gap-4">
-        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }} className="text-3xl">✈️</motion.div>
+        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }} className="text-3xl" style={{ color: "var(--accent)" }} aria-hidden="true"><IconPlane size={32} /></motion.div>
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>Ładowanie planu…</p>
       </div>
     );
@@ -81,18 +82,17 @@ export default function ShareClient() {
   if (notPublic) {
     return (
       <div className="flex flex-col flex-1 items-center justify-center px-5 text-center gap-4">
-        <span className="text-4xl">🔒</span>
-        <h1 className="text-xl font-bold">Plan prywatny</h1>
+        <h1 className="text-xl font-bold">Tego planu nie da się otworzyć</h1>
         <p className="text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>
-          Właściciel nie udostępnił tego planu publicznie.<br />
-          Poproś go o włączenie opcji &ldquo;Udostępnij w galerii&rdquo;.
+          Plan został usunięty, link jest niepoprawny albo autor nie udostępnił go publicznie.<br />
+          Możesz za to ułożyć własny w kilka minut.
         </p>
         <Link
-          href="/"
+          href="/quiz"
           className="btn-primary"
           style={{ display: "block", textAlign: "center", textDecoration: "none", fontSize: "0.875rem", marginTop: "0.5rem" }}
         >
-          Wygeneruj własny plan →
+          Ułóż własny plan →
         </Link>
       </div>
     );
@@ -109,20 +109,20 @@ export default function ShareClient() {
         {/* Share banner */}
         <div
           className="mb-5 px-4 py-3 rounded-2xl flex items-center justify-between gap-3"
-          style={{ background: "var(--accent-light)", border: "1px solid rgba(255,107,53,0.2)" }}
+          style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
         >
           <p className="text-xs font-medium leading-relaxed" style={{ color: "var(--accent)" }}>
-            Plan wygenerowany przez <strong>Włóczykij</strong> · AI podróże budżetowe
+            Plan wygenerowany przez <strong>Włóczykij</strong> · budżetowe weekendy w Europie
           </p>
           <button
             onClick={handleCopy}
             className="flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full transition-all"
             style={{
-              background: copied ? "#DCFCE7" : "var(--accent)",
-              color: copied ? "#16A34A" : "white",
+              background: copied ? "var(--success-bg)" : "var(--accent)",
+              color: copied ? "var(--success)" : "white",
             }}
           >
-            {copied ? "Skopiowano ✓" : "Kopiuj link"}
+            {copied ? <><IconCheck size={14} /> Skopiowano</> : "Kopiuj link"}
           </button>
         </div>
 
@@ -141,13 +141,13 @@ export default function ShareClient() {
 
           <div className="mt-4 pt-4 border-t grid grid-cols-2 gap-3" style={{ borderColor: "var(--border)" }}>
             {[
-              { label: "Loty", value: plan.budgetBreakdown.flights, emoji: "✈️" },
-              { label: "Nocleg", value: plan.budgetBreakdown.accommodation, emoji: "🛏️" },
-              { label: "Jedzenie", value: plan.budgetBreakdown.food, emoji: "🍽️" },
-              { label: "Atrakcje", value: plan.budgetBreakdown.attractions, emoji: "🎟️" },
+              { label: "Loty", value: plan.budgetBreakdown.flights, Icon: IconPlane },
+              { label: "Nocleg", value: plan.budgetBreakdown.accommodation, Icon: IconBed },
+              { label: "Jedzenie", value: plan.budgetBreakdown.food, Icon: IconFork },
+              { label: "Atrakcje", value: plan.budgetBreakdown.attractions, Icon: IconTicket },
             ].map((item) => (
               <div key={item.label} className="flex items-center gap-2">
-                <span className="text-base">{item.emoji}</span>
+                <span aria-hidden="true" style={{ color: "var(--accent)" }}><item.Icon size={18} /></span>
                 <div>
                   <p className="text-xs" style={{ color: "var(--text-muted)" }}>{item.label}</p>
                   <p className="text-sm font-semibold">{item.value}</p>
@@ -177,9 +177,8 @@ export default function ShareClient() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.05 + i * 0.06 }}
                 className="flex items-start gap-3 px-4 py-3 rounded-2xl"
-                style={{ background: "var(--accent-light)", border: "1px solid rgba(255,107,53,0.15)" }}
+                style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
               >
-                <span style={{ color: "var(--accent)", fontWeight: 700, fontSize: 14, lineHeight: "20px", flexShrink: 0 }}>✦</span>
                 <p className="text-xs leading-relaxed">{tip}</p>
               </motion.div>
             ))}
@@ -199,7 +198,7 @@ export default function ShareClient() {
               onClick={() => setActiveDay(i)}
               className="flex-shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200"
               style={{
-                background: activeDay === i ? "var(--accent)" : "#F0F0F0",
+                background: activeDay === i ? "var(--accent)" : "var(--bg-surface)",
                 color: activeDay === i ? "white" : "var(--text-secondary)",
               }}
             >
@@ -215,13 +214,13 @@ export default function ShareClient() {
       <div className="px-5 mt-8">
         <div
           className="p-5 rounded-2xl text-center"
-          style={{ background: "var(--accent-light)", border: "1px solid rgba(255,107,53,0.2)" }}
+          style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
         >
           <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>
-            Wygeneruj swój plan z AI →
+            Ułóż swój plan →
           </p>
           <p className="text-xs mt-1 mb-4" style={{ color: "var(--text-muted)" }}>
-            Odpowiedz na 6 pytań — AI ułoży Twój plan godzina po godzinie
+            Odpowiedz na 6 pytań, a ułożymy Twój plan godzina po godzinie
           </p>
           <Link
             href="/"
@@ -249,7 +248,7 @@ function SharedDayPlanView({ day, city }: { day: DayPlan; city: string }) {
     >
       <div
         className="px-4 py-3 mb-3 rounded-2xl flex items-center justify-between gap-3"
-        style={{ background: "#F7F7F5", border: "1px solid var(--border)" }}
+        style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
       >
         <div>
           <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>{day.date}</p>
@@ -261,7 +260,7 @@ function SharedDayPlanView({ day, city }: { day: DayPlan; city: string }) {
             target="_blank"
             rel="noopener noreferrer"
             className="flex-shrink-0 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-opacity hover:opacity-70"
-            style={{ background: "#E8F4FD", color: "#1A73E8", textDecoration: "none" }}
+            style={{ background: "var(--bg-surface)", color: "var(--accent)", textDecoration: "none" }}
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
@@ -305,8 +304,8 @@ function SharedActivityCard({ activity, index }: { activity: DayActivity; index:
           <span
             className="flex-shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
             style={{
-              background: activity.cost === "Free" || activity.cost === "Bezpłatnie" ? "rgba(34,197,94,0.12)" : "#F0F0F0",
-              color: activity.cost === "Free" || activity.cost === "Bezpłatnie" ? "#16A34A" : "var(--text-muted)",
+              background: activity.cost === "Free" || activity.cost === "Bezpłatnie" ? "var(--success-bg)" : "var(--bg-surface)",
+              color: activity.cost === "Free" || activity.cost === "Bezpłatnie" ? "var(--success)" : "var(--text-muted)",
             }}
           >
             {activity.cost}
@@ -315,13 +314,13 @@ function SharedActivityCard({ activity, index }: { activity: DayActivity; index:
         <p className="text-xs mt-1.5 leading-relaxed" style={{ color: "var(--text-muted)" }}>{activity.description}</p>
         {activity.location && (
           <div className="flex items-center justify-between mt-1.5">
-            <p className="text-xs font-medium" style={{ color: "var(--accent)" }}>📍 {activity.location}</p>
+            <p className="text-xs font-medium inline-flex items-center gap-1" style={{ color: "var(--accent)" }}><IconPin size={12} />{activity.location}</p>
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activity.location)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs font-semibold ml-2 flex-shrink-0 transition-opacity hover:opacity-70"
-              style={{ color: "#1A73E8", textDecoration: "none" }}
+              style={{ color: "var(--accent)", textDecoration: "none" }}
             >
               Nawiguj →
             </a>

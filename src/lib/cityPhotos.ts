@@ -110,12 +110,12 @@ export function getCityPhotoUrl(city: string, width = 800): string {
 
 // Featured destinations shown on the homepage
 export const FEATURED_DESTINATIONS = [
-  { city: "Barcelona", country: "Hiszpania", flag: "🇪🇸", priceFrom: "od ~1 400 zł", tag: "Gorący" },
-  { city: "Lizbona", country: "Portugalia", flag: "🇵🇹", priceFrom: "od ~900 zł", tag: "Tanie loty" },
-  { city: "Rzym", country: "Włochy", flag: "🇮🇹", priceFrom: "od ~1 100 zł", tag: "Klasyk" },
-  { city: "Ateny", country: "Grecja", flag: "🇬🇷", priceFrom: "od ~1 000 zł", tag: "Słońce" },
-  { city: "Praga", country: "Czechy", flag: "🇨🇿", priceFrom: "od ~500 zł", tag: "Blisko" },
-  { city: "Dubrownik", country: "Chorwacja", flag: "🇭🇷", priceFrom: "od ~800 zł", tag: "Lato" },
-  { city: "Budapeszt", country: "Węgry", flag: "🇭🇺", priceFrom: "od ~400 zł", tag: "Blisko" },
-  { city: "Porto", country: "Portugalia", flag: "🇵🇹", priceFrom: "od ~950 zł", tag: "Tanie loty" },
+  { city: "Barcelona", country: "Hiszpania", flag: "🇪🇸", priceFrom: "wyjazd od ~1 400 zł", tag: "Gorący" },
+  { city: "Lizbona", country: "Portugalia", flag: "🇵🇹", priceFrom: "wyjazd od ~900 zł", tag: "Tanie loty" },
+  { city: "Rzym", country: "Włochy", flag: "🇮🇹", priceFrom: "wyjazd od ~1 100 zł", tag: "Klasyk" },
+  { city: "Ateny", country: "Grecja", flag: "🇬🇷", priceFrom: "wyjazd od ~1 000 zł", tag: "Słońce" },
+  { city: "Praga", country: "Czechy", flag: "🇨🇿", priceFrom: "wyjazd od ~500 zł", tag: "Blisko" },
+  { city: "Dubrownik", country: "Chorwacja", flag: "🇭🇷", priceFrom: "wyjazd od ~800 zł", tag: "Lato" },
+  { city: "Budapeszt", country: "Węgry", flag: "🇭🇺", priceFrom: "wyjazd od ~400 zł", tag: "Blisko" },
+  { city: "Porto", country: "Portugalia", flag: "🇵🇹", priceFrom: "wyjazd od ~950 zł", tag: "Tanie loty" },
 ];

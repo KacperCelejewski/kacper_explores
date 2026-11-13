@@ -68,9 +68,11 @@ export default function ChatPanel({ tripId, city }: Props) {
         onClick={() => setOpen(true)}
         className="fixed bottom-20 right-4 z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-xl transition-transform hover:scale-105 active:scale-95"
         style={{ background: "var(--accent)", color: "white" }}
-        aria-label="Zapytaj AI o plan"
+        aria-label="Zapytaj o plan"
       >
-        💬
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" />
+        </svg>
       </button>
 
       {/* Drawer */}
@@ -105,7 +107,7 @@ export default function ChatPanel({ tripId, city }: Props) {
               {/* Header */}
               <div className="px-5 pb-3 flex items-center justify-between border-b" style={{ borderColor: "var(--border)" }}>
                 <div>
-                  <p className="font-bold text-sm">💬 Zapytaj AI</p>
+                  <p className="font-bold text-sm">Zapytaj o plan</p>
                   <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
                     Asystent zna Twój plan — {city}
                   </p>

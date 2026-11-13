@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/lib/store";
 import { getCityPhotoUrl } from "@/lib/cityPhotos";
 import type { Companion, TravelVibe, TravelStyle, DestinationRecommendation, FlightDetails, QuizAnswers } from "@/types";
+import { IconPin, IconPlane, IconCheck } from "@/app/components/Icons";
 
 type IconFC = React.FC<{ size?: number }>;
 
@@ -67,8 +68,8 @@ function GeneratingOverlay({
     <div className="fixed inset-0 z-40 flex flex-col" style={{ background: "var(--bg-primary)" }}>
       <div className="flex flex-col flex-1 items-center justify-center px-6 gap-6">
         <div className="relative" style={{ width: 160, height: 110 }}>
-          <div className="absolute bottom-0 select-none" style={{ left: "50%", transform: "translateX(-50%)", fontSize: "3rem" }}>
-            🗼
+          <div className="absolute bottom-0 select-none" style={{ left: "50%", transform: "translateX(-50%)", color: "var(--accent)" }}>
+            <IconPin size={48} />
           </div>
           <motion.div
             className="absolute select-none"
@@ -76,7 +77,7 @@ function GeneratingOverlay({
             animate={{ x: [-140, -50, 48, 58], y: [15, -15, 15, 42], rotate: [-30, -20, 5, 12] }}
             transition={{ duration: 2.4, ease: [0.4, 0, 0.2, 1], repeat: Infinity, repeatDelay: 1.2 }}
           >
-            ✈️
+            <IconPlane size={28} />
           </motion.div>
         </div>
 
@@ -107,7 +108,7 @@ function GeneratingOverlay({
                       border: active ? "2px solid var(--accent)" : "none",
                     }}
                   >
-                    {done ? "✓" : active ? (
+                    {done ? <IconCheck size={12} /> : active ? (
                       <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: "var(--accent)", display: "block" }} />
                     ) : ""}
                   </div>
@@ -136,9 +137,9 @@ function GeneratingOverlay({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               className="w-full max-w-xs rounded-2xl px-4 py-3"
-              style={{ background: "var(--accent-light)", border: "1px solid rgba(196,98,45,0.2)" }}
+              style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
             >
-              <p className="text-xs font-bold mb-2" style={{ color: "var(--accent)" }}>📍 Dzień 1 gotowy</p>
+              <p className="text-xs font-bold mb-2" style={{ color: "var(--accent)" }}>Dzień 1 gotowy</p>
               <div className="flex flex-col gap-1.5">
                 {previewActivities.slice(0, 3).map((a, i) => (
                   <div key={i} className="flex items-center gap-2">
@@ -156,9 +157,9 @@ function GeneratingOverlay({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
               className="w-full max-w-xs px-4 py-3 rounded-2xl"
-              style={{ background: "var(--accent-light)", border: "1px solid rgba(196,98,45,0.2)" }}
+              style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
             >
-              <p className="text-xs font-bold mb-1" style={{ color: "var(--accent)" }}>💡 Czy wiesz, że…</p>
+              <p className="text-xs font-bold mb-1" style={{ color: "var(--accent)" }}>Czy wiesz, że…</p>
               <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
                 {CITY_FACTS_GENERIC[factIndex % CITY_FACTS_GENERIC.length]}
               </p>
@@ -170,7 +171,7 @@ function GeneratingOverlay({
       <div className="px-6 pb-10">
         <div className="flex items-center justify-between mb-1.5">
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-            {hasProgress ? `${currentDay} / ${totalDays} dni` : "Łączę się z AI…"}
+            {hasProgress ? `${currentDay} / ${totalDays} dni` : "Przygotowuję plan…"}
           </p>
           <p className="text-xs font-semibold" style={{ color: "var(--accent)" }}>{progress}%</p>
         </div>
@@ -190,7 +191,7 @@ function GeneratingOverlay({
 const COMPANION_OPTIONS: { value: Companion; Icon: IconFC; label: string; desc: string }[] = [
   { value: "solo",    Icon: IconSolo,    label: "Sam/a",           desc: "Solo — porady bezpieczeństwa, miejsca do poznania ludzi" },
   { value: "couple",  Icon: IconCouple,  label: "Para",            desc: "Romantyczne kolacje, wspólne aktywności" },
-  { value: "family",  Icon: IconFamily,  label: "Rodzina",         desc: "Family-friendly, spokojne tempo, bezpieczne dzielnice" },
+  { value: "family",  Icon: IconFamily,  label: "Rodzina",         desc: "Atrakcje dla dzieci, spokojne tempo, bezpieczne dzielnice" },
   { value: "friends", Icon: IconFriends, label: "Znajomi",         desc: "Aktywności grupowe, wieczorne wyjścia, podział kosztów" },
 ];
 
@@ -198,7 +199,7 @@ const COMPANION_OPTIONS: { value: Companion; Icon: IconFC; label: string; desc: 
 
 const VIBE_OPTIONS: { value: TravelVibe; label: string; desc: string }[] = [
   { value: "chill",   label: "Luz",           desc: "Kawiarnie, spacery, własne tempo" },
-  { value: "intense", label: "Full program",  desc: "Jak najwięcej atrakcji" },
+  { value: "intense", label: "Pełny program",  desc: "Jak najwięcej atrakcji" },
   { value: "social",  label: "Towarzyski",    desc: "Poznawanie ludzi, bary" },
   { value: "active",  label: "Aktywny",       desc: "Trasy, sport, ruch" },
 ];
@@ -267,7 +268,7 @@ export default function QuickPage() {
   };
 
   const back = () => {
-    if (step === 0) { router.push("/start"); return; }
+    if (step === 0) { router.push("/"); return; }
     setDir(-1);
     setStep((s) => s - 1);
   };
@@ -392,7 +393,7 @@ export default function QuickPage() {
   }
 
   return (
-    <div className="flex flex-col flex-1 px-5 pb-8">
+    <div className="quick-root flex flex-col flex-1 px-5 pb-8">
       {/* Top bar */}
       <div className="pt-6 pb-4">
         <div className="flex items-center justify-between mb-4">
@@ -415,7 +416,7 @@ export default function QuickPage() {
                   background: i === step
                     ? "var(--accent)"
                     : i < step
-                    ? "rgba(196,98,45,0.35)"
+                    ? "var(--border)"
                     : "var(--border)",
                 }}
               />
@@ -480,7 +481,7 @@ export default function QuickPage() {
 
       {/* Error */}
       {genError && (
-        <div className="mb-3 px-4 py-3 rounded-2xl text-sm" style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)" }}>
+        <div className="mb-3 px-4 py-3 rounded-2xl text-sm" style={{ background: "var(--error-bg)", color: "var(--error)", border: "1px solid var(--error-bg)" }}>
           {genError}
         </div>
       )}
@@ -491,7 +492,7 @@ export default function QuickPage() {
         disabled={!canNext()}
         onClick={next}
       >
-        {step < TOTAL_STEPS - 1 ? "Dalej →" : `Stwórz plan dla ${city || "miasta"} ✨`}
+        {step < TOTAL_STEPS - 1 ? "Dalej →" : `Stwórz plan dla ${city || "miasta"}`}
       </button>
     </div>
   );
@@ -509,7 +510,7 @@ function StepDestination({
     <div>
       <h2 className="text-2xl font-bold mt-2">Dokąd lecisz?</h2>
       <p className="text-sm mt-2 mb-6" style={{ color: "var(--text-muted)" }}>
-        Podaj miasto i kraj — AI ułoży plan dopasowany do tej destynacji.
+        Podaj miasto i kraj — ułożymy plan dopasowany do tej destynacji.
       </p>
 
       <div className="flex flex-col gap-4">
@@ -555,7 +556,7 @@ function StepDestination({
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           className="mt-5 p-4 rounded-2xl flex items-center gap-3"
-          style={{ background: "var(--accent-light)", border: "1px solid rgba(196,98,45,0.25)" }}
+          style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
         >
           <img
             src={getCityPhotoUrl(city, 400)}
@@ -564,7 +565,7 @@ function StepDestination({
           />
           <div>
             <p className="font-bold text-base">{city}, {country}</p>
-            <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>AI wygeneruje plan dla tej destynacji</p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>Ułożymy plan dla tej destynacji</p>
           </div>
         </motion.div>
       )}
@@ -589,7 +590,7 @@ function StepDates({
     <div>
       <h2 className="text-2xl font-bold mt-2">Kiedy lecisz?</h2>
       <p className="text-sm mt-2 mb-6" style={{ color: "var(--text-muted)" }}>
-        AI dopasuje plan do Twoich godzin przylotu i wylotu.
+        Dopasujemy plan do Twoich godzin przylotu i wylotu.
       </p>
 
       <div className="flex flex-col gap-5">
@@ -643,7 +644,7 @@ function StepDates({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="p-4 rounded-2xl text-center"
-            style={{ background: "var(--accent-light)", border: "1px solid rgba(196,98,45,0.25)" }}
+            style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
           >
             <p className="text-3xl font-bold" style={{ color: "var(--accent)" }}>{duration} {duration === 1 ? "dzień" : duration <= 4 ? "dni" : "dni"}</p>
             <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
@@ -666,7 +667,7 @@ function StepCompanion({
     <div>
       <h2 className="text-2xl font-bold mt-2">Kto leci?</h2>
       <p className="text-sm mt-2 mb-6" style={{ color: "var(--text-muted)" }}>
-        AI dopasuje restauracje, atrakcje i wskazówki do Twojej grupy.
+        Dobierzemy restauracje, atrakcje i wskazówki do Twojej grupy.
       </p>
       <div className="grid grid-cols-2 gap-3">
         {COMPANION_OPTIONS.map((opt) => (
@@ -700,7 +701,7 @@ function StepStyle({
     <div>
       <h2 className="text-2xl font-bold mt-2">Jaki styl?</h2>
       <p className="text-sm mt-2 mb-5" style={{ color: "var(--text-muted)" }}>
-        Opcjonalne — AI lepiej dopasuje atrakcje.
+        Opcjonalne — dzięki temu lepiej dobierzemy atrakcje.
       </p>
 
       <p className="text-xs font-semibold mb-3 uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>

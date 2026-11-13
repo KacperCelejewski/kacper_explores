@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { IconThumbUp, IconThumbDown, IconCheck, IconBackpack } from "./Icons";
 
 type Step = "idle" | "short" | "expanding" | "full" | "done";
 
@@ -96,10 +97,10 @@ export default function FeedbackWidget({ tripId, city, onPdfUnlocked }: Props) {
             style={{
               background: "var(--accent-light)",
               color: "var(--accent)",
-              border: "1px solid rgba(196,98,45,0.2)",
+              border: "1px solid var(--border)",
             }}
           >
-            ✦ Oceń ten plan — odblokuj PDF
+            Oceń ten plan — odblokuj PDF
           </motion.button>
         )}
 
@@ -121,24 +122,26 @@ export default function FeedbackWidget({ tripId, city, onPdfUnlocked }: Props) {
               <button
                 onClick={() => setRating("up")}
                 disabled={loading}
-                className="flex-1 py-3 rounded-2xl text-2xl transition-all"
+                aria-label="Plan mi się podoba" aria-pressed={rating === "up"} className="flex-1 py-3 rounded-2xl transition-all flex items-center justify-center"
                 style={{
-                  background: rating === "up" ? "#DCFCE7" : "#F0F0F0",
-                  border: rating === "up" ? "2px solid #16A34A" : "2px solid transparent",
+                  color: "var(--success)",
+                  background: rating === "up" ? "var(--success-bg)" : "var(--bg-surface)",
+                  border: rating === "up" ? "2px solid var(--success)" : "2px solid transparent",
                 }}
               >
-                👍
+                <IconThumbUp size={26} />
               </button>
               <button
                 onClick={() => setRating("down")}
                 disabled={loading}
-                className="flex-1 py-3 rounded-2xl text-2xl transition-all"
+                aria-label="Plan mi się nie podoba" aria-pressed={rating === "down"} className="flex-1 py-3 rounded-2xl transition-all flex items-center justify-center"
                 style={{
-                  background: rating === "down" ? "#FEE2E2" : "#F0F0F0",
-                  border: rating === "down" ? "2px solid #DC2626" : "2px solid transparent",
+                  color: "var(--error)",
+                  background: rating === "down" ? "var(--error-bg)" : "var(--bg-surface)",
+                  border: rating === "down" ? "2px solid var(--error)" : "2px solid transparent",
                 }}
               >
-                👎
+                <IconThumbDown size={26} />
               </button>
             </div>
 
@@ -149,7 +152,7 @@ export default function FeedbackWidget({ tripId, city, onPdfUnlocked }: Props) {
               rows={2}
               className="w-full rounded-xl px-3 py-2 text-sm resize-none mb-4"
               style={{
-                background: "#F7F7F5",
+                background: "var(--bg-surface)",
                 border: "1px solid var(--border)",
                 color: "var(--text-primary)",
                 outline: "none",
@@ -176,8 +179,8 @@ export default function FeedbackWidget({ tripId, city, onPdfUnlocked }: Props) {
             exit={{ opacity: 0 }}
             className="glass-card p-5"
           >
-            <p className="text-sm font-bold mb-1">
-              ✓ PDF odblokowany!
+            <p className="text-sm font-bold mb-1 flex items-center gap-1.5">
+              <IconCheck size={16} /> PDF odblokowany!
             </p>
             <p className="text-xs mb-4" style={{ color: "var(--text-muted)" }}>
               Masz chwilę? 3 pytania więcej = <strong>+1 bezpłatny plan podróży</strong> na konto.
@@ -193,7 +196,7 @@ export default function FeedbackWidget({ tripId, city, onPdfUnlocked }: Props) {
               <button
                 onClick={() => setStep("done")}
                 className="py-2.5 px-4 rounded-xl text-sm font-semibold transition-opacity hover:opacity-70"
-                style={{ background: "#F0F0F0", color: "var(--text-secondary)" }}
+                style={{ background: "var(--bg-surface)", color: "var(--text-secondary)" }}
               >
                 Może później
               </button>
@@ -224,7 +227,7 @@ export default function FeedbackWidget({ tripId, city, onPdfUnlocked }: Props) {
                   rows={2}
                   className="w-full rounded-xl px-3 py-2 text-sm resize-none"
                   style={{
-                    background: "#F7F7F5",
+                    background: "var(--bg-surface)",
                     border: "1px solid var(--border)",
                     color: "var(--text-primary)",
                     outline: "none",
@@ -243,7 +246,7 @@ export default function FeedbackWidget({ tripId, city, onPdfUnlocked }: Props) {
                   rows={2}
                   className="w-full rounded-xl px-3 py-2 text-sm resize-none"
                   style={{
-                    background: "#F7F7F5",
+                    background: "var(--bg-surface)",
                     border: "1px solid var(--border)",
                     color: "var(--text-primary)",
                     outline: "none",
@@ -262,7 +265,7 @@ export default function FeedbackWidget({ tripId, city, onPdfUnlocked }: Props) {
                       onClick={() => setSource(opt.value)}
                       className="px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
                       style={{
-                        background: source === opt.value ? "var(--accent)" : "#F0F0F0",
+                        background: source === opt.value ? "var(--accent)" : "var(--bg-surface)",
                         color: source === opt.value ? "white" : "var(--text-secondary)",
                       }}
                     >
@@ -292,7 +295,7 @@ export default function FeedbackWidget({ tripId, city, onPdfUnlocked }: Props) {
             animate={{ opacity: 1, scale: 1 }}
             className="glass-card p-5 text-center"
           >
-            <p className="text-2xl mb-2">🎒</p>
+            <p className="mb-2 flex justify-center" style={{ color: "var(--accent)" }}><IconBackpack size={28} /></p>
             <p className="text-sm font-bold mb-1">
               {creditAdded ? "Dzięki. Masz na koncie 1 plan więcej." : "Dzięki za opinię."}
             </p>

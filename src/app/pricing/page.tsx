@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import CheckoutButton from "../components/CheckoutButton";
 import SiteNav from "../components/SiteNav";
 import SiteFooter from "../components/SiteFooter";
-import PriceAlertSignup from "../components/PriceAlertSignup";
+import DropSignup from "../components/DropSignup";
 import { PRICES } from "@/lib/prices";
+import { IconBackpack, IconCheck } from "@/app/components/Icons";
 
 const pricingSchema = {
   "@context": "https://schema.org",
@@ -79,7 +80,7 @@ const PLANS = [
     ],
     highlight: false,
     cta: "Kup Pack →",
-    emoji: "🎒",
+    Icon: IconBackpack,
   },
   {
     key: "pro_yearly",
@@ -95,7 +96,7 @@ const PLANS = [
     ],
     highlight: true,
     cta: "Zostań Pro →",
-    emoji: "✦",
+    Icon: null,
   },
   {
     key: "pro_monthly",
@@ -111,7 +112,7 @@ const PLANS = [
     ],
     highlight: false,
     cta: "Zostań Pro →",
-    emoji: "✦",
+    Icon: null,
   },
 ];
 
@@ -140,7 +141,7 @@ export default function PricingPage() {
         {/* Free tier */}
         <div
           className="p-5 rounded-2xl flex items-center justify-between"
-          style={{ background: "#F7F7F5", border: "1px solid var(--border)" }}
+          style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
         >
           <div>
             <p className="font-bold text-sm">Free</p>
@@ -162,9 +163,9 @@ export default function PricingPage() {
             key={plan.key}
             className="rounded-2xl overflow-hidden"
             style={{
-              background: "#FFFFFF",
+              background: "var(--bg-primary)",
               border: plan.highlight ? `2px solid var(--accent)` : "1px solid var(--border)",
-              boxShadow: plan.highlight ? "0 4px 20px rgba(255,107,53,0.12)" : "0 1px 8px rgba(0,0,0,0.04)",
+              boxShadow: plan.highlight ? "0 4px 20px var(--border)" : "0 1px 8px rgba(0,0,0,0.04)",
             }}
           >
             {plan.highlight && (
@@ -183,7 +184,7 @@ export default function PricingPage() {
             <div className="p-5">
               <div className="flex items-start justify-between">
                 <div>
-                  <span className="text-xl">{plan.emoji}</span>
+                  {plan.Icon && <span style={{ color: "var(--accent)", display: "block" }}><plan.Icon size={24} /></span>}
                   <h2 className="font-bold text-lg mt-1">{plan.name}</h2>
                 </div>
                 <div className="text-right">
@@ -202,7 +203,7 @@ export default function PricingPage() {
                       className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
                       style={{ background: "var(--accent-light)" }}
                     >
-                      <span className="text-xs" style={{ color: "var(--accent)" }}>✓</span>
+                      <span style={{ color: "var(--accent)", display: "flex" }}><IconCheck size={10} /></span>
                     </div>
                     <p className="text-sm">{f}</p>
                   </div>
@@ -218,17 +219,22 @@ export default function PricingPage() {
       {/* Zasady zwrotu, zgodnie z regulaminem §5 */}
       <div
         className="mt-5 p-4 rounded-2xl"
-        style={{ background: "#F0FDF4", border: "1px solid #BBF7D0" }}
+        style={{ background: "var(--success-bg)", border: "1px solid var(--border)" }}
       >
-        <p className="text-sm font-bold" style={{ color: "#15803D" }}>Zwroty</p>
-        <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "#4B5563" }}>
+        <p className="text-sm font-bold" style={{ color: "var(--success)" }}>Zwroty</p>
+        <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
           Pro możesz zwrócić w ciągu 14 dni, dopóki nie wygenerujesz na nim planu. Wygenerowany plan
           jest już Twój, więc Packa po użyciu nie zwracamy. Szczegóły w{" "}
-          <a href="/regulamin" style={{ color: "#15803D", textDecoration: "underline" }}>regulaminie</a>.
+          <a href="/regulamin" style={{ color: "var(--success)", textDecoration: "underline", display: "inline-block", padding: "12px 0" }}>regulaminie</a>.
         </p>
       </div>
 
-      <PriceAlertSignup />
+      <div className="mt-10">
+        <DropSignup
+          title="Nie chcesz płacić? Okazje co czwartek są za darmo"
+          lead="Bez konta i bez karty: co czwartek 3 najtańsze wyjazdy z Twojego lotniska. Wypiszesz się jednym kliknięciem."
+        />
+      </div>
 
       <p className="text-xs text-center mt-5" style={{ color: "var(--text-muted)" }}>
         Płatności obsługuje Stripe. Nie widzimy ani nie przechowujemy danych Twojej karty.

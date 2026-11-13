@@ -5,12 +5,15 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { createSupabaseClient } from "@/lib/supabase/client";
+import { resolveOrigin } from "@/lib/drop/defaults";
 import {
   IconHome,
   IconCompass,
   IconPerson,
   IconTag,
   IconBook,
+  IconPlane,
+  IconMail,
 } from "@/app/components/Icons";
 
 type IconComponent = React.FC<{ size?: number }>;
@@ -36,6 +39,7 @@ function MenuItem({ href, Icon, label, onClick }: {
 export default function GlobalMenu() {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
+  const [dealsOrigin, setDealsOrigin] = useState("WRO");
   const router = useRouter();
   const supabase = createSupabaseClient();
   const fabRef = useRef<HTMLButtonElement>(null);
@@ -49,6 +53,10 @@ export default function GlobalMenu() {
     return () => subscription.unsubscribe();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    try { setDealsOrigin(resolveOrigin(window.localStorage.getItem("deals_origin"))); } catch { /* storage zablokowany */ }
+  }, [open]);
 
   // Focus first element in sheet when opened
   useEffect(() => {
@@ -108,7 +116,7 @@ export default function GlobalMenu() {
         aria-label="Otwórz menu"
         aria-haspopup="dialog"
         aria-expanded={open}
-        className="global-fab no-print fixed z-50 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-transform active:scale-95"
+        className="global-fab no-print fixed z-50 h-12 px-4 gap-2 rounded-full flex items-center justify-center shadow-lg transition-transform active:scale-95 text-sm font-semibold"
         style={{
           bottom: "1.5rem",
           right: "max(1.25rem, calc(50vw - 224px + 1.25rem))",
@@ -117,6 +125,7 @@ export default function GlobalMenu() {
         }}
       >
         <IconCompass size={20} />
+        Menu
       </button>
 
       <AnimatePresence>
@@ -162,6 +171,8 @@ export default function GlobalMenu() {
               <nav className="px-5 mt-2">
                 <MenuItem href="/"        Icon={IconHome}    label="Strona główna"  onClick={close} />
                 <MenuItem href="/quiz"    Icon={IconCompass} label="Planuj wyjazd"  onClick={close} />
+                <MenuItem href={`/okazje/${dealsOrigin.toLowerCase()}`} Icon={IconPlane} label="Okazje na weekend" onClick={close} />
+                <MenuItem href="/#zrzut"  Icon={IconMail}    label="Czwartkowy zrzut" onClick={close} />
                 {email && <MenuItem href="/profile" Icon={IconPerson} label="Moje konto" onClick={close} />}
                 <MenuItem href="/pricing" Icon={IconTag}     label="Cennik"         onClick={close} />
                 <MenuItem href="/blog"    Icon={IconBook}    label="Blog"           onClick={close} />

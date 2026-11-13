@@ -11,11 +11,13 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     origin,
     deals: deals.map((d) => ({
+      city_code: d.city_code,
       city: d.city_name,
       price: d.price,
       departure_at: d.departure_at,
       return_at: d.return_at,
       hours: hoursInCity(d),
+      fetched_at: d.fetched_at,
     })),
   });
 }

@@ -7,6 +7,7 @@ import { useAppStore } from "@/lib/store";
 import type { QuizAnswers } from "@/types";
 import { PRICES } from "@/lib/prices";
 import DropProfileButton from "@/app/components/DropProfileButton";
+import { formatPlans } from "@/lib/formatPlans";
 
 interface Trip {
   id: string;
@@ -28,16 +29,16 @@ interface ProfileData {
 }
 
 const VIBE_LABELS: Record<string, string> = {
-  chill: "Reset ☕",
-  intense: "Full program 🔥",
-  social: "Towarzyski 🎉",
-  active: "Aktywny 🥾",
+  chill: "Reset",
+  intense: "Pełny program",
+  social: "Towarzyski",
+  active: "Aktywny",
 };
 
 const PLACE_LABELS: Record<string, string> = {
-  big_city: "Duże miasto 🏙️",
-  charming: "Kameralne 🏘️",
-  beach_sun: "Słońce i woda 🏖️",
+  big_city: "Duże miasto",
+  charming: "Kameralne",
+  beach_sun: "Słońce i woda",
 };
 
 const TAG_LABELS: Record<string, string> = {
@@ -156,7 +157,7 @@ export default function ProfilePage() {
         <button
           onClick={() => router.back()}
           className="text-sm font-medium transition-opacity hover:opacity-60"
-          style={{ color: "var(--text-muted)" }}
+          style={{ color: "var(--text-muted)", padding: "12px 0" }}
         >
           ← Wstecz
         </button>
@@ -185,14 +186,14 @@ export default function ProfilePage() {
                 className="text-xs font-bold px-2.5 py-0.5 rounded-full"
                 style={{ background: "var(--accent)", color: "white" }}
               >
-                ✦ Pro
+                Pro
               </span>
             ) : (
               <span
                 className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
-                style={{ background: "#F0F0F0", color: "var(--text-secondary)" }}
+                style={{ background: "var(--bg-surface)", color: "var(--text-secondary)" }}
               >
-                {data.credits_remaining ?? 0} {(data.credits_remaining ?? 0) === 1 ? "plan" : (data.credits_remaining ?? 0) <= 4 ? "plany" : "planów"} pozostało
+                {formatPlans(data.credits_remaining ?? 0)} {(data.credits_remaining ?? 0) === 1 ? "pozostał" : (data.credits_remaining ?? 0) >= 2 && (data.credits_remaining ?? 0) <= 4 ? "pozostały" : "pozostało"}
               </span>
             )}
           </div>
@@ -207,10 +208,10 @@ export default function ProfilePage() {
           transition={{ delay: 0.1 }}
           onClick={() => router.push("/pricing")}
           className="mt-4 w-full p-4 rounded-2xl text-left transition-opacity hover:opacity-90"
-          style={{ background: "var(--accent-light)", border: "1px solid rgba(255,107,53,0.2)" }}
+          style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
         >
           <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>
-            ✦ Zostań Pro — nielimitowane plany →
+            Zostań Pro — nielimitowane plany →
           </p>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
             {PRICES.proMonthly.label}/mies. lub {PRICES.proYearly.label}/rok · anuluj kiedy chcesz
@@ -235,7 +236,7 @@ export default function ProfilePage() {
             <button
               onClick={() => router.push("/quiz")}
               className="text-xs font-semibold transition-opacity hover:opacity-70"
-              style={{ color: "var(--accent)" }}
+              style={{ color: "var(--accent)", padding: "12px 0" }}
             >
               Edytuj →
             </button>
@@ -246,7 +247,7 @@ export default function ProfilePage() {
           <div className="glass-card p-4">
             <div className="flex flex-wrap gap-2">
               {prefs.budget && (
-                <Chip label={prefs.budget === "low" ? "🎒 Backpacker" : "🧳 Komfortowy"} />
+                <Chip label={prefs.budget === "low" ? "Backpacker" : "Komfortowy"} />
               )}
               {prefs.vibe && <Chip label={VIBE_LABELS[prefs.vibe] ?? prefs.vibe} />}
               {prefs.placeType && <Chip label={PLACE_LABELS[prefs.placeType] ?? prefs.placeType} />}
@@ -267,7 +268,7 @@ export default function ProfilePage() {
         ) : (
           <div
             className="p-5 rounded-2xl text-center"
-            style={{ background: "#F7F7F5", border: "1.5px dashed var(--border)" }}
+            style={{ background: "var(--bg-surface)", border: "1.5px dashed var(--border)" }}
           >
             <p className="text-sm font-medium">Brak zapisanych preferencji</p>
             <p className="text-xs mt-1 mb-4" style={{ color: "var(--text-muted)" }}>
@@ -320,7 +321,7 @@ export default function ProfilePage() {
                 key={trip.id}
                 onClick={() => router.push(`/plan/${trip.id}`)}
                 className="flex items-center justify-between p-4 rounded-2xl text-left transition-opacity hover:opacity-80 w-full"
-                style={{ background: "#F7F7F5", border: "1px solid var(--border)" }}
+                style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
               >
                 <div>
                   <p className="text-sm font-semibold">{trip.city}</p>
@@ -352,7 +353,7 @@ export default function ProfilePage() {
             disabled={portalLoading}
             className="btn-primary"
           >
-            {portalLoading ? "Przekierowuję…" : "✦ Zarządzaj subskrypcją Pro →"}
+            {portalLoading ? "Przekierowuję…" : "Zarządzaj subskrypcją Pro →"}
           </button>
         ) : (
           <button
@@ -366,9 +367,9 @@ export default function ProfilePage() {
           onClick={handleSaveAgain}
           disabled={saving}
           className="text-sm font-semibold py-3 rounded-2xl transition-opacity hover:opacity-70"
-          style={{ background: "#F0F0F0", color: "var(--text-secondary)" }}
+          style={{ background: "var(--bg-surface)", color: "var(--text-secondary)" }}
         >
-          {saved ? "✓ Zapisano" : saving ? "Zapisuję…" : "Zapisz obecne ustawienia quizu"}
+          {saved ? "Zapisano" : saving ? "Zapisuję…" : "Zapisz obecne ustawienia quizu"}
         </button>
       </div>
 
@@ -382,16 +383,16 @@ export default function ProfilePage() {
           <button
             onClick={() => setDeleteStep("confirm")}
             className="text-sm font-semibold py-3 px-4 rounded-2xl transition-opacity hover:opacity-70 w-full"
-            style={{ background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA" }}
+            style={{ background: "var(--error-bg)", color: "var(--error)", border: "1px solid var(--border)" }}
           >
             Usuń konto i wszystkie dane
           </button>
         ) : (
-          <div className="p-4 rounded-2xl" style={{ background: "#FEF2F2", border: "1px solid #FECACA" }}>
-            <p className="text-sm font-bold mb-1" style={{ color: "#DC2626" }}>
+          <div className="p-4 rounded-2xl" style={{ background: "var(--error-bg)", border: "1px solid var(--border)" }}>
+            <p className="text-sm font-bold mb-1" style={{ color: "var(--error)" }}>
               Czy na pewno chcesz usunąć konto?
             </p>
-            <p className="text-xs mb-4" style={{ color: "#991B1B" }}>
+            <p className="text-xs mb-4" style={{ color: "var(--error)" }}>
               Zostaną trwale usunięte: Twoje konto, wszystkie wygenerowane plany podróży i historia płatności.
               Tej operacji nie można cofnąć.
             </p>
@@ -400,7 +401,7 @@ export default function ProfilePage() {
                 onClick={handleDeleteAccount}
                 disabled={deleting}
                 className="flex-1 text-sm font-bold py-2.5 rounded-xl transition-opacity hover:opacity-80 disabled:opacity-40"
-                style={{ background: "#DC2626", color: "white" }}
+                style={{ background: "var(--error)", color: "white" }}
               >
                 {deleting ? "Usuwam…" : "Tak, usuń konto"}
               </button>
@@ -408,7 +409,7 @@ export default function ProfilePage() {
                 onClick={() => setDeleteStep("idle")}
                 disabled={deleting}
                 className="flex-1 text-sm font-semibold py-2.5 rounded-xl transition-opacity hover:opacity-80"
-                style={{ background: "#F0F0F0", color: "var(--text-secondary)" }}
+                style={{ background: "var(--bg-surface)", color: "var(--text-secondary)" }}
               >
                 Anuluj
               </button>
@@ -424,7 +425,7 @@ function Chip({ label }: { label: string }) {
   return (
     <span
       className="text-xs px-2.5 py-1 rounded-full font-medium"
-      style={{ background: "#F0F0F0", color: "var(--text-secondary)" }}
+      style={{ background: "var(--bg-surface)", color: "var(--text-secondary)" }}
     >
       {label}
     </span>

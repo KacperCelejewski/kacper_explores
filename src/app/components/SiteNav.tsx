@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createSupabaseClient } from "@/lib/supabase/client";
+import { formatPlans } from "@/lib/formatPlans";
+import { resolveOrigin } from "@/lib/drop/defaults";
 
 interface UserStatus {
   authenticated: boolean;
@@ -12,6 +14,12 @@ interface UserStatus {
 
 export default function SiteNav() {
   const [userStatus, setUserStatus] = useState<UserStatus | null>(null);
+  // Link „Okazje” prowadzi na ostatnio wybrane lotnisko (to samo, co zapamiętuje pasek na stronie głównej)
+  const [dealsOrigin, setDealsOrigin] = useState("WRO");
+
+  useEffect(() => {
+    try { setDealsOrigin(resolveOrigin(window.localStorage.getItem("deals_origin"))); } catch { /* storage zablokowany */ }
+  }, []);
 
   useEffect(() => {
     const supabase = createSupabaseClient();
@@ -29,7 +37,7 @@ export default function SiteNav() {
   const loggedIn = userStatus?.authenticated ?? false;
   const credits = userStatus?.credits_remaining ?? 0;
   const isPro = userStatus?.is_pro ?? false;
-  const lowCredits = loggedIn && !isPro && credits <= 2;
+  const noCredits = loggedIn && !isPro && credits === 0;
 
   return (
     <nav
@@ -42,11 +50,11 @@ export default function SiteNav() {
       </Link>
       <div className="flex items-center gap-3">
         <Link
-          href="/odkryj"
+          href={`/okazje/${dealsOrigin.toLowerCase()}`}
           className="text-xs font-semibold py-2"
           style={{ color: "var(--text-muted)", textDecoration: "none" }}
         >
-          Odkryj
+          Okazje
         </Link>
         {/* Na wąskich ekranach Blog jest w menu pod przyciskiem, tu się nie mieści */}
         <Link
@@ -71,20 +79,20 @@ export default function SiteNav() {
                 className="text-xs font-bold px-3 py-1.5 rounded-full"
                 style={{ background: "var(--accent)", color: "white", textDecoration: "none" }}
               >
-                ✦ Pro
+                Pro
               </Link>
             ) : (
               <Link
                 href="/profile"
                 className="text-xs font-bold px-3 py-1.5 rounded-full"
                 style={{
-                  background: lowCredits ? "#FEE2E2" : "var(--accent-light)",
-                  color: lowCredits ? "#DC2626" : "var(--accent)",
+                  background: noCredits ? "var(--error-bg)" : "var(--accent-light)",
+                  color: noCredits ? "var(--error)" : "var(--accent)",
                   textDecoration: "none",
-                  border: `1px solid ${lowCredits ? "#FECACA" : "rgba(196,98,45,0.25)"}`,
+                  border: `1px solid ${noCredits ? "var(--error)" : "var(--border)"}`,
                 }}
               >
-                {credits} {credits === 1 ? "plan" : credits <= 4 ? "plany" : "planów"}
+                {formatPlans(credits)}
               </Link>
             )}
           </>

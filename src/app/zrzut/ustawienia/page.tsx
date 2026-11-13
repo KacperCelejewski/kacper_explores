@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isHardDisabled, DROP_MAX_PRICES } from "@/lib/drop/signup";
 import DropSettingsForm from "./DropSettingsForm";
+import SiteNav from "@/app/components/SiteNav";
+import DropSignup from "@/app/components/DropSignup";
 
 export const metadata: Metadata = {
-  title: "Ustawienia zrzutu | Włóczykij",
+  title: "Ustawienia zrzutu",
   robots: { index: false, follow: false },
 };
 
@@ -27,7 +29,9 @@ export default async function DropSettingsPage({
     : { data: null };
 
   return (
-    <main className="max-w-md mx-auto px-6 py-16">
+    <>
+    <SiteNav />
+    <div className="max-w-md mx-auto px-6 py-16">
       <h1 className="text-2xl font-bold mb-2" style={{ fontFamily: "var(--font-heading)" }}>
         Ustawienia zrzutu
       </h1>
@@ -43,10 +47,15 @@ export default async function DropSettingsPage({
           }}
         />
       ) : (
-        <p className="text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>
-          Ten link jest nieaktualny. Najnowszy znajdziesz w ostatnim zrzucie.
-        </p>
+        <div>
+          <p className="text-sm leading-relaxed mb-8" style={{ color: "var(--text-muted)" }}>
+            Ten link jest nieaktualny. Najnowszy znajdziesz w ostatnim zrzucie. Możesz też zapisać się od nowa:
+            wybierz lotniska i budżet, a potwierdzenie przyjdzie mailem.
+          </p>
+          <DropSignup collapsed />
+        </div>
       )}
-    </main>
+    </div>
+    </>
   );
 }

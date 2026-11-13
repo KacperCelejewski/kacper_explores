@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { POLISH_AIRPORTS } from "@/lib/airports";
+import { ORIGIN_GENITIVE } from "@/lib/drop/email";
 
 export default function SiteFooter() {
   return (
@@ -19,6 +21,19 @@ export default function SiteFooter() {
             hej@wloczykij.me
           </a>
         </div>
+        <nav aria-label="Okazje na weekend" className="w-full flex items-center flex-wrap gap-x-4 gap-y-1">
+          <span className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>Tanie loty na weekend z:</span>
+          {POLISH_AIRPORTS.map((a) => (
+            <Link
+              key={a.code}
+              href={`/okazje/${a.code.toLowerCase()}`}
+              className="text-xs inline-block py-2"
+              style={{ color: "var(--text-muted)", textDecoration: "none" }}
+            >
+              {ORIGIN_GENITIVE[a.code] ?? a.city}
+            </Link>
+          ))}
+        </nav>
         <div className="flex items-center flex-wrap gap-x-4 gap-y-2">
           <Link
             href="/"

@@ -7,6 +7,7 @@ import Image from "next/image";
 import SiteNav from "@/app/components/SiteNav";
 import { CONTINENTS, getContinent, type Continent } from "@/lib/continents";
 import { getCityPhotoUrl } from "@/lib/cityPhotos";
+import { IconSearch } from "@/app/components/Icons";
 
 interface GalleryTrip {
   id: string;
@@ -112,9 +113,10 @@ export default function OdkryjPage() {
                     disabled={!hasTrips}
                     className="text-xs font-semibold px-3 py-1.5 rounded-full transition-all"
                     style={{
-                      background: isActive ? "var(--accent)" : "var(--glass-bg, rgba(255,255,255,0.07))",
-                      color: isActive ? "#fff" : hasTrips ? "var(--text-muted)" : "var(--text-muted)",
-                      border: `1px solid ${isActive ? "var(--accent)" : "var(--border-color, rgba(255,255,255,0.12))"}`,
+                      background: isActive ? "var(--accent)" : "var(--bg-surface)",
+                      color: isActive ? "#fff" : "var(--text-muted)",
+                      border: `1px solid ${isActive ? "var(--accent)" : "var(--border)"}`,
+                      minHeight: 44,
                       opacity: hasTrips ? 1 : 0.35,
                       cursor: hasTrips ? "pointer" : "default",
                     }}
@@ -144,9 +146,10 @@ export default function OdkryjPage() {
                     onClick={() => selectCountry(country)}
                     className="text-xs px-2.5 py-1 rounded-full transition-all"
                     style={{
-                      background: activeCountry === country ? "var(--accent-muted, rgba(var(--accent-rgb),0.2))" : "transparent",
+                      background: activeCountry === country ? "var(--accent-light)" : "transparent",
                       color: activeCountry === country ? "var(--accent)" : "var(--text-muted)",
-                      border: `1px solid ${activeCountry === country ? "var(--accent)" : "var(--border-color, rgba(255,255,255,0.1))"}`,
+                      border: `1px solid ${activeCountry === country ? "var(--accent)" : "var(--border)"}`,
+                      minHeight: 44,
                     }}
                   >
                     {country}
@@ -171,25 +174,24 @@ export default function OdkryjPage() {
             animate={{ opacity: 1 }}
             className="text-center py-12"
           >
-            <p className="text-3xl mb-3">🔍</p>
+            <p className="mb-3 flex justify-center" style={{ color: "var(--text-muted)" }}><IconSearch size={32} /></p>
             <p className="text-sm font-medium">Brak planów dla tego regionu</p>
             <button
               onClick={() => { setActiveContinent(null); setActiveCountry(null); }}
               className="text-xs mt-3 font-semibold"
-              style={{ color: "var(--accent)" }}
+              style={{ color: "var(--accent)", padding: "12px 0" }}
             >
               Pokaż wszystkie →
             </button>
           </motion.div>
         ) : trips.length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-4xl mb-4">🗺️</p>
-            <p className="text-sm font-medium">Brak publicznych planów</p>
+            <p className="text-sm font-medium">Galeria planów dopiero się zapełnia</p>
             <p className="text-xs mt-1 mb-6" style={{ color: "var(--text-muted)" }}>
-              Bądź pierwszy — udostępnij swój plan z planu podróży
+              Na razie najlepiej sprawdzają się świeże okazje na weekend z Twojego lotniska.
             </p>
-            <Link href="/quiz" className="btn-primary" style={{ display: "inline-block", width: "auto", padding: "12px 24px", textDecoration: "none" }}>
-              Stwórz plan →
+            <Link href="/okazje/wro" className="btn-primary" style={{ display: "inline-block", width: "auto", padding: "12px 24px", textDecoration: "none" }}>
+              Zobacz okazje na weekend →
             </Link>
           </div>
         ) : (
@@ -219,7 +221,7 @@ export default function OdkryjPage() {
                       <p className="text-xs mt-0.5 truncate" style={{ color: "var(--text-muted)" }}>
                         {trip.country}
                         {trip.quiz_answers?.duration ? ` · ${trip.quiz_answers.duration} dni` : ""}
-                        {trip.quiz_answers?.budget === "low" ? " · 🎒 Backpacker" : " · 🧳 Komfort"}
+                        {trip.quiz_answers?.budget === "low" ? " · Backpacker" : " · Komfort"}
                         {" · "}{formatDate(trip.created_at)}
                       </p>
                     </div>

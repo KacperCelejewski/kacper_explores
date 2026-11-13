@@ -5,7 +5,9 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { useRef, useState, useEffect, useCallback } from "react";
 import DropSignup from "@/app/components/DropSignup";
-import DealsStrip from "@/app/components/DealsStrip";
+import DealsStrip, { type StripDeal } from "@/app/components/DealsStrip";
+import { ORIGIN_GENITIVE } from "@/lib/drop/email";
+import { resolveOrigin } from "@/lib/drop/defaults";
 import { getCityPhotoUrl, FEATURED_DESTINATIONS } from "@/lib/cityPhotos";
 
 // ─── Static data ────────────────────────────────────────────────────────────
@@ -235,8 +237,13 @@ function DuskPoster() {
 export default function HomeClient({
   galleryPhotos = [],
   faq,
+  initialDeals = [],
+  initialDealsOrigin = "WRO",
 }: {
   galleryPhotos?: string[];
+  /** Okazje z domyślnego lotniska, pobrane na serwerze, żeby pasek nie wskakiwał po załadowaniu */
+  initialDeals?: StripDeal[];
+  initialDealsOrigin?: string;
   /** Objection handling, rendered before the final call to action */
   faq?: React.ReactNode;
 }) {
@@ -244,6 +251,12 @@ export default function HomeClient({
   useEffect(() => {
     document.body.classList.add("is-home");
     return () => document.body.classList.remove("is-home");
+  }, []);
+
+  /* ── lotnisko dla zapisu na zrzut: to samo, które wybrano w pasku okazji ── */
+  const [dropOrigin, setDropOrigin] = useState(initialDealsOrigin);
+  useEffect(() => {
+    try { setDropOrigin(resolveOrigin(window.localStorage.getItem("deals_origin"))); } catch { /* storage zablokowany */ }
   }, []);
 
   /* ── destinations carousel ── */
@@ -374,10 +387,33 @@ export default function HomeClient({
           >
             6 pytań · darmowe konto · 2 plany gratis co miesiąc, bez karty
           </motion.p>
+          <motion.p
+            initial={false}
+            style={{ color: "var(--text-secondary)", fontSize: 14, marginTop: 10 }}
+          >
+            Albo co czwartek 3 okazje z Twojego lotniska:{" "}
+            <a href="#zrzut" style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "underline", textUnderlineOffset: 3 }}>
+              zapisz się za darmo
+            </a>
+          </motion.p>
         </div>
       </section>
 
-      <DealsStrip />
+      <DealsStrip initialDeals={initialDeals} initialOrigin={initialDealsOrigin} onOriginChange={setDropOrigin} />
+
+      {/* ════════════════════════════════════════════════════════════════════
+          CZWARTKOWY ZRZUT — zapis na tygodniowy mail z lotami na weekend, zaraz pod okazjami
+          ════════════════════════════════════════════════════════════════════ */}
+      <section id="zrzut" style={{ background: "var(--bg-surface)", padding: "56px 28px 64px", scrollMarginTop: 16 }}>
+        <div style={{ maxWidth: 480, margin: "0 auto" }}>
+          <DropSignup
+            defaultAirports={[dropOrigin]}
+            cheapestHint={dropOrigin === initialDealsOrigin && initialDeals[0]
+              ? { from: ORIGIN_GENITIVE[dropOrigin] ?? dropOrigin, price: initialDeals[0].price, thirdPrice: (initialDeals[2] ?? initialDeals[initialDeals.length - 1]).price }
+              : null}
+          />
+        </div>
+      </section>
 
       {/* ════════════════════════════════════════════════════════════════════
           §3  HOW IT WORKS — dark, editorial, numbered steps
@@ -602,6 +638,11 @@ export default function HomeClient({
               </div>
             ))}
 
+            {/* Co jeszcze potrafi plan */}
+            <p style={{ padding: "12px 20px", fontSize: 13, lineHeight: 1.6, color: "var(--text-muted)", borderTop: "1px solid var(--border)" }}>
+              To tylko 5 godzin jednego dnia. W swoim planie zmienisz dzień, podmienisz atrakcję, sprawdzisz budżet i mapę, pobierzesz PDF i wrzucisz wyjazd do kalendarza.
+            </p>
+
             {/* Footer CTA */}
             <div
               style={{
@@ -661,11 +702,11 @@ export default function HomeClient({
               Gdzie chcesz<br />lecieć?
             </motion.h2>
             <Link
-              href="/quiz"
+              href="/okazje/wro"
               style={{
                 display: "inline-block",
-                padding: "6px 0",
-                fontSize: 12,
+                padding: "12px 0",
+                fontSize: 13,
                 fontWeight: 700,
                 color: "var(--accent)",
                 textDecoration: "none",
@@ -673,7 +714,7 @@ export default function HomeClient({
                 marginLeft: 16,
               }}
             >
-              Dopasuj do siebie →
+              Okazje na weekend →
             </Link>
           </div>
         </div>
@@ -819,15 +860,6 @@ export default function HomeClient({
       </section>
 
       {faq}
-
-      {/* ════════════════════════════════════════════════════════════════════
-          CZWARTKOWY ZRZUT — zapis na tygodniowy mail z lotami na weekend
-          ════════════════════════════════════════════════════════════════════ */}
-      <section id="zrzut" style={{ background: "var(--bg-surface)", padding: "88px 28px 96px", scrollMarginTop: 16 }}>
-        <div style={{ maxWidth: 480, margin: "0 auto" }}>
-          <DropSignup />
-        </div>
-      </section>
 
       {/* ════════════════════════════════════════════════════════════════════
           §6  FINAL CTA — dusk poster: the walker heads off over the ridge

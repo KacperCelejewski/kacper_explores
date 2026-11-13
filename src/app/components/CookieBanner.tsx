@@ -68,25 +68,24 @@ export default function CookieBanner() {
           aria-label="Zgoda na pliki cookie"
           style={{
             position: "fixed",
-            bottom: 80, // above GlobalMenu nav
-            // Centrowanie bez transform: Framer Motion nadpisuje transform animacją y
-            left: 16,
-            right: 16,
-            marginInline: "auto",
-            maxWidth: 480,
+            // Przyklejony do dołu na całą szerokość i niski, żeby nie zasłaniał przycisków w hero
+            bottom: 0,
+            left: 0,
+            right: 0,
             zIndex: 100,
-            background: "var(--background, #fff)",
-            border: "1.5px solid var(--border, #e5e5e5)",
-            borderRadius: 20,
-            padding: "16px 18px",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+            background: "var(--bg-primary)",
+            borderTop: "1.5px solid var(--border)",
+            padding: "12px 16px max(12px, env(safe-area-inset-bottom))",
+            boxShadow: "0 -6px 24px rgba(28,16,8,0.10)",
           }}
         >
-          <p style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
+          <div style={{ maxWidth: 880, margin: "0 auto", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 20px" }}>
+          <div style={{ flex: "1 1 340px", minWidth: 0 }}>
+          <p style={{ margin: "0 0 2px", fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
             Używamy plików cookie
           </p>
-          <p style={{ margin: "0 0 14px", fontSize: 12, lineHeight: 1.5, color: "var(--text-muted)" }}>
-            Niezbędne cookies działają zawsze. Za Twoją zgodą używamy też cookies partnerskich (linki afiliacyjne do lotów) i analitycznych (Google Analytics — co klikasz i które strony oglądasz).{" "}
+          <p style={{ margin: 0, fontSize: 13, lineHeight: 1.45, color: "var(--text-muted)" }}>
+            Niezbędne działają zawsze. Za Twoją zgodą dodajemy partnerskie (linki do lotów) i analityczne (Google Analytics).{" "}
             <a
               href="/cookies"
               style={{ color: "var(--accent)", textDecoration: "underline" }}
@@ -94,12 +93,13 @@ export default function CookieBanner() {
               Polityka cookies
             </a>
           </p>
-          <div style={{ display: "flex", gap: 8 }}>
+          </div>
+          <div style={{ display: "flex", gap: 8, flex: "0 1 320px", minWidth: 260 }}>
             <button
               onClick={handleAccept}
               style={{
                 flex: 1,
-                padding: "10px 0",
+                padding: "12px 0",
                 borderRadius: 12,
                 border: "none",
                 background: "var(--accent)",
@@ -115,9 +115,9 @@ export default function CookieBanner() {
               onClick={handleReject}
               style={{
                 flex: 1,
-                padding: "10px 0",
+                padding: "12px 0",
                 borderRadius: 12,
-                border: "1.5px solid var(--border, #e5e5e5)",
+                border: "1.5px solid var(--border)",
                 background: "transparent",
                 color: "var(--text-secondary)",
                 fontWeight: 600,
@@ -127,6 +127,7 @@ export default function CookieBanner() {
             >
               Tylko niezbędne
             </button>
+          </div>
           </div>
         </motion.div>
       )}

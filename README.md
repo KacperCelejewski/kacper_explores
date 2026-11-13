@@ -26,7 +26,7 @@ for third-party APIs.
   re-generating the whole trip.
 - **Extras** — packing list, restaurant picks, map (Leaflet), PDF export,
   `.ics` calendar export, public share links, pre-trip reminder e-mail.
-- **Monetisation** — 5 free credits on sign-up, one-off credit pack,
+- **Monetisation** — 2 free plans per month, one-off credit pack,
   monthly/yearly Pro subscription, Stripe billing portal.
 
 ## Architecture

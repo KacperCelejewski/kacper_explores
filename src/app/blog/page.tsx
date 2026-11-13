@@ -66,7 +66,7 @@ export default function BlogPage() {
             Podróże solo po Europie
           </h1>
           <p className="text-sm mt-2 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-            Praktyczne przewodniki, triki budżetowe i inspiracje dla solo travelerów.
+            Praktyczne przewodniki, triki budżetowe i inspiracje dla osób podróżujących solo.
           </p>
         </div>
 
@@ -109,10 +109,10 @@ export default function BlogPage() {
           ))}
         </div>
 
-        <div className="mt-10 p-5 rounded-2xl text-center" style={{ background: "var(--accent-light)", border: "1px solid rgba(196,98,45,0.2)" }}>
-          <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>Gotowy na swoją podróż?</p>
+        <div className="mt-10 p-5 rounded-2xl text-center" style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}>
+          <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>Gotowe na wyjazd?</p>
           <p className="text-xs mt-1 mb-4" style={{ color: "var(--text-muted)" }}>
-            AI ułoży Twój plan podróży godzina po godzinie
+            Twój weekend w 3 minuty: lot i plan z cenami
           </p>
           <Link
             href="/quiz"

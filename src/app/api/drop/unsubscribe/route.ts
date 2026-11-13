@@ -24,7 +24,7 @@ function page(title: string, body: string, status = 200): Response {
   });
 }
 
-const button = "display:inline-block;min-height:48px;padding:0 24px;border:0;border-radius:14px;background:#FF6B35;color:#fff;font-size:16px;font-weight:700;cursor:pointer;line-height:48px;text-decoration:none;";
+const button = "display:inline-block;min-height:48px;padding:0 24px;border:0;border-radius:14px;background:#A04B20;color:#fff;font-size:16px;font-weight:700;cursor:pointer;line-height:48px;text-decoration:none;";
 
 // GET niczego nie zmienia: skanery poczty otwierają linki z maili, więc wypis wymaga kliknięcia (POST).
 export async function GET(req: NextRequest) {

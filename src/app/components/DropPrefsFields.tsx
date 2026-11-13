@@ -8,10 +8,11 @@ type Props = {
   maxPrice: number;
   onToggleAirport: (code: string) => void;
   onMaxPrice: (price: number) => void;
+  priceHint?: string;
 };
 
 // Lotniska i budżet: wspólne dla zapisu na zrzut i strony ustawień.
-export default function DropPrefsFields({ airports, maxPrice, onToggleAirport, onMaxPrice }: Props) {
+export default function DropPrefsFields({ airports, maxPrice, onToggleAirport, onMaxPrice, priceHint }: Props) {
   const chip = (active: boolean, disabled = false): React.CSSProperties => ({
     minHeight: 44,
     padding: "0 16px",
@@ -66,6 +67,9 @@ export default function DropPrefsFields({ airports, maxPrice, onToggleAirport, o
             </button>
           ))}
         </div>
+        {priceHint && (
+          <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>{priceHint}</p>
+        )}
       </fieldset>
     </>
   );

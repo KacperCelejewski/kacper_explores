@@ -1,9 +1,15 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { createSupabaseClient } from "@/lib/supabase/client";
+import { useAppStore } from "@/lib/store";
+import { quizSummary } from "@/lib/quizSummary";
+import { trackEvent } from "@/lib/analytics";
+import DropSignup from "@/app/components/DropSignup";
+import { IconMail, IconArrowLeft } from "@/app/components/Icons";
 
 function LoginContent() {
   const searchParams = useSearchParams();
@@ -14,7 +20,7 @@ function LoginContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(
     searchParams.get("error") === "link"
-      ? "Ten link nie zadziałał. Wygasł albo otworzyłeś go w innej przeglądarce niż ta, w której go zamówiłeś. Poproś o nowy."
+      ? "Ten link nie zadziałał. Wygasł albo został otwarty w innej przeglądarce niż ta, w której go zamówiono. Zamów nowy."
       : ""
   );
 
@@ -44,6 +50,13 @@ function LoginContent() {
   };
 
   const fromQuiz = next.includes("/destinations") || next.includes("/quiz");
+  const quizAnswers = useAppStore((st) => st.quizAnswers);
+  const summary = fromQuiz ? quizSummary(quizAnswers) : [];
+
+  // Mierzymy bramkę po quizie: ile osób dochodzi do tego ekranu
+  useEffect(() => {
+    if (fromQuiz) trackEvent("login_gate_view");
+  }, [fromQuiz]);
 
   return (
     <div className="flex flex-col flex-1 px-5 pb-8 justify-center">
@@ -52,6 +65,14 @@ function LoginContent() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold mb-6"
+          style={{ color: "var(--text-muted)", textDecoration: "none", minHeight: 44 }}
+        >
+          <IconArrowLeft size={16} /> Wróć na stronę główną
+        </Link>
+
         {/* Header */}
         <div className="mb-8">
           <p className="text-xs font-bold tracking-widest uppercase mb-4" style={{ color: "var(--accent)" }}>
@@ -59,17 +80,11 @@ function LoginContent() {
           </p>
           {fromQuiz ? (
             <>
-              <div
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-4"
-                style={{ background: "var(--accent-light)", color: "var(--accent)" }}
-              >
-                ✓ Twoje wyniki są gotowe
-              </div>
               <h1 className="text-3xl font-bold leading-tight">
-                Zaloguj się,<br />żeby zobaczyć<br />dopasowane kierunki.
+                Jeszcze krok,<br />i dobierzemy<br />6 kierunków.
               </h1>
               <p className="text-sm mt-3 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                Masz gotowe 6 kierunków w swoim budżecie. Logujesz się linkiem z e-maila, bez hasła.
+                Po zalogowaniu dobierzemy 6 kierunków pod Twoje odpowiedzi, z cenami lotów. Logujesz się linkiem z e-maila, bez hasła.
               </p>
             </>
           ) : (
@@ -84,45 +99,32 @@ function LoginContent() {
           )}
         </div>
 
-        {/* Blurred destinations tease (only when coming from quiz) */}
-        {fromQuiz && (
+        {/* Odpowiedzi z quizu, żeby było widać, że nie giną */}
+        {fromQuiz && summary.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, delay: 0.15 }}
-            className="mb-6 rounded-2xl overflow-hidden relative"
-            style={{ border: "1px solid var(--border)" }}
-            aria-hidden="true"
+            className="mb-6 rounded-2xl p-4"
+            style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
           >
-            <div className="flex gap-2 p-3" style={{ filter: "blur(4px)", userSelect: "none" }}>
-              {["Barcelona", "Lizbona", "Praga", "Ateny"].map((city) => (
-                <div
-                  key={city}
-                  className="flex-1 rounded-xl py-2 px-2 text-center"
-                  style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
-                >
-                  <p className="text-xs font-bold truncate">{city}</p>
-                  <p className="text-xs mt-0.5" style={{ color: "var(--accent)", fontWeight: 700 }}>~1 800 zł</p>
-                </div>
-              ))}
-            </div>
-            <div
-              className="absolute inset-0 flex items-center justify-center"
-              style={{ background: "rgba(245,239,224,0.6)" }}
-            >
-              <p className="text-xs font-bold text-center px-4" style={{ color: "var(--accent)" }}>
-                Zaloguj się, żeby odblokować wyniki
-              </p>
-            </div>
+            <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{ color: "var(--accent)" }}>Twoje odpowiedzi</p>
+            <p className="text-sm font-semibold leading-relaxed">{summary.join(" · ")}</p>
           </motion.div>
         )}
+
+        <ul className="mb-6 flex flex-col gap-1.5 text-sm list-none p-0" style={{ color: "var(--text-secondary)" }}>
+          <li>2 plany co miesiąc za darmo, bez karty</li>
+          <li>Historia wyjazdów zawsze pod ręką</li>
+          <li>Mail z przypomnieniem dzień przed wylotem</li>
+        </ul>
 
         {sent ? (
           <div
             className="p-6 rounded-2xl text-center"
             style={{ background: "var(--accent-light)", border: "1px solid var(--accent)" }}
           >
-            <span className="text-3xl" aria-hidden="true">📬</span>
+            <span className="inline-block" style={{ color: "var(--accent)" }}><IconMail size={32} /></span>
             <h2 className="text-base font-bold mt-3">Sprawdź skrzynkę</h2>
             <p className="text-sm mt-2" style={{ color: "var(--text-muted)" }}>
               Wysłaliśmy link na <strong style={{ color: "var(--text-primary)" }}>{email}</strong>.
@@ -195,6 +197,15 @@ function LoginContent() {
             <p className="text-xs text-center mt-1" style={{ color: "var(--text-muted)" }}>
               Bez hasła. Kliknij link w e-mailu i gotowe.
             </p>
+          </div>
+        )}
+
+        {!sent && (
+          <div className="mt-8">
+            <p className="text-sm mb-3" style={{ color: "var(--text-muted)" }}>
+              Nie chcesz jeszcze konta? Okazje na weekend dostaniesz też samym e-mailem.
+            </p>
+            <DropSignup collapsed defaultAirports={quizAnswers.airports.slice(0, 1)} />
           </div>
         )}
       </motion.div>

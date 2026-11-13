@@ -16,6 +16,10 @@
   /* Stream in the hero poster */
   --water: #5C7A78;
   --error: #B91C1C;
+  --error-bg: #F7E1DD;
+  --success: #2D5A27;
+  --success-bg: #E3EBD9;
+  --info: #4A6563;
 }
 
 @theme inline {
@@ -526,6 +530,7 @@ body.is-home section[id] {
 }
 
 /* Focus mode: the quiz has its own Back and the action bar owns the thumb zone */
-body:has(.quiz-root) .global-fab {
+body:has(.quiz-root) .global-fab,
+body:has(.quick-root) .global-fab {
   display: none;
 }

@@ -57,7 +57,7 @@ export default function CheckoutButton({ planKey, cta, gate, returnTo = "/pricin
         {children ?? (loading ? "Przekierowanie…" : cta)}
       </button>
       {error && (
-        <p className="text-xs mt-2 text-center" style={{ color: "#EF4444" }}>{error}</p>
+        <p className="text-xs mt-2 text-center" style={{ color: "var(--error)" }}>{error}</p>
       )}
     </>
   );

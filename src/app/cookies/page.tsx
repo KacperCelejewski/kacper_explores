@@ -162,12 +162,6 @@ export default function CookiesPage() {
 
         {/* Header */}
         <header className="pt-4 pb-6">
-          <div
-            className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl mb-5"
-            style={{ background: "var(--accent-light)" }}
-          >
-            🍪
-          </div>
           <h1
             className="text-3xl font-bold leading-tight"
             style={{ color: "var(--text-primary)" }}

@@ -107,7 +107,7 @@ const STYLE_OPTIONS: { value: TravelStyle; label: string; Icon: IconFC; desc: st
 
 const VIBE_OPTIONS: { value: TravelVibe; Icon: IconFC; label: string; desc: string }[] = [
   { value: "chill",   Icon: IconSun,       label: "Reset",        desc: "Własne tempo, kawiarnie, luz" },
-  { value: "intense", Icon: IconLightning, label: "Full program", desc: "Jak najwięcej, każda chwila gra" },
+  { value: "intense", Icon: IconLightning, label: "Pełny program", desc: "Jak najwięcej, każda chwila gra" },
   { value: "social",  Icon: IconPeople,    label: "Towarzyski",   desc: "Poznawanie ludzi, bary, imprezy" },
   { value: "active",  Icon: IconMountain,  label: "Aktywny",      desc: "Piesze trasy, sport, przyroda" },
 ];
@@ -132,7 +132,7 @@ const COMPANION_LABELS: Record<Companion, string> = {
 };
 const BUDGET_LABELS = { low: "Backpacker", medium: "Komfortowy" } as const;
 const VIBE_LABELS: Record<TravelVibe, string> = {
-  chill: "Reset", intense: "Full program", social: "Towarzyski", active: "Aktywny",
+  chill: "Reset", intense: "Pełny program", social: "Towarzyski", active: "Aktywny",
 };
 const MONTH_SHORT = ["sty","lut","mar","kwi","maj","cze","lip","sie","wrz","paź","lis","gru"];
 
@@ -406,7 +406,7 @@ function QuizPageInner() {
       {quizAnswers.preferredCity && (
         <div
           className="flex items-center gap-2 px-4 py-2.5 rounded-2xl mt-3"
-          style={{ background: "var(--accent-light)", border: "1px solid rgba(196,98,45,0.25)" }}
+          style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
         >
           <span style={{ color: "var(--accent)" }}><IconPlane size={16} /></span>
           <p className="text-sm font-semibold" style={{ color: "var(--accent)" }}>
@@ -425,7 +425,7 @@ function QuizPageInner() {
             transition={{ duration: 0.25 }}
             onClick={handleUseSaved}
             className="w-full mt-3 p-4 rounded-2xl text-left transition-opacity hover:opacity-90"
-            style={{ background: "var(--accent-light)", border: "1px solid rgba(196,98,45,0.25)" }}
+            style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
           >
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -519,7 +519,7 @@ function QuizPageInner() {
         )}
         {currentQuizStep === 0 && (
           <p className="text-center text-xs mt-3" style={{ color: "var(--text-muted)" }}>
-            6 pytań, ok. 2 minuty. Nic nie kosztuje.
+            6 pytań, ok. 2 minuty. Na końcu założysz darmowe konto, bez karty.
           </p>
         )}
       </div>
@@ -581,7 +581,7 @@ const IconGroupFriends: CompanionIconFC = ({ size = 24 }) => (
 const COMPANION_OPTIONS: { value: Companion; label: string; Icon: CompanionIconFC; desc: string }[] = [
   { value: "solo",    label: "Sam/a",    Icon: IconSolo,         desc: "Porady bezpieczeństwa, miejsca do poznania ludzi" },
   { value: "couple",  label: "Para",     Icon: IconCouple,       desc: "Romantyczne kolacje, wspólne aktywności" },
-  { value: "family",  label: "Rodzina",  Icon: IconFamily,       desc: "Family-friendly, spokojne tempo, bezpieczeństwo" },
+  { value: "family",  label: "Rodzina",  Icon: IconFamily,       desc: "Spokojne tempo, atrakcje dla dzieci, bezpieczeństwo" },
   { value: "friends", label: "Znajomi",  Icon: IconGroupFriends, desc: "Aktywności grupowe, wieczory w barach, podział kosztów" },
 ];
 
@@ -594,7 +594,7 @@ function StepCompanion({
 }) {
   return (
     <div>
-      <StepHeader title="Kto jedzie?" hint="AI dopasuje atrakcje, restauracje i wskazówki do Twojej grupy." />
+      <StepHeader title="Kto jedzie?" hint="Dobierzemy atrakcje, restauracje i wskazówki do Twojej grupy." />
       <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Wybierz kto podróżuje">
         {COMPANION_OPTIONS.map((opt) => (
           <OptionCard key={opt.value} selected={companion === opt.value} onClick={() => onPick(opt.value)}>
@@ -674,7 +674,7 @@ function StepStyle({ styles, toggleStyle }: { styles: TravelStyle[]; toggleStyle
     <div>
       <StepHeader
         title="Czym się interesujesz?"
-        hint="Wybierz ile chcesz albo pomiń — AI lepiej dopasuje kierunki, gdy coś zaznaczysz."
+        hint="Wybierz ile chcesz albo pomiń — kierunki dobierzemy trafniej, gdy coś zaznaczysz."
       />
       <div className="grid grid-cols-2 gap-3" role="group" aria-label="Wybierz zainteresowania">
         {STYLE_OPTIONS.map((opt) => (
@@ -754,7 +754,7 @@ function StepWhen({
         title="Kiedy i jak długo?"
         hint={
           monthPrefilled
-            ? "Zaznaczyłem bieżący miesiąc — zmień go, jeśli jedziesz później."
+            ? "Zaznaczono bieżący miesiąc — zmień go, jeśli jedziesz później."
             : "Pogoda, sezon, ceny — wszystko pod uwagę."
         }
       />
