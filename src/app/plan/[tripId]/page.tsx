@@ -61,7 +61,7 @@ export default function PlanPage() {
   const router = useRouter();
   const params = useParams<{ tripId: string }>();
   const planPath = params?.tripId ? `/plan/${params.tripId}` : "/pricing";
-  const { currentTrip, setCurrentTrip, updateTripDay, updateTripActivity, addTripActivity, resetQuiz } = useAppStore();
+  const { currentTrip, setCurrentTrip, updateTripDay, updateTripActivity, addTripActivity, resetQuiz, quizAnswers } = useAppStore();
   const [activeDay, setActiveDay] = useState(0);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -439,70 +439,6 @@ export default function PlanPage() {
         </motion.div>
       </div>
 
-      {/* Upsell banner — show when low on credits or out */}
-      {userCredits && !userCredits.isPro && userCredits.credits <= 2 && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="mx-5 mb-4 p-4 rounded-2xl no-print"
-          style={{ background: "var(--accent-light)", border: "2px solid var(--accent)" }}
-        >
-          <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>
-            {userCredits.credits === 0 ? "To był ostatni plan ✦" : `Zostały Ci ${userCredits.credits} ${userCredits.credits === 1 ? "plan" : "plany"} ✦`}
-          </p>
-          <p className="text-xs mt-1 mb-3 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-            Pack to 5 kolejnych planów za {PRICES.pack.label}. Pro Roczny to wyjazdy bez limitu i PDF za {PRICES.proYearly.label} na rok.
-          </p>
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <CheckoutButton
-                planKey="pack_5"
-                gate="plan_banner"
-                cta={`Kup Pack — ${PRICES.pack.label} →`}
-                returnTo={planPath}
-                className="w-full min-h-11 text-xs font-bold py-2.5 rounded-xl text-center"
-                style={{ background: "var(--accent)", color: "white" }}
-              />
-            </div>
-            <CheckoutButton
-              planKey="pro_yearly"
-              gate="plan_banner"
-              cta="Pro Roczny"
-              returnTo={planPath}
-              className="min-h-11 text-xs font-semibold px-3 py-2.5 rounded-xl"
-              style={{ background: "white", color: "var(--accent)", border: "1px solid var(--accent)" }}
-            />
-          </div>
-          <a
-            href="/pricing"
-            className="inline-block mt-2 py-1 text-xs underline"
-            style={{ color: "var(--text-muted)" }}
-          >
-            Porównaj plany
-          </a>
-        </motion.div>
-      )}
-
-      {/* Czwartkowy zrzut — tylko dla tych, którzy jeszcze nie są zapisani */}
-      {dropSubscribed === false && (
-        <div
-          className="mx-5 mb-4 p-5 rounded-2xl no-print"
-          style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
-        >
-          {dropAccount ? (
-            <>
-              <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: "var(--text-muted)" }}>
-                Czwartkowy zrzut
-              </p>
-              <DropProfileButton prefs={dropAccount.prefs} />
-            </>
-          ) : (
-            <DropSignup />
-          )}
-        </div>
-      )}
-
       {/* Lot i noclegi */}
       <FlightCard offer={dest?.bestOffer} city={plan.city} />
       <HotelLinks
@@ -815,11 +751,34 @@ export default function PlanPage() {
 
         <button
           className="btn-primary no-print"
-          onClick={() => { resetQuiz(); router.push("/"); }}
+          onClick={() => { resetQuiz(); router.push("/quiz"); }}
         >
           Zaplanuj nową podróż →
         </button>
       </div>
+
+      {/* Czwartkowy zrzut — tylko dla tych, którzy jeszcze nie są zapisani */}
+      {dropSubscribed === false && (
+        <div
+          className="mx-5 mb-4 p-5 rounded-2xl no-print"
+          style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
+        >
+          {dropAccount ? (
+            <>
+              <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: "var(--text-muted)" }}>
+                Czwartkowy zrzut
+              </p>
+              <DropProfileButton prefs={dropAccount.prefs} />
+            </>
+          ) : (
+            <DropSignup
+              defaultAirports={quizAnswers.airports.slice(0, 1)}
+              title="Plan gotowy. A co z następnym weekendem?"
+              lead="Co czwartek 3 najtańsze wyjazdy z Twojego lotniska. Za darmo, wypiszesz się jednym kliknięciem."
+            />
+          )}
+        </div>
+      )}
 
       {/* Feedback widget — pokazuj tylko jeśli nie dano jeszcze feedbacku i nie jest Pro */}
       {!feedbackGiven && !userCredits?.isPro && currentTrip && (
@@ -830,6 +789,51 @@ export default function PlanPage() {
             onPdfUnlocked={handlePdfUnlocked}
           />
         </div>
+      )}
+
+      {/* Baner Pack/Pro: dopiero gdy kredyty się skończyły, po linkach partnerskich, planie i zapisie na zrzut */}
+      {userCredits && !userCredits.isPro && userCredits.credits === 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="mx-5 mb-4 p-4 rounded-2xl no-print"
+          style={{ background: "var(--accent-light)", border: "2px solid var(--accent)" }}
+        >
+          <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>
+            To był ostatni darmowy plan w tym miesiącu
+          </p>
+          <p className="text-xs mt-1 mb-3 leading-relaxed" style={{ color: "var(--text-muted)" }}>
+            Pack to 5 kolejnych planów za {PRICES.pack.label}. Pro Roczny to wyjazdy bez limitu i PDF za {PRICES.proYearly.label} na rok.
+          </p>
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <CheckoutButton
+                planKey="pack_5"
+                gate="plan_banner"
+                cta={`Kup Pack — ${PRICES.pack.label} →`}
+                returnTo={planPath}
+                className="w-full min-h-11 text-xs font-bold py-2.5 rounded-xl text-center"
+                style={{ background: "var(--accent)", color: "white" }}
+              />
+            </div>
+            <CheckoutButton
+              planKey="pro_yearly"
+              gate="plan_banner"
+              cta="Pro Roczny"
+              returnTo={planPath}
+              className="min-h-11 text-xs font-semibold px-3 py-2.5 rounded-xl"
+              style={{ background: "white", color: "var(--accent)", border: "1px solid var(--accent)" }}
+            />
+          </div>
+          <a
+            href="/pricing"
+            className="inline-block mt-2 py-1 text-xs underline"
+            style={{ color: "var(--text-muted)" }}
+          >
+            Porównaj plany
+          </a>
+        </motion.div>
       )}
 
       {/* PDF Pro gate modal */}
