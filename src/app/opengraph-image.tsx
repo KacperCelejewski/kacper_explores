@@ -39,7 +39,6 @@ export default async function OGImage() {
           position: "relative",
         }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={BRAND_MARK_DATA_URI} width={Math.round(markH * BRAND_MARK_RATIO)} height={markH} alt="" />
         <div style={{ display: "flex", flexDirection: "column", maxWidth: 640 }}>
           <div
