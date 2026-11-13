@@ -427,7 +427,7 @@ function DestCard({
             <a
               {...partnerLinkProps(flight, "flight", dest.city)}
               className="text-xs font-medium px-3 py-2 rounded-xl transition-opacity hover:opacity-70"
-              style={{ background: "var(--surface)", color: "var(--text-muted)", border: "1px solid var(--border)" }}
+              style={{ background: "var(--bg-surface)", color: "var(--text-muted)", border: "1px solid var(--border)" }}
             >
               Szukaj lotów ↗
             </a>
@@ -511,7 +511,7 @@ function FlightModal({
                 value={arrivalDate}
                 onChange={(e) => setArrivalDate(e.target.value)}
                 className="flex-1 px-3 py-2 rounded-xl text-sm outline-none"
-                style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
+                style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
               />
               <input
                 type="time"
@@ -519,7 +519,7 @@ function FlightModal({
                 onChange={(e) => setArrivalTime(e.target.value)}
                 placeholder="14:30"
                 className="w-24 px-3 py-2 rounded-xl text-sm outline-none"
-                style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
+                style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
               />
             </div>
           </div>
@@ -534,7 +534,7 @@ function FlightModal({
                 value={returnDate}
                 onChange={(e) => setReturnDate(e.target.value)}
                 className="flex-1 px-3 py-2 rounded-xl text-sm outline-none"
-                style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
+                style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
               />
               <input
                 type="time"
@@ -542,7 +542,7 @@ function FlightModal({
                 onChange={(e) => setReturnTime(e.target.value)}
                 placeholder="08:00"
                 className="w-24 px-3 py-2 rounded-xl text-sm outline-none"
-                style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
+                style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
               />
             </div>
           </div>
@@ -558,7 +558,7 @@ function FlightModal({
           <button
             onClick={onClose}
             className="flex-1 py-3 rounded-xl font-medium text-sm transition-opacity hover:opacity-70"
-            style={{ background: "var(--surface)", color: "var(--text-muted)", border: "1px solid var(--border)" }}
+            style={{ background: "var(--bg-surface)", color: "var(--text-muted)", border: "1px solid var(--border)" }}
           >
             Anuluj
           </button>
@@ -607,7 +607,7 @@ function UpgradeModal({ onClose }: { onClose: () => void }) {
           <button
             onClick={onClose}
             className="flex-1 py-2.5 rounded-xl text-sm font-medium"
-            style={{ background: "var(--surface)", color: "var(--text-muted)", border: "1px solid var(--border)" }}
+            style={{ background: "var(--bg-surface)", color: "var(--text-muted)", border: "1px solid var(--border)" }}
           >
             Wróć
           </button>
@@ -849,7 +849,7 @@ export default function DestinationsPage() {
                   ? "var(--accent)"
                   : (userStatus.credits_remaining ?? 0) === 0
                   ? "#ef4444"
-                  : "var(--surface)",
+                  : "var(--bg-surface)",
                 color: userStatus.is_pro || (userStatus.credits_remaining ?? 0) === 0
                   ? "#fff"
                   : "var(--text-muted)",

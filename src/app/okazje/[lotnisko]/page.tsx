@@ -57,7 +57,7 @@ export default async function DealsPage({ params }: { params: Params }) {
                 aria-current={a.code === origin ? "page" : undefined}
                 className="text-xs font-semibold px-3 py-1.5 rounded-full"
                 style={{
-                  background: a.code === origin ? "var(--accent)" : "var(--surface)",
+                  background: a.code === origin ? "var(--accent)" : "var(--bg-surface)",
                   color: a.code === origin ? "#fff" : "var(--text-secondary)",
                   border: "1px solid var(--border)",
                 }}

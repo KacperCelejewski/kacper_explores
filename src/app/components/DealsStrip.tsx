@@ -55,7 +55,7 @@ export default function DealsStrip() {
             aria-label="Lotnisko wylotu"
             value={origin}
             onChange={(e) => choose(e.target.value)}
-            style={{ fontSize: 13, padding: "6px 8px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)" }}
+            style={{ fontSize: 13, padding: "6px 8px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--bg-surface)" }}
           >
             {POLISH_AIRPORTS.map((a) => <option key={a.code} value={a.code}>{a.city}</option>)}
           </select>
