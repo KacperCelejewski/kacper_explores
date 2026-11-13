@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { DROP_MAX_AIRPORTS } from "@/lib/drop/signup";
 import DropPrefsFields from "./DropPrefsFields";
@@ -28,6 +28,7 @@ export default function DropSignup({ defaultAirports, cheapestHint = null, title
   const [email, setEmail] = useState("");
   const [airports, setAirports] = useState<string[]>(defaultAirports ?? []);
   const [maxPrice, setMaxPrice] = useState<number>(() => pickDefaultMaxPrice(cheapestHint?.price ?? null));
+  const emailId = useId();
   const touched = useRef(false);
   const defaultsKey = (defaultAirports ?? []).join(",");
   const hintPrice = cheapestHint?.price ?? null;
@@ -100,7 +101,7 @@ export default function DropSignup({ defaultAirports, cheapestHint = null, title
   if (state === "pending" || state === "enabled") {
     return (
       <div>
-        {heading}
+        {!collapsed && heading}
         <div
           role="status"
           className="p-5 rounded-2xl"
@@ -130,11 +131,11 @@ export default function DropSignup({ defaultAirports, cheapestHint = null, title
       {!collapsed && heading}
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
         <div>
-          <label htmlFor="drop-email" className="block text-sm font-semibold mb-2">
+          <label htmlFor={emailId} className="block text-sm font-semibold mb-2">
             E-mail
           </label>
           <input
-            id="drop-email"
+            id={emailId}
             type="email"
             autoComplete="email"
             inputMode="email"
@@ -185,7 +186,7 @@ export default function DropSignup({ defaultAirports, cheapestHint = null, title
   if (!collapsed) return form;
   return (
     <details className="rounded-2xl" style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}>
-      <summary className="cursor-pointer list-none p-4 flex items-center justify-between gap-3" style={{ minHeight: 48 }}>
+      <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden p-4 flex items-center justify-between gap-3" style={{ minHeight: 48 }}>
         <span>
           <span className="block text-xs font-bold tracking-widest uppercase" style={{ color: "var(--accent)" }}>Czwartkowy zrzut</span>
           <span className="block text-base font-bold mt-0.5">{title ?? "Takie okazje co czwartek w skrzynce"}</span>

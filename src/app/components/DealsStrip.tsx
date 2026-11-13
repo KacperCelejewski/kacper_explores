@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { POLISH_AIRPORTS } from "@/lib/airports";
 import { resolveOrigin } from "@/lib/drop/defaults";
 import { ORIGIN_GENITIVE, formatLocal } from "@/lib/drop/email";
@@ -39,15 +39,19 @@ export default function DealsStrip({
 }) {
   const [origin, setOrigin] = useState(initialOrigin);
   const [deals, setDeals] = useState<StripDeal[]>(initialDeals);
+  // false, gdy dane dla bieżącego lotniska jeszcze nie dotarły: karty wtedy nie pasują do nagłówka
+  const [ready, setReady] = useState(true);
+  const requestId = useRef(0);
 
+  // Tylko ostatnie zapytanie ma prawo ustawić dane, więc spóźniona odpowiedź ze starego lotniska nic nie nadpisze
   const load = (code: string) => {
-    if (code === initialOrigin) { setDeals(initialDeals); return () => {}; }
-    let cancelled = false;
+    const id = ++requestId.current;
+    if (code === initialOrigin) { setDeals(initialDeals); setReady(true); return; }
+    setReady(false);
     fetch(`/api/deals?origin=${code}`)
       .then((r) => (r.ok ? r.json() : { deals: [] }))
-      .then((d) => { if (!cancelled) setDeals(Array.isArray(d.deals) ? d.deals : []); })
-      .catch(() => { if (!cancelled) setDeals([]); });
-    return () => { cancelled = true; };
+      .then((d) => { if (id === requestId.current) { setDeals(Array.isArray(d.deals) ? d.deals : []); setReady(true); } })
+      .catch(() => { if (id === requestId.current) { setDeals([]); setReady(true); } });
   };
 
   // Zapamiętane lotnisko czytamy dopiero po zamontowaniu, żeby HTML z serwera i pierwszy render były takie same
@@ -55,20 +59,21 @@ export default function DealsStrip({
     const saved = readSavedOrigin(initialOrigin);
     if (saved !== initialOrigin) {
       setOrigin(saved);
-      return load(saved);
+      load(saved);
     }
+    return () => { requestId.current++; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const choose = (code: string) => {
     setOrigin(code);
-    setDeals([]);
     onOriginChange?.(code);
     try { window.localStorage.setItem(STORAGE_KEY, code); } catch { /* storage zablokowany */ }
     load(code);
   };
 
-  if (deals.length === 0) return null;
+  // Bez danych na starcie nie pokazujemy nic. Po wyborze innego lotniska sekcja zostaje, żeby dało się wybrać kolejne.
+  if (deals.length === 0 && origin === initialOrigin && ready) return null;
   const from = ORIGIN_GENITIVE[origin] ?? origin;
   const slug = origin.toLowerCase();
 
@@ -94,8 +99,13 @@ export default function DealsStrip({
         <p style={{ fontSize: 14, color: "var(--text-muted)", margin: "10px 0 0", lineHeight: 1.5 }}>
           Lot w obie strony, ceny z ostatnich wyszukiwań. Przed zakupem sprawdź aktualną cenę.
         </p>
+        {deals.length === 0 && (
+          <p style={{ fontSize: 15, color: "var(--text-muted)", margin: "16px 0 0" }}>
+            {ready ? `Na ten weekend nie ma jeszcze okazji z ${from}. Wybierz inne lotnisko albo zapisz się niżej.` : "Szukam okazji…"}
+          </p>
+        )}
         <ul style={{ listStyle: "none", padding: 0, margin: "16px 0 0", display: "grid", gap: 10 }}>
-          {deals.map((d) => (
+          {ready && deals.map((d) => (
             <li key={d.city_code}>
               <Link
                 href={`/okazje/${slug}#${d.city_code}`}

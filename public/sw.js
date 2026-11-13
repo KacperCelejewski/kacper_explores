@@ -1,11 +1,10 @@
-const CACHE = "wloczykij-v1";
+const CACHE = "wloczykij-v2";
 const OFFLINE_URL = "/offline";
 
 const PRECACHE = [
   "/",
   "/offline",
   "/quiz",
-  "/flights",
 ];
 
 self.addEventListener("install", (event) => {

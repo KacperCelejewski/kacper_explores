@@ -75,7 +75,7 @@ export default function CookieBanner() {
             zIndex: 100,
             background: "var(--bg-primary)",
             borderTop: "1.5px solid var(--border)",
-            padding: "12px 16px",
+            padding: "12px 16px max(12px, env(safe-area-inset-bottom))",
             boxShadow: "0 -6px 24px rgba(28,16,8,0.10)",
           }}
         >

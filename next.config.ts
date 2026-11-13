@@ -33,6 +33,9 @@ const nextConfig: NextConfig = {
         destination: "/?utm_source=instagram&utm_medium=social&utm_campaign=bio",
         permanent: false,
       },
+      // Usunięte trasy: stare linki i zakładki nie kończą na 404
+      { source: "/flights", destination: "/destinations", permanent: true },
+      { source: "/start", destination: "/", permanent: true },
     ];
   },
   async headers() {

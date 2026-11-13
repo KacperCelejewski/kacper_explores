@@ -389,7 +389,7 @@ function DestCard({
             <span
               key={tag}
               className="text-xs font-medium px-2 py-0.5 rounded-full"
-              style={{ background: "var(--border)", color: "var(--accent)" }}
+              style={{ background: "var(--accent-light)", color: "var(--accent)" }}
             >
               {TAG_LABELS[tag] ?? tag}
             </span>

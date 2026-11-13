@@ -32,7 +32,7 @@ Not another flight aggregator and not a generic "travel planner". Włóczykij is
 
 ## Operating Context
 
-- Entry paths: full quiz (`/quiz`), quick path (`/quick`), destinations browser (`/destinations`, `/odkryj`), flights (`/flights`).
+- Entry paths: full quiz (`/quiz`), quick path (`/quick`), destinations browser (`/destinations`), weekend deals (`/okazje/[lotnisko]`).
 - Plan view (`/plan/[tripId]`): streamed days, regenerate a single day, swap one activity, packing list, restaurant picks, Leaflet map, budget tracker, chat, PDF and `.ics` export, public share link (`/share/[tripId]`).
 - Pre-trip reminder e-mail (Vercel Cron, daily 07:00), newsletter with double opt-in.
 - Blog in MDX (`src/content/blog`) for SEO, focused on budget solo travel in Europe.
