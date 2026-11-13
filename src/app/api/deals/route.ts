@@ -11,6 +11,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     origin,
     deals: deals.map((d) => ({
+      city_code: d.city_code,
       city: d.city_name,
       price: d.price,
       departure_at: d.departure_at,
