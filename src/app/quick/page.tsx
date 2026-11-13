@@ -190,7 +190,7 @@ function GeneratingOverlay({
 const COMPANION_OPTIONS: { value: Companion; Icon: IconFC; label: string; desc: string }[] = [
   { value: "solo",    Icon: IconSolo,    label: "Sam/a",           desc: "Solo — porady bezpieczeństwa, miejsca do poznania ludzi" },
   { value: "couple",  Icon: IconCouple,  label: "Para",            desc: "Romantyczne kolacje, wspólne aktywności" },
-  { value: "family",  Icon: IconFamily,  label: "Rodzina",         desc: "Family-friendly, spokojne tempo, bezpieczne dzielnice" },
+  { value: "family",  Icon: IconFamily,  label: "Rodzina",         desc: "Atrakcje dla dzieci, spokojne tempo, bezpieczne dzielnice" },
   { value: "friends", Icon: IconFriends, label: "Znajomi",         desc: "Aktywności grupowe, wieczorne wyjścia, podział kosztów" },
 ];
 

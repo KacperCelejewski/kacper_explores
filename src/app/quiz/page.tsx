@@ -519,7 +519,7 @@ function QuizPageInner() {
         )}
         {currentQuizStep === 0 && (
           <p className="text-center text-xs mt-3" style={{ color: "var(--text-muted)" }}>
-            6 pytań, ok. 2 minuty. Nic nie kosztuje.
+            6 pytań, ok. 2 minuty. Na końcu założysz darmowe konto, bez karty.
           </p>
         )}
       </div>
@@ -581,7 +581,7 @@ const IconGroupFriends: CompanionIconFC = ({ size = 24 }) => (
 const COMPANION_OPTIONS: { value: Companion; label: string; Icon: CompanionIconFC; desc: string }[] = [
   { value: "solo",    label: "Sam/a",    Icon: IconSolo,         desc: "Porady bezpieczeństwa, miejsca do poznania ludzi" },
   { value: "couple",  label: "Para",     Icon: IconCouple,       desc: "Romantyczne kolacje, wspólne aktywności" },
-  { value: "family",  label: "Rodzina",  Icon: IconFamily,       desc: "Family-friendly, spokojne tempo, bezpieczeństwo" },
+  { value: "family",  label: "Rodzina",  Icon: IconFamily,       desc: "Spokojne tempo, atrakcje dla dzieci, bezpieczeństwo" },
   { value: "friends", label: "Znajomi",  Icon: IconGroupFriends, desc: "Aktywności grupowe, wieczory w barach, podział kosztów" },
 ];
 
