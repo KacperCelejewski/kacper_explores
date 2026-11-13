@@ -87,6 +87,13 @@ const mdxComponents = {
     />
   ),
   hr: () => <hr className="my-6" style={{ borderColor: "var(--border)" }} />,
+  // Linki wewnętrzne przez Link (bez przeładowania), zewnętrzne z rel zamiast przekazywania reputacji
+  a: ({ href = "", children, ...rest }: React.AnchorHTMLAttributes<HTMLAnchorElement>) =>
+    href.startsWith("/") || href.startsWith("#") ? (
+      <Link href={href} className="font-semibold underline underline-offset-2" style={{ color: "var(--accent)" }}>{children}</Link>
+    ) : (
+      <a href={href} {...rest} target="_blank" rel="noopener noreferrer nofollow" className="font-semibold underline underline-offset-2" style={{ color: "var(--accent)" }}>{children}</a>
+    ),
 };
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -176,14 +183,16 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
               style={{ background: "var(--accent)", color: "white" }}
               aria-hidden="true"
             >
-              K
+              {post.author === "editorial" ? "W" : "K"}
             </div>
             <div>
               <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>
-                Włóczykij
+                {post.author === "editorial" ? "Redakcja Włóczykija" : "Włóczykij"}
               </p>
               <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                Założyciel Włóczykij · podróżuje solo od 6 lat
+                {post.author === "editorial"
+                  ? "Poradnik oparty na ogólnych zasadach; ceny i warunki sprawdź u przewoźnika"
+                  : "Założyciel Włóczykij · podróżuje solo od 6 lat"}
               </p>
             </div>
           </div>
