@@ -13,6 +13,7 @@ import CheckoutButton from "@/app/components/CheckoutButton";
 import DropSignup from "@/app/components/DropSignup";
 import DropProfileButton from "@/app/components/DropProfileButton";
 import { FlightCard, HotelLinks, LuggageTile, TicketsLink } from "@/app/components/PartnerLinks";
+import { IconPlane, IconBed, IconFork, IconTicket, IconLink, IconLock, IconDownload, IconCalendar, IconGlobe, IconCheck, IconClose, IconRefresh, IconPin, IconSuitcase } from "@/app/components/Icons";
 import type { DayPlan, DayActivity, TripPlan, DestinationRecommendation, QuizAnswers } from "@/types";
 import { getCityPhotoUrl } from "@/lib/cityPhotos";
 import { PRICES } from "@/lib/prices";
@@ -356,7 +357,7 @@ export default function PlanPage() {
           className="text-3xl"
           aria-hidden="true"
         >
-          ✈️
+          <IconPlane size={32} />
         </motion.div>
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>Ładowanie planu…</p>
       </div>
@@ -422,10 +423,10 @@ export default function PlanPage() {
 
           {/* Budget breakdown */}
           <div className="grid grid-cols-2 gap-3">
-            <BudgetItem label="Loty" value={plan.budgetBreakdown.flights} emoji="✈️" />
-            <BudgetItem label="Nocleg" value={plan.budgetBreakdown.accommodation} emoji="🛏️" />
-            <BudgetItem label="Jedzenie" value={plan.budgetBreakdown.food} emoji="🍽️" />
-            <BudgetItem label="Atrakcje" value={plan.budgetBreakdown.attractions} emoji="🎟️" />
+            <BudgetItem label="Loty" value={plan.budgetBreakdown.flights} Icon={IconPlane} />
+            <BudgetItem label="Nocleg" value={plan.budgetBreakdown.accommodation} Icon={IconBed} />
+            <BudgetItem label="Jedzenie" value={plan.budgetBreakdown.food} Icon={IconFork} />
+            <BudgetItem label="Atrakcje" value={plan.budgetBreakdown.attractions} Icon={IconTicket} />
           </div>
 
           <div className="mt-3 pt-3 border-t flex items-center justify-between" style={{ borderColor: "var(--border)" }}>
@@ -462,7 +463,7 @@ export default function PlanPage() {
               Szukam restauracji…
             </>
           ) : (
-            <>{restaurantsOpen && restaurants ? "🍽️ Polecane restauracje ↑" : "🍽️ Gdzie zjeść w " + plan.city}</>
+            <><IconFork size={16} />{restaurantsOpen && restaurants ? "Polecane restauracje ↑" : "Gdzie zjeść w " + plan.city}</>
           )}
         </button>
 
@@ -505,7 +506,6 @@ export default function PlanPage() {
                 className="flex items-start gap-3 px-4 py-3 rounded-2xl"
                 style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
               >
-                <span style={{ color: "var(--accent)", fontWeight: 700, fontSize: 14, lineHeight: "20px", flexShrink: 0 }}>✦</span>
                 <p className="text-xs leading-relaxed">{tip}</p>
               </motion.div>
             ))}
@@ -530,7 +530,7 @@ export default function PlanPage() {
               style={{ color: "var(--error)" }}
               aria-label="Zamknij"
             >
-              ✕
+              <IconClose size={14} />
             </button>
           </motion.div>
         )}
@@ -619,7 +619,7 @@ export default function PlanPage() {
               Generuję listę…
             </>
           ) : (
-            <>{packingOpen && packingList ? "🧳 Lista rzeczy ↑" : "🧳 Wygeneruj listę do spakowania"}</>
+            <><IconSuitcase size={16} />{packingOpen && packingList ? "Lista rzeczy ↑" : "Wygeneruj listę do spakowania"}</>
           )}
         </button>
 
@@ -658,7 +658,7 @@ export default function PlanPage() {
                                     color: "white",
                                   }}
                                 >
-                                  {checked ? "✓" : ""}
+                                  {checked ? <IconCheck size={12} /> : null}
                                 </span>
                                 <span
                                   className="text-sm"
@@ -701,7 +701,7 @@ export default function PlanPage() {
           className="flex items-center justify-center gap-2 py-2.5 rounded-2xl text-sm font-semibold"
           style={{ background: "var(--success-bg)", color: "var(--success)" }}
         >
-          <span>✓</span>
+          <IconCheck size={16} />
           <span>Plan zapisany na Twoim koncie</span>
         </div>
 
@@ -714,7 +714,7 @@ export default function PlanPage() {
               color: copied && !isPublic ? "var(--accent)" : copied ? "var(--success)" : "var(--text-secondary)",
             }}
           >
-            {copied && !isPublic ? "↓ Najpierw udostępnij plan" : copied ? "✓ Skopiowano" : "🔗 Udostępnij"}
+            {copied && !isPublic ? "↓ Najpierw udostępnij plan" : copied ? <><IconCheck size={14} /> Skopiowano</> : <><IconLink size={14} /> Udostępnij</>}
           </button>
           <button
             onClick={handlePDF}
@@ -725,14 +725,14 @@ export default function PlanPage() {
               color: userCredits?.isPro || feedbackGiven ? "var(--text-secondary)" : "var(--accent)",
             }}
           >
-            {pdfLoading ? "…" : userCredits?.isPro || feedbackGiven ? "📄 PDF" : "🔒 PDF"}
+            {pdfLoading ? "…" : userCredits?.isPro || feedbackGiven ? <><IconDownload size={14} /> PDF</> : <><IconLock size={14} /> PDF</>}
           </button>
           <button
             onClick={handleICS}
             className="py-3 rounded-2xl text-xs font-semibold flex items-center justify-center gap-1 transition-all hover:opacity-80"
             style={{ background: "var(--bg-surface)", color: "var(--text-secondary)" }}
           >
-            📅 Kalendarz
+            <IconCalendar size={14} /> Kalendarz
           </button>
         </div>
 
@@ -746,7 +746,7 @@ export default function PlanPage() {
             color: isPublic ? "var(--success)" : "var(--text-secondary)",
           }}
         >
-          {publicToggling ? "…" : isPublic ? "✓ Plan widoczny w galerii" : "🌍 Udostępnij w galerii Odkryj"}
+          {publicToggling ? "…" : isPublic ? <><IconCheck size={16} /> Plan widoczny w galerii</> : <><IconGlobe size={16} /> Udostępnij w galerii Odkryj</>}
         </button>
 
         <button
@@ -878,7 +878,7 @@ export default function PlanPage() {
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-bold text-sm text-white">✦ Pro Roczny</p>
+                      <p className="font-bold text-sm text-white">Pro Roczny</p>
                       <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.75)" }}>
                         PDF · wyjazdy bez limitu
                       </p>
@@ -938,10 +938,10 @@ export default function PlanPage() {
   );
 }
 
-function BudgetItem({ label, value, emoji }: { label: string; value: string; emoji: string }) {
+function BudgetItem({ label, value, Icon }: { label: string; value: string; Icon: (p: { size?: number }) => React.ReactElement }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="text-base" aria-hidden="true">{emoji}</span>
+      <span style={{ color: "var(--accent)" }}><Icon size={18} /></span>
       <div>
         <p className="text-xs" style={{ color: "var(--text-muted)" }}>{label}</p>
         <p className="text-sm font-semibold">{value}</p>
@@ -1027,7 +1027,7 @@ function DayPlanView({
             {regenLoading ? (
               <span className="w-3 h-3 rounded-full border border-t-transparent animate-spin" style={{ borderColor: "var(--accent)", borderTopColor: "transparent" }} />
             ) : (
-              "↻"
+              <IconRefresh size={14} />
             )}
             {regenLoading ? "…" : "Inny pomysł"}
           </button>
@@ -1110,13 +1110,12 @@ function RestaurantCard({ restaurant: r, city, index }: { restaurant: Restaurant
         className="flex items-center gap-2 px-3 py-2 rounded-xl mb-2"
         style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
       >
-        <span style={{ color: "var(--accent)", fontSize: 13, fontWeight: 700, flexShrink: 0 }}>✦</span>
         <p className="text-xs" style={{ color: "var(--text-secondary)" }}>{r.highlight}</p>
       </div>
 
       <div className="flex items-center justify-between">
         <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-          <span aria-hidden="true">📍 </span>{r.address}
+          <span className="inline-flex items-center gap-1"><IconPin size={12} />{r.address}</span>
         </p>
         <a
           href={mapsUrl}
@@ -1197,7 +1196,7 @@ function AddActivityModal({
 
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-lg font-bold">Dodaj do dnia {dayNum}</h3>
-          <button onClick={onClose} className="text-xl" style={{ color: "var(--text-muted)" }}>✕</button>
+          <button onClick={onClose} className="text-xl" style={{ color: "var(--text-muted)" }} aria-label="Zamknij"><IconClose size={18} /></button>
         </div>
 
         <div className="flex flex-col gap-4">
@@ -1343,7 +1342,7 @@ function AddActivityModal({
             className="flex-[2] py-3 rounded-2xl font-bold text-sm disabled:opacity-50"
             style={{ background: "var(--accent)", color: "#fff" }}
           >
-            Dodaj do planu ✓
+            Dodaj do planu
           </button>
         </div>
       </motion.div>
@@ -1407,7 +1406,7 @@ function ActivityCard({
             >
               {swapping ? (
                 <span className="w-3 h-3 rounded-full border border-t-transparent animate-spin inline-block" style={{ borderColor: "var(--text-secondary)", borderTopColor: "transparent" }} />
-              ) : "↻"}
+              ) : <IconRefresh size={12} />}
             </button>
             <span
               className="text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
@@ -1432,7 +1431,7 @@ function ActivityCard({
         {activity.location && (
           <div className="flex items-center justify-between mt-1.5">
             <p className="text-xs font-medium" style={{ color: "var(--accent)" }}>
-              <span aria-hidden="true">📍 </span>{activity.location}
+              <span className="inline-flex items-center gap-1"><IconPin size={12} />{activity.location}</span>
             </p>
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activity.location)}`}

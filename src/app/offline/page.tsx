@@ -1,9 +1,11 @@
 "use client";
 
+import { IconPlane } from "@/app/components/Icons";
+
 export default function OfflinePage() {
   return (
     <div className="flex flex-col flex-1 items-center justify-center px-6 text-center gap-6">
-      <span className="text-6xl">✈️</span>
+      <span style={{ color: "var(--accent)" }}><IconPlane size={64} /></span>
       <div>
         <h1 className="text-2xl font-bold mb-2">Brak połączenia</h1>
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>

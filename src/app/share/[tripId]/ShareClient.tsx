@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { IconPlane, IconBed, IconFork, IconTicket, IconCheck, IconPin } from "@/app/components/Icons";
 import type { TripPlan, DayPlan, DayActivity, DestinationRecommendation } from "@/types";
 import Link from "next/link";
 
@@ -72,7 +73,7 @@ export default function ShareClient() {
   if (loading) {
     return (
       <div className="flex flex-col flex-1 items-center justify-center gap-4">
-        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }} className="text-3xl">✈️</motion.div>
+        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }} className="text-3xl" style={{ color: "var(--accent)" }} aria-hidden="true"><IconPlane size={32} /></motion.div>
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>Ładowanie planu…</p>
       </div>
     );
@@ -121,7 +122,7 @@ export default function ShareClient() {
               color: copied ? "var(--success)" : "white",
             }}
           >
-            {copied ? "Skopiowano ✓" : "Kopiuj link"}
+            {copied ? <><IconCheck size={14} /> Skopiowano</> : "Kopiuj link"}
           </button>
         </div>
 
@@ -140,13 +141,13 @@ export default function ShareClient() {
 
           <div className="mt-4 pt-4 border-t grid grid-cols-2 gap-3" style={{ borderColor: "var(--border)" }}>
             {[
-              { label: "Loty", value: plan.budgetBreakdown.flights, emoji: "✈️" },
-              { label: "Nocleg", value: plan.budgetBreakdown.accommodation, emoji: "🛏️" },
-              { label: "Jedzenie", value: plan.budgetBreakdown.food, emoji: "🍽️" },
-              { label: "Atrakcje", value: plan.budgetBreakdown.attractions, emoji: "🎟️" },
+              { label: "Loty", value: plan.budgetBreakdown.flights, Icon: IconPlane },
+              { label: "Nocleg", value: plan.budgetBreakdown.accommodation, Icon: IconBed },
+              { label: "Jedzenie", value: plan.budgetBreakdown.food, Icon: IconFork },
+              { label: "Atrakcje", value: plan.budgetBreakdown.attractions, Icon: IconTicket },
             ].map((item) => (
               <div key={item.label} className="flex items-center gap-2">
-                <span className="text-base">{item.emoji}</span>
+                <span aria-hidden="true" style={{ color: "var(--accent)" }}><item.Icon size={18} /></span>
                 <div>
                   <p className="text-xs" style={{ color: "var(--text-muted)" }}>{item.label}</p>
                   <p className="text-sm font-semibold">{item.value}</p>
@@ -178,7 +179,6 @@ export default function ShareClient() {
                 className="flex items-start gap-3 px-4 py-3 rounded-2xl"
                 style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
               >
-                <span style={{ color: "var(--accent)", fontWeight: 700, fontSize: 14, lineHeight: "20px", flexShrink: 0 }}>✦</span>
                 <p className="text-xs leading-relaxed">{tip}</p>
               </motion.div>
             ))}
@@ -314,7 +314,7 @@ function SharedActivityCard({ activity, index }: { activity: DayActivity; index:
         <p className="text-xs mt-1.5 leading-relaxed" style={{ color: "var(--text-muted)" }}>{activity.description}</p>
         {activity.location && (
           <div className="flex items-center justify-between mt-1.5">
-            <p className="text-xs font-medium" style={{ color: "var(--accent)" }}>📍 {activity.location}</p>
+            <p className="text-xs font-medium inline-flex items-center gap-1" style={{ color: "var(--accent)" }}><IconPin size={12} />{activity.location}</p>
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activity.location)}`}
               target="_blank"

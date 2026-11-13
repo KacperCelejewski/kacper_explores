@@ -10,6 +10,7 @@ import { useAppStore } from "@/lib/store";
 import type { DestinationRecommendation, FlightDetails } from "@/types";
 import { getCityPhotoUrl } from "@/lib/cityPhotos";
 import { formatPlans } from "@/lib/formatPlans";
+import { IconPin, IconPlane, IconCheck } from "@/app/components/Icons";
 
 interface UserStatus {
   authenticated: boolean;
@@ -50,7 +51,7 @@ const STEPS = [
   "Dobieram atrakcje do Twojego stylu…",
   "Układam plan dzień po dniu…",
   "Obliczam budżet podróży…",
-  "Dodaję wskazówki dla podróżujących solo…",
+  "Dodaję wskazówki dla osób podróżujących solo…",
 ];
 
 const STEP_DELAYS = [0, 5, 12, 22, 35, 50];
@@ -116,8 +117,8 @@ function GeneratingOverlay({
       <div className="flex flex-col flex-1 items-center justify-center px-6 gap-6">
         {/* Plane animation */}
         <div className="relative" style={{ width: 180, height: 130 }}>
-          <div className="absolute bottom-0 select-none" style={{ left: "50%", transform: "translateX(-50%)", fontSize: "3.5rem" }}>
-            🗼
+          <div className="absolute bottom-0 select-none" style={{ left: "50%", transform: "translateX(-50%)", color: "var(--accent)" }}>
+            <IconPin size={56} />
           </div>
           <motion.div
             className="absolute select-none"
@@ -125,7 +126,7 @@ function GeneratingOverlay({
             animate={{ x: [-160, -60, 52, 64], y: [20, -20, 20, 48], rotate: [-30, -20, 5, 12] }}
             transition={{ duration: 2.4, ease: [0.4, 0, 0.2, 1], repeat: Infinity, repeatDelay: 1.2 }}
           >
-            ✈️
+            <IconPlane size={28} />
           </motion.div>
         </div>
 
@@ -158,7 +159,7 @@ function GeneratingOverlay({
                       border: active ? "2px solid var(--accent)" : "none",
                     }}
                   >
-                    {done ? "✓" : active ? (
+                    {done ? <IconCheck size={12} /> : active ? (
                       <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: "var(--accent)", display: "block" }} />
                     ) : ""}
                   </div>
@@ -179,7 +180,7 @@ function GeneratingOverlay({
         ) : (
           <div className="flex items-center gap-3">
             <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: "var(--accent)", display: "block" }} />
-            <p className="text-sm" style={{ color: "var(--text-secondary)" }}>Łączę się z AI…</p>
+            <p className="text-sm" style={{ color: "var(--text-secondary)" }}>Przygotowuję plan…</p>
           </div>
         )}
 
@@ -195,7 +196,7 @@ function GeneratingOverlay({
               className="w-full max-w-xs px-4 py-3 rounded-2xl"
               style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
             >
-              <p className="text-xs font-bold mb-2" style={{ color: "var(--accent)" }}>📍 Dzień 1 gotowy</p>
+              <p className="text-xs font-bold mb-2" style={{ color: "var(--accent)" }}>Dzień 1 gotowy</p>
               <div className="flex flex-col gap-1.5">
                 {previewActivities.slice(0, 3).map((a, i) => (
                   <div key={i} className="flex items-center gap-2">
@@ -216,7 +217,7 @@ function GeneratingOverlay({
               className="w-full max-w-xs px-4 py-3 rounded-2xl"
               style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
             >
-              <p className="text-xs font-bold mb-1" style={{ color: "var(--accent)" }}>💡 Czy wiesz, że…</p>
+              <p className="text-xs font-bold mb-1" style={{ color: "var(--accent)" }}>Czy wiesz, że…</p>
               <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
                 {facts[factIndex]}
               </p>
@@ -254,9 +255,9 @@ function PlaneAnimation({ city }: { city?: string }) {
         {/* Tower */}
         <div
           className="absolute bottom-0 select-none leading-none"
-          style={{ left: "50%", transform: "translateX(-50%)", fontSize: "4rem" }}
+          style={{ left: "50%", transform: "translateX(-50%)", color: "var(--accent)" }}
         >
-          🗼
+          <IconPin size={64} />
         </div>
 
         {/* Plane — flies in from top-left, arcs down to tower tip */}
@@ -275,7 +276,7 @@ function PlaneAnimation({ city }: { city?: string }) {
             repeatDelay: 1.2,
           }}
         >
-          ✈️
+          <IconPlane size={28} />
         </motion.div>
       </div>
 
@@ -343,7 +344,7 @@ function DestCard({
             (e.currentTarget as HTMLImageElement).style.display = "none";
             const parent = e.currentTarget.parentElement;
             if (parent) {
-              parent.style.background = "linear-gradient(135deg, #FF6B35 0%, #ff8c5a 100%)";
+              parent.style.background = "linear-gradient(135deg, var(--accent) 0%, var(--accent-poster) 100%)";
               parent.style.display = "flex";
               parent.style.alignItems = "center";
               parent.style.justifyContent = "center";
@@ -371,7 +372,7 @@ function DestCard({
           <span
             className="text-xs font-bold px-2.5 py-1 rounded-full"
             style={{
-              background: dest.budgetLevel === "low" ? "rgba(34,197,94,0.9)" : "rgba(251,191,36,0.9)",
+              background: dest.budgetLevel === "low" ? "var(--success)" : "var(--accent)",
               color: "#fff",
             }}
           >
@@ -405,7 +406,7 @@ function DestCard({
           <ul className="mb-4 space-y-1">
             {highlights.map((h, i) => (
               <li key={i} className="flex items-start gap-1.5 text-sm" style={{ color: "var(--text-primary)" }}>
-                <span style={{ color: "var(--accent)" }}>✓</span>
+                <span style={{ color: "var(--accent)", marginTop: 3 }}><IconCheck size={14} /></span>
                 <span>{h}</span>
               </li>
             ))}
@@ -572,7 +573,7 @@ function FlightModal({
             {isGenerating
               ? "Generuję plan…"
               : hasFlightData
-              ? "Wygeneruj plan ✨"
+              ? "Wygeneruj plan"
               : "Generuj bez dat"}
           </button>
         </div>
@@ -597,7 +598,7 @@ function UpgradeModal({ onClose }: { onClose: () => void }) {
         className="w-full max-w-sm rounded-2xl p-6 text-center"
         style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
       >
-        <div className="text-4xl mb-3">✈️</div>
+        <div className="mb-3 flex justify-center" style={{ color: "var(--accent)" }}><IconPlane size={40} /></div>
         <h3 className="font-bold text-lg mb-2" style={{ color: "var(--text-primary)" }}>
           Plany na ten miesiąc się skończyły
         </h3>
@@ -905,7 +906,7 @@ export default function DestinationsPage() {
                 className="text-xs font-bold px-2.5 py-1 rounded-lg"
                 style={{ background: "var(--accent)", color: "#fff" }}
               >
-                Zapisz ✓
+                Zapisz
               </button>
             </div>
           </motion.div>

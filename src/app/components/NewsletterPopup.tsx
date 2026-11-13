@@ -138,14 +138,15 @@ function NewsletterPopupInner() {
             aria-label="Zamknij"
             style={{
               position: "absolute",
-              top: 12,
-              right: 14,
+              top: 4,
+              right: 4,
               background: "none",
               border: "none",
               cursor: "pointer",
               fontSize: 20,
               lineHeight: 1,
-              padding: 4,
+              width: 44,
+              height: 44,
               color: "var(--text-muted)",
             }}
           >
@@ -191,7 +192,7 @@ function NewsletterPopupInner() {
                       color: copied ? "var(--success)" : "white",
                     }}
                   >
-                    {copied ? "Skopiowano ✓" : "Kopiuj"}
+                    {copied ? "Skopiowano" : "Kopiuj"}
                   </button>
                 </div>
                 <p className="text-xs mt-3 leading-relaxed" style={{ color: "var(--text-muted)" }}>
@@ -251,8 +252,8 @@ function NewsletterPopupInner() {
                 </p>
                 <button
                   onClick={handleRetry}
-                  className="text-xs font-semibold mt-3"
-                  style={{ color: "var(--accent)", background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                  className="text-xs font-semibold mt-1"
+                  style={{ color: "var(--accent)", background: "none", border: "none", cursor: "pointer", padding: "12px 0" }}
                 >
                   ← Zapisz się ponownie
                 </button>
@@ -275,8 +276,8 @@ function NewsletterPopupInner() {
                 </p>
                 <button
                   onClick={handleRetry}
-                  className="text-xs font-semibold mt-3"
-                  style={{ color: "var(--accent)", background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                  className="text-xs font-semibold mt-1"
+                  style={{ color: "var(--accent)", background: "none", border: "none", cursor: "pointer", padding: "12px 0" }}
                 >
                   ← Spróbuj ponownie
                 </button>

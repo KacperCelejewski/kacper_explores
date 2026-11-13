@@ -4,6 +4,7 @@ import type { DayActivity, FlightOffer } from "@/types";
 import {
   bookingLink, flightLink, hostelworldLink, isFreeCost, luggageLink, partnerLinkProps, ticketsLink,
 } from "@/lib/affiliate";
+import { IconBed, IconBackpack, IconPlane } from "./Icons";
 
 export function PartnerNote({ show }: { show: boolean }) {
   if (!show) return null;
@@ -20,8 +21,8 @@ export function HotelLinks({
   const booking = bookingLink({ city, country, checkin, checkout });
   const hostelworld = hostelworldLink(city);
   const options = [
-    { label: "🛏️ Booking.com", sub: "Hotele i apartamenty", link: booking, color: "#003580", bg: "#EEF3FF" },
-    { label: "🏕️ Hostelworld", sub: "Hostele dla backpackerów", link: hostelworld, color: "#FF6C2F", bg: "#FFF0E8" },
+    { label: "Booking.com", sub: "Hotele i apartamenty", link: booking, Icon: IconBed },
+    { label: "Hostelworld", sub: "Hostele dla backpackerów", link: hostelworld, Icon: IconBackpack },
   ];
 
   return (
@@ -35,13 +36,13 @@ export function HotelLinks({
             key={opt.label}
             {...partnerLinkProps(opt.link, "hotel", city)}
             className="flex items-center justify-between p-4 rounded-2xl transition-opacity hover:opacity-80"
-            style={{ background: opt.bg, textDecoration: "none", border: `1px solid ${opt.color}22` }}
+            style={{ background: "var(--bg-surface)", textDecoration: "none", border: "1px solid var(--border)" }}
           >
             <div>
-              <p className="text-sm font-bold" style={{ color: opt.color }}>{opt.label}</p>
+              <p className="text-sm font-bold flex items-center gap-1.5" style={{ color: "var(--text-primary)" }}><opt.Icon size={16} />{opt.label}</p>
               <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{opt.sub}</p>
             </div>
-            <span className="text-xs font-semibold" style={{ color: opt.color }}>Szukaj →</span>
+            <span className="text-xs font-semibold" style={{ color: "var(--accent)" }}>Szukaj →</span>
           </a>
         ))}
       </div>
@@ -72,7 +73,7 @@ export function FlightCard({ offer, city }: { offer: FlightOffer | undefined; ci
         style={{ background: "var(--bg-surface)", textDecoration: "none", border: "1px solid var(--border)" }}
       >
         <div>
-          <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>✈️ Lot do {city}</p>
+          <p className="text-sm font-bold flex items-center gap-1.5" style={{ color: "var(--accent)" }}><IconPlane size={16} />Lot do {city}</p>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
             {offer.origin.city} ({offer.origin.code}) · {offer.price} zł{dates}
           </p>

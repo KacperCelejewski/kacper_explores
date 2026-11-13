@@ -4,6 +4,7 @@ import SiteNav from "../components/SiteNav";
 import SiteFooter from "../components/SiteFooter";
 import DropSignup from "../components/DropSignup";
 import { PRICES } from "@/lib/prices";
+import { IconBackpack, IconCheck } from "@/app/components/Icons";
 
 const pricingSchema = {
   "@context": "https://schema.org",
@@ -79,7 +80,7 @@ const PLANS = [
     ],
     highlight: false,
     cta: "Kup Pack →",
-    emoji: "🎒",
+    Icon: IconBackpack,
   },
   {
     key: "pro_yearly",
@@ -95,7 +96,7 @@ const PLANS = [
     ],
     highlight: true,
     cta: "Zostań Pro →",
-    emoji: "✦",
+    Icon: null,
   },
   {
     key: "pro_monthly",
@@ -111,7 +112,7 @@ const PLANS = [
     ],
     highlight: false,
     cta: "Zostań Pro →",
-    emoji: "✦",
+    Icon: null,
   },
 ];
 
@@ -183,7 +184,7 @@ export default function PricingPage() {
             <div className="p-5">
               <div className="flex items-start justify-between">
                 <div>
-                  <span className="text-xl">{plan.emoji}</span>
+                  {plan.Icon && <span style={{ color: "var(--accent)", display: "block" }}><plan.Icon size={24} /></span>}
                   <h2 className="font-bold text-lg mt-1">{plan.name}</h2>
                 </div>
                 <div className="text-right">
@@ -202,7 +203,7 @@ export default function PricingPage() {
                       className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
                       style={{ background: "var(--accent-light)" }}
                     >
-                      <span className="text-xs" style={{ color: "var(--accent)" }}>✓</span>
+                      <span style={{ color: "var(--accent)", display: "flex" }}><IconCheck size={10} /></span>
                     </div>
                     <p className="text-sm">{f}</p>
                   </div>
@@ -224,7 +225,7 @@ export default function PricingPage() {
         <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
           Pro możesz zwrócić w ciągu 14 dni, dopóki nie wygenerujesz na nim planu. Wygenerowany plan
           jest już Twój, więc Packa po użyciu nie zwracamy. Szczegóły w{" "}
-          <a href="/regulamin" style={{ color: "var(--success)", textDecoration: "underline" }}>regulaminie</a>.
+          <a href="/regulamin" style={{ color: "var(--success)", textDecoration: "underline", display: "inline-block", padding: "12px 0" }}>regulaminie</a>.
         </p>
       </div>
 

@@ -29,16 +29,16 @@ interface ProfileData {
 }
 
 const VIBE_LABELS: Record<string, string> = {
-  chill: "Reset ☕",
-  intense: "Full program 🔥",
-  social: "Towarzyski 🎉",
-  active: "Aktywny 🥾",
+  chill: "Reset",
+  intense: "Pełny program",
+  social: "Towarzyski",
+  active: "Aktywny",
 };
 
 const PLACE_LABELS: Record<string, string> = {
-  big_city: "Duże miasto 🏙️",
-  charming: "Kameralne 🏘️",
-  beach_sun: "Słońce i woda 🏖️",
+  big_city: "Duże miasto",
+  charming: "Kameralne",
+  beach_sun: "Słońce i woda",
 };
 
 const TAG_LABELS: Record<string, string> = {
@@ -157,7 +157,7 @@ export default function ProfilePage() {
         <button
           onClick={() => router.back()}
           className="text-sm font-medium transition-opacity hover:opacity-60"
-          style={{ color: "var(--text-muted)" }}
+          style={{ color: "var(--text-muted)", padding: "12px 0" }}
         >
           ← Wstecz
         </button>
@@ -186,7 +186,7 @@ export default function ProfilePage() {
                 className="text-xs font-bold px-2.5 py-0.5 rounded-full"
                 style={{ background: "var(--accent)", color: "white" }}
               >
-                ✦ Pro
+                Pro
               </span>
             ) : (
               <span
@@ -211,7 +211,7 @@ export default function ProfilePage() {
           style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
         >
           <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>
-            ✦ Zostań Pro — nielimitowane plany →
+            Zostań Pro — nielimitowane plany →
           </p>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
             {PRICES.proMonthly.label}/mies. lub {PRICES.proYearly.label}/rok · anuluj kiedy chcesz
@@ -236,7 +236,7 @@ export default function ProfilePage() {
             <button
               onClick={() => router.push("/quiz")}
               className="text-xs font-semibold transition-opacity hover:opacity-70"
-              style={{ color: "var(--accent)" }}
+              style={{ color: "var(--accent)", padding: "12px 0" }}
             >
               Edytuj →
             </button>
@@ -247,7 +247,7 @@ export default function ProfilePage() {
           <div className="glass-card p-4">
             <div className="flex flex-wrap gap-2">
               {prefs.budget && (
-                <Chip label={prefs.budget === "low" ? "🎒 Backpacker" : "🧳 Komfortowy"} />
+                <Chip label={prefs.budget === "low" ? "Backpacker" : "Komfortowy"} />
               )}
               {prefs.vibe && <Chip label={VIBE_LABELS[prefs.vibe] ?? prefs.vibe} />}
               {prefs.placeType && <Chip label={PLACE_LABELS[prefs.placeType] ?? prefs.placeType} />}
@@ -353,7 +353,7 @@ export default function ProfilePage() {
             disabled={portalLoading}
             className="btn-primary"
           >
-            {portalLoading ? "Przekierowuję…" : "✦ Zarządzaj subskrypcją Pro →"}
+            {portalLoading ? "Przekierowuję…" : "Zarządzaj subskrypcją Pro →"}
           </button>
         ) : (
           <button
@@ -369,7 +369,7 @@ export default function ProfilePage() {
           className="text-sm font-semibold py-3 rounded-2xl transition-opacity hover:opacity-70"
           style={{ background: "var(--bg-surface)", color: "var(--text-secondary)" }}
         >
-          {saved ? "✓ Zapisano" : saving ? "Zapisuję…" : "Zapisz obecne ustawienia quizu"}
+          {saved ? "Zapisano" : saving ? "Zapisuję…" : "Zapisz obecne ustawienia quizu"}
         </button>
       </div>
 

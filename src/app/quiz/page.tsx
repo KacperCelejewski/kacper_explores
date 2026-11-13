@@ -107,7 +107,7 @@ const STYLE_OPTIONS: { value: TravelStyle; label: string; Icon: IconFC; desc: st
 
 const VIBE_OPTIONS: { value: TravelVibe; Icon: IconFC; label: string; desc: string }[] = [
   { value: "chill",   Icon: IconSun,       label: "Reset",        desc: "Własne tempo, kawiarnie, luz" },
-  { value: "intense", Icon: IconLightning, label: "Full program", desc: "Jak najwięcej, każda chwila gra" },
+  { value: "intense", Icon: IconLightning, label: "Pełny program", desc: "Jak najwięcej, każda chwila gra" },
   { value: "social",  Icon: IconPeople,    label: "Towarzyski",   desc: "Poznawanie ludzi, bary, imprezy" },
   { value: "active",  Icon: IconMountain,  label: "Aktywny",      desc: "Piesze trasy, sport, przyroda" },
 ];
@@ -132,7 +132,7 @@ const COMPANION_LABELS: Record<Companion, string> = {
 };
 const BUDGET_LABELS = { low: "Backpacker", medium: "Komfortowy" } as const;
 const VIBE_LABELS: Record<TravelVibe, string> = {
-  chill: "Reset", intense: "Full program", social: "Towarzyski", active: "Aktywny",
+  chill: "Reset", intense: "Pełny program", social: "Towarzyski", active: "Aktywny",
 };
 const MONTH_SHORT = ["sty","lut","mar","kwi","maj","cze","lip","sie","wrz","paź","lis","gru"];
 
@@ -594,7 +594,7 @@ function StepCompanion({
 }) {
   return (
     <div>
-      <StepHeader title="Kto jedzie?" hint="AI dopasuje atrakcje, restauracje i wskazówki do Twojej grupy." />
+      <StepHeader title="Kto jedzie?" hint="Dobierzemy atrakcje, restauracje i wskazówki do Twojej grupy." />
       <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Wybierz kto podróżuje">
         {COMPANION_OPTIONS.map((opt) => (
           <OptionCard key={opt.value} selected={companion === opt.value} onClick={() => onPick(opt.value)}>
@@ -674,7 +674,7 @@ function StepStyle({ styles, toggleStyle }: { styles: TravelStyle[]; toggleStyle
     <div>
       <StepHeader
         title="Czym się interesujesz?"
-        hint="Wybierz ile chcesz albo pomiń — AI lepiej dopasuje kierunki, gdy coś zaznaczysz."
+        hint="Wybierz ile chcesz albo pomiń — kierunki dobierzemy trafniej, gdy coś zaznaczysz."
       />
       <div className="grid grid-cols-2 gap-3" role="group" aria-label="Wybierz zainteresowania">
         {STYLE_OPTIONS.map((opt) => (
@@ -754,7 +754,7 @@ function StepWhen({
         title="Kiedy i jak długo?"
         hint={
           monthPrefilled
-            ? "Zaznaczyłem bieżący miesiąc — zmień go, jeśli jedziesz później."
+            ? "Zaznaczono bieżący miesiąc — zmień go, jeśli jedziesz później."
             : "Pogoda, sezon, ceny — wszystko pod uwagę."
         }
       />

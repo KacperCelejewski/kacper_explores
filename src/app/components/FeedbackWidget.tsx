@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { IconThumbUp, IconThumbDown, IconCheck, IconBackpack } from "./Icons";
 
 type Step = "idle" | "short" | "expanding" | "full" | "done";
 
@@ -99,7 +100,7 @@ export default function FeedbackWidget({ tripId, city, onPdfUnlocked }: Props) {
               border: "1px solid var(--border)",
             }}
           >
-            ✦ Oceń ten plan — odblokuj PDF
+            Oceń ten plan — odblokuj PDF
           </motion.button>
         )}
 
@@ -121,24 +122,26 @@ export default function FeedbackWidget({ tripId, city, onPdfUnlocked }: Props) {
               <button
                 onClick={() => setRating("up")}
                 disabled={loading}
-                className="flex-1 py-3 rounded-2xl text-2xl transition-all"
+                aria-label="Plan mi się podoba" aria-pressed={rating === "up"} className="flex-1 py-3 rounded-2xl transition-all flex items-center justify-center"
                 style={{
+                  color: "var(--success)",
                   background: rating === "up" ? "var(--success-bg)" : "var(--bg-surface)",
                   border: rating === "up" ? "2px solid var(--success)" : "2px solid transparent",
                 }}
               >
-                👍
+                <IconThumbUp size={26} />
               </button>
               <button
                 onClick={() => setRating("down")}
                 disabled={loading}
-                className="flex-1 py-3 rounded-2xl text-2xl transition-all"
+                aria-label="Plan mi się nie podoba" aria-pressed={rating === "down"} className="flex-1 py-3 rounded-2xl transition-all flex items-center justify-center"
                 style={{
+                  color: "var(--error)",
                   background: rating === "down" ? "var(--error-bg)" : "var(--bg-surface)",
                   border: rating === "down" ? "2px solid var(--error)" : "2px solid transparent",
                 }}
               >
-                👎
+                <IconThumbDown size={26} />
               </button>
             </div>
 
@@ -176,8 +179,8 @@ export default function FeedbackWidget({ tripId, city, onPdfUnlocked }: Props) {
             exit={{ opacity: 0 }}
             className="glass-card p-5"
           >
-            <p className="text-sm font-bold mb-1">
-              ✓ PDF odblokowany!
+            <p className="text-sm font-bold mb-1 flex items-center gap-1.5">
+              <IconCheck size={16} /> PDF odblokowany!
             </p>
             <p className="text-xs mb-4" style={{ color: "var(--text-muted)" }}>
               Masz chwilę? 3 pytania więcej = <strong>+1 bezpłatny plan podróży</strong> na konto.
@@ -292,7 +295,7 @@ export default function FeedbackWidget({ tripId, city, onPdfUnlocked }: Props) {
             animate={{ opacity: 1, scale: 1 }}
             className="glass-card p-5 text-center"
           >
-            <p className="text-2xl mb-2">🎒</p>
+            <p className="mb-2 flex justify-center" style={{ color: "var(--accent)" }}><IconBackpack size={28} /></p>
             <p className="text-sm font-bold mb-1">
               {creditAdded ? "Dzięki. Masz na koncie 1 plan więcej." : "Dzięki za opinię."}
             </p>
