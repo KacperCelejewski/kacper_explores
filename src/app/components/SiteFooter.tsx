@@ -22,7 +22,7 @@ export default function SiteFooter() {
           </a>
         </div>
         <nav aria-label="Okazje na weekend" className="w-full flex items-center flex-wrap gap-x-4 gap-y-1">
-          <span className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>Tanie loty na weekend z:</span>
+          <Link href="/okazje" className="text-xs font-semibold inline-block py-2" style={{ color: "var(--text-secondary)", textDecoration: "none" }}>Tanie loty na weekend z:</Link>
           {POLISH_AIRPORTS.map((a) => (
             <Link
               key={a.code}

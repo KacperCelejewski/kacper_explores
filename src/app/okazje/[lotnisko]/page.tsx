@@ -13,6 +13,9 @@ import { ORIGIN_GENITIVE, formatLocal, transfersLabel } from "@/lib/drop/email";
 import { buildFlightLink, buildPlanUrl } from "@/lib/drop/links";
 import { getDealsForOrigin, originFromSlug } from "@/lib/drop/read";
 import { dealNotes, hoursInCity } from "@/lib/drop/stay";
+import { AIRPORT_FACTS } from "@/lib/seo/airportFacts";
+import { breadcrumbLd, faqLd, itemListLd, jsonLdScript } from "@/lib/seo/jsonld";
+import { cityFromDealName, citySlug } from "@/lib/seo/cities";
 
 // Noce liczymy z dat lotu (pobyty trwają od 47 do 73 godzin), nie zakładamy na sztywno dwóch
 function nightsLabel(dep: string, ret: string): string {
@@ -28,9 +31,15 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const origin = originFromSlug((await params).lotnisko);
   if (!origin) return { title: "Okazje na weekend" };
   const from = ORIGIN_GENITIVE[origin] ?? origin;
+  // Najniższa cena w opisie tylko wtedy, gdy ją mamy: opis nie obiecuje liczby, której nie ma
+  const { deals } = await getDealsForOrigin(origin);
+  const lowest = deals[0] ? ` Teraz najtaniej: ${deals[0].city_name} od ${deals[0].price} zł w obie strony.` : "";
+  const title = `Tanie loty na weekend z ${from}`;
+  const description = `Najtańsze wyjazdy na najbliższy weekend z ${from}: cena lotu, daty i ile godzin zostaje na miejscu.${lowest} Ceny z wyszukiwań z ostatnich dni.`;
   return {
-    title: `Tanie loty na weekend z ${from}`,
-    description: `Najtańsze wyjazdy na najbliższy weekend z ${from}: cena lotu, daty i ile godzin zostaje na miejscu. Ceny z wyszukiwań z ostatnich dni.`,
+    title,
+    description,
+    openGraph: { title, description, url: `https://wloczykij.me/okazje/${origin.toLowerCase()}`, type: "website" },
     alternates: { canonical: `https://wloczykij.me/okazje/${origin.toLowerCase()}` },
     // Modlin zwraca dane z Okęcia (kod miasta WAW), więc jego strona nie trafia do indeksu jako duplikat
     ...(origin === "WMI" ? { robots: { index: false, follow: true } } : {}),
@@ -49,8 +58,42 @@ export default async function DealsPage({ params }: { params: Params }) {
     ? new Date(deals[0].fetched_at).toLocaleDateString("pl-PL", { timeZone: "Europe/Warsaw", day: "numeric", month: "long" })
     : null;
 
+  const facts = AIRPORT_FACTS[origin];
+  const faq = [
+    {
+      q: `Skąd są ceny lotów z ${from}?`,
+      a: "Z wyszukiwań w serwisie Aviasales (Travelpayouts) z ostatnich dni, nie z rezerwacji na żywo. Cena może się zmienić, więc zawsze sprawdź aktualną przed zakupem.",
+    },
+    {
+      q: "Co znaczy „najbliższy weekend”?",
+      a: "Lot tam i z powrotem z wylotem od czwartku wieczorem do piątku i powrotem w niedzielę albo poniedziałek. Pobyt na miejscu trwa zwykle dwa, góra trzy dni, a dokładną liczbę godzin podajemy przy każdej okazji.",
+    },
+    {
+      q: "Czy cena zawiera bagaż i nocleg?",
+      a: "Nie. To cena samego lotu. Często obejmuje tylko małą torbę pod siedzeniem, a większy bagaż podręczny jest płatny. Przy każdej okazji dopisujemy, co wiemy o bagażu.",
+    },
+    {
+      q: "Jak często okazje się odświeżają?",
+      a: "Raz w tygodniu, w środę wieczorem. W czwartek po południu trzy najlepsze lądują w mailu Czwartkowego zrzutu.",
+    },
+  ];
+  const ld = [
+    breadcrumbLd([
+      { name: "Strona główna", path: "/" },
+      { name: "Okazje na weekend", path: "/okazje" },
+      { name: `Z ${from}`, path: `/okazje/${origin.toLowerCase()}` },
+    ]),
+    faqLd(faq),
+    ...(deals.length > 0
+      ? [itemListLd(deals.map((d) => ({ name: `${d.city_name}: weekend z ${from}`, path: `/okazje/${origin.toLowerCase()}#${d.city_code}` })))]
+      : []),
+  ];
+
   return (
     <>
+      {ld.map((o, i) => (
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(o) }} />
+      ))}
       <SiteNav />
       <main className="max-w-2xl mx-auto w-full px-5 pb-12">
         <div className="pt-10 pb-6">
@@ -58,6 +101,7 @@ export default async function DealsPage({ params }: { params: Params }) {
           <h1 className="text-3xl font-bold leading-tight">Weekend z {from}</h1>
           <p className="text-sm mt-2 leading-relaxed" style={{ color: "var(--text-muted)" }}>
             Najtańsze loty tam i z powrotem na najbliższy weekend. Cena to lot, bez noclegu i bagażu.
+            {facts && <> Wylot z lotniska {facts.name} ({facts.place}).</>}
           </p>
           <nav aria-label="Lotnisko" className="flex flex-wrap gap-2 mt-4">
             {POLISH_AIRPORTS.map((a) => (
@@ -157,6 +201,37 @@ export default async function DealsPage({ params }: { params: Params }) {
         )}
 
         <div className="mt-10"><DropSignup defaultAirports={[origin]} cheapestHint={hint} /></div>
+
+        {deals.some((d) => cityFromDealName(d.city_name)) && (
+          <section className="mt-12" aria-label="Przewodniki po miastach">
+            <h2 className="text-xl font-bold mb-3">Dokąd teraz z {from}</h2>
+            <ul className="flex flex-wrap gap-2 list-none p-0">
+              {deals.filter((d) => cityFromDealName(d.city_name)).map((d) => (
+                <li key={d.city_code}>
+                  <Link
+                    href={`/weekend/${citySlug(cityFromDealName(d.city_name)!)}`}
+                    className="text-sm font-semibold px-3 py-2 rounded-full inline-block"
+                    style={{ border: "1px solid var(--border)", color: "var(--accent)", background: "var(--bg-surface)" }}
+                  >
+                    Weekend: {d.city_name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <section className="mt-12" aria-label="Najczęstsze pytania">
+          <h2 className="text-xl font-bold mb-4">Najczęstsze pytania</h2>
+          <dl className="flex flex-col gap-4">
+            {faq.map(({ q, a }) => (
+              <div key={q}>
+                <dt className="text-base font-semibold">{q}</dt>
+                <dd className="text-sm mt-1 leading-relaxed" style={{ color: "var(--text-muted)" }}>{a}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
       </main>
       <SiteFooter />
     </>

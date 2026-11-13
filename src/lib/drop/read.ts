@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { POLISH_AIRPORTS } from "@/lib/airports";
 import { createServiceClient } from "@/lib/supabase/service";
 import type { CityTeaser, DropDeal } from "./types";
@@ -30,7 +31,18 @@ export interface DealsForOrigin {
 }
 
 // Najtańsze okazje z ostatniego tygodnia, w którym cron coś zapisał dla tego lotniska
-export async function getDealsForOrigin(origin: string, limit = 12): Promise<DealsForOrigin> {
+// cache: generateMetadata i strona w jednym żądaniu dzielą jedno zapytanie
+export const getDealsForOrigin = cache(async (origin: string, limit = 12): Promise<DealsForOrigin> => {
+  try {
+    return await loadDealsForOrigin(origin, limit);
+  } catch (err) {
+    // Brak połączenia albo zmiennych środowiskowych nie wywraca strony: pokazuje się stan „brak okazji”
+    console.error("[drop/read] origin", err instanceof Error ? err.message : err);
+    return { deals: [], teasers: new Map(), week: null };
+  }
+});
+
+async function loadDealsForOrigin(origin: string, limit: number): Promise<DealsForOrigin> {
   const db = createServiceClient();
   const { data, error } = await db
     .from("drop_deals")
@@ -58,3 +70,31 @@ export async function getDealsForOrigin(origin: string, limit = 12): Promise<Dea
   const teasers = new Map<string, CityTeaser>(((teaserRows ?? []) as CityTeaser[]).map((t) => [t.city_code, t]));
   return { deals, teasers, week };
 }
+
+// Najtańsza oferta z każdego lotniska, od najtańszej; do bloku „loty w tym tygodniu” na stronie miasta
+export function bestPerOrigin(deals: DropDeal[]): DropDeal[] {
+  const best = new Map<string, DropDeal>();
+  for (const d of deals) {
+    const cur = best.get(d.origin);
+    if (!cur || d.price < cur.price) best.set(d.origin, d);
+  }
+  return [...best.values()].sort((a, b) => a.price - b.price);
+}
+
+// Oferty do jednego miasta (po nazwie z Travelpayouts) z ostatniego tygodnia; przy błędzie bazy pusto,
+// żeby strona miasta nadal się renderowała
+export const getDealsForCity = cache(async (cityName: string): Promise<DropDeal[]> => {
+  try {
+    const { data, error } = await createServiceClient()
+      .from("drop_deals")
+      .select("*")
+      .eq("city_name", cityName)
+      .order("week", { ascending: false })
+      .limit(60);
+    if (error || !data) return [];
+    return bestPerOrigin(upcomingDeals(pickLatestWeek(data as DropDeal[])));
+  } catch (err) {
+    console.error("[drop/read] city", err instanceof Error ? err.message : err);
+    return [];
+  }
+});
