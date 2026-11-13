@@ -409,7 +409,7 @@ export default function HomeClient({
           <DropSignup
             defaultAirports={[dropOrigin]}
             cheapestHint={dropOrigin === initialDealsOrigin && initialDeals[0]
-              ? { from: ORIGIN_GENITIVE[dropOrigin] ?? dropOrigin, price: initialDeals[0].price }
+              ? { from: ORIGIN_GENITIVE[dropOrigin] ?? dropOrigin, price: initialDeals[0].price, thirdPrice: (initialDeals[2] ?? initialDeals[initialDeals.length - 1]).price }
               : null}
           />
         </div>
@@ -702,11 +702,11 @@ export default function HomeClient({
               Gdzie chcesz<br />lecieć?
             </motion.h2>
             <Link
-              href="/quiz"
+              href="/okazje/wro"
               style={{
                 display: "inline-block",
-                padding: "6px 0",
-                fontSize: 12,
+                padding: "12px 0",
+                fontSize: 13,
                 fontWeight: 700,
                 color: "var(--accent)",
                 textDecoration: "none",
@@ -714,7 +714,7 @@ export default function HomeClient({
                 marginLeft: 16,
               }}
             >
-              Dopasuj do siebie →
+              Okazje na weekend →
             </Link>
           </div>
         </div>

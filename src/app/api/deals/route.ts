@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
       departure_at: d.departure_at,
       return_at: d.return_at,
       hours: hoursInCity(d),
+      fetched_at: d.fetched_at,
     })),
   });
 }

@@ -13,6 +13,7 @@ export interface StripDeal {
   departure_at: string;
   return_at: string;
   hours: number | null;
+  fetched_at?: string;
 }
 
 const STORAGE_KEY = "deals_origin";
@@ -84,7 +85,7 @@ export default function DealsStrip({
           Okazje na weekend
         </p>
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-          <h2 style={{ fontSize: "clamp(28px, 7vw, 40px)", lineHeight: 1.1, fontWeight: 700, margin: 0 }}>
+          <h2 style={{ fontSize: "clamp(30px, 8vw, 44px)", lineHeight: 1.1, fontWeight: 700, margin: 0 }}>
             Najbliższy weekend z {from}
           </h2>
           <select
@@ -97,7 +98,7 @@ export default function DealsStrip({
           </select>
         </div>
         <p style={{ fontSize: 14, color: "var(--text-muted)", margin: "10px 0 0", lineHeight: 1.5 }}>
-          Lot w obie strony, ceny z ostatnich wyszukiwań. Przed zakupem sprawdź aktualną cenę.
+          Lot w obie strony, ceny z wyszukiwań{deals[0]?.fetched_at ? ` z ${new Date(deals[0].fetched_at).toLocaleDateString("pl-PL", { timeZone: "Europe/Warsaw", day: "numeric", month: "long" })}` : " z ostatnich dni"}. Przed zakupem sprawdź aktualną cenę.
         </p>
         {deals.length === 0 && (
           <p style={{ fontSize: 15, color: "var(--text-muted)", margin: "16px 0 0" }}>

@@ -530,6 +530,7 @@ body.is-home section[id] {
 }
 
 /* Focus mode: the quiz has its own Back and the action bar owns the thumb zone */
-body:has(.quiz-root) .global-fab {
+body:has(.quiz-root) .global-fab,
+body:has(.quick-root) .global-fab {
   display: none;
 }

@@ -210,6 +210,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
         {/* Zapis na zrzut: najlżejsza oferta dla czytelnika, który jeszcze nic nie planuje */}
         <DropSignup defaultAirports={["WRO"]} />
+        <p className="text-sm mt-3">
+          <Link href="/okazje/wro" className="font-semibold" style={{ color: "var(--accent)" }}>Zobacz teraz okazje z Wrocławia →</Link>
+        </p>
 
         <div
           className="mt-8 p-5 rounded-2xl text-center"

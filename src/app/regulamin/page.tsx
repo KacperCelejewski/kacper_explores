@@ -49,7 +49,6 @@ export default function ReguaminPage() {
 
         {/* Header */}
         <div className="mb-8 pb-6 border-b" style={{ borderColor: "var(--border)" }}>
-          <div className="text-3xl mb-3">📋</div>
           <h1 className="text-3xl font-bold leading-tight mb-2">Regulamin serwisu</h1>
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>
             Ostatnia aktualizacja: 17 maja 2026

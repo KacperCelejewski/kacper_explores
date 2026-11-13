@@ -11,7 +11,7 @@ export function quizSummary(a: QuizAnswers): string[] {
   const out: string[] = [];
   if (a.companion && COMPANION[a.companion]) out.push(COMPANION[a.companion]);
   if (a.budget && BUDGET[a.budget]) out.push(BUDGET[a.budget]);
-  if (a.month) out.push(`${MONTH_SHORT[a.month - 1]} · ${a.duration ?? 5} dni`);
+  if (a.month) out.push(a.duration ? `${MONTH_SHORT[a.month - 1]} · ${a.duration} dni` : MONTH_SHORT[a.month - 1]);
   const from = a.airports.map((c) => ORIGIN_GENITIVE[c]).filter(Boolean);
   if (from.length > 0) out.push(`z ${from.join(" lub ")}`);
   return out;

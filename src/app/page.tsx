@@ -77,6 +77,7 @@ async function loadStripDeals(): Promise<StripDeal[]> {
       departure_at: d.departure_at,
       return_at: d.return_at,
       hours: hoursInCity(d),
+      fetched_at: d.fetched_at,
     }));
   } catch (err) {
     console.error("[home] okazje", err instanceof Error ? err.message : err);

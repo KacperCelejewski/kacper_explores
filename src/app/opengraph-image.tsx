@@ -10,11 +10,13 @@ export const contentType = "image/png";
 async function loadCormorant(): Promise<ArrayBuffer | null> {
   try {
     const css = await fetch("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600", {
+      signal: AbortSignal.timeout(5000),
       headers: { "User-Agent": "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_8; de-at) AppleWebKit/533.21.1 (KHTML, like Gecko) Version/5.0.5 Safari/533.21.1" },
-    }).then((r) => r.text());
+    }).then((r) => (r.ok ? r.text() : ""));
     const url = css.match(/src: url\((.+?)\) format\('(?:opentype|truetype)'\)/)?.[1];
     if (!url) return null;
-    return await fetch(url).then((r) => r.arrayBuffer());
+    const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    return res.ok ? await res.arrayBuffer() : null;
   } catch {
     return null;
   }

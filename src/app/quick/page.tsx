@@ -393,7 +393,7 @@ export default function QuickPage() {
   }
 
   return (
-    <div className="flex flex-col flex-1 px-5 pb-8">
+    <div className="quick-root flex flex-col flex-1 px-5 pb-8">
       {/* Top bar */}
       <div className="pt-6 pb-4">
         <div className="flex items-center justify-between mb-4">

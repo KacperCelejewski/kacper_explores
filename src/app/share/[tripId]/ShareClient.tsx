@@ -112,7 +112,7 @@ export default function ShareClient() {
           style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
         >
           <p className="text-xs font-medium leading-relaxed" style={{ color: "var(--accent)" }}>
-            Plan wygenerowany przez <strong>Włóczykij</strong> · AI podróże budżetowe
+            Plan wygenerowany przez <strong>Włóczykij</strong> · budżetowe weekendy w Europie
           </p>
           <button
             onClick={handleCopy}
@@ -217,10 +217,10 @@ export default function ShareClient() {
           style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
         >
           <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>
-            Wygeneruj swój plan z AI →
+            Ułóż swój plan →
           </p>
           <p className="text-xs mt-1 mb-4" style={{ color: "var(--text-muted)" }}>
-            Odpowiedz na 6 pytań — AI ułoży Twój plan godzina po godzinie
+            Odpowiedz na 6 pytań, a ułożymy Twój plan godzina po godzinie
           </p>
           <Link
             href="/"

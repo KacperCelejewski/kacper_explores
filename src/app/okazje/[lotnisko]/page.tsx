@@ -14,6 +14,12 @@ import { buildFlightLink, buildPlanUrl } from "@/lib/drop/links";
 import { getDealsForOrigin, originFromSlug } from "@/lib/drop/read";
 import { dealNotes, hoursInCity } from "@/lib/drop/stay";
 
+// Noce liczymy z dat lotu (pobyty trwają od 47 do 73 godzin), nie zakładamy na sztywno dwóch
+function nightsLabel(dep: string, ret: string): string {
+  const n = Math.max(1, Math.round((Date.UTC(+ret.slice(0, 4), +ret.slice(5, 7) - 1, +ret.slice(8, 10)) - Date.UTC(+dep.slice(0, 4), +dep.slice(5, 7) - 1, +dep.slice(8, 10))) / 86400000));
+  return `Nocleg: ${n} ${n === 1 ? "noc" : n < 5 ? "noce" : "nocy"}`;
+}
+
 export const dynamic = "force-dynamic";
 
 type Params = Promise<{ lotnisko: string }>;
@@ -36,7 +42,7 @@ export default async function DealsPage({ params }: { params: Params }) {
   const from = ORIGIN_GENITIVE[origin] ?? origin;
   const { deals, teasers } = await getDealsForOrigin(origin);
   const marker = process.env.TRAVELPAYOUTS_MARKER;
-  const hint = deals[0] ? { from, price: deals[0].price } : null;
+  const hint = deals[0] ? { from, price: deals[0].price, thirdPrice: (deals[2] ?? deals[deals.length - 1]).price } : null;
   const seen = deals[0]
     ? new Date(deals[0].fetched_at).toLocaleDateString("pl-PL", { timeZone: "Europe/Warsaw", day: "numeric", month: "long" })
     : null;
@@ -117,7 +123,7 @@ export default async function DealsPage({ params }: { params: Params }) {
                       className="text-sm font-bold px-3 py-3 rounded-xl text-center"
                       style={{ background: "var(--accent)", color: "#fff", minHeight: 44 }}
                     >
-                      Nocleg na 2 noce ↗
+                      {nightsLabel(deal.departure_at, deal.return_at)} ↗
                     </a>
                   </div>
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3">

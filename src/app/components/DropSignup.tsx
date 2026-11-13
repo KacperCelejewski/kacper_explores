@@ -16,7 +16,7 @@ type Props = {
   /** Lotniska zaznaczone na start (strona zna je z adresu, zapamiętanego wyboru albo z quizu) */
   defaultAirports?: string[];
   /** Najtańsza okazja z tego lotniska (from = „Wrocławia”): z niej wynika domyślny budżet i podpowiedź pod nim */
-  cheapestHint?: { from: string; price: number } | null;
+  cheapestHint?: { from: string; price: number; thirdPrice?: number } | null;
   /** Własny nagłówek, gdy formularz stoi w innym kontekście (cennik, blog) */
   title?: string;
   lead?: string;
@@ -27,11 +27,12 @@ type Props = {
 export default function DropSignup({ defaultAirports, cheapestHint = null, title, lead, collapsed = false }: Props) {
   const [email, setEmail] = useState("");
   const [airports, setAirports] = useState<string[]>(defaultAirports ?? []);
-  const [maxPrice, setMaxPrice] = useState<number>(() => pickDefaultMaxPrice(cheapestHint?.price ?? null));
+  const [maxPrice, setMaxPrice] = useState<number>(() => pickDefaultMaxPrice(cheapestHint?.thirdPrice ?? cheapestHint?.price ?? null));
   const emailId = useId();
   const touched = useRef(false);
   const defaultsKey = (defaultAirports ?? []).join(",");
-  const hintPrice = cheapestHint?.price ?? null;
+  // Budżet dobieramy tak, żeby mieściły się co najmniej 3 okazje (trzecia najtańsza), nie tylko najtańsza
+  const hintPrice = cheapestHint?.thirdPrice ?? cheapestHint?.price ?? null;
 
   // Strona główna zna zapamiętane lotnisko dopiero po zamontowaniu; nie nadpisujemy wyboru użytkownika
   useEffect(() => {
@@ -85,8 +86,8 @@ export default function DropSignup({ defaultAirports, cheapestHint = null, title
         Czwartkowy zrzut
       </p>
       <h2
-        className="text-3xl font-bold leading-tight"
-        style={{ fontFamily: "var(--font-heading)" }}
+        className="font-bold leading-tight"
+        style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(30px, 8vw, 44px)" }}
       >
         {title ?? "Co czwartek 3 wyjazdy z Twojego lotniska"}
       </h2>
