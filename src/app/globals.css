@@ -534,3 +534,6 @@ body:has(.quiz-root) .global-fab,
 body:has(.quick-root) .global-fab {
   display: none;
 }
+
+/* Dopóki baner cookies czeka na decyzję, przycisk menu jest schowany: inaczej zasłania tekst baneru albo treść strony */
+body.has-cookie-banner .global-fab { display: none; }

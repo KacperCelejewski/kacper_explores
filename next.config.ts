@@ -36,6 +36,8 @@ const nextConfig: NextConfig = {
       // Usunięte trasy: stare linki i zakładki nie kończą na 404
       { source: "/flights", destination: "/destinations", permanent: true },
       { source: "/start", destination: "/", permanent: true },
+      // Crawlery i strony bez <link rel=icon> pytają o /favicon.ico; ikonę generuje src/app/icon.tsx
+      { source: "/favicon.ico", destination: "/icon", permanent: false },
     ];
   },
   async headers() {

@@ -128,7 +128,7 @@ export default function ShareClient() {
 
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-5">
           <div className="flex items-center gap-3">
-            <span className="text-4xl">{destination?.coverImage ?? "🗺️"}</span>
+            <span className="text-4xl" style={{ color: "var(--accent)" }}>{destination?.coverImage ?? <IconPin size={36} />}</span>
             <div>
               <h1 className="text-xl font-bold">
                 {plan.city} {destination?.countryFlag ?? ""}

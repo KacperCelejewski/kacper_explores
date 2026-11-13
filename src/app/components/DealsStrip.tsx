@@ -43,6 +43,8 @@ export default function DealsStrip({
   // false, gdy dane dla bieżącego lotniska jeszcze nie dotarły: karty wtedy nie pasują do nagłówka
   const [ready, setReady] = useState(true);
   const requestId = useRef(0);
+  // Po pierwszym wyborze sekcja zostaje, żeby dało się wybrać kolejne lotnisko
+  const [hasChosen, setHasChosen] = useState(false);
 
   // Tylko ostatnie zapytanie ma prawo ustawić dane, więc spóźniona odpowiedź ze starego lotniska nic nie nadpisze
   const load = (code: string) => {
@@ -67,6 +69,7 @@ export default function DealsStrip({
   }, []);
 
   const choose = (code: string) => {
+    setHasChosen(true);
     setOrigin(code);
     onOriginChange?.(code);
     try { window.localStorage.setItem(STORAGE_KEY, code); } catch { /* storage zablokowany */ }
@@ -74,7 +77,7 @@ export default function DealsStrip({
   };
 
   // Bez danych na starcie nie pokazujemy nic. Po wyborze innego lotniska sekcja zostaje, żeby dało się wybrać kolejne.
-  if (deals.length === 0 && origin === initialOrigin && ready) return null;
+  if (deals.length === 0 && !hasChosen && origin === initialOrigin && ready) return null;
   const from = ORIGIN_GENITIVE[origin] ?? origin;
   const slug = origin.toLowerCase();
 
@@ -98,9 +101,9 @@ export default function DealsStrip({
           </select>
         </div>
         <p style={{ fontSize: 14, color: "var(--text-muted)", margin: "10px 0 0", lineHeight: 1.5 }}>
-          Lot w obie strony, ceny z wyszukiwań{deals[0]?.fetched_at ? ` z ${new Date(deals[0].fetched_at).toLocaleDateString("pl-PL", { timeZone: "Europe/Warsaw", day: "numeric", month: "long" })}` : " z ostatnich dni"}. Przed zakupem sprawdź aktualną cenę.
+          Lot w obie strony, ceny z wyszukiwań{ready && deals[0]?.fetched_at ? ` z ${new Date(deals[0].fetched_at).toLocaleDateString("pl-PL", { timeZone: "Europe/Warsaw", day: "numeric", month: "long" })}` : " z ostatnich dni"}. Przed zakupem sprawdź aktualną cenę.
         </p>
-        {deals.length === 0 && (
+        {(!ready || deals.length === 0) && (
           <p style={{ fontSize: 15, color: "var(--text-muted)", margin: "16px 0 0" }}>
             {ready ? `Na ten weekend nie ma jeszcze okazji z ${from}. Wybierz inne lotnisko albo zapisz się niżej.` : "Szukam okazji…"}
           </p>

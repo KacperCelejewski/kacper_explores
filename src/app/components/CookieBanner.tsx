@@ -34,6 +34,12 @@ function loadTrackingScript() {
 export default function CookieBanner() {
   const [visible, setVisible] = useState(false);
 
+  // Dopóki baner jest widoczny, przycisk menu jest schowany (CSS: body.has-cookie-banner)
+  useEffect(() => {
+    document.body.classList.toggle("has-cookie-banner", visible);
+    return () => document.body.classList.remove("has-cookie-banner");
+  }, [visible]);
+
   useEffect(() => {
     const consent = loadConsent();
     if (consent === "accepted") {

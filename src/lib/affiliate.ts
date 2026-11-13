@@ -41,12 +41,14 @@ function link(url: string, partner: Partner, config: string | undefined): Partne
 }
 
 export function bookingLink(
-  input: { city: string; country: string; checkin?: string; checkout?: string },
+  input: { city: string; country: string; checkin?: string; checkout?: string; label?: string },
   config: PartnerConfig = PARTNER_CONFIG,
 ): PartnerLink {
   const params = new URLSearchParams({ ss: input.country ? `${input.city}, ${input.country}` : input.city, group_adults: "1", no_rooms: "1" });
   if (input.checkin) params.set("checkin", input.checkin);
   if (input.checkout) params.set("checkout", input.checkout);
+  // label pozwala w raporcie Bookinga odróżnić, z której strony przyszła rezerwacja
+  if (input.label) params.set("label", input.label);
   return link(`https://www.booking.com/search.html?${params}`, "booking", config.booking);
 }
 
@@ -104,6 +106,12 @@ export function partnerLinkProps(link: PartnerLink, placement: Placement, city: 
     "data-paid": link.paid ? ("true" as const) : ("false" as const),
     "data-city": city,
   };
+}
+
+// Nazwa zdarzenia do licznika po stronie serwera (tabela quiz_events), niezależnego od zgody na GA:
+// "affiliate_click:booking:hotel" albo z dopiskiem ":unpaid", gdy link nie jest partnerski.
+export function affiliateServerEvent(aff: { placement: string; partner: string; paid: boolean }): string {
+  return `affiliate_click:${aff.partner}:${aff.placement}${aff.paid ? "" : ":unpaid"}`.slice(0, 80);
 }
 
 export function affiliateClickParams(

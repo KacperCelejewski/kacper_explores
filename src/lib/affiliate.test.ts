@@ -136,3 +136,31 @@ describe("bookingLink bez kraju", () => {
     expect(q).toBe("Rzym");
   });
 });
+
+describe("affiliateServerEvent", () => {
+  it("składa nazwę z partnera i miejsca", async () => {
+    const { affiliateServerEvent } = await import("./affiliate");
+    expect(affiliateServerEvent({ placement: "hotel", partner: "booking", paid: true })).toBe("affiliate_click:booking:hotel");
+  });
+  it("dopisuje :unpaid dla linku bez prowizji", async () => {
+    const { affiliateServerEvent } = await import("./affiliate");
+    expect(affiliateServerEvent({ placement: "flight", partner: "aviasales", paid: false })).toBe("affiliate_click:aviasales:flight:unpaid");
+  });
+});
+
+describe("bookingLink label", () => {
+  it("dopisuje label do adresu Bookinga, gdy podano źródło", () => {
+    const l = bookingLink({ city: "Rzym", country: "", label: "okazje-wro" }, {});
+    expect(new URL(l.href).searchParams.get("label")).toBe("okazje-wro");
+  });
+  it("bez label niczego nie dopisuje", () => {
+    expect(new URL(bookingLink({ city: "Rzym", country: "" }, {}).href).searchParams.has("label")).toBe(false);
+  });
+});
+
+describe("bookingLink label z szablonem partnera", () => {
+  it("label zostaje w adresie przekazanym do szablonu {url}", () => {
+    const l = bookingLink({ city: "Rzym", country: "", label: "okazje-wro" }, { booking: "https://partner.example/go?u={url}" });
+    expect(decodeURIComponent(l.href)).toContain("label=okazje-wro");
+  });
+});

@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Script from "next/script";
 import { GA_ID, trackEvent } from "@/lib/analytics";
-import { affiliateClickParams } from "@/lib/affiliate";
+import { affiliateClickParams, affiliateServerEvent } from "@/lib/affiliate";
 
 const SCROLL_STEPS = [25, 50, 75, 90];
 
@@ -47,7 +47,17 @@ export default function Analytics() {
         page_path: window.location.pathname,
       });
       const aff = link ? affiliateClickParams(link.dataset) : null;
-      if (aff) trackEvent("affiliate_click", { ...aff, page_path: window.location.pathname });
+      if (aff) {
+        trackEvent("affiliate_click", { ...aff, page_path: window.location.pathname });
+        // Anonimowy licznik po stronie serwera: bez cookies i bez trwałego identyfikatora, więc nie zależy od zgody na GA.
+        // Dzięki niemu liczba kliknięć w partnerów nie jest niedoszacowana przez odrzucone cookies.
+        try {
+          navigator.sendBeacon?.(
+            "/api/track",
+            new Blob([JSON.stringify({ session_id: crypto.randomUUID(), event: affiliateServerEvent(aff) })], { type: "application/json" }),
+          );
+        } catch { /* pomiar nigdy nie blokuje kliknięcia */ }
+      }
     };
     document.addEventListener("click", onClick, { capture: true });
     return () => document.removeEventListener("click", onClick, { capture: true });
