@@ -95,6 +95,7 @@ export default async function DealsPage({ params }: { params: Params }) {
               const hotel = bookingLink({
                 city: deal.city_name, country: "",
                 checkin: deal.departure_at.slice(0, 10), checkout: deal.return_at.slice(0, 10),
+                label: `okazje-${origin.toLowerCase()}`,
               });
               return (
                 <Fragment key={deal.city_code}>

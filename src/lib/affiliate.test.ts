@@ -147,3 +147,13 @@ describe("affiliateServerEvent", () => {
     expect(affiliateServerEvent({ placement: "flight", partner: "aviasales", paid: false })).toBe("affiliate_click:aviasales:flight:unpaid");
   });
 });
+
+describe("bookingLink label", () => {
+  it("dopisuje label do adresu Bookinga, gdy podano źródło", () => {
+    const l = bookingLink({ city: "Rzym", country: "", label: "okazje-wro" }, {});
+    expect(new URL(l.href).searchParams.get("label")).toBe("okazje-wro");
+  });
+  it("bez label niczego nie dopisuje", () => {
+    expect(new URL(bookingLink({ city: "Rzym", country: "" }, {}).href).searchParams.has("label")).toBe(false);
+  });
+});
