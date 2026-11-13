@@ -83,7 +83,7 @@ export function bestPerOrigin(deals: DropDeal[]): DropDeal[] {
 
 // Oferty do jednego miasta (po nazwie z Travelpayouts) z ostatniego tygodnia; przy błędzie bazy pusto,
 // żeby strona miasta nadal się renderowała
-export async function getDealsForCity(cityName: string): Promise<DropDeal[]> {
+export const getDealsForCity = cache(async (cityName: string): Promise<DropDeal[]> => {
   try {
     const { data, error } = await createServiceClient()
       .from("drop_deals")
@@ -97,4 +97,4 @@ export async function getDealsForCity(cityName: string): Promise<DropDeal[]> {
     console.error("[drop/read] city", err instanceof Error ? err.message : err);
     return [];
   }
-}
+});

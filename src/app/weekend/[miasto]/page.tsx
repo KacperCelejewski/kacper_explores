@@ -29,8 +29,8 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     // Bez świeżych cen strona jest cienka, więc nie trafia do indeksu; wraca, gdy dane się pojawią
     ...(hasDeals ? {} : { robots: { index: false, follow: true } }),
     openGraph: { title, description, url, type: "website" },
-    title: `${city.city} na weekend: loty z Polski i plan`,
-    description: `${city.description} Sprawdź ceny lotów z polskich lotnisk (kierunek: ${city.city}) i ułóż plan na weekend.`,
+    title,
+    description,
     alternates: { canonical: `https://wloczykij.me/weekend/${citySlug(city)}` },
   };
 }

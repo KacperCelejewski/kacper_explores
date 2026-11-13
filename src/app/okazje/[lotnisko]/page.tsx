@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!origin) return { title: "Okazje na weekend" };
   const from = ORIGIN_GENITIVE[origin] ?? origin;
   // Najniższa cena w opisie tylko wtedy, gdy ją mamy: opis nie obiecuje liczby, której nie ma
-  const { deals } = await getDealsForOrigin(origin, 1);
+  const { deals } = await getDealsForOrigin(origin);
   const lowest = deals[0] ? ` Teraz najtaniej: ${deals[0].city_name} od ${deals[0].price} zł w obie strony.` : "";
   const title = `Tanie loty na weekend z ${from}`;
   const description = `Najtańsze wyjazdy na najbliższy weekend z ${from}: cena lotu, daty i ile godzin zostaje na miejscu.${lowest} Ceny z wyszukiwań z ostatnich dni.`;
