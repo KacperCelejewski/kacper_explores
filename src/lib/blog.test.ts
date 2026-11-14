@@ -14,8 +14,12 @@ const airportSlugs = new Set(POLISH_AIRPORTS.map((a) => a.code.toLowerCase()));
 const STATIC_ROUTES = new Set(["/", "/quiz", "/quick", "/pricing", "/okazje", "/blog", "/login"]);
 const COVER_ICONS = new Set(["compass", "globe", "coin", "plane", "mountain"]);
 
+// \b w JS zna tylko ASCII, więc „zł” i polskie słowa łapiemy przez granice liter z flagą u
+export const PRICE_RE = /\d[\d\s.,\u00a0]*\s*(zł|zlotych|złotych|pln|eur|euro|usd|gbp|czk|huf)(?![\p{L}])|[€£$]\s*\d|\d\s*(€|£|\$|%)|(?<![\p{L}])(procent|procentów)(?![\p{L}])/iu;
+export const FIRST_PERSON_RE = /(?<![\p{L}])(oceniłem|oceniłam|zebrałem|zebrałam|sprawdziłem|sprawdziłam|przetestowałem|przetestowałam|byłem|byłam|wybrałem|wybrałam|polecam|uważam|mój|moja|moje|moim zdaniem)(?![\p{L}])|od 6 lat/iu;
+
 function validRoute(href: string): boolean {
-  const [pathname] = href.split("#");
+  const [pathname] = href.replace(/\/$/, "").split(/[?#]/);
   if (STATIC_ROUTES.has(pathname)) return true;
   let m = pathname.match(/^\/blog\/([^/]+)$/);
   if (m) return slugs.has(m[1]);
@@ -33,9 +37,13 @@ describe.each(files)("artykuł %s", (file) => {
   it("ma komplet pól we frontmatterze", () => {
     expect(data.title).toBeTruthy();
     expect(data.description).toBeTruthy();
-    expect(data.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    // gray-matter zamienia niecytowaną datę YAML na obiekt Date; wymagamy napisu, jak w pozostałych artykułach
+    expect(typeof data.date, `${file}: date musi być w cudzysłowie`).toBe("string");
+    expect(String(data.date)).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(COVER_ICONS.has(data.coverIcon)).toBe(true);
     expect(Array.isArray(data.tags) && data.tags.length > 0).toBe(true);
+    // literówka w author po cichu zmieniłaby podpis na głos założyciela
+    expect([undefined, "redakcja"]).toContain(data.author);
     expect(data.readingTime).toBeGreaterThan(0);
   });
 
@@ -50,15 +58,34 @@ describe.each(files)("artykuł %s", (file) => {
 
   if (data.author === "redakcja") {
     it("tekst redakcji nie podaje cen ani liczb, których nie da się sprawdzić", () => {
-      expect(content).not.toMatch(/\bzł\b|PLN|EUR|€|\d\s?%/);
+      expect(content).not.toMatch(PRICE_RE);
     });
     it("nie mówi głosem założyciela w pierwszej osobie", () => {
-      expect(content).not.toMatch(/\b(oceniłem|zebrałem|sprawdziłem|polecam|moim zdaniem|od 6 lat)\b/i);
+      expect(content).not.toMatch(FIRST_PERSON_RE);
     });
     it("ma linki do okazji lub stron miast (linkowanie wewnętrzne)", () => {
       expect(content).toMatch(/\]\(\/(okazje|weekend)/);
     });
   }
+});
+
+describe("reguły treści redakcji", () => {
+  it("wykrywają ceny i waluty, także z kropką i twardą spacją", () => {
+    for (const t of ["100 zł", "50 zł.", "5zł", "50\u00a0zł", "około 200 EUR", "€20", "kosztuje 15%", "10 procent"]) {
+      expect(PRICE_RE.test(t), t).toBe(true);
+    }
+  });
+  it("nie łapią zwykłych słów podobnych do waluty", () => {
+    for (const t of ["zły plan", "złoty środek", "złotych zasad", "trzy pytania", "Europa Środkowa"]) {
+      expect(PRICE_RE.test(t), t).toBe(false);
+    }
+  });
+  it("wykrywają pierwszą osobę liczby pojedynczej", () => {
+    for (const t of ["Oceniłem miasta", "moim zdaniem", "polecam ten hostel", "podróżuje solo od 6 lat", "Mój plan"]) {
+      expect(FIRST_PERSON_RE.test(t), t).toBe(true);
+    }
+    expect(FIRST_PERSON_RE.test("polecamy sprawdzić regulamin")).toBe(false);
+  });
 });
 
 describe("getAllPosts", () => {

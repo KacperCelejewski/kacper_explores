@@ -87,13 +87,19 @@ const mdxComponents = {
     />
   ),
   hr: () => <hr className="my-6" style={{ borderColor: "var(--border)" }} />,
-  // Linki wewnętrzne przez Link (bez przeładowania), zewnętrzne z rel zamiast przekazywania reputacji
-  a: ({ href = "", children, ...rest }: React.AnchorHTMLAttributes<HTMLAnchorElement>) =>
-    href.startsWith("/") || href.startsWith("#") ? (
-      <Link href={href} className="font-semibold underline underline-offset-2" style={{ color: "var(--accent)" }}>{children}</Link>
-    ) : (
-      <a href={href} {...rest} target="_blank" rel="noopener noreferrer nofollow" className="font-semibold underline underline-offset-2" style={{ color: "var(--accent)" }}>{children}</a>
-    ),
+  // Linki wewnętrzne przez Link (bez przeładowania). „//host” to adres zewnętrzny, nie wewnętrzny.
+  // Zewnętrzne w nowej karcie z rel; mailto i tel zostają zwykłymi linkami.
+  a: ({ href = "", children, ...rest }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => {
+    const style = { color: "var(--accent)" };
+    const cls = "font-semibold underline underline-offset-2";
+    if (/^\/(?!\/)/.test(href) || href.startsWith("#")) {
+      return <Link href={href} className={cls} style={style}>{children}</Link>;
+    }
+    if (/^(mailto:|tel:)/.test(href)) {
+      return <a href={href} className={cls} style={style}>{children}</a>;
+    }
+    return <a href={href} {...rest} target="_blank" rel="noopener noreferrer" className={cls} style={style}>{children}</a>;
+  },
 };
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
