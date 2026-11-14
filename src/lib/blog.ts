@@ -12,6 +12,8 @@ export interface PostMeta {
   coverIcon: string;
   tags: string[];
   readingTime: number;
+  /** "editorial": tekst redakcji (frontmatter `author: redakcja`); domyślnie głos założyciela */
+  author: "founder" | "editorial";
 }
 
 export interface Post extends PostMeta {
@@ -34,6 +36,7 @@ export function getAllPosts(): PostMeta[] {
         coverIcon: data.coverIcon ?? "plane",
         tags: data.tags ?? [],
         readingTime: data.readingTime ?? 5,
+        author: data.author === "redakcja" ? "editorial" : "founder",
       } as PostMeta;
     })
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -54,6 +57,7 @@ export function getPost(slug: string): Post | null {
     coverIcon: data.coverIcon ?? "plane",
     tags: data.tags ?? [],
     readingTime: data.readingTime ?? 5,
+    author: data.author === "redakcja" ? "editorial" : "founder",
     content,
   };
 }
