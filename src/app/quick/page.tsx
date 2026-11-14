@@ -6,8 +6,10 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/lib/store";
 import { getCityPhotoUrl } from "@/lib/cityPhotos";
-import type { Companion, TravelVibe, TravelStyle, DestinationRecommendation, FlightDetails, QuizAnswers } from "@/types";
+import type { Companion, GroupComposition, TravelVibe, TravelStyle, DestinationRecommendation, FlightDetails, QuizAnswers } from "@/types";
 import { IconPin, IconPlane, IconCheck } from "@/app/components/Icons";
+import GroupSizePicker from "@/app/components/GroupSizePicker";
+import { groupFromCompanion } from "@/lib/group";
 
 type IconFC = React.FC<{ size?: number }>;
 
@@ -237,7 +239,8 @@ export default function QuickPage() {
   const [arrivalTime, setArrivalTime] = useState("12:00");
   const [returnDate, setReturnDate] = useState("");
   const [returnTime, setReturnTime] = useState("10:00");
-  const [companion, setCompanion] = useState<Companion | null>(null);
+  const [companion, setCompanionState] = useState<Companion | null>(null);
+  const [group, setGroup] = useState<GroupComposition | undefined>(undefined);
   const [vibe, setVibe] = useState<TravelVibe | null>(null);
   const [styles, setStyles] = useState<TravelStyle[]>([]);
 
@@ -245,6 +248,13 @@ export default function QuickPage() {
   const [genProgress, setGenProgress] = useState({ current: 0, total: 0 });
   const [previewActivities, setPreviewActivities] = useState<{ time: string; emoji: string; title: string }[]>([]);
   const [genError, setGenError] = useState<string | null>(null);
+
+  // Skład grupy ma sens tylko dla znajomych i rodziny, przy zmianie towarzystwa wraca do domyślnego
+  const setCompanion = (v: Companion) => {
+    if (v === companion) return;
+    setCompanionState(v);
+    setGroup(v === "friends" || v === "family" ? groupFromCompanion(v) : undefined);
+  };
 
   const toggleStyle = (s: TravelStyle) => {
     setStyles((prev) => prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]);
@@ -307,6 +317,7 @@ export default function QuickPage() {
       duration,
       airports: ["WRO"],
       companion,
+      ...(group ? { group } : {}),
     };
 
     const flightDetails: FlightDetails = {
@@ -465,7 +476,7 @@ export default function QuickPage() {
               initial="enter" animate="center" exit="exit"
               transition={{ duration: 0.25, ease: "easeInOut" }}
             >
-              <StepCompanion companion={companion} setCompanion={setCompanion} />
+              <StepCompanion companion={companion} setCompanion={setCompanion} group={group} setGroup={setGroup} />
             </motion.div>
           )}
           {step === 3 && (
@@ -658,10 +669,12 @@ function StepDates({
 }
 
 function StepCompanion({
-  companion, setCompanion,
+  companion, setCompanion, group, setGroup,
 }: {
   companion: Companion | null;
   setCompanion: (v: Companion) => void;
+  group: GroupComposition | undefined;
+  setGroup: (g: GroupComposition) => void;
 }) {
   return (
     <div>
@@ -685,6 +698,11 @@ function StepCompanion({
           </button>
         ))}
       </div>
+      {(companion === "friends" || companion === "family") && (
+        <div className="mt-4">
+          <GroupSizePicker companion={companion} group={group} onChange={setGroup} />
+        </div>
+      )}
     </div>
   );
 }

@@ -34,7 +34,9 @@ import {
   IconArrowRight,
   IconCheck,
 } from "@/app/components/Icons";
-import type { Companion } from "@/types";
+import type { Companion, GroupComposition } from "@/types";
+import GroupSizePicker from "@/app/components/GroupSizePicker";
+import { groupFromCompanion } from "@/lib/group";
 
 type IconFC = React.FC<{ size?: number }>;
 
@@ -331,6 +333,23 @@ function QuizPageInner() {
     advanceTimer.current = setTimeout(() => { void handleNextRef.current(); }, AUTO_ADVANCE_MS);
   };
 
+  // Solo i para jadą dalej same. Znajomi i rodzina czekają na ustawienie liczby osób.
+  const pickCompanion = (v: Companion) => {
+    if (v === "friends" || v === "family") {
+      if (stepRef.current !== 0) return;
+      cancelAdvance();
+      if (quizAnswers.companion !== v) {
+        setQuizAnswer("companion", v);
+        setQuizAnswer("group", groupFromCompanion(v));
+      }
+      return;
+    }
+    pick(0, () => {
+      setQuizAnswer("companion", v);
+      setQuizAnswer("group", undefined);
+    });
+  };
+
   const handleBack = () => {
     cancelAdvance();
     setHasMoved(true);
@@ -449,7 +468,9 @@ function QuizPageInner() {
               initial="enter" animate="center" exit="exit" transition={slideTransition}>
               <StepCompanion
                 companion={quizAnswers.companion}
-                onPick={(v) => pick(0, () => setQuizAnswer("companion", v))}
+                group={quizAnswers.group}
+                onPick={pickCompanion}
+                onGroupChange={(g) => setQuizAnswer("group", g)}
               />
             </motion.div>
           )}
@@ -587,10 +608,14 @@ const COMPANION_OPTIONS: { value: Companion; label: string; Icon: CompanionIconF
 
 function StepCompanion({
   companion,
+  group,
   onPick,
+  onGroupChange,
 }: {
   companion: Companion | null;
+  group: GroupComposition | undefined;
   onPick: (v: Companion) => void;
+  onGroupChange: (g: GroupComposition) => void;
 }) {
   return (
     <div>
@@ -606,6 +631,11 @@ function StepCompanion({
           </OptionCard>
         ))}
       </div>
+      {(companion === "friends" || companion === "family") && (
+        <div className="mt-4">
+          <GroupSizePicker companion={companion} group={group} onChange={onGroupChange} />
+        </div>
+      )}
     </div>
   );
 }
