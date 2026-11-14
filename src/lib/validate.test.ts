@@ -16,6 +16,14 @@ describe("validateQuizAnswers", () => {
     ).toBe(true);
   });
 
+  it("accepts a valid group", () => {
+    expect(validateQuizAnswers({ group: { adults: 4, childrenAges: [] } })).toBe(true);
+  });
+
+  it("accepts a quiz without group (old saved data)", () => {
+    expect(validateQuizAnswers({ budget: "low", airports: ["WRO"] })).toBe(true);
+  });
+
   it("accepts a partial quiz", () => {
     expect(validateQuizAnswers({ budget: "medium" })).toBe(true);
   });
@@ -30,6 +38,8 @@ describe("validateQuizAnswers", () => {
     ["duration above max", { duration: 22 }],
     ["empty airport list", { airports: [] }],
     ["unsupported airport", { airports: ["JFK"] }],
+    ["group without adults", { group: { adults: 0, childrenAges: [] } }],
+    ["group with invalid child age", { group: { adults: 2, childrenAges: [18] } }],
   ])("rejects %s", (_, input) => {
     expect(validateQuizAnswers(input)).toBe(false);
   });

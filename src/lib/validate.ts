@@ -1,4 +1,5 @@
 import type { QuizAnswers, DestinationRecommendation, TripPlan } from "@/types";
+import { isValidGroup } from "@/lib/group";
 
 const VALID_BUDGETS = new Set(["low", "medium"]);
 const VALID_STYLES = new Set(["nature", "history", "architecture", "food", "beach", "nightlife"]);
@@ -32,6 +33,8 @@ export function validateQuizAnswers(data: unknown): data is Partial<QuizAnswers>
     if (d.airports.length === 0 || d.airports.length > 8) return false;
     if (!d.airports.every((a) => VALID_AIRPORTS.has(a))) return false;
   }
+  // Brak `group` to stare dane albo solo/para; jeśli jest, musi być poprawny.
+  if (d.group !== undefined && !isValidGroup(d.group)) return false;
 
   return true;
 }

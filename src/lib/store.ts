@@ -167,7 +167,7 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: "kacper-explores-store",
-      version: 3,
+      version: 4,
       onRehydrateStorage: () => (state) => {
         if (state) state.setHasHydrated(true);
       },
@@ -185,6 +185,8 @@ export const useAppStore = create<AppState>()(
           if (qa.companion === undefined) qa.companion = null;
           s.quizAnswers = qa;
         }
+        // v4: dodano opcjonalne `group`; jego brak oznacza stary zapis (solo/para), więc nic nie zmieniamy.
+        if (version < 4) return s;
         return s;
       },
       partialize: (state) => ({

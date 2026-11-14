@@ -1,4 +1,5 @@
 import type { QuizAnswers } from "@/types";
+import { groupLabel } from "@/lib/group";
 import { ORIGIN_GENITIVE } from "@/lib/drop/email";
 
 const COMPANION: Record<string, string> = { solo: "Sam/a", couple: "Para", family: "Rodzina", friends: "Znajomi" };
@@ -9,7 +10,9 @@ const MONTH_SHORT = ["sty", "lut", "mar", "kwi", "maj", "cze", "lip", "sie", "wr
 // Tylko to, co człowiek faktycznie wybrał; nic nie jest dopowiedziane.
 export function quizSummary(a: QuizAnswers): string[] {
   const out: string[] = [];
-  if (a.companion && COMPANION[a.companion]) out.push(COMPANION[a.companion]);
+  const withGroup = a.group && (a.companion === "friends" || a.companion === "family");
+  if (withGroup && a.group) out.push(groupLabel(a.group));
+  else if (a.companion && COMPANION[a.companion]) out.push(COMPANION[a.companion]);
   if (a.budget && BUDGET[a.budget]) out.push(BUDGET[a.budget]);
   if (a.month) out.push(a.duration ? `${MONTH_SHORT[a.month - 1]} · ${a.duration} dni` : MONTH_SHORT[a.month - 1]);
   const from = a.airports.map((c) => ORIGIN_GENITIVE[c]).filter(Boolean);
