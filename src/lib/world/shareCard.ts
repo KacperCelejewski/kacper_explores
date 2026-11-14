@@ -114,6 +114,7 @@ export async function shareMap(
   a.href = url;
   a.download = FILE_NAME;
   a.click();
-  URL.revokeObjectURL(url);
+  // Przeglądarka zaczyna pobieranie asynchronicznie; unieważnienie od razu potrafi je zerwać
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
   return "download";
 }
