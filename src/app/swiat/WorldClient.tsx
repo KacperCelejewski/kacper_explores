@@ -9,6 +9,7 @@ import { dealsLinkFor } from "@/lib/world/dealsLink";
 import { SHARE_CARD_SIZE, drawShareCard, shareCardLines, shareMap } from "@/lib/world/shareCard";
 import { loadVisited, saveVisited, toggleVisited } from "@/lib/world/storage";
 import CountryList from "./CountryList";
+import GlobeBoundary from "./GlobeBoundary";
 import StatsPanel from "./StatsPanel";
 
 // ssr: false działa tylko w komponencie klienta (dokumentacja Next 16, lazy-loading), a three.js ładuje się tylko tutaj
@@ -76,7 +77,11 @@ export default function WorldClient() {
   return (
     <div style={{ display: "grid", gap: 24 }}>
       {notice && <p role="status" style={{ fontSize: 13, color: "var(--text-muted)", margin: 0 }}>{notice}</p>}
-      {globeOn && <WorldGlobe visited={visitedSet} onToggle={onToggle} onSnapshot={onSnapshot} onError={onGlobeError} label={label} />}
+      {globeOn && (
+        <GlobeBoundary onError={onGlobeError}>
+          <WorldGlobe visited={visitedSet} onToggle={onToggle} onSnapshot={onSnapshot} onError={onGlobeError} label={label} />
+        </GlobeBoundary>
+      )}
       <StatsPanel stats={stats} />
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
         <button

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Globe, { type GlobeMethods } from "react-globe.gl";
 import { MeshLambertMaterial } from "three";
-import { countryName } from "@/lib/world/countries";
+import { shapeLabel, type ShapeProperties } from "@/lib/world/shapeLabel";
 
 interface Props {
   visited: ReadonlySet<string>;
@@ -15,7 +15,7 @@ interface Props {
 }
 
 interface Shape {
-  properties: { iso: string | null; sovereign: boolean; name: string | null };
+  properties: ShapeProperties;
 }
 
 function hasWebGL(): boolean {
@@ -129,8 +129,7 @@ export default function WorldGlobe({ visited, onToggle, onSnapshot, onError, lab
           }}
           polygonsTransitionDuration={200}
           polygonLabel={(d) => {
-            const { iso, sovereign, name } = (d as Shape).properties;
-            return sovereign && iso ? countryName(iso) : `${iso ? countryName(iso) : (name ?? "")} (terytorium zależne)`;
+            return shapeLabel((d as Shape).properties);
           }}
           onPolygonClick={(d) => {
             const { iso, sovereign } = (d as Shape).properties;
