@@ -29,6 +29,14 @@ export interface QuizAnswers {
   preferredCity?: string;
   /** Who's traveling */
   companion: Companion | null;
+  /** Skład grupy; gdy brak, wynika z `companion` */
+  group?: GroupComposition;
+}
+
+/** Skład grupy: dorośli i wiek każdego dziecka (w latach) */
+export interface GroupComposition {
+  adults: number;
+  childrenAges: number[];
 }
 
 export interface Airport {
