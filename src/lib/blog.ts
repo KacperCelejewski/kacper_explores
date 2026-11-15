@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
+import { slugify } from "./seo/slug";
 
 const BLOG_DIR = path.join(process.cwd(), "src/content/blog");
 
@@ -12,6 +13,8 @@ export interface PostMeta {
   coverIcon: string;
   tags: string[];
   readingTime: number;
+  /** miasto, któremu poświęcony jest artykuł (frontmatter `city`, nazwa z katalogu); łączy artykuł 48 h ze stroną /weekend/[miasto] */
+  city?: string;
   /** data ostatniej istotnej zmiany treści (frontmatter `updated`); używana w dateModified i sitemapie */
   updated?: string;
   /** pytania i odpowiedzi (frontmatter `faq`); muszą zgadzać się z widoczną sekcją artykułu */
@@ -36,6 +39,7 @@ function parseMeta(slug: string, data: Record<string, unknown>): PostMeta {
     coverIcon: (data.coverIcon as string) ?? "plane",
     tags: (data.tags as string[]) ?? [],
     readingTime: (data.readingTime as number) ?? 5,
+    ...(typeof data.city === "string" ? { city: data.city } : {}),
     ...(typeof data.updated === "string" ? { updated: data.updated } : {}),
     ...(faq.length > 0 ? { faq } : {}),
   };
@@ -59,4 +63,9 @@ export function getPost(slug: string): Post | null {
 
   const { data, content } = matter(fs.readFileSync(filePath, "utf-8"));
   return { ...parseMeta(slug, data), content };
+}
+
+// Artykuł „plan na 48 godzin” dla miasta o danym slugu (z /weekend/[miasto]); null, gdy go nie ma
+export function postForCity(citySlugValue: string): PostMeta | null {
+  return getAllPosts().find((p) => p.city && slugify(p.city) === citySlugValue) ?? null;
 }

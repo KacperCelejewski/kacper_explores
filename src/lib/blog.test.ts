@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
 import { describe, expect, it } from "vitest";
-import { getAllPosts } from "./blog";
+import { getAllPosts, postForCity } from "./blog";
 import { POLISH_AIRPORTS } from "./airports";
 import { citySlug, weekendCities } from "./seo/cities";
 
@@ -80,6 +80,25 @@ describe.each(files)("artykuł %s", (file) => {
       expect(content).toMatch(/\]\(\/(okazje|weekend)/);
     });
   }
+});
+
+describe("artykuły o mieście (frontmatter city)", () => {
+  const cityPosts = files
+    .map((f) => ({ f, data: matter(fs.readFileSync(path.join(DIR, f), "utf-8")).data }))
+    .filter((x) => x.data.city);
+  it("są trzy plany 48 godzin z polem city", () => {
+    expect(cityPosts.map((x) => x.data.city).sort()).toEqual(["Praga", "Rzym", "Wilno"]);
+  });
+  it.each(cityPosts)("$f wskazuje miasto ze strony /weekend i linkuje do niej", ({ f, data }) => {
+    const city = weekendCities().find((c) => c.city === data.city);
+    expect(city, `${f}: nieznane miasto ${data.city}`).toBeTruthy();
+    const content = fs.readFileSync(path.join(DIR, f), "utf-8");
+    expect(content).toContain(`](/weekend/${citySlug(city!)})`);
+  });
+  it("postForCity zwraca artykuł dla miasta i null dla pozostałych", () => {
+    expect(postForCity("praga")?.slug).toBe("weekend-w-pradze-plan-na-48-godzin");
+    expect(postForCity("barcelona")).toBeNull();
+  });
 });
 
 describe("klaster wyjazdu ze znajomymi", () => {

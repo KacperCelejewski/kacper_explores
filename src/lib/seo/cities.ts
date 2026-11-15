@@ -63,3 +63,14 @@ export function slugsWithDeals(cityNames: string[]): string[] {
   const have = new Set(cityNames);
   return weekendCities().filter((c) => have.has(dealCityName(c))).map(citySlug);
 }
+
+// Miasta o największej liczbie wspólnych tagów katalogu; remis rozstrzyga kolejność w katalogu (wynik stały)
+export function similarCities(c: CatalogEntry, n = 3): CatalogEntry[] {
+  return weekendCities()
+    .filter((o) => o.city !== c.city)
+    .map((o, i) => ({ o, i, shared: o.tags.filter((t) => c.tags.includes(t)).length }))
+    .filter((x) => x.shared > 0)
+    .sort((a, b) => b.shared - a.shared || a.i - b.i)
+    .slice(0, n)
+    .map((x) => x.o);
+}

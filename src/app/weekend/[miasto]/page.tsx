@@ -7,7 +7,8 @@ import SiteFooter from "@/app/components/SiteFooter";
 import DropSignup from "@/app/components/DropSignup";
 import { ORIGIN_GENITIVE, formatLocal } from "@/lib/drop/email";
 import { getDealsForCity } from "@/lib/drop/read";
-import { cityAudience, cityFromSlug, citySlug, dealCityName, weekendCities } from "@/lib/seo/cities";
+import { postForCity } from "@/lib/blog";
+import { cityAudience, cityFromSlug, citySlug, dealCityName, similarCities, weekendCities } from "@/lib/seo/cities";
 import { breadcrumbLd, faqLd, jsonLdScript } from "@/lib/seo/jsonld";
 
 // Strony powstają dla wszystkich miast z listy, a ceny odświeżają się co godzinę (dane w bazie zmieniają się raz w tygodniu)
@@ -42,6 +43,8 @@ export default async function WeekendCityPage({ params }: { params: Params }) {
   const deals = await getDealsForCity(dealCityName(city));
   const audience = cityAudience(city);
   const slug = citySlug(city);
+  const guide = postForCity(slug);
+  const similar = similarCities(city);
   const cheapest = deals[0];
 
   const faq = [
@@ -137,6 +140,29 @@ export default async function WeekendCityPage({ params }: { params: Params }) {
             Zaplanuj wyjazd: {city.city} →
           </Link>
         </section>
+
+        {guide && (
+          <p className="text-base mb-8">
+            <Link href={`/blog/${guide.slug}`} className="font-semibold underline underline-offset-2" style={{ color: "var(--accent)" }}>
+              Plan na 48 godzin: {city.city}
+            </Link>
+          </p>
+        )}
+
+        {similar.length > 0 && (
+          <section aria-label="Podobne kierunki" className="mb-10">
+            <h2 className="text-xl font-bold mb-3">Podobne kierunki</h2>
+            <ul className="flex flex-wrap gap-3">
+              {similar.map((s) => (
+                <li key={s.city}>
+                  <Link href={`/weekend/${citySlug(s)}`} className="font-semibold underline underline-offset-2" style={{ color: "var(--accent)" }}>
+                    Weekend: {s.city}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <DropSignup title={`Okazje, gdy lot na kierunek ${city.city} stanieje`} />
 
