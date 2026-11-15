@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { searchFlightOptions } from "@/lib/flights/rapidapi";
+import { parsePassengers, searchFlightForDates, searchFlightOptions } from "@/lib/flights/rapidapi";
 import { checkRateLimit, LIMITS } from "@/lib/rateLimit";
 import { getClientIp } from "@/lib/validate";
+
+const SOLO = { adults: 1, children: 0, infants: 0 };
 
 export async function GET(req: NextRequest) {
   const ip = getClientIp(req);
@@ -27,11 +29,33 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Nieprawidłowe wartości month lub duration" }, { status: 400 });
   }
 
+  const passengers = parsePassengers(searchParams);
+  if (!passengers) {
+    return NextResponse.json({ error: "Nieprawidłowy skład grupy (adults, children, infants)" }, { status: 400 });
+  }
+
   if (!process.env.RAPIDAPI_KEY) {
     console.warn("[real-flights] RAPIDAPI_KEY not set — returning empty");
     return NextResponse.json({ flights: [], reason: "no_api_key" });
   }
 
-  const result = await searchFlightOptions(origin, dest, month, duration, 3);
+  const result = await searchFlightOptions(origin, dest, month, duration, 3, passengers);
+
+  // Porównanie z jedną osobą: jedno zapytanie, te same daty co najlepsza oferta, tylko dla grupy.
+  // Limit dzienny pilnuje searchFlightForDates; odmowa lub błąd pomija porównanie bez wpływu na wynik.
+  const best = result.flights[0];
+  const seats = passengers.adults + passengers.children;
+  if (searchParams.get("compare") === "1" && best && seats > 1) {
+    try {
+      const solo = await searchFlightForDates(origin, dest, best.departureDate, best.returnDate, SOLO);
+      const soloBest = solo?.[0];
+      // FlightOffer.soloPrice czyta FlightCard (PartnerLinks) przez soloComparisonNote.
+      // Kopia, bo best to ta sama referencja co wpis w pamięciowym cache.
+      if (soloBest) result.flights[0] = { ...best, soloPrice: soloBest.price };
+    } catch {
+      // porównanie jest dodatkiem
+    }
+  }
+
   return NextResponse.json({ flights: result.flights, count: result.flights.length, reason: result.reason });
 }

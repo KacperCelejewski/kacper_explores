@@ -19,4 +19,15 @@ describe("quizSummary", () => {
     expect(quizSummary({ ...base, budget: "medium", airports: ["KRK", "KTW"] }))
       .toEqual(["1500–3000 zł", "z Krakowa lub Katowic"]);
   });
+  it("z grupą zamiast „Znajomi” pokazuje opis grupy", () => {
+    expect(quizSummary({ ...base, companion: "friends", group: { adults: 4, childrenAges: [] } }))
+      .toEqual(["4 osoby", "z Wrocławia"]);
+  });
+  it("z grupą zamiast „Rodzina” pokazuje skład z dziećmi", () => {
+    expect(quizSummary({ ...base, companion: "family", group: { adults: 2, childrenAges: [2, 4, 7] } }))
+      .toEqual(["2 dorosłych, dzieci: 2, 4 i 7 lat", "z Wrocławia"]);
+  });
+  it("bez grupy zostaje „Znajomi”", () => {
+    expect(quizSummary({ ...base, companion: "friends" })).toEqual(["Znajomi", "z Wrocławia"]);
+  });
 });

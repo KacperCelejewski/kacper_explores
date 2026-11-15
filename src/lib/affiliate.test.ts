@@ -164,3 +164,26 @@ describe("bookingLink label z szablonem partnera", () => {
     expect(decodeURIComponent(l.href)).toContain("label=okazje-wro");
   });
 });
+
+describe("bookingLink dla grupy", () => {
+  const base = { city: "Rzym", country: "Włochy", checkin: "2026-12-05", checkout: "2026-12-08" };
+
+  it("bez grupy i dla solo adres jest taki sam jak dziś", () => {
+    const today = bookingLink(base, {}).href;
+    expect(bookingLink({ ...base, group: { adults: 1, childrenAges: [] } }, {}).href).toBe(today);
+    expect(today).toContain("group_adults=1&no_rooms=1");
+  });
+
+  it("dla grupy podaje dorosłych, dzieci, wiek każdego dziecka i jeden pokój", () => {
+    const params = new URL(bookingLink({ ...base, group: { adults: 2, childrenAges: [4, 1] } }, {}).href).searchParams;
+    expect(params.get("group_adults")).toBe("2");
+    expect(params.get("group_children")).toBe("2");
+    expect(params.getAll("age")).toEqual(["4", "1"]);
+    expect(params.get("no_rooms")).toBe("1");
+  });
+
+  it("w adresie nie ma danych osobowych", () => {
+    const href = bookingLink({ ...base, group: { adults: 3, childrenAges: [7] } }, {}).href;
+    expect(href).not.toMatch(/@|name=/);
+  });
+});

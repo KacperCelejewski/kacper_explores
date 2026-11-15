@@ -1,3 +1,5 @@
+import type { FlightPassengers } from "@/lib/group";
+
 export type BudgetLevel = "low" | "medium";
 
 export type Companion = "solo" | "couple" | "family" | "friends";
@@ -29,6 +31,14 @@ export interface QuizAnswers {
   preferredCity?: string;
   /** Who's traveling */
   companion: Companion | null;
+  /** Skład grupy; gdy brak, wynika z `companion` */
+  group?: GroupComposition;
+}
+
+/** Skład grupy: dorośli i wiek każdego dziecka (w latach) */
+export interface GroupComposition {
+  adults: number;
+  childrenAges: number[];
 }
 
 export interface Airport {
@@ -48,7 +58,10 @@ export interface FlightOffer {
   id: string;
   origin: Airport;
   destination: Airport;
-  price: number; // PLN
+  price: number; // PLN za osobę
+  totalPrice?: number; // PLN za całą grupę
+  soloPrice?: number | null; // PLN za jedną osobę, te same daty (porównanie z grupą)
+  passengers?: FlightPassengers;
   realCost: number; // PLN (lot + dojazd do hubu)
   durationMinutes: number;
   airline: string;

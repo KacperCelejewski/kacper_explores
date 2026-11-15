@@ -1,0 +1,160 @@
+import { describe, it, expect } from "vitest";
+import {
+  MAX_GROUP,
+  isGroupTrip,
+  showGroupBudget,
+  groupFromCompanion,
+  groupSize,
+  toFlightPassengers,
+  isValidGroup,
+  scaleBudgetText,
+  groupLabel,
+} from "./group";
+
+describe("groupFromCompanion", () => {
+  it("wylicza domyślny skład z typu towarzystwa", () => {
+    expect(groupFromCompanion("solo")).toEqual({ adults: 1, childrenAges: [] });
+    expect(groupFromCompanion("couple")).toEqual({ adults: 2, childrenAges: [] });
+    expect(groupFromCompanion("friends")).toEqual({ adults: 4, childrenAges: [] });
+    expect(groupFromCompanion("family")).toEqual({ adults: 2, childrenAges: [] });
+    expect(groupFromCompanion(null)).toEqual({ adults: 1, childrenAges: [] });
+  });
+
+  it("przekazany skład wygrywa dla znajomych i rodziny", () => {
+    const g = { adults: 3, childrenAges: [5] };
+    expect(groupFromCompanion("friends", g)).toBe(g);
+    expect(groupFromCompanion("family", g)).toBe(g);
+  });
+
+  it("stary zapisany skład jest ignorowany dla solo i pary", () => {
+    const g = { adults: 3, childrenAges: [5] };
+    expect(groupFromCompanion("solo", g)).toEqual({ adults: 1, childrenAges: [] });
+    expect(groupFromCompanion("couple", g)).toEqual({ adults: 2, childrenAges: [] });
+  });
+});
+
+describe("toFlightPassengers / groupSize", () => {
+  const g = { adults: 2, childrenAges: [1, 2, 11, 12] };
+
+  it("dzieli pasażerów po granicach wieku 2 i 12", () => {
+    expect(toFlightPassengers(g)).toEqual({ adults: 3, children: 2, infants: 1 });
+  });
+
+  it("niemowlęta nie zajmują miejsca", () => {
+    expect(groupSize(g)).toBe(5);
+  });
+});
+
+describe("isValidGroup", () => {
+  it("przyjmuje poprawne składy", () => {
+    expect(isValidGroup({ adults: 1, childrenAges: [3] })).toBe(true);
+    expect(isValidGroup({ adults: 9, childrenAges: [] })).toBe(true);
+    expect(isValidGroup({ adults: 9, childrenAges: [1] })).toBe(true);
+  });
+
+  it("odrzuca niepoprawne składy", () => {
+    expect(isValidGroup({ adults: 0, childrenAges: [] })).toBe(false);
+    expect(isValidGroup({ adults: 10, childrenAges: [] })).toBe(false);
+    expect(isValidGroup({ adults: 2, childrenAges: [-1] })).toBe(false);
+    expect(isValidGroup({ adults: 2, childrenAges: [18] })).toBe(false);
+    expect(isValidGroup({ adults: 2, childrenAges: [4.5] })).toBe(false);
+    expect(isValidGroup({ adults: 2, childrenAges: "x" })).toBe(false);
+    expect(isValidGroup(null)).toBe(false);
+  });
+
+  it("niemowląt nie może być więcej niż dorosłych", () => {
+    expect(isValidGroup({ adults: 2, childrenAges: [0, 1] })).toBe(true);
+    expect(isValidGroup({ adults: 2, childrenAges: [0, 1, 0] })).toBe(false);
+    expect(isValidGroup({ adults: 1, childrenAges: [0, 0] })).toBe(false);
+  });
+
+  it("liczba dzieci nie przekracza MAX_GROUP", () => {
+    expect(isValidGroup({ adults: 9, childrenAges: Array(MAX_GROUP).fill(0) })).toBe(true);
+    expect(isValidGroup({ adults: 9, childrenAges: Array(MAX_GROUP + 1).fill(0) })).toBe(false);
+  });
+
+  it("odrzuca skład ponad MAX_GROUP miejsc", () => {
+    expect(MAX_GROUP).toBe(9);
+    expect(isValidGroup({ adults: 9, childrenAges: [5] })).toBe(false);
+  });
+});
+
+describe("scaleBudgetText", () => {
+  it("mnoży liczby i formatuje zakres", () => {
+    expect(scaleBudgetText("1200-1500 PLN", 4)).toBe("4 800–6 000 PLN");
+    expect(scaleBudgetText("~300 PLN", 2)).toBe("600 PLN");
+  });
+
+  it("traktuje spację tysięcy jako część liczby", () => {
+    expect(scaleBudgetText("1 200–1 500 PLN", 4)).toBe("4 800–6 000 PLN");
+    expect(scaleBudgetText("1\u00a0200 PLN", 2)).toBe("2 400 PLN");
+  });
+
+  it("kropka lub przecinek przed dokładnie trzema cyframi to separator tysięcy", () => {
+    expect(scaleBudgetText("1.200 PLN", 2)).toBe("2 400 PLN");
+    expect(scaleBudgetText("1,200 PLN", 2)).toBe("2 400 PLN");
+    expect(scaleBudgetText("1.200–1.500 PLN", 2)).toBe("2 400–3 000 PLN");
+    expect(scaleBudgetText("1 200,50 PLN", 2)).toBe("2 401 PLN");
+  });
+
+  it("obsługuje ułamki z przecinkiem i kropką", () => {
+    expect(scaleBudgetText("2,5 PLN", 2)).toBe("5 PLN");
+    expect(scaleBudgetText("2.5 PLN", 3)).toBe("8 PLN");
+  });
+
+  it("dla mnożnika 1 zwraca tekst bez zmian, razem z tyldą", () => {
+    expect(scaleBudgetText("~300 PLN", 1)).toBe("~300 PLN");
+    expect(scaleBudgetText("1200-1500 PLN", 1)).toBe("1200-1500 PLN");
+  });
+
+  it("zwraca null dla niepoprawnego mnożnika", () => {
+    expect(scaleBudgetText("300 PLN", 0)).toBeNull();
+    expect(scaleBudgetText("300 PLN", -2)).toBeNull();
+    expect(scaleBudgetText("300 PLN", Number.NaN)).toBeNull();
+    expect(scaleBudgetText("300 PLN", Infinity)).toBeNull();
+  });
+
+  it("zwraca null bez cyfr", () => {
+    expect(scaleBudgetText("Free", 4)).toBeNull();
+    expect(scaleBudgetText("", 4)).toBeNull();
+  });
+});
+
+describe("groupLabel", () => {
+  it("opisuje grupę dorosłych", () => {
+    expect(groupLabel({ adults: 1, childrenAges: [] })).toBe("1 osoba");
+    expect(groupLabel({ adults: 4, childrenAges: [] })).toBe("4 osoby");
+    expect(groupLabel({ adults: 5, childrenAges: [] })).toBe("5 osób");
+  });
+
+  it("wylicza dzieci z wiekiem", () => {
+    expect(groupLabel({ adults: 2, childrenAges: [4, 7] })).toBe("2 dorosłych, dzieci: 4 i 7 lat");
+    expect(groupLabel({ adults: 2, childrenAges: [2, 4, 7] })).toBe("2 dorosłych, dzieci: 2, 4 i 7 lat");
+    expect(groupLabel({ adults: 1, childrenAges: [3] })).toBe("1 dorosły, dziecko: 3 lata");
+  });
+});
+
+describe("isGroupTrip i showGroupBudget", () => {
+  it("para z domyślnym składem to nie wyjazd grupowy", () => {
+    expect(isGroupTrip("couple", undefined)).toBe(false);
+    expect(isGroupTrip("couple", { adults: 2, childrenAges: [] })).toBe(false);
+  });
+
+  it("znajomi bez zapisanej grupy to nie wyjazd grupowy", () => {
+    expect(isGroupTrip("friends", undefined)).toBe(false);
+    expect(isGroupTrip("solo", { adults: 1, childrenAges: [] })).toBe(false);
+    expect(isGroupTrip(null, undefined)).toBe(false);
+  });
+
+  it("znajomi i rodzina z zapisaną grupą to wyjazd grupowy", () => {
+    expect(isGroupTrip("friends", { adults: 4, childrenAges: [] })).toBe(true);
+    expect(isGroupTrip("family", { adults: 1, childrenAges: [] })).toBe(true);
+  });
+
+  it("nagłówek grupowy tylko dla grupy większej niż 1 osoba", () => {
+    expect(showGroupBudget("friends", { adults: 4, childrenAges: [] })).toBe(true);
+    expect(showGroupBudget("family", { adults: 1, childrenAges: [] })).toBe(false);
+    expect(showGroupBudget("couple", undefined)).toBe(false);
+    expect(showGroupBudget("friends", undefined)).toBe(false);
+  });
+});

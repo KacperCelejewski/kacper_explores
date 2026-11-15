@@ -1,9 +1,14 @@
 import { createServiceClient } from "@/lib/supabase/service";
 import { FLIGHT_CACHE_TTL_MS } from "@/lib/constants";
 import { SKY_IDS } from "@/lib/flights/sky-ids";
+import { MAX_GROUP, type FlightPassengers } from "@/lib/group";
+
+const SOLO: FlightPassengers = { adults: 1, children: 0, infants: 0 };
 
 export interface RealFlight {
-  price: number;
+  price: number;               // PLN za osobę
+  totalPrice: number;          // PLN za całą grupę
+  passengers: FlightPassengers;
   airline: string;
   departureDate: string;       // YYYY-MM-DD
   departureTime: string;       // HH:MM local at origin
@@ -12,6 +17,7 @@ export interface RealFlight {
   returnDepartureTime: string; // HH:MM local at destination
   returnArrivalTime: string;   // HH:MM local at origin
   durationMinutes: number;
+  soloPrice?: number;          // PLN za jedną osobę, te same daty (tylko z compare=1)
 }
 
 // ── Sky Scrapper response types ───────────────────────────────────────────────
@@ -96,6 +102,75 @@ function candidateDates(month: number, duration: number): Array<{ departDate: st
     .map(({ departDate, returnDate }) => ({ departDate, returnDate }));
 }
 
+// Klucz cache: jeden dorosły zachowuje dawny format, żeby stare wpisy dalej trafiały.
+export function buildFlightCacheKey(
+  origin: string,
+  dest: string,
+  departDate: string,
+  returnDate: string,
+  p: FlightPassengers
+): string {
+  const base = `sky-${origin}-${dest}-${departDate}-${returnDate}`;
+  if (p.adults === 1 && p.children === 0 && p.infants === 0) return base;
+  return `${base}-a${p.adults}c${p.children}i${p.infants}`;
+}
+
+// TODO: potwierdzić zapytaniem na żywo (2 dorosłych vs 1) przed zaufaniem cenom grupowym
+// Parametry pasażerów dla Sky Scrappera; dla jednego dorosłego zostaje samo adults=1.
+export function buildSearchParams(p: FlightPassengers): Record<string, string> {
+  const params: Record<string, string> = { adults: String(p.adults) };
+  if (p.children > 0) params.childrens = String(p.children);
+  if (p.infants > 0) params.infants = String(p.infants);
+  return params;
+}
+
+// Skład z query stringa: domyślnie 1/0/0, null gdy wartości są poza zakresem
+// albo miejsc (dorośli plus dzieci, bez niemowląt) jest więcej niż MAX_GROUP.
+export function parsePassengers(searchParams: URLSearchParams): FlightPassengers | null {
+  const read = (name: string, fallback: number, min: number): number | null => {
+    const raw = searchParams.get(name);
+    if (raw === null || raw === "") return fallback;
+    if (!/^\d+$/.test(raw)) return null;
+    const n = Number(raw);
+    return n >= min && n <= MAX_GROUP ? n : null;
+  };
+  const adults = read("adults", 1, 1);
+  const children = read("children", 0, 0);
+  const infants = read("infants", 0, 0);
+  if (adults === null || children === null || infants === null) return null;
+  if (adults + children > MAX_GROUP) return null;
+  // Niemowlę leci na kolanach dorosłego.
+  if (infants > adults) return null;
+  return { adults, children, infants };
+}
+
+// Zakładamy, że price.raw to cena całej rezerwacji (z niemowlętami włącznie).
+// Cena za osobę to całość podzielona przez liczbę miejsc (dorośli plus dzieci, jak w groupSize);
+// niemowlęta wchodzą tylko do sumy.
+// TODO: potwierdzić zapytaniem na żywo (2 dorosłych vs 1) przed zaufaniem cenom grupowym
+export function splitPrice(total: number, p: FlightPassengers): { price: number; totalPrice: number } {
+  const seats = p.adults + p.children;
+  const totalPrice = Math.round(total);
+  return { price: Math.round(totalPrice / seats), totalPrice };
+}
+
+// Stare wpisy cache nie mają totalPrice ani passengers. Dla klucza bez sufiksu (jeden dorosły)
+// uzupełniamy braki, dla kluczy grupowych taki wpis uznajemy za brak w cache (null).
+export function normalizeCachedFlights(flights: RealFlight[], p: FlightPassengers): RealFlight[] | null {
+  const solo = p.adults === 1 && p.children === 0 && p.infants === 0;
+  const out: RealFlight[] = [];
+  for (const f of flights) {
+    if (f.totalPrice !== undefined && f.passengers !== undefined) {
+      out.push(f);
+    } else if (solo) {
+      out.push({ ...f, totalPrice: f.totalPrice ?? f.price, passengers: f.passengers ?? SOLO });
+    } else {
+      return null;
+    }
+  }
+  return out;
+}
+
 // ── Global daily cap ──────────────────────────────────────────────────────────
 export const DAILY_CAP = 10600;
 const ALERT_THRESHOLD = 0.8;
@@ -154,7 +229,7 @@ function getSupabase() {
   return createServiceClient();
 }
 
-async function readSupabaseCache(cacheKey: string): Promise<RealFlight[] | null> {
+async function readSupabaseCache(cacheKey: string, passengers: FlightPassengers): Promise<RealFlight[] | null> {
   const sb = getSupabase();
   if (!sb) return null;
   try {
@@ -164,7 +239,7 @@ async function readSupabaseCache(cacheKey: string): Promise<RealFlight[] | null>
       .eq("cache_key", cacheKey)
       .gt("expires_at", new Date().toISOString())
       .single();
-    return data ? (data.flights as RealFlight[]) : null;
+    return data ? normalizeCachedFlights(data.flights as RealFlight[], passengers) : null;
   } catch { return null; }
 }
 
@@ -195,6 +270,11 @@ async function logUsage(cacheKey: string, origin: string, dest: string, month: n
 
 // ── Single-date fetch with built-in retry ─────────────────────────────────────
 // Returns parsed flights or null (null = no results for this date, try next candidate).
+// Dokumentacja Sky Scrappera (RapidAPI) była niedostępna, więc poniższe punkty to założenia do sprawdzenia:
+// - dzieci i niemowlęta to parametry `childrens` i `infants` obok `adults`;
+// - `price.raw` traktujemy jako cenę całej rezerwacji, a nie za osobę;
+// - limit pasażerów przyjmujemy jak MAX_GROUP (9 miejsc);
+// - segmenty nie mają w naszych typach numeru lotu (pole nieznane, nie używamy go).
 async function fetchForDate(
   originSky: { skyId: string; entityId: string },
   destSky: { skyId: string; entityId: string },
@@ -202,7 +282,8 @@ async function fetchForDate(
   returnDate: string,
   originCode: string,
   destCode: string,
-  apiKey: string
+  apiKey: string,
+  passengers: FlightPassengers = SOLO
 ): Promise<RealFlight[] | null> {
   const url = new URL("https://sky-scrapper.p.rapidapi.com/api/v1/flights/searchFlights");
   url.searchParams.set("originSkyId", originSky.skyId);
@@ -212,7 +293,7 @@ async function fetchForDate(
   url.searchParams.set("date", departDate);
   url.searchParams.set("returnDate", returnDate);
   url.searchParams.set("cabinClass", "economy");
-  url.searchParams.set("adults", "1");
+  for (const [key, value] of Object.entries(buildSearchParams(passengers))) url.searchParams.set(key, value);
   url.searchParams.set("sortBy", "best");
   url.searchParams.set("currency", "PLN");
 
@@ -258,14 +339,16 @@ async function fetchForDate(
     const inbound = it.legs[1] ?? null;
     if (!outbound) continue;
 
-    const price = Math.round(it.price.raw);
-    if (!price) continue;
+    const { price, totalPrice } = splitPrice(it.price.raw, passengers);
+    if (!totalPrice) continue;
 
     const airline = outbound.carriers?.marketing?.[0]?.name ?? "Linie lotnicze";
     const durMinutes = outbound.durationInMinutes ?? 120;
 
     results.push({
       price,
+      totalPrice,
+      passengers,
       airline,
       departureDate: isoToDate(outbound.departure),
       departureTime: isoToHHMM(outbound.departure),
@@ -283,12 +366,72 @@ async function fetchForDate(
 
 // ── Core fetch ────────────────────────────────────────────────────────────────
 
+// Jedna para dat przez cache L1/L2 i limit dzienny (wspólne dla wyszukiwania i porównania).
+async function fetchDatePair(
+  originSky: (typeof SKY_IDS)[string],
+  destSky: (typeof SKY_IDS)[string],
+  originCode: string,
+  destCode: string,
+  departDate: string,
+  returnDate: string,
+  month: number,
+  apiKey: string,
+  passengers: FlightPassengers
+): Promise<RealFlight[] | null> {
+  const cacheKey = buildFlightCacheKey(originCode, destCode, departDate, returnDate, passengers);
+
+  // L1
+  const mem = memCache.get(cacheKey);
+  if (mem && mem.expiresAt > Date.now() && mem.data.length > 0) {
+    void logUsage(cacheKey, originCode, destCode, month, true);
+    return mem.data;
+  }
+
+  // L2
+  const cached = await readSupabaseCache(cacheKey, passengers);
+  if (cached && cached.length > 0) {
+    memCache.set(cacheKey, { data: cached, expiresAt: Date.now() + FLIGHT_CACHE_TTL_MS });
+    void logUsage(cacheKey, originCode, destCode, month, true);
+    return cached;
+  }
+
+  try {
+    const results = await fetchForDate(originSky, destSky, departDate, returnDate, originCode, destCode, apiKey, passengers);
+    if (results && results.length > 0) {
+      memCache.set(cacheKey, { data: results, expiresAt: Date.now() + FLIGHT_CACHE_TTL_MS });
+      void writeSupabaseCache(cacheKey, results);
+      void logUsage(cacheKey, originCode, destCode, month, false);
+      return results;
+    }
+  } catch (err) {
+    console.error("[sky-scrapper] error:", err);
+  }
+  return null;
+}
+
+/** Dokładnie jedno zapytanie dla podanej pary dat (porównanie z jedną osobą). */
+export async function searchFlightForDates(
+  originCode: string,
+  destCode: string,
+  departDate: string,
+  returnDate: string,
+  passengers: FlightPassengers = SOLO
+): Promise<RealFlight[] | null> {
+  const apiKey = process.env.RAPIDAPI_KEY;
+  const originSky = SKY_IDS[originCode];
+  const destSky = SKY_IDS[destCode];
+  if (!apiKey || !originSky || !destSky) return null;
+  const month = Number(departDate.slice(5, 7)) || 0;
+  return fetchDatePair(originSky, destSky, originCode, destCode, departDate, returnDate, month, apiKey, passengers);
+}
+
 export async function searchFlightOptions(
   originCode: string,
   destCode: string,
   month: number,
   duration: number,
-  maxResults = 3
+  maxResults = 3,
+  passengers: FlightPassengers = SOLO
 ): Promise<{ flights: RealFlight[]; reason?: string }> {
   const apiKey = process.env.RAPIDAPI_KEY;
   if (!apiKey) return { flights: [], reason: "no_api_key" };
@@ -304,35 +447,7 @@ export async function searchFlightOptions(
 
   const perCandidate = await Promise.all(
     candidates.map(async ({ departDate, returnDate }) => {
-      const cacheKey = `sky-${originCode}-${destCode}-${departDate}-${returnDate}`;
-
-      // L1
-      const mem = memCache.get(cacheKey);
-      if (mem && mem.expiresAt > Date.now() && mem.data.length > 0) {
-        void logUsage(cacheKey, originCode, destCode, month, true);
-        return mem.data;
-      }
-
-      // L2
-      const cached = await readSupabaseCache(cacheKey);
-      if (cached && cached.length > 0) {
-        memCache.set(cacheKey, { data: cached, expiresAt: Date.now() + FLIGHT_CACHE_TTL_MS });
-        void logUsage(cacheKey, originCode, destCode, month, true);
-        return cached;
-      }
-
-      try {
-        const results = await fetchForDate(originSky, destSky, departDate, returnDate, originCode, destCode, apiKey);
-        if (results && results.length > 0) {
-          memCache.set(cacheKey, { data: results, expiresAt: Date.now() + FLIGHT_CACHE_TTL_MS });
-          void writeSupabaseCache(cacheKey, results);
-          void logUsage(cacheKey, originCode, destCode, month, false);
-          return results;
-        }
-      } catch (err) {
-        console.error("[sky-scrapper] error:", err);
-      }
-      return null;
+      return fetchDatePair(originSky, destSky, originCode, destCode, departDate, returnDate, month, apiKey, passengers);
     })
   );
 
@@ -353,8 +468,9 @@ export async function searchCheapestFlight(
   originCode: string,
   destCode: string,
   month: number,
-  duration: number
+  duration: number,
+  passengers: FlightPassengers = SOLO
 ): Promise<RealFlight | null> {
-  const { flights } = await searchFlightOptions(originCode, destCode, month, duration, 1);
+  const { flights } = await searchFlightOptions(originCode, destCode, month, duration, 1, passengers);
   return flights[0] ?? null;
 }
