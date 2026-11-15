@@ -4,6 +4,7 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { getClientIp } from "@/lib/validate";
+import { safeNextPath } from "@/lib/safeRedirect";
 
 export async function POST(req: NextRequest) {
   // Rate limit: max 10 checkout attempts per hour per IP
@@ -58,10 +59,7 @@ export async function POST(req: NextRequest) {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   // Tylko ścieżki w obrębie aplikacji — nie pozwalamy przekierować na obcą domenę
-  const cancelPath =
-    typeof returnTo === "string" && returnTo.startsWith("/") && !returnTo.startsWith("//") && !returnTo.includes("\\")
-      ? returnTo
-      : "/pricing";
+  const cancelPath = safeNextPath(returnTo, "/pricing");
 
   const session = await stripe.checkout.sessions.create({
     customer: customerId,

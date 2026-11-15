@@ -8,12 +8,13 @@ import { createSupabaseClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
 import { quizSummary } from "@/lib/quizSummary";
 import { trackEvent } from "@/lib/analytics";
+import { safeNextPath } from "@/lib/safeRedirect";
 import DropSignup from "@/app/components/DropSignup";
 import { IconMail, IconArrowLeft } from "@/app/components/Icons";
 
 function LoginContent() {
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/destinations";
+  const next = safeNextPath(searchParams.get("next"), "/destinations");
 
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
