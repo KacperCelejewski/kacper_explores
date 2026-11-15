@@ -8,6 +8,7 @@ import { useAppStore } from "@/lib/store";
 import type { TravelStyle, TripDuration, TravelVibe, PlaceType, QuizAnswers } from "@/types";
 import { MONTH_NAMES } from "@/lib/constants";
 import { trackEvent } from "@/lib/analytics";
+import { cityAfterLogin, quizLoginNext } from "@/lib/quizLogin";
 import { parseDropParams } from "@/lib/drop/quizParams";
 import QuizProgress from "@/components/quiz/QuizProgress";
 import {
@@ -242,8 +243,10 @@ function QuizPageInner() {
       setDropStepReset(true);
       trackEvent("drop_plan_started", { city: dropPrefill.preferredCity });
     } else if (searchParams.get("afterLogin") !== "1") {
-      // po powrocie z logowania zostaje miasto zapisane w store
       setQuizAnswer("preferredCity", searchParams.get("city") ?? undefined);
+    } else {
+      // po powrocie z logowania miasto jest w URL; store bywa pusty (link z maila w innej przeglądarce)
+      setQuizAnswer("preferredCity", cityAfterLogin(searchParams.get("city"), quizAnswers.preferredCity));
     }
     if (homeFriends) {
       // store trzyma krok i odpowiedzi z poprzedniej wizyty; bez auto-advance, żeby dało się ustawić liczbę osób
@@ -291,7 +294,9 @@ function QuizPageInner() {
 
   const handleUseSaved = () => {
     if (!savedPrefs) return;
+    const keepCity = quizAnswers.preferredCity;
     resetQuiz();
+    if (keepCity) setQuizAnswer("preferredCity", keepCity);
     if (savedPrefs.budget)   setQuizAnswer("budget",    savedPrefs.budget);
     if (savedPrefs.vibe)     setQuizAnswer("vibe",      savedPrefs.vibe);
     if (savedPrefs.placeType) setQuizAnswer("placeType", savedPrefs.placeType);
@@ -326,7 +331,7 @@ function QuizPageInner() {
       track("quiz_complete");
       const profile = await fetch("/api/profile").then((r) => r.json()).catch(() => ({}));
       if (!profile.authenticated) {
-        router.push("/login?next=/quiz%3FafterLogin%3D1");
+        router.push(`/login?next=${encodeURIComponent(quizLoginNext(quizAnswers.preferredCity))}`);
       } else {
         router.push("/destinations");
       }
