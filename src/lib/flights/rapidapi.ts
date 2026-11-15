@@ -2,6 +2,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { FLIGHT_CACHE_TTL_MS } from "@/lib/constants";
 import { SKY_IDS } from "@/lib/flights/sky-ids";
 import { MAX_GROUP, type FlightPassengers } from "@/lib/group";
+import type { CachedFlightPair, FlightCachePair } from "./card-price";
 
 const SOLO: FlightPassengers = { adults: 1, children: 0, infants: 0 };
 
@@ -75,8 +76,7 @@ function fmtDate(d: Date): string {
 
 // Returns up to 4 candidate departure dates for the month, sorted nearest first.
 // Tries days 10, 15, 20, 25; each picks the first occurrence ≥3 days from now.
-function candidateDates(month: number, duration: number): Array<{ departDate: string; returnDate: string }> {
-  const now = new Date();
+export function candidateDates(month: number, duration: number, now = new Date()): Array<{ departDate: string; returnDate: string }> {
   const minTime = now.getTime() + 3 * 24 * 60 * 60 * 1000;
   const results: Array<{ departDate: string; returnDate: string; t: number }> = [];
 
@@ -160,6 +160,7 @@ export function normalizeCachedFlights(flights: RealFlight[], p: FlightPassenger
   const solo = p.adults === 1 && p.children === 0 && p.infants === 0;
   const out: RealFlight[] = [];
   for (const f of flights) {
+    if (!f || typeof f !== "object") continue;
     if (f.totalPrice !== undefined && f.passengers !== undefined) {
       out.push(f);
     } else if (solo) {
@@ -229,17 +230,18 @@ function getSupabase() {
   return createServiceClient();
 }
 
-async function readSupabaseCache(cacheKey: string, passengers: FlightPassengers): Promise<RealFlight[] | null> {
+async function readSupabaseCache(cacheKey: string, passengers: FlightPassengers): Promise<{ data: RealFlight[]; expiresAt: number } | null> {
   const sb = getSupabase();
   if (!sb) return null;
   try {
     const { data } = await sb
       .from("flight_cache")
-      .select("flights")
+      .select("flights,expires_at")
       .eq("cache_key", cacheKey)
       .gt("expires_at", new Date().toISOString())
       .single();
-    return data ? normalizeCachedFlights(data.flights as RealFlight[], passengers) : null;
+    const flights = data && Array.isArray(data.flights) ? normalizeCachedFlights(data.flights as RealFlight[], passengers) : null;
+    return flights ? { data: flights, expiresAt: Date.parse(data!.expires_at) } : null;
   } catch { return null; }
 }
 
@@ -266,6 +268,57 @@ async function logUsage(cacheKey: string, origin: string, dest: string, month: n
   try {
     await sb.from("api_usage_log").insert({ cache_key: cacheKey, origin, dest, month, hit });
   } catch { /* non-critical */ }
+}
+
+/** Cache-only batch read. A miss never reaches fetchForDate or consumes the daily cap. */
+export async function readCachedFlightPairs(
+  pairs: FlightCachePair[],
+  passengers: FlightPassengers,
+): Promise<CachedFlightPair[]> {
+  const byKey = new Map(pairs.map((pair) => [
+    buildFlightCacheKey(pair.origin, pair.destination, pair.departDate, pair.returnDate, passengers), pair,
+  ]));
+  const found = new Map<string, { data: RealFlight[]; expiresAt: number }>();
+  const now = Date.now();
+  for (const key of byKey.keys()) {
+    const mem = memCache.get(key);
+    if (mem && mem.expiresAt > now && mem.data.length) found.set(key, mem);
+  }
+  const missing = [...byKey.keys()].filter((key) => !found.has(key));
+  const sb = getSupabase();
+  if (sb && missing.length) {
+    try {
+      const { data, error } = await sb.from("flight_cache")
+        .select("cache_key,flights,expires_at")
+        .in("cache_key", missing)
+        .gt("expires_at", new Date(now).toISOString());
+      if (!error) for (const row of data ?? []) {
+        if (!byKey.has(row.cache_key) || !Array.isArray(row.flights)) continue;
+        const flights = normalizeCachedFlights(row.flights as RealFlight[], passengers);
+        const expiresAt = Date.parse(row.expires_at);
+        if (!flights?.length || !Number.isFinite(expiresAt) || expiresAt <= now) continue;
+        const entry = { data: flights, expiresAt };
+        memCache.set(row.cache_key, entry);
+        found.set(row.cache_key, entry);
+      }
+    } catch { /* Missing configuration/table or unavailable DB: keep cards usable. */ }
+  }
+  const results: CachedFlightPair[] = [];
+  for (const [key, cached] of found) {
+    const pair = byKey.get(key)!;
+    results.push({ ...pair, flights: cached.data, expiresAt: cached.expiresAt });
+  }
+  // Batch usage too: up to six cards/eight origins must not cause serial DB writes.
+  // Cache-only misses are not paid calls, so never write hit:false here.
+  if (sb && results.length) {
+    try {
+      await sb.from("api_usage_log").insert(results.map((pair) => ({
+        cache_key: buildFlightCacheKey(pair.origin, pair.destination, pair.departDate, pair.returnDate, passengers),
+        origin: pair.origin, dest: pair.destination, month: Number(pair.departDate.slice(5, 7)), hit: true,
+      })));
+    } catch { /* Same non-critical logging behavior as the existing flight reader. */ }
+  }
+  return results;
 }
 
 // ── Single-date fetch with built-in retry ─────────────────────────────────────
@@ -389,10 +442,10 @@ async function fetchDatePair(
 
   // L2
   const cached = await readSupabaseCache(cacheKey, passengers);
-  if (cached && cached.length > 0) {
-    memCache.set(cacheKey, { data: cached, expiresAt: Date.now() + FLIGHT_CACHE_TTL_MS });
+  if (cached && cached.expiresAt > Date.now() && cached.data.length > 0) {
+    memCache.set(cacheKey, cached);
     void logUsage(cacheKey, originCode, destCode, month, true);
-    return cached;
+    return cached.data;
   }
 
   try {

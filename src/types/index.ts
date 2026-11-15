@@ -85,7 +85,6 @@ export interface DestinationRecommendation {
   description: string;
   vibes?: TravelVibe[];
   placeTypes?: PlaceType[];
-  /** Estimated flight cost range from AI (e.g. "350–600 PLN") */
   /** Pre-built Google Flights / Skyscanner search URL */
   flightSearchUrl?: string;
   /** Legacy flight offer fields — kept for backward compat with saved trips */
