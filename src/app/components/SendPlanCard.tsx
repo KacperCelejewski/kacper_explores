@@ -83,7 +83,9 @@ export default function SendPlanCard({ tripId, city, title, isPublic, onMakePubl
       return;
     }
     setConfirming(false);
-    await sendLink();
+    // Kopiowanie i systemowe udostępnianie wymagają świeżego stuknięcia, więc po włączeniu linku
+    // użytkownik dostaje ten sam przycisk jeszcze raz zamiast automatycznej próby po zapytaniu do serwera.
+    flash({ kind: "ok", text: CREW_COPY.sendNowPublic });
   };
 
   return (
@@ -92,7 +94,7 @@ export default function SendPlanCard({ tripId, city, title, isPublic, onMakePubl
       style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
       aria-labelledby={`${descId}-title`}
     >
-      <h2 id={`${descId}-title`} className="text-base font-bold" style={{ color: "var(--accent)" }}>
+      <h2 id={`${descId}-title`} className="text-xl font-bold" style={{ color: "var(--accent)" }}>
         {title}
       </h2>
       <p id={descId} className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>

@@ -28,7 +28,8 @@ export const CREW_COPY = {
   sendConfirmTitle: "Najpierw plan musi być publiczny",
   sendConfirmBody:
     "Każdy, kto dostanie link, otworzy plan bez konta. Plan pojawi się też w galerii Odkryj, bo to jedna wspólna widoczność. Wyłączysz ją w dowolnej chwili.",
-  sendConfirmYes: "Włącz i skopiuj link",
+  sendConfirmYes: "Włącz link",
+  sendNowPublic: "Link włączony. Teraz go skopiuj i wklej na czacie ekipy.",
   sendConfirmNo: "Nie teraz",
   sendCopied: "Link skopiowany. Wklej go na czacie ekipy.",
   sendFailed: "Nie udało się włączyć udostępniania. Spróbuj jeszcze raz — zwykle działa za drugim.",

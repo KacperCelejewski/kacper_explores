@@ -36,3 +36,19 @@ Rozjazd wynika z trzech rzeczy: (1) obietnica na głównej jest ogólna, a to, c
 ## Czego ta zmiana nie rozwiązuje
 
 Oddzielenie "link dla znajomych" od "galeria publiczna" wymaga osobnej kolumny widoczności w `trips` (migracja Supabase) i zmiany `/api/gallery`. Bez migracji ekran uczciwie mówi, że link = plan publiczny i pojawia się w galerii (patrz commit z kartą "Wyślij plan ekipie"). Decyzja o migracji należy do właściciela.
+
+## Co zmieniono (gałąź `feat/ux-group-flow`)
+
+| Problem | Zmiana |
+|---------|--------|
+| 8, 11 | Podtytuł głównej: "Powiedz, ilu Was jedzie. Dostaniesz kierunki w Waszym budżecie, koszt na osobę i razem oraz plan do wysłania ekipie." Kroki "Jak to działa" mówią "Wy", nie "Ty". Zasada nazewnictwa w `src/lib/groupFlow.ts`: "znajomi" = kategoria (H1, karta w quizie), "ekipa" = konkretna grupa. |
+| 4, 5, 10 | Krok "kto jedzie": podtytuł po wyborze znajomych mówi, co dostanie ekipa; pole "Ilu Was jedzie?" wyróżnione (obrys, większa liczba), po wyborze ekipy przewijane nad lepki przycisk; hover nie wygląda już jak wybór; usunięty "podział kosztów". |
+| 6 | Żeton "Ekipa · 4 osoby" na ekranach 2–6; pod opcjami budżetu "razem do 6 000 zł". |
+| 7, 14 | Ekran kierunków: ramka "Wasza ekipa: 4 osoby", budżet na osobę i razem, "Zmień skład"; na karcie "razem ok. … (4 osoby)" przy świeżej wycenie lotu; przyciski 44 px. |
+| 1, 2, 3, 15 | Plan: karta "Wyślij plan ekipie" zaraz pod nagłówkiem. Kopiuje link albo otwiera systemowe udostępnianie. Plan prywatny: najpierw jasna zgoda ("każdy z linkiem otworzy plan bez konta, plan pojawi się też w galerii Odkryj"), potem "Włącz link". Pole z linkiem do ręcznego skopiowania. Stary przycisk "Udostępnij" usunięty, przełącznik widoczności opisuje, że to ta sama flaga. |
+| 13 | Nagłówek planu: "Wasza ekipa: 4 osoby" i podpis, że pozycje są na osobę, a koszt całkowity także razem. |
+| 9 | `/share/[tripId]` pokazuje skład i koszt na osobę/razem (API zwraca tylko liczbę osób znajomych, bez budżetu, lotnisk i wieku dzieci). |
+
+Poza zakresem (bez zmian): flagi `features.ts`, webhook, auth, admin, crony, analityka, `/api/destination-flight-prices`, płatności, migracje.
+
+Nie zweryfikowane w przeglądarce na produkcji (wymagają konta i zużywają zasoby): ekran kierunków i plan grupowy "na osobę/razem". Zweryfikowane lokalnie: quiz (krok 1 i 2) i karta "Wyślij plan ekipie" w izolacji.
