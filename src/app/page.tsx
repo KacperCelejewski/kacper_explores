@@ -11,7 +11,7 @@ import { hoursInCity } from "@/lib/drop/stay";
 import type { StripDeal } from "./components/DealsStrip";
 
 export const metadata: Metadata = {
-  title: META.title,
+  title: `${META.title} | Włóczykij`,
   description: META.description,
   alternates: {
     canonical: "https://wloczykij.me",
