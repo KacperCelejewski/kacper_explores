@@ -17,6 +17,7 @@ export interface RealFlight {
   returnDepartureTime: string; // HH:MM local at destination
   returnArrivalTime: string;   // HH:MM local at origin
   durationMinutes: number;
+  soloPrice?: number;          // PLN za jedną osobę, te same daty (tylko z compare=1)
 }
 
 // ── Sky Scrapper response types ───────────────────────────────────────────────
@@ -363,6 +364,65 @@ async function fetchForDate(
 
 // ── Core fetch ────────────────────────────────────────────────────────────────
 
+// Jedna para dat przez cache L1/L2 i limit dzienny (wspólne dla wyszukiwania i porównania).
+async function fetchDatePair(
+  originSky: (typeof SKY_IDS)[string],
+  destSky: (typeof SKY_IDS)[string],
+  originCode: string,
+  destCode: string,
+  departDate: string,
+  returnDate: string,
+  month: number,
+  apiKey: string,
+  passengers: FlightPassengers
+): Promise<RealFlight[] | null> {
+  const cacheKey = buildFlightCacheKey(originCode, destCode, departDate, returnDate, passengers);
+
+  // L1
+  const mem = memCache.get(cacheKey);
+  if (mem && mem.expiresAt > Date.now() && mem.data.length > 0) {
+    void logUsage(cacheKey, originCode, destCode, month, true);
+    return mem.data;
+  }
+
+  // L2
+  const cached = await readSupabaseCache(cacheKey, passengers);
+  if (cached && cached.length > 0) {
+    memCache.set(cacheKey, { data: cached, expiresAt: Date.now() + FLIGHT_CACHE_TTL_MS });
+    void logUsage(cacheKey, originCode, destCode, month, true);
+    return cached;
+  }
+
+  try {
+    const results = await fetchForDate(originSky, destSky, departDate, returnDate, originCode, destCode, apiKey, passengers);
+    if (results && results.length > 0) {
+      memCache.set(cacheKey, { data: results, expiresAt: Date.now() + FLIGHT_CACHE_TTL_MS });
+      void writeSupabaseCache(cacheKey, results);
+      void logUsage(cacheKey, originCode, destCode, month, false);
+      return results;
+    }
+  } catch (err) {
+    console.error("[sky-scrapper] error:", err);
+  }
+  return null;
+}
+
+/** Dokładnie jedno zapytanie dla podanej pary dat (porównanie z jedną osobą). */
+export async function searchFlightForDates(
+  originCode: string,
+  destCode: string,
+  departDate: string,
+  returnDate: string,
+  passengers: FlightPassengers = SOLO
+): Promise<RealFlight[] | null> {
+  const apiKey = process.env.RAPIDAPI_KEY;
+  const originSky = SKY_IDS[originCode];
+  const destSky = SKY_IDS[destCode];
+  if (!apiKey || !originSky || !destSky) return null;
+  const month = Number(departDate.slice(5, 7)) || 0;
+  return fetchDatePair(originSky, destSky, originCode, destCode, departDate, returnDate, month, apiKey, passengers);
+}
+
 export async function searchFlightOptions(
   originCode: string,
   destCode: string,
@@ -385,35 +445,7 @@ export async function searchFlightOptions(
 
   const perCandidate = await Promise.all(
     candidates.map(async ({ departDate, returnDate }) => {
-      const cacheKey = buildFlightCacheKey(originCode, destCode, departDate, returnDate, passengers);
-
-      // L1
-      const mem = memCache.get(cacheKey);
-      if (mem && mem.expiresAt > Date.now() && mem.data.length > 0) {
-        void logUsage(cacheKey, originCode, destCode, month, true);
-        return mem.data;
-      }
-
-      // L2
-      const cached = await readSupabaseCache(cacheKey, passengers);
-      if (cached && cached.length > 0) {
-        memCache.set(cacheKey, { data: cached, expiresAt: Date.now() + FLIGHT_CACHE_TTL_MS });
-        void logUsage(cacheKey, originCode, destCode, month, true);
-        return cached;
-      }
-
-      try {
-        const results = await fetchForDate(originSky, destSky, departDate, returnDate, originCode, destCode, apiKey, passengers);
-        if (results && results.length > 0) {
-          memCache.set(cacheKey, { data: results, expiresAt: Date.now() + FLIGHT_CACHE_TTL_MS });
-          void writeSupabaseCache(cacheKey, results);
-          void logUsage(cacheKey, originCode, destCode, month, false);
-          return results;
-        }
-      } catch (err) {
-        console.error("[sky-scrapper] error:", err);
-      }
-      return null;
+      return fetchDatePair(originSky, destSky, originCode, destCode, departDate, returnDate, month, apiKey, passengers);
     })
   );
 

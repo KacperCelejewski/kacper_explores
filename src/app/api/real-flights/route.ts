@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { parsePassengers, searchFlightOptions } from "@/lib/flights/rapidapi";
+import { parsePassengers, searchFlightForDates, searchFlightOptions } from "@/lib/flights/rapidapi";
 import { checkRateLimit, LIMITS } from "@/lib/rateLimit";
 import { getClientIp } from "@/lib/validate";
+
+const SOLO = { adults: 1, children: 0, infants: 0 };
 
 export async function GET(req: NextRequest) {
   const ip = getClientIp(req);
@@ -39,27 +41,20 @@ export async function GET(req: NextRequest) {
 
   const result = await searchFlightOptions(origin, dest, month, duration, 3, passengers);
 
-  // Porównanie z jedną osobą: tylko dla najlepszej oferty i tylko dla grupy.
-  // Limit dziennych wywołań pilnuje searchFlightOptions; gdy odmówi, pomijamy bez błędu.
-  let soloPrice: number | null = null;
+  // Porównanie z jedną osobą: jedno zapytanie, te same daty co najlepsza oferta, tylko dla grupy.
+  // Limit dzienny pilnuje searchFlightForDates; odmowa lub błąd pomija porównanie bez wpływu na wynik.
   const best = result.flights[0];
   const seats = passengers.adults + passengers.children;
   if (searchParams.get("compare") === "1" && best && seats > 1) {
     try {
-      const solo = await searchFlightOptions(origin, dest, month, duration, 3, { adults: 1, children: 0, infants: 0 });
-      const same = solo.flights.find(
-        (f) => f.departureDate === best.departureDate && f.returnDate === best.returnDate
-      );
-      soloPrice = same ? same.price : null;
+      const solo = await searchFlightForDates(origin, dest, best.departureDate, best.returnDate, SOLO);
+      const soloBest = solo?.[0];
+      // FlightOffer.soloPrice czyta FlightCard (PartnerLinks) przez soloComparisonNote.
+      if (soloBest) best.soloPrice = soloBest.price;
     } catch {
-      soloPrice = null;
+      // porównanie jest dodatkiem
     }
   }
 
-  return NextResponse.json({
-    flights: result.flights,
-    count: result.flights.length,
-    reason: result.reason,
-    ...(soloPrice !== null ? { soloPrice } : {}),
-  });
+  return NextResponse.json({ flights: result.flights, count: result.flights.length, reason: result.reason });
 }

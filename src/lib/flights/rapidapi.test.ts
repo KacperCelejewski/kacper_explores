@@ -71,3 +71,16 @@ describe("normalizeCachedFlights", () => {
     expect(normalizeCachedFlights([f], g)).toEqual([f]);
   });
 });
+
+describe("searchFlightForDates", () => {
+  it("bez klucza API nie wykonuje zapytania", async () => {
+    const prev = process.env.RAPIDAPI_KEY;
+    delete process.env.RAPIDAPI_KEY;
+    const { searchFlightForDates } = await import("./rapidapi");
+    expect(await searchFlightForDates("WRO", "BCN", "2026-02-20", "2026-02-22")).toBeNull();
+    if (prev !== undefined) process.env.RAPIDAPI_KEY = prev;
+  });
+  it("klucz solo dla pary dat to dawny format jednej osoby", () => {
+    expect(buildFlightCacheKey("WRO", "BCN", "2026-02-20", "2026-02-22", solo)).not.toMatch(/-a\d/);
+  });
+});
