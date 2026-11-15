@@ -2,15 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { sendSlack } from "@/lib/slack";
+import { safeNextPath } from "@/lib/safeRedirect";
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
   const token_hash = url.searchParams.get("token_hash");
   const type = url.searchParams.get("type") as EmailOtpType | null;
-  const rawNext = url.searchParams.get("next") ?? "/";
-  // Tylko ścieżki wewnątrz serwisu — "//evil.com" czy "https://..." dałyby open redirect.
-  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
+  // Tylko ścieżki wewnątrz serwisu: obce hosty (też "/\\host", "/<tab>/host") dałyby open redirect.
+  const next = safeNextPath(url.searchParams.get("next"));
 
   const redirectUrl = new URL(next, req.url);
 
