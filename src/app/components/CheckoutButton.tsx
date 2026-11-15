@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, type CSSProperties, type ReactNode } from "react";
+import { useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { trackEvent } from "@/lib/analytics";
 import { planPrice } from "@/lib/prices";
-import { checkoutErrorMessage } from "@/lib/checkoutFlow";
+import { checkoutErrorMessage, checkoutTrackingEvent } from "@/lib/checkoutFlow";
 
 interface Props {
   planKey: string;
@@ -23,9 +23,12 @@ export default function CheckoutButton({ planKey, cta, gate, returnTo = "/pricin
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Podwójne kliknięcie zanim React przerysuje disabled nie tworzy drugiej sesji ani zdarzenia
+  const inFlight = useRef(false);
 
   const handleCheckout = async () => {
-    trackEvent("begin_checkout", { plan: planKey, gate, value: planPrice(planKey), currency: "PLN" });
+    if (inFlight.current) return;
+    inFlight.current = true;
     setLoading(true);
     setError(null);
     try {
@@ -34,13 +37,17 @@ export default function CheckoutButton({ planKey, cta, gate, returnTo = "/pricin
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ planKey, returnTo }),
       });
-      if (res.status === 401) { router.push(`/login?next=${encodeURIComponent(returnTo)}`); return; }
       const data = await res.json().catch(() => null);
+      const event = checkoutTrackingEvent(res.status, data);
+      const params = { plan: planKey, gate, value: planPrice(planKey), currency: "PLN" };
+      if (event) trackEvent(event, params);
+      if (res.status === 401) { router.push(`/login?next=${encodeURIComponent(returnTo)}`); return; }
       if (res.ok && data?.url) window.location.href = data.url;
       else setError(checkoutErrorMessage(res.status, data));
     } catch {
       setError("Nie ma połączenia. Sprawdź internet i kliknij jeszcze raz.");
     } finally {
+      inFlight.current = false;
       setLoading(false);
     }
   };
