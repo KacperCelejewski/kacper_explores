@@ -14,10 +14,34 @@ export interface PostMeta {
   readingTime: number;
   /** "editorial": tekst redakcji (frontmatter `author: redakcja`); domyślnie głos założyciela */
   author: "founder" | "editorial";
+  /** data ostatniej istotnej zmiany treści (frontmatter `updated`); używana w dateModified i sitemapie */
+  updated?: string;
+  /** pytania i odpowiedzi (frontmatter `faq`); muszą zgadzać się z widoczną sekcją artykułu */
+  faq?: { q: string; a: string }[];
 }
 
 export interface Post extends PostMeta {
   content: string;
+}
+
+function parseMeta(slug: string, data: Record<string, unknown>): PostMeta {
+  const faq = Array.isArray(data.faq)
+    ? (data.faq as { q?: unknown; a?: unknown }[])
+        .filter((f) => typeof f?.q === "string" && typeof f?.a === "string")
+        .map((f) => ({ q: f.q as string, a: f.a as string }))
+    : [];
+  return {
+    slug,
+    title: (data.title as string) ?? "",
+    description: (data.description as string) ?? "",
+    date: (data.date as string) ?? "",
+    coverIcon: (data.coverIcon as string) ?? "plane",
+    tags: (data.tags as string[]) ?? [],
+    readingTime: (data.readingTime as number) ?? 5,
+    author: data.author === "redakcja" ? "editorial" : "founder",
+    ...(typeof data.updated === "string" ? { updated: data.updated } : {}),
+    ...(faq.length > 0 ? { faq } : {}),
+  };
 }
 
 export function getAllPosts(): PostMeta[] {
@@ -27,17 +51,7 @@ export function getAllPosts(): PostMeta[] {
     .map((file) => {
       const slug = file.replace(/\.mdx$/, "");
       const raw = fs.readFileSync(path.join(BLOG_DIR, file), "utf-8");
-      const { data } = matter(raw);
-      return {
-        slug,
-        title: data.title ?? "",
-        description: data.description ?? "",
-        date: data.date ?? "",
-        coverIcon: data.coverIcon ?? "plane",
-        tags: data.tags ?? [],
-        readingTime: data.readingTime ?? 5,
-        author: data.author === "redakcja" ? "editorial" : "founder",
-      } as PostMeta;
+      return parseMeta(slug, matter(raw).data);
     })
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
@@ -46,18 +60,6 @@ export function getPost(slug: string): Post | null {
   const filePath = path.join(BLOG_DIR, `${slug}.mdx`);
   if (!fs.existsSync(filePath)) return null;
 
-  const raw = fs.readFileSync(filePath, "utf-8");
-  const { data, content } = matter(raw);
-
-  return {
-    slug,
-    title: data.title ?? "",
-    description: data.description ?? "",
-    date: data.date ?? "",
-    coverIcon: data.coverIcon ?? "plane",
-    tags: data.tags ?? [],
-    readingTime: data.readingTime ?? 5,
-    author: data.author === "redakcja" ? "editorial" : "founder",
-    content,
-  };
+  const { data, content } = matter(fs.readFileSync(filePath, "utf-8"));
+  return { ...parseMeta(slug, data), content };
 }
