@@ -114,6 +114,7 @@ export function buildFlightCacheKey(
   return `${base}-a${p.adults}c${p.children}i${p.infants}`;
 }
 
+// TODO: potwierdzić zapytaniem na żywo (2 dorosłych vs 1) przed zaufaniem cenom grupowym
 // Parametry pasażerów dla Sky Scrappera; dla jednego dorosłego zostaje samo adults=1.
 export function buildSearchParams(p: FlightPassengers): Record<string, string> {
   const params: Record<string, string> = { adults: String(p.adults) };
@@ -128,8 +129,9 @@ export function parsePassengers(searchParams: URLSearchParams): FlightPassengers
   const read = (name: string, fallback: number, min: number): number | null => {
     const raw = searchParams.get(name);
     if (raw === null || raw === "") return fallback;
+    if (!/^\d+$/.test(raw)) return null;
     const n = Number(raw);
-    return Number.isInteger(n) && n >= min && n <= MAX_GROUP ? n : null;
+    return n >= min && n <= MAX_GROUP ? n : null;
   };
   const adults = read("adults", 1, 1);
   const children = read("children", 0, 0);
@@ -139,11 +141,31 @@ export function parsePassengers(searchParams: URLSearchParams): FlightPassengers
   return { adults, children, infants };
 }
 
-// Zakładamy, że price.raw to cena całej rezerwacji (dorośli, dzieci i niemowlęta razem),
-// więc cena za osobę to całość podzielona przez wszystkich pasażerów.
+// Zakładamy, że price.raw to cena całej rezerwacji (z niemowlętami włącznie).
+// Cena za osobę to całość podzielona przez liczbę miejsc (dorośli plus dzieci, jak w groupSize);
+// niemowlęta wchodzą tylko do sumy.
+// TODO: potwierdzić zapytaniem na żywo (2 dorosłych vs 1) przed zaufaniem cenom grupowym
 export function splitPrice(total: number, p: FlightPassengers): { price: number; totalPrice: number } {
-  const people = p.adults + p.children + p.infants;
-  return { price: Math.round(total / people), totalPrice: Math.round(total) };
+  const seats = p.adults + p.children;
+  const totalPrice = Math.round(total);
+  return { price: Math.round(totalPrice / seats), totalPrice };
+}
+
+// Stare wpisy cache nie mają totalPrice ani passengers. Dla klucza bez sufiksu (jeden dorosły)
+// uzupełniamy braki, dla kluczy grupowych taki wpis uznajemy za brak w cache (null).
+export function normalizeCachedFlights(flights: RealFlight[], p: FlightPassengers): RealFlight[] | null {
+  const solo = p.adults === 1 && p.children === 0 && p.infants === 0;
+  const out: RealFlight[] = [];
+  for (const f of flights) {
+    if (f.totalPrice !== undefined && f.passengers !== undefined) {
+      out.push(f);
+    } else if (solo) {
+      out.push({ ...f, totalPrice: f.totalPrice ?? f.price, passengers: f.passengers ?? SOLO });
+    } else {
+      return null;
+    }
+  }
+  return out;
 }
 
 // ── Global daily cap ──────────────────────────────────────────────────────────
@@ -204,7 +226,7 @@ function getSupabase() {
   return createServiceClient();
 }
 
-async function readSupabaseCache(cacheKey: string): Promise<RealFlight[] | null> {
+async function readSupabaseCache(cacheKey: string, passengers: FlightPassengers): Promise<RealFlight[] | null> {
   const sb = getSupabase();
   if (!sb) return null;
   try {
@@ -214,7 +236,7 @@ async function readSupabaseCache(cacheKey: string): Promise<RealFlight[] | null>
       .eq("cache_key", cacheKey)
       .gt("expires_at", new Date().toISOString())
       .single();
-    return data ? (data.flights as RealFlight[]) : null;
+    return data ? normalizeCachedFlights(data.flights as RealFlight[], passengers) : null;
   } catch { return null; }
 }
 
@@ -315,7 +337,7 @@ async function fetchForDate(
     if (!outbound) continue;
 
     const { price, totalPrice } = splitPrice(it.price.raw, passengers);
-    if (!price) continue;
+    if (!totalPrice) continue;
 
     const airline = outbound.carriers?.marketing?.[0]?.name ?? "Linie lotnicze";
     const durMinutes = outbound.durationInMinutes ?? 120;
@@ -373,7 +395,7 @@ export async function searchFlightOptions(
       }
 
       // L2
-      const cached = await readSupabaseCache(cacheKey);
+      const cached = await readSupabaseCache(cacheKey, passengers);
       if (cached && cached.length > 0) {
         memCache.set(cacheKey, { data: cached, expiresAt: Date.now() + FLIGHT_CACHE_TTL_MS });
         void logUsage(cacheKey, originCode, destCode, month, true);

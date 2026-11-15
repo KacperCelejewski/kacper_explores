@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildFlightCacheKey, buildSearchParams, parsePassengers, splitPrice } from "./rapidapi";
+import { buildFlightCacheKey, buildSearchParams, normalizeCachedFlights, parsePassengers, splitPrice, type RealFlight } from "./rapidapi";
 
 const solo = { adults: 1, children: 0, infants: 0 };
 
@@ -36,6 +36,9 @@ describe("parsePassengers", () => {
     expect(parsePassengers(sp("adults=-1"))).toBeNull();
     expect(parsePassengers(sp("adults=abc"))).toBeNull();
     expect(parsePassengers(sp("adults=1.5"))).toBeNull();
+    expect(parsePassengers(sp("adults=1e1"))).toBeNull();
+    expect(parsePassengers(sp("adults=+2"))).toBeNull();
+    expect(parsePassengers(sp("adults=%202"))).toBeNull();
     expect(parsePassengers(sp("children=-1"))).toBeNull();
   });
   it("odrzuca zbyt dużą grupę (niemowlęta nie zajmują miejsc)", () => {
@@ -46,6 +49,25 @@ describe("parsePassengers", () => {
 
 describe("splitPrice", () => {
   it("jedna osoba: cena bez zmian", () => expect(splitPrice(499.6, solo)).toEqual({ price: 500, totalPrice: 500 }));
-  it("grupa: cena za osobę to całość podzielona przez wszystkich", () =>
-    expect(splitPrice(2000, { adults: 2, children: 1, infants: 1 })).toEqual({ price: 500, totalPrice: 2000 }));
+  it("grupa: cena za osobę to całość podzielona przez miejsca, niemowlę tylko w sumie", () =>
+    expect(splitPrice(2000, { adults: 2, children: 1, infants: 1 })).toEqual({ price: 667, totalPrice: 2000 }));
+});
+
+describe("normalizeCachedFlights", () => {
+  const legacy = { price: 300, airline: "X" } as RealFlight;
+  const full = { ...legacy, totalPrice: 300, passengers: solo } as RealFlight;
+  it("dla klucza solo uzupełnia stare wpisy", () => {
+    expect(normalizeCachedFlights([legacy], solo)).toEqual([{ ...legacy, totalPrice: 300, passengers: solo }]);
+  });
+  it("dla klucza solo zostawia kompletne wpisy", () => {
+    expect(normalizeCachedFlights([full], solo)).toEqual([full]);
+  });
+  it("dla klucza grupowego stary wpis to brak w cache", () => {
+    expect(normalizeCachedFlights([legacy], { adults: 4, children: 0, infants: 0 })).toBeNull();
+  });
+  it("dla klucza grupowego kompletny wpis przechodzi", () => {
+    const g = { adults: 4, children: 0, infants: 0 };
+    const f = { ...legacy, totalPrice: 1200, passengers: g } as RealFlight;
+    expect(normalizeCachedFlights([f], g)).toEqual([f]);
+  });
 });
