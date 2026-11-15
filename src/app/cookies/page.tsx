@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import SiteNav from "../components/SiteNav";
 import SiteFooter from "../components/SiteFooter";
+import { CookieSettingsButton } from "../components/AffiliateProvider";
 
 export const metadata: Metadata = {
   title: "Polityka Cookies",
@@ -95,7 +96,7 @@ const CookieTable = ({ rows }: { rows: CookieRow[] }) => (
 );
 
 export default function CookiesPage() {
-  const updatedAt = "15 maja 2026";
+  const updatedAt = "15 listopada 2026";
 
   const necessaryCookies: CookieRow[] = [
     {
@@ -111,10 +112,10 @@ export default function CookiesPage() {
       expiry: "Sesja",
     },
     {
-      name: "cookie-consent",
+      name: "cookie_consent (localStorage)",
       provider: "Włóczykij",
       purpose: "Zapamiętanie Twojej zgody na cookies",
-      expiry: "12 miesięcy",
+      expiry: "Do zmiany zgody lub usunięcia danych strony",
     },
   ];
 
@@ -213,8 +214,19 @@ export default function CookiesPage() {
               e-maila. Bez zgody Google dostaje tylko anonimowe sygnały bez
               plików cookie (cookies <code>_ga*</code>). Zgodę wycofasz w każdej
               chwili, czyszcząc dane strony w przeglądarce. Nie używamy Meta
-              Pixel ani reklamowego śledzenia.
+              Pixel. Linki partnerskie Travelpayouts do Aviasales, Tiqets i Radical Storage
+              włączamy dopiero po akceptacji w bannerze. Bez zgody prowadzą bezpośrednio
+              do usługodawcy, bez parametrów afiliacyjnych. Samo wyświetlenie planu
+              nie ładuje skryptów ani cookies Travelpayouts. Po kliknięciu partner może
+              poprosić o własną zgodę na cookies zgodnie ze swoją polityką.
             </P>
+            <P>
+              Kliknięcia linków mierzymy zdarzeniem affiliate_click (partner, miasto, miejsce
+              linku). Anonimowy licznik na naszym serwerze nie używa cookies ani trwałego
+              identyfikatora użytkownika. Zmiana zgody dotyczy kolejnych kliknięć;
+              wcześniej zapisane cookies partnera usuniesz na jego stronie lub w przeglądarce.
+            </P>
+            <CookieSettingsButton />
           </Section>
 
           <Section title="5. Pliki cookie stron trzecich">

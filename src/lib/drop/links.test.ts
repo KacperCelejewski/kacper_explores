@@ -72,12 +72,23 @@ describe("kanał linku (email albo strona)", () => {
 });
 
 describe("buildFlightLink", () => {
+  it("strips stored attribution before falling back without a current project", () => {
+    const link = buildFlightLink({ ...deal, link: "/search/WRO1311BCN15111?marker=old&trs=old" }, "12345", "2026-W46", "web");
+    expect(link).toMatchObject({ href: "https://www.aviasales.com/search/WRO1311BCN15111", paid: false });
+  });
+
+  it.each(["https://off-domain.example/", "https://[invalid", "https://user:secret@www.aviasales.com/search/X"])("rebuilds a safe route for unusable target %s", (raw) => {
+    const link = buildFlightLink({ ...deal, link: raw }, "12345", "2026-W46", "web", "99999");
+    expect(new URL(link.href).searchParams.get("u")).toContain("https://www.aviasales.com/search/WRO1311BCN15111");
+  });
+
   it("z markerem daje link partnerski i oznacza go jako płatny", () => {
-    const l = buildFlightLink(deal, "12345", "2026-W46", "web");
+    const l = buildFlightLink(deal, "12345", "2026-W46", "web", "99999");
     expect(l.paid).toBe(true);
     expect(l.partner).toBe("aviasales");
     expect(l.href).toContain("marker=12345");
-    expect(l.href).toContain("utm_medium=web");
+    expect(new URL(l.href).searchParams.get("trs")).toBe("99999");
+    expect(new URL(new URL(l.href).searchParams.get("u")!).searchParams.get("utm_medium")).toBe("web");
   });
 
   it("bez markera daje zwykły link do wyszukiwarki, bez prowizji i bez pustego markera", () => {

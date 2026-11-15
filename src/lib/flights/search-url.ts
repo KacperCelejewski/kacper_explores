@@ -30,6 +30,9 @@ export function buildSkyscannerUrl(
   return `https://www.skyscanner.pl/transport/loty/${origin}/${dest}/${datePart}?adultsv2=${passengers?.adults ?? 1}&cabin_class=economy`;
 }
 
+// TODO(group): preserve the already-merged passenger contract here. Infant handling
+// remains a separate group task; do not silently change its existing warning/behavior.
+// Without passenger data the existing one-adult fallback remains unchanged.
 // Ścieżka niesie dorosłych, potem dzieci (cyfra dzieci pomijana przy 0). Niemowląt nie kodujemy.
 // Obie liczby są jednocyfrowe, bo dorośli i dzieci razem nie przekraczają MAX_GROUP (9).
 function passengerCode(p?: FlightPassengers): string {
@@ -48,8 +51,22 @@ export function buildAviasalesUrl(
   marker: string,
   passengers?: FlightPassengers,
 ): string {
+  const iata = (code: string) => /^[a-z]{3}$/i.test(code) ? code.toUpperCase() : "";
+  const origin = iata(originCode);
+  const dest = iata(destCode);
+  const valid = (iso: string) => {
+    if (!/^\d{4}-\d{2}-\d{2}/.test(iso) || !Number.isFinite(Date.parse(iso))) return false;
+    const date = iso.slice(0, 10);
+    const parsed = new Date(`${date}T12:00:00Z`);
+    return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === date;
+  };
   const ddmm = (iso: string) => `${iso.slice(8, 10)}${iso.slice(5, 7)}`;
-  const path = `${originCode.toUpperCase()}${ddmm(departIso)}${destCode.toUpperCase()}${ddmm(returnIso)}${passengerCode(passengers)}`;
+  if (!origin || !dest || !valid(departIso) || (returnIso && !valid(returnIso))) {
+    const params = new URLSearchParams({ params: `${origin}${dest}${passengerCode(passengers)}` });
+    if (marker) params.set("marker", marker);
+    return `https://www.aviasales.com/?${params}`;
+  }
+  const path = `${origin}${ddmm(departIso)}${dest}${returnIso ? ddmm(returnIso) : ""}${passengerCode(passengers)}`;
   const query = marker ? `?marker=${encodeURIComponent(marker)}` : "";
   return `https://www.aviasales.com/search/${path}${query}`;
 }

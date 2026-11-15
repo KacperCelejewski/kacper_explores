@@ -1,38 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { setAnalyticsConsent } from "@/lib/analytics";
-
-const STORAGE_KEY = "cookie_consent";
-
-type Consent = "accepted" | "rejected";
-
-function loadConsent(): Consent | null {
-  try {
-    return localStorage.getItem(STORAGE_KEY) as Consent | null;
-  } catch {
-    return null;
-  }
-}
-
-function saveConsent(value: Consent) {
-  try {
-    localStorage.setItem(STORAGE_KEY, value);
-  } catch { /* ignore */ }
-}
-
-function loadTrackingScript() {
-  if (document.getElementById("tp-drive")) return;
-  const s = document.createElement("script");
-  s.id = "tp-drive";
-  s.async = true;
-  s.src = "https://emrldco.com/NTI4ODcz.js?t=528873";
-  document.head.appendChild(s);
-}
+import { saveConsent, subscribeConsent } from "@/lib/cookieConsent";
+import { useCookieConsent } from "./AffiliateProvider";
 
 export default function CookieBanner() {
-  const [visible, setVisible] = useState(false);
+  const consent = useCookieConsent();
+  const hydrated = useSyncExternalStore(subscribeConsent, () => true, () => false);
+  const visible = hydrated && consent === null;
 
   // Dopóki baner jest widoczny, przycisk menu jest schowany (CSS: body.has-cookie-banner)
   useEffect(() => {
@@ -40,26 +17,14 @@ export default function CookieBanner() {
     return () => document.body.classList.remove("has-cookie-banner");
   }, [visible]);
 
-  useEffect(() => {
-    const consent = loadConsent();
-    if (consent === "accepted") {
-      loadTrackingScript();
-    } else if (!consent) {
-      setVisible(true);
-    }
-  }, []);
-
   const handleAccept = () => {
     saveConsent("accepted");
     setAnalyticsConsent(true);
-    loadTrackingScript();
-    setVisible(false);
   };
 
   const handleReject = () => {
     saveConsent("rejected");
     setAnalyticsConsent(false);
-    setVisible(false);
   };
 
   return (
@@ -91,7 +56,7 @@ export default function CookieBanner() {
             Używamy plików cookie
           </p>
           <p style={{ margin: 0, fontSize: 13, lineHeight: 1.45, color: "var(--text-muted)" }}>
-            Niezbędne działają zawsze. Za Twoją zgodą dodajemy partnerskie (linki do lotów) i analityczne (Google Analytics).{" "}
+            Niezbędne działają zawsze. Za Twoją zgodą włączamy linki partnerskie do lotów, biletów i przechowalni oraz cookies analityczne (Google Analytics).{" "}
             <a
               href="/cookies"
               style={{ color: "var(--accent)", textDecoration: "underline" }}

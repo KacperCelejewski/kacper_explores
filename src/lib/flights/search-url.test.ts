@@ -20,6 +20,13 @@ describe("buildSkyscannerUrl", () => {
 });
 
 describe("buildAviasalesUrl", () => {
+  it("keeps the existing one-adult default when passenger composition is absent", () => {
+    expect(buildAviasalesUrl("WRO", "BCN", "2026-12-05", "2026-12-08", "")).toBe("https://www.aviasales.com/search/WRO0512BCN08121");
+  });
+
+  it("uses an undated form instead of impossible calendar dates", () => {
+    expect(buildAviasalesUrl("WRO", "BCN", "2026-02-31", "2026-03-05", "")).toBe("https://www.aviasales.com/?params=WROBCN1");
+  });
   it("builds ORIGIN+DDMM+DEST+DDMM+1 with the marker", () => {
     expect(
       buildAviasalesUrl("wro", "bcn", "2026-12-05T06:30:00+01:00", "2026-12-08T21:10:00+01:00", "abc123"),

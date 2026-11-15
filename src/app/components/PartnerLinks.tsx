@@ -7,6 +7,8 @@ import {
 import { droppedPassengersNote } from "@/lib/flights/droppedPassengers";
 import { soloComparisonNote } from "@/lib/flights/soloComparison";
 import { IconBed, IconBackpack, IconPlane } from "./Icons";
+import { useAffiliateConfig } from "./AffiliateProvider";
+import { toFlightPassengers } from "@/lib/group";
 
 export function PartnerNote({ show }: { show: boolean }) {
   if (!show) return null;
@@ -59,18 +61,20 @@ function shortDate(iso?: string): string | null {
   return iso && /^\d{4}-\d{2}-\d{2}/.test(iso) ? `${iso.slice(8, 10)}.${iso.slice(5, 7)}` : null;
 }
 
-export function FlightCard({ offer, city }: { offer: FlightOffer | undefined; city: string }) {
-  const link = flightLink(offer);
+export function FlightCard({ offer, city, group }: { offer: FlightOffer | undefined; city: string; group?: GroupComposition }) {
+  const config = useAffiliateConfig();
+  const passengers = group ? toFlightPassengers(group) : offer?.passengers;
+  const link = flightLink(offer, config, passengers);
   if (!offer || !link) return null;
 
   const from = shortDate(offer.departureDate);
   const to = shortDate(offer.returnDate);
   const dates = from && to ? ` · ${from}–${to}` : "";
-  const seats = offer.passengers ? offer.passengers.adults + offer.passengers.children : 1;
+  const seats = passengers ? passengers.adults + passengers.children : 1;
   const isGroup = seats > 1;
   const soloNote = isGroup ? soloComparisonNote(offer.price, offer.soloPrice ?? null, seats) : null;
 
-  const droppedNote = droppedPassengersNote(link.partner, offer.passengers);
+  const droppedNote = droppedPassengersNote(link.partner, passengers);
 
   return (
     <div className="px-5 mb-4 no-print">
@@ -106,8 +110,9 @@ export function FlightCard({ offer, city }: { offer: FlightOffer | undefined; ci
 }
 
 export function TicketsLink({ activity, city }: { activity: DayActivity; city: string }) {
+  const config = useAffiliateConfig();
   if (activity.type !== "attraction" || isFreeCost(activity.cost)) return null;
-  const link = ticketsLink({ title: activity.title, city });
+  const link = ticketsLink({ title: activity.title, city }, config);
   return (
     <div className="flex items-center gap-2 mt-1.5 no-print">
       <a
@@ -116,7 +121,7 @@ export function TicketsLink({ activity, city }: { activity: DayActivity; city: s
         className="text-xs font-semibold transition-opacity hover:opacity-70"
         style={{ color: "var(--accent)", textDecoration: "none" }}
       >
-        Sprawdź bilety ↗
+        Sprawdź bilety
       </a>
       <PartnerNote show={link.paid} />
     </div>
@@ -124,7 +129,7 @@ export function TicketsLink({ activity, city }: { activity: DayActivity; city: s
 }
 
 export function LuggageTile({ city }: { city: string }) {
-  const link = luggageLink();
+  const link = luggageLink(useAffiliateConfig());
   return (
     <div
       className="ml-11 mt-3 rounded-2xl px-4 py-3 no-print"
@@ -140,7 +145,7 @@ export function LuggageTile({ city }: { city: string }) {
           className="text-xs font-semibold transition-opacity hover:opacity-70"
           style={{ color: "var(--accent)", textDecoration: "none" }}
         >
-          Znajdź przechowalnię ↗
+          Przechowalnia bagażu
         </a>
         <PartnerNote show={link.paid} />
       </div>

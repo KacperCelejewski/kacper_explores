@@ -187,15 +187,18 @@ export default function ReguaminPage() {
         {/* §7 */}
         <Section title="§7. Linki afiliacyjne">
           <P>
-            Serwis zawiera linki partnerskie (afiliacyjne) do zewnętrznych serwisów: wyszukiwarki lotów Aviasales
-            (za pośrednictwem sieci Travelpayouts), serwisów z noclegami (Booking.com, Hostelworld), biletów na
-            atrakcje (GetYourGuide, Tiqets) i przechowalni bagażu (Radical Storage, Bounce). Kliknięcie takiego
-            linku i dokonanie zakupu może skutkować otrzymaniem przez Operatora prowizji od partnera. Linki
-            afiliacyjne nie wpływają na cenę dla Użytkownika.
+            Serwis korzysta z linków partnerskich sieci Travelpayouts do Aviasales (loty), Tiqets
+            (bilety na atrakcje) i Radical Storage (przechowalnie bagażu). Po wyrażeniu zgody
+            w bannerze cookies kliknięcie takiego linku i zakup u partnera może przynieść
+            Operatorowi prowizję. Bez zgody lub konfiguracji partnera link prowadzi bezpośrednio
+            do usługodawcy, bez identyfikatora partnera. Linki do Booking.com i Hostelworld
+            nie są linkami z prowizją. Ceny i dostępność sprawdzisz na stronie usługodawcy.
           </P>
           <P>
             Linki partnerskie są oznaczone w Serwisie dopiskiem „link partnerski”, a w kodzie strony atrybutem{" "}
-            <code>{'rel="sponsored"'}</code>.
+            <code>{'rel="sponsored noopener noreferrer"'}</code>. Prowizja nie oznacza gwarancji
+            najniższej ceny ani dostępności. Pliki cookie partnerów po przejściu na ich strony
+            podlegają ich politykom i mechanizmom zgody.
           </P>
         </Section>
 

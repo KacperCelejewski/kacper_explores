@@ -466,7 +466,7 @@ export default function PlanPage() {
       </div>
 
       {/* Lot i noclegi */}
-      <FlightCard offer={dest?.bestOffer} city={plan.city} />
+      <FlightCard offer={dest?.bestOffer} city={plan.city} group={group} />
       <HotelLinks
         city={plan.city}
         country={plan.country}
