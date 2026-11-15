@@ -18,6 +18,7 @@ import type { DayPlan, DayActivity, TripPlan, DestinationRecommendation, QuizAns
 import { getCityPhotoUrl } from "@/lib/cityPhotos";
 import { PRICES } from "@/lib/prices";
 import { isFreeCost } from "@/lib/affiliate";
+import { groupFromCompanion } from "@/lib/group";
 
 const ACTIVITY_COLORS: Record<string, string> = {
   attraction: "var(--accent-light)",
@@ -447,6 +448,10 @@ export default function PlanPage() {
         country={plan.country}
         checkin={dest?.bestOffer?.departureDate}
         checkout={dest?.bestOffer?.returnDate}
+        group={groupFromCompanion(
+          (currentTrip?.quizAnswers ?? quizAnswers).companion,
+          (currentTrip?.quizAnswers ?? quizAnswers).group,
+        )}
       />
 
       {/* Restaurants */}

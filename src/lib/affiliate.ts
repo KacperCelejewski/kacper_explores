@@ -1,4 +1,4 @@
-import type { FlightOffer } from "@/types";
+import type { FlightOffer, GroupComposition } from "@/types";
 
 export type Partner =
   | "aviasales" | "skyscanner" | "booking" | "hostelworld"
@@ -41,10 +41,17 @@ function link(url: string, partner: Partner, config: string | undefined): Partne
 }
 
 export function bookingLink(
-  input: { city: string; country: string; checkin?: string; checkout?: string; label?: string },
+  input: { city: string; country: string; checkin?: string; checkout?: string; label?: string; group?: GroupComposition },
   config: PartnerConfig = PARTNER_CONFIG,
 ): PartnerLink {
-  const params = new URLSearchParams({ ss: input.country ? `${input.city}, ${input.country}` : input.city, group_adults: "1", no_rooms: "1" });
+  const group = input.group;
+  const params = new URLSearchParams({ ss: input.country ? `${input.city}, ${input.country}` : input.city, group_adults: String(group?.adults ?? 1) });
+  // Booking chce liczbę dzieci i wiek każdego z nich (parametr age powtórzony)
+  if (group && group.childrenAges.length > 0) {
+    params.set("group_children", String(group.childrenAges.length));
+    for (const age of group.childrenAges) params.append("age", String(age));
+  }
+  params.set("no_rooms", "1");
   if (input.checkin) params.set("checkin", input.checkin);
   if (input.checkout) params.set("checkout", input.checkout);
   // label pozwala w raporcie Bookinga odróżnić, z której strony przyszła rezerwacja

@@ -1,3 +1,4 @@
+import type { FlightPassengers } from "@/lib/group";
 import { SKY_IDS } from "./sky-ids";
 
 function toSkyId(iataCode: string): string {
@@ -16,7 +17,8 @@ export function buildSkyscannerUrl(
   originCode: string,
   destCode: string,
   departDate?: string | null,
-  returnDate?: string | null
+  returnDate?: string | null,
+  passengers?: FlightPassengers,
 ): string {
   const origin = toSkyId(originCode);
   const dest = toSkyId(destCode);
@@ -25,20 +27,29 @@ export function buildSkyscannerUrl(
     ? `${toSkyDate(departDate)}/${toSkyDate(returnDate)}/`
     : "";
 
-  return `https://www.skyscanner.pl/transport/loty/${origin}/${dest}/${datePart}?adultsv2=1&cabin_class=economy`;
+  return `https://www.skyscanner.pl/transport/loty/${origin}/${dest}/${datePart}?adultsv2=${passengers?.adults ?? 1}&cabin_class=economy`;
+}
+
+function passengerCode(p?: FlightPassengers): string {
+  if (!p) return "1";
+  const tail = p.infants > 0 ? `${p.children}${p.infants}` : p.children > 0 ? String(p.children) : "";
+  return `${p.adults}${tail}`;
 }
 
 // Format wyszukiwania Aviasales: WRO0512BCN08121 = z WRO 5.12, powrót 8.12, 1 dorosły.
+// Dzieci i niemowlęta dopisujemy po adults: lata, dorośli, dzieci, niemowlęta (np. 2 dorosłych i dziecko to 21).
+// Skyscanner dostaje tylko dorosłych, bo format wieku dzieci w adresie nie jest potwierdzony.
 // Dzień i miesiąc bierzemy z tekstu daty, żeby lot po północy nie wypadał dzień wcześniej.
 export function buildAviasalesUrl(
   originCode: string,
   destCode: string,
   departIso: string,
   returnIso: string,
-  marker: string
+  marker: string,
+  passengers?: FlightPassengers,
 ): string {
   const ddmm = (iso: string) => `${iso.slice(8, 10)}${iso.slice(5, 7)}`;
-  const path = `${originCode.toUpperCase()}${ddmm(departIso)}${destCode.toUpperCase()}${ddmm(returnIso)}1`;
+  const path = `${originCode.toUpperCase()}${ddmm(departIso)}${destCode.toUpperCase()}${ddmm(returnIso)}${passengerCode(passengers)}`;
   const query = marker ? `?marker=${encodeURIComponent(marker)}` : "";
   return `https://www.aviasales.com/search/${path}${query}`;
 }

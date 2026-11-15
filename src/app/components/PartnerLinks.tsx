@@ -1,6 +1,6 @@
 "use client";
 
-import type { DayActivity, FlightOffer } from "@/types";
+import type { DayActivity, FlightOffer, GroupComposition } from "@/types";
 import {
   bookingLink, flightLink, hostelworldLink, isFreeCost, luggageLink, partnerLinkProps, ticketsLink,
 } from "@/lib/affiliate";
@@ -17,9 +17,9 @@ export function PartnerNote({ show }: { show: boolean }) {
 }
 
 export function HotelLinks({
-  city, country, checkin, checkout,
-}: { city: string; country: string; checkin?: string; checkout?: string }) {
-  const booking = bookingLink({ city, country, checkin, checkout });
+  city, country, checkin, checkout, group,
+}: { city: string; country: string; checkin?: string; checkout?: string; group?: GroupComposition }) {
+  const booking = bookingLink({ city, country, checkin, checkout, group });
   const hostelworld = hostelworldLink(city);
   const options = [
     { label: "Booking.com", sub: "Hotele i apartamenty", link: booking, Icon: IconBed },
