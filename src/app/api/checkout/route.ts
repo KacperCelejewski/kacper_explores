@@ -4,6 +4,7 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { getClientIp } from "@/lib/validate";
+import { safeReturnPath, successUrl } from "@/lib/checkoutFlow";
 
 export async function POST(req: NextRequest) {
   // Rate limit: max 10 checkout attempts per hour per IP
@@ -58,24 +59,29 @@ export async function POST(req: NextRequest) {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   // Tylko ścieżki w obrębie aplikacji — nie pozwalamy przekierować na obcą domenę
-  const cancelPath =
-    typeof returnTo === "string" && returnTo.startsWith("/") && !returnTo.startsWith("//") && !returnTo.includes("\\")
-      ? returnTo
-      : "/pricing";
+  const returnPath = safeReturnPath(returnTo);
+  const cancelPath = returnPath ?? "/pricing";
 
-  const session = await stripe.checkout.sessions.create({
-    customer: customerId,
-    mode: plan.type === "subscription" ? "subscription" : "payment",
-    line_items: [{ price: plan.priceId, quantity: 1 }],
-    success_url: `${appUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${appUrl}${cancelPath}`,
-    allow_promotion_codes: true,
-    metadata: {
-      supabase_user_id: user.id,
-      plan_key: planKey,
-    },
-    locale: "pl",
-  });
+  let session;
+  try {
+    session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      mode: plan.type === "subscription" ? "subscription" : "payment",
+      line_items: [{ price: plan.priceId, quantity: 1 }],
+      success_url: successUrl(appUrl, returnPath),
+      cancel_url: `${appUrl}${cancelPath}`,
+      allow_promotion_codes: true,
+      metadata: {
+        supabase_user_id: user.id,
+        plan_key: planKey,
+      },
+      locale: "pl",
+    });
+  } catch (err) {
+    // Szczegóły Stripe zostają w logach; użytkownik dostaje komunikat bez danych dostawcy
+    console.error("[checkout] stripe", err instanceof Error ? err.message : err);
+    return NextResponse.json({ error: "Płatność się nie otworzyła. Spróbuj jeszcze raz — zwykle działa za drugim." }, { status: 502 });
+  }
 
   return NextResponse.json({ url: session.url });
 }
