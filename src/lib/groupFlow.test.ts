@@ -4,6 +4,7 @@ import {
   CREW_COPY,
   companionTrailLabel,
   crewBudgetNote,
+  crewBudgetTogether,
   crewSummary,
   crewTotalBudget,
   sharedCrewFromQuiz,
@@ -72,6 +73,14 @@ describe("crewBudgetNote", () => {
     expect(crewBudgetNote("low", "solo", undefined)).toBeNull();
     expect(crewBudgetNote(null, "friends", FOUR)).toBeNull();
     expect(crewBudgetNote("low", "family", { adults: 1, childrenAges: [] })).toBeNull();
+  });
+});
+
+describe("crewBudgetTogether", () => {
+  it("podaje sam budżet razem", () => {
+    expect(crewBudgetTogether("low", "friends", FOUR)).toBe("do 6 000 zł");
+    expect(crewBudgetTogether("medium", "friends", FOUR)).toBe("6 000–12 000 zł");
+    expect(crewBudgetTogether("low", "solo", undefined)).toBeNull();
   });
 });
 

@@ -38,7 +38,7 @@ import {
 import type { Companion, GroupComposition } from "@/types";
 import GroupSizePicker from "@/app/components/GroupSizePicker";
 import { groupFromCompanion } from "@/lib/group";
-import { CREW_COPY, companionTrailLabel, quizCompanionHint } from "@/lib/groupFlow";
+import { CREW_COPY, companionTrailLabel, crewBudgetTogether, quizCompanionHint } from "@/lib/groupFlow";
 import { parseHomeParams, homeFriendsAnswers, srcEventName, keepUtmQuery } from "@/lib/homeParams";
 
 type IconFC = React.FC<{ size?: number }>;
@@ -422,7 +422,9 @@ function QuizPageInner() {
         <div className="mt-2 flex flex-wrap items-center gap-1.5" style={{ minHeight: 28 }} aria-live="polite">
           {trail.length === 0 ? (
             <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-              Na końcu: kierunki w Twoim budżecie i plan godzina po godzinie.
+              {quizAnswers.companion === "friends" || quizAnswers.companion === "family"
+                ? "Na końcu: kierunki w Waszym budżecie i plan godzina po godzinie."
+                : "Na końcu: kierunki w Twoim budżecie i plan godzina po godzinie."}
             </p>
           ) : (
             <AnimatePresence initial={false}>
@@ -501,6 +503,7 @@ function QuizPageInner() {
               initial="enter" animate="center" exit="exit" transition={slideTransition}>
               <StepBudget
                 budget={quizAnswers.budget}
+                together={(level) => crewBudgetTogether(level, quizAnswers.companion, quizAnswers.group)}
                 onPick={(v) => pick(1, () => setQuizAnswer("budget", v))}
               />
             </motion.div>
@@ -672,9 +675,11 @@ function StepCompanion({
 
 function StepBudget({
   budget,
+  together,
   onPick,
 }: {
   budget: "low" | "medium" | null;
+  together: (level: "low" | "medium") => string | null;
   onPick: (v: "low" | "medium") => void;
 }) {
   const opts: { value: "low" | "medium"; Icon: IconFC; label: string; desc: string }[] = [
@@ -695,6 +700,11 @@ function StepBudget({
               <div>
                 <p className="font-semibold text-[15px]">{opt.label}</p>
                 <p className="text-xs mt-0.5 leading-snug" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
+                {together(opt.value) && (
+                  <p className="text-xs mt-1 font-semibold" style={{ color: "var(--text-secondary)" }}>
+                    {CREW_COPY.total} {together(opt.value)}
+                  </p>
+                )}
               </div>
             </div>
           </OptionCard>

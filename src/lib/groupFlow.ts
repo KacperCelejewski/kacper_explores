@@ -76,17 +76,25 @@ export function crewSummary(
 
 const BUDGET_PER_PERSON: Record<BudgetLevel, string> = { low: "do 1 500 zł", medium: "1 500–3 000 zł" };
 
-// "do 1 500 zł na osobę, razem do 6 000 zł"; null, gdy nie ma czego mnożyć (solo, para, jedna osoba).
-export function crewBudgetNote(
+// Budżet razem dla całej ekipy ("do 6 000 zł"); null, gdy nie ma czego mnożyć (solo, para, jedna osoba).
+export function crewBudgetTogether(
   budget: BudgetLevel | null | undefined,
   companion: Companion | null | undefined,
   group?: GroupComposition | null,
 ): string | null {
   if (!budget || !showGroupBudget(companion ?? null, group ?? undefined) || !group) return null;
-  const perPerson = BUDGET_PER_PERSON[budget];
-  const together = scaleBudgetText(perPerson, groupSize(group));
-  if (!together) return null;
-  return `${perPerson} ${CREW_COPY.perPerson}, ${CREW_COPY.total} ${together}`;
+  return scaleBudgetText(BUDGET_PER_PERSON[budget], groupSize(group));
+}
+
+// "do 1 500 zł na osobę, razem do 6 000 zł"
+export function crewBudgetNote(
+  budget: BudgetLevel | null | undefined,
+  companion: Companion | null | undefined,
+  group?: GroupComposition | null,
+): string | null {
+  const together = crewBudgetTogether(budget, companion, group);
+  if (!budget || !together) return null;
+  return `${BUDGET_PER_PERSON[budget]} ${CREW_COPY.perPerson}, ${CREW_COPY.total} ${together}`;
 }
 
 // Cena lotu za osobę razem dla całej ekipy ("ok." bo wycena jest zaokrąglona); null dla jednej osoby.
