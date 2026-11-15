@@ -62,6 +62,18 @@ function parseNumber(match: string, thousands?: string, decimals?: string): numb
   return Number(match.replace(",", "."));
 }
 
+// Wszystkie liczby z tekstu budżetu, np. "1 200–1 500 PLN" daje [1200, 1500].
+export function extractBudgetNumbers(text: string): number[] {
+  return Array.from(text.matchAll(NUMBER_RE), (m) => parseNumber(m[0], m[1], m[2]));
+}
+
+// Przekształca każdą liczbę w tekście budżetu; zakresy zapisuje przez en dash, tyldę zachowuje.
+export function mapBudgetNumbers(text: string, fn: (n: number) => number): string {
+  return text
+    .replace(/(\d)\s*[-–]\s*(\d)/g, "$1–$2")
+    .replace(NUMBER_RE, (m, th?: string, dec?: string) => formatThousands(Math.round(fn(parseNumber(m, th, dec)))));
+}
+
 // Czy wyjazd ma jawnie zapisaną grupę, czyli plan liczony jest na osobę.
 export function isGroupTrip(companion: Companion | null, group?: GroupComposition): boolean {
   return (companion === "friends" || companion === "family") && group != null;

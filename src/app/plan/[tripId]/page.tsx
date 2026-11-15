@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { useAppStore } from "@/lib/store";
 import { downloadICS } from "@/app/utils/ics-download";
+import { adjustPlanBudget } from "@/lib/budgetAdjust";
 import { resolveIcsStartDate } from "@/lib/ics";
 import ChatPanel from "@/app/components/ChatPanel";
 import BudgetTracker from "@/app/components/BudgetTracker";
@@ -281,7 +282,9 @@ export default function PlanPage() {
     await fetch(`/api/trips/${currentTrip.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ai_plan_json: { ...currentTrip.plan, days: updatedDays } }),
+      body: JSON.stringify({
+        ai_plan_json: adjustPlanBudget(currentTrip.plan, { ...currentTrip.plan, days: updatedDays }),
+      }),
     }).catch(() => {});
   };
 

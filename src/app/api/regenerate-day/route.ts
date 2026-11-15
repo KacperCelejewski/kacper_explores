@@ -4,6 +4,7 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { logGeminiCall } from "@/lib/geminiLog";
 import { guardAiCall } from "@/lib/aiGuard";
+import { adjustPlanBudget } from "@/lib/budgetAdjust";
 import type { DayPlan, TripPlan } from "@/types";
 
 export const maxDuration = 45;
@@ -111,7 +112,7 @@ Zachowaj pole "day": ${existingDay.day} i "date": "${existingDay.date}" bez zmia
   // Persist updated day in Supabase
   const updatedDays = [...plan.days];
   updatedDays[dayIndex] = newDay;
-  const updatedPlan = { ...plan, days: updatedDays };
+  const updatedPlan = adjustPlanBudget(plan, { ...plan, days: updatedDays });
 
   // Sesją użytkownika zapis nic nie robił (trips nie ma polityki UPDATE); user_id pilnuje właściciela
   await createServiceClient()
