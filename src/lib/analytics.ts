@@ -19,6 +19,13 @@ export function trackEvent(name: string, params: Params = {}) {
   window.gtag("event", name, params);
 }
 
+// Nazwa zdarzenia quizu w GA4. Kroki dostają prefiks quiz_, ale quiz_complete i from_* zostają bez zmian.
+// Do 2026-11-15 quiz_complete szło jako "quiz_quiz_complete" (a from_* jako "quiz_from_*"); w raportach
+// historycznych traktuj te nazwy jako to samo zdarzenie. /api/track zapisuje nazwy bez prefiksu.
+export function quizGaEventName(event: string): string {
+  return event.startsWith("quiz_") || event.startsWith("from_") ? event : `quiz_${event}`;
+}
+
 export function setAnalyticsConsent(granted: boolean) {
   if (typeof window === "undefined" || !GA_ID || !window.gtag) return;
   window.gtag("consent", "update", { analytics_storage: granted ? "granted" : "denied" });

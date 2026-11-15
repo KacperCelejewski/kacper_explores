@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseHomeParams } from "./homeParams";
+import { parseHomeParams, keepUtmQuery } from "./homeParams";
 
 const p = (q: string) => parseHomeParams(new URLSearchParams(q));
 
@@ -54,5 +54,43 @@ describe("homeFriendsAnswers", () => {
 
   it("dla Znajomych bez zapisanej grupy daje domyślną", () => {
     expect(homeFriendsAnswers({ companion: "friends", group: undefined })).toEqual({ companion: "friends", group: def });
+  });
+});
+
+describe("src z Instagrama i bloga", () => {
+  it("przyjmuje ig-ekipa, ig-solo i blog-ekipa", () => {
+    expect(p("companion=friends&src=ig-ekipa")).toEqual({ companion: "friends", src: "ig-ekipa" });
+    expect(p("src=ig-solo").src).toBe("ig-solo");
+    expect(p("companion=friends&src=blog-ekipa").src).toBe("blog-ekipa");
+  });
+
+  it("nazwy zdarzeń nie mają myślników", () => {
+    expect(srcEventName("ig-ekipa")).toBe("from_ig_ekipa");
+    expect(srcEventName("ig-solo")).toBe("from_ig_solo");
+    expect(srcEventName("blog-ekipa")).toBe("from_blog_ekipa");
+  });
+
+  it("dalej odrzuca nieznane wartości", () => {
+    for (const v of ["ig", "ig-ekipa2", "IG-EKIPA", "blog", "ig-ekipa&x=1"]) expect(p(`src=${encodeURIComponent(v)}`).src).toBeNull();
+  });
+});
+
+describe("keepUtmQuery", () => {
+  const k = (q: string) => keepUtmQuery(new URLSearchParams(q));
+
+  it("zostawia utm_source/medium/campaign/content", () => {
+    expect(k("companion=friends&src=ig-ekipa&utm_source=instagram&utm_medium=social&utm_campaign=bio&utm_content=ekipa"))
+      .toBe("?utm_source=instagram&utm_medium=social&utm_campaign=bio&utm_content=ekipa");
+  });
+
+  it("pomija inne parametry i puste wartości", () => {
+    expect(k("companion=friends&city=Rzym&utm_source=")).toBe("");
+    expect(k("")).toBe("");
+  });
+
+  it("odrzuca wartości z dziwnymi znakami albo zbyt długie", () => {
+    expect(k("utm_source=" + encodeURIComponent("<script>"))).toBe("");
+    expect(k("utm_campaign=" + "a".repeat(101))).toBe("");
+    expect(k("utm_medium=social&utm_campaign=" + encodeURIComponent("x y"))).toBe("?utm_medium=social");
   });
 });

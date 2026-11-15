@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/lib/store";
 import type { TravelStyle, TripDuration, TravelVibe, PlaceType, QuizAnswers } from "@/types";
 import { MONTH_NAMES } from "@/lib/constants";
-import { trackEvent } from "@/lib/analytics";
+import { trackEvent, quizGaEventName } from "@/lib/analytics";
 import { cityAfterLogin, quizLoginNext } from "@/lib/quizLogin";
 import { parseDropParams } from "@/lib/drop/quizParams";
 import QuizProgress from "@/components/quiz/QuizProgress";
@@ -38,7 +38,7 @@ import {
 import type { Companion, GroupComposition } from "@/types";
 import GroupSizePicker from "@/app/components/GroupSizePicker";
 import { groupFromCompanion } from "@/lib/group";
-import { parseHomeParams, homeFriendsAnswers, srcEventName } from "@/lib/homeParams";
+import { parseHomeParams, homeFriendsAnswers, srcEventName, keepUtmQuery } from "@/lib/homeParams";
 
 type IconFC = React.FC<{ size?: number }>;
 
@@ -219,7 +219,7 @@ function QuizPageInner() {
   const sessionId = useRef(crypto.randomUUID());
 
   const track = (event: string, step?: number) => {
-    trackEvent(`quiz_${event}`, { step });
+    trackEvent(quizGaEventName(event), { step });
     void fetch("/api/track", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -258,7 +258,7 @@ function QuizPageInner() {
     }
     if (homeParams.src) track(srcEventName(homeParams.src));
     // parametry zadziałały raz; bez nich odświeżenie strony nie cofa kroku ani liczby osób i nie liczy kliknięcia drugi raz
-    if (homeFriends || homeParams.src) router.replace("/quiz", { scroll: false });
+    if (homeFriends || homeParams.src) router.replace(`/quiz${keepUtmQuery(searchParams)}`, { scroll: false });
     track("step_view", 0);
 
     fetch("/api/profile")

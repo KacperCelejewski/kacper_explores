@@ -19,3 +19,16 @@ export function checkoutErrorMessage(status: number, body: { error?: unknown } |
   if (status >= 400 && status < 500 && typeof body?.error === "string" && body.error) return body.error;
   return GENERIC_ERROR;
 }
+
+/**
+ * Zdarzenie GA4 po odpowiedzi /api/checkout. begin_checkout liczymy dopiero, gdy istnieje sesja Stripe
+ * (wcześniej leciało przy każdym kliknięciu, także bez logowania i przy błędach, stąd 17 zdarzeń wobec 2 sesji).
+ */
+export function checkoutTrackingEvent(
+  status: number,
+  body: { url?: unknown; error?: unknown } | null,
+): "begin_checkout" | "checkout_login_required" | null {
+  if (status === 401) return "checkout_login_required";
+  if (status >= 200 && status < 300 && typeof body?.url === "string" && body.url) return "begin_checkout";
+  return null;
+}
