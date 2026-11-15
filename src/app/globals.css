@@ -223,184 +223,121 @@ h1, h2, h3 {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
 
-/* ================================================================
-   HOME PAGE — full-width override + fixed nav + poster hero
-   ================================================================ */
-
-/* 1. Unlock the 448px shell for the landing page */
-body.is-home main.app-shell {
+/* Wide pages opt in through server-rendered markup. The plan can reuse these
+   widths with data-page="plan" data-layout="wide" in its separate change. */
+main.app-shell:has(> :is([data-page="home"], [data-layout="wide"])) {
   max-width: none;
   padding: 0;
 }
 
-/* 2. Fixed nav over the sand poster hero */
-body.is-home main.app-shell > nav {
+:is([data-page="home"], [data-layout="wide"]) {
+  --page-gutter: 20px;
+  --page-width: 720px;
+}
+
+.home-container {
+  width: min(var(--page-width), calc(100% - 2 * var(--page-gutter)));
+  margin-inline: auto;
+  min-width: 0;
+}
+
+[data-page="home"] > nav {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  inset: 0 0 auto;
   z-index: 200;
-  background: rgba(245, 239, 224, 0.9) !important;
+  min-height: 68px;
+  background: rgba(245, 239, 224, 0.95);
   backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border) !important;
+  padding-inline: max(var(--page-gutter), calc((100% - var(--page-width)) / 2));
+}
+
+[data-page="home"] > nav a:not([href="/blog"]) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+[data-page="home"] > nav a[href="/blog"] { display: none; }
+
+[data-page="home"] > nav a:not([href="/login"]) {
+  color: var(--text-secondary);
+}
+
+[data-page="home"] > :is(section, footer) {
+  width: min(var(--page-width), calc(100% - 2 * var(--page-gutter)));
   max-width: none;
+  margin-inline: auto;
+  padding-inline: 0;
 }
 
-body.is-home main.app-shell > nav a:not([href="/login"]) {
-  color: var(--text-secondary) !important;
-}
-
-/* 3. Keep FAQ + footer centered at comfortable reading width */
-body.is-home main.app-shell > section,
-body.is-home main.app-shell > footer {
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
-  box-sizing: border-box;
-}
-
-/* Strona główna jest na całą szerokość, więc przycisk menu wraca do rogu ekranu */
-body.is-home .global-fab {
+body:has([data-page="home"]) .global-fab {
   right: 1.25rem !important;
 }
 
-/* 4. Anchor scroll offset for fixed nav */
-body.is-home section[id] {
-  scroll-margin-top: 72px;
-}
+[data-page="home"] section[id] { scroll-margin-top: 84px; }
+[data-page="home"] :is(a, button, select, summary) { min-height: 44px; }
+[data-page="home"] a { align-content: center; }
 
-/* 5. Poster hero: art below the copy on phones, behind it from tablet up */
-.home-hero {
-  position: relative;
-  background: var(--bg-primary);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
+.home-hero { padding: 80px 0 40px; }
+.home-hero-grid { display: grid; gap: 32px; }
+.home-title { font-size: 36px; }
+.home-hero-actions { display: flex; flex-direction: column; align-items: flex-start; }
+.home-secondary-links { display: flex; flex-wrap: wrap; align-items: center; gap: 0 8px; }
+.home-secondary-links a { display: inline-flex; align-items: center; }
 
-.home-hero-copy {
-  position: relative;
-  z-index: 2;
-  padding: 104px 24px 8px;
-  max-width: 640px;
+.home-destinations {
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: var(--bg-surface);
 }
+.home-destinations h2 { font-size: 32px; line-height: 1.1; }
+.home-destinations ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 20px 0 12px; }
+.home-destinations li { display: flex; flex-direction: column; gap: 2px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.home-destinations strong { font-family: var(--font-heading); font-size: 24px; }
+.home-destinations span { color: var(--text-secondary); font-size: 14px; }
+.home-destinations a { display: inline-flex; align-items: center; font-size: 14px; font-weight: 700; color: var(--accent); }
 
-.home-hero-art {
-  display: block;
-  order: 2;
-  width: 100%;
-  margin-top: 24px;
-}
-
-.home-hero-art--phone {
-  aspect-ratio: 720 / 360;
-  height: auto;
-}
-
-.home-hero-art--wide {
-  display: none;
-}
-
-/* Hero walker: hops left over four stones, turns, hops back. 10s loop.
-   Horizontal and vertical motion run on separate groups so each hop is an arc.
-   Stone offsets match STONES in HomeClient.tsx (150px apart; landing heights
-   0, +3, -3, +1.5 from the first stone). */
-.hero-hop-x,
-.hero-hop-y,
-.hero-hop-face,
-.hero-hop-squash {
-  animation-duration: 10s;
-  animation-iteration-count: infinite;
-}
-
-.hero-hop-x {
-  animation-name: hero-hop-x;
-  animation-timing-function: linear;
-}
-
-.hero-hop-y { animation-name: hero-hop-y; }
-.hero-hop-face { animation-name: hero-hop-face; }
-.hero-hop-squash { animation-name: hero-hop-squash; }
-
-@keyframes hero-hop-x {
-  0%, 12%   { transform: translateX(0); }
-  17%, 21%  { transform: translateX(-150px); }
-  26%, 30%  { transform: translateX(-300px); }
-  35%, 50%  { transform: translateX(-450px); }
-  55%, 59%  { transform: translateX(-300px); }
-  64%, 68%  { transform: translateX(-150px); }
-  73%, 100% { transform: translateX(0); }
-}
-
-/* Ground keyframes ease out into the rise, apex keyframes ease in to the fall */
-@keyframes hero-hop-y {
-  0%, 12%   { transform: translateY(0);       animation-timing-function: cubic-bezier(0.3, 0.6, 0.5, 1); }
-  14.5%     { transform: translateY(-60px);   animation-timing-function: cubic-bezier(0.5, 0, 0.7, 0.4); }
-  17%, 21%  { transform: translateY(3px);     animation-timing-function: cubic-bezier(0.3, 0.6, 0.5, 1); }
-  23.5%     { transform: translateY(-58px);   animation-timing-function: cubic-bezier(0.5, 0, 0.7, 0.4); }
-  26%, 30%  { transform: translateY(-3px);    animation-timing-function: cubic-bezier(0.3, 0.6, 0.5, 1); }
-  32.5%     { transform: translateY(-60px);   animation-timing-function: cubic-bezier(0.5, 0, 0.7, 0.4); }
-  35%, 50%  { transform: translateY(1.5px);   animation-timing-function: cubic-bezier(0.3, 0.6, 0.5, 1); }
-  52.5%     { transform: translateY(-60px);   animation-timing-function: cubic-bezier(0.5, 0, 0.7, 0.4); }
-  55%, 59%  { transform: translateY(-3px);    animation-timing-function: cubic-bezier(0.3, 0.6, 0.5, 1); }
-  61.5%     { transform: translateY(-58px);   animation-timing-function: cubic-bezier(0.5, 0, 0.7, 0.4); }
-  64%, 68%  { transform: translateY(3px);     animation-timing-function: cubic-bezier(0.3, 0.6, 0.5, 1); }
-  70.5%     { transform: translateY(-58px);   animation-timing-function: cubic-bezier(0.5, 0, 0.7, 0.4); }
-  73%, 100% { transform: translateY(0); }
-}
-
-/* Faces left on the way out, turns at the far stone, turns back at home */
-@keyframes hero-hop-face {
-  0%, 42%     { transform: scaleX(1); }
-  42.6%, 86%  { transform: scaleX(-1); }
-  86.6%, 100% { transform: scaleX(1); }
-}
-
-/* Crouch before each take-off, stretch leaving the stone, squash on landing */
-@keyframes hero-hop-squash {
-  0%, 100%,
-  10.5%, 14%, 17%, 19%,
-  19.5%, 23%, 26%, 28%,
-  28.5%, 32%, 35%, 37%,
-  48.5%, 52%, 55%, 57%,
-  57.5%, 61%, 64%, 66%,
-  66.5%, 70%, 73%, 75%                     { transform: scale(1, 1); }
-  11.5%, 20.5%, 29.5%, 49.5%, 58.5%, 67.5% { transform: scale(1.06, 0.92); }
-  12.8%, 21.8%, 30.8%, 50.8%, 59.8%, 68.8% { transform: scale(0.95, 1.06); }
-  17.6%, 26.6%, 35.6%, 55.6%, 64.6%, 73.6% { transform: scale(1.08, 0.9); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .hero-hop-x,
-  .hero-hop-y,
-  .hero-hop-face,
-  .hero-hop-squash {
-    animation: none;
-  }
-}
+.home-discovery { display: grid; gap: 24px; padding-block: 16px 48px; }
+.home-discovery > .deals-strip { padding: 24px 0; }
+.home-discovery > .deals-strip > div { max-width: none; }
+.home-signup { border-radius: 22px; padding: 28px 20px; min-width: 0; }
+.home-signup > div { max-width: 600px; margin-inline: auto; }
+.home-section { padding-block: 56px 64px; }
+.home-steps { display: grid; gap: 32px; }
+.home-preview { display: grid; gap: 24px; align-items: start; }
+.home-faq { display: grid; gap: 24px; padding-block: 48px 64px; }
+.home-finale { padding-block: 64px 8px; }
 
 @media (min-width: 768px) {
-  .home-hero {
-    min-height: 100dvh;
-    justify-content: center;
-  }
+  [data-page="home"] > nav a[href="/blog"] { display: inline-flex; align-items: center; }
+  .home-hero { padding-block: 112px 56px; }
+  .home-title { font-size: 48px; }
+  .home-hero-actions { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 0 16px; }
+  .home-destinations { padding: 32px; }
+  .home-section { padding-block: 72px 80px; }
+}
 
-  .home-hero-copy {
-    /* Bottom room keeps the copy above the hills, which fill the lowest ~14% of the art */
-    padding: 104px 48px max(80px, 18vh);
+@media (min-width: 1024px) {
+  :is([data-page="home"], [data-layout="wide"]) {
+    --page-gutter: 32px;
+    --page-width: 960px;
   }
+  .home-hero-grid { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 40px; align-items: start; }
+  .home-hero { padding-top: 88px; }
+  .home-title { font-size: clamp(36px, 4vw, 56px); }
+  .home-discovery:has(> .deals-strip) { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); align-items: start; }
+  .home-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
+  .home-steps > div { flex-direction: column; }
+  .home-preview { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 40px; }
+  .home-faq { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 40px; align-items: start; }
+  .home-faq h2 { position: sticky; top: 100px; }
+}
 
-  .home-hero-art--phone {
-    display: none;
-  }
-
-  .home-hero-art--wide {
-    display: block;
-    position: absolute;
-    inset: 0;
-    height: 100%;
-    margin-top: 0;
+@media (min-width: 1280px) {
+  :is([data-page="home"], [data-layout="wide"]) {
+    --page-gutter: 48px;
+    --page-width: 1120px;
   }
 }
 
@@ -537,3 +474,10 @@ body:has(.quick-root) .global-fab {
 
 /* Dopóki baner cookies czeka na decyzję, przycisk menu jest schowany: inaczej zasłania tekst baneru albo treść strony */
 body.has-cookie-banner .global-fab { display: none; }
+
+/* Keep all existing nav actions within a 320px viewport. */
+@media (max-width: 374px) {
+  [data-page="home"] { --page-gutter: 16px; }
+  [data-page="home"] > nav > div { gap: 8px; }
+  [data-page="home"] > nav img { height: 22px !important; }
+}

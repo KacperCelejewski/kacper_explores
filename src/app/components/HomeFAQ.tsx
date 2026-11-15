@@ -37,7 +37,7 @@ export const FAQS = [
 
 export default function HomeFAQ() {
   return (
-    <section className="mx-auto max-w-[600px] px-5 pt-4 pb-20" aria-labelledby="faq-heading">
+    <section className="home-faq home-container" aria-labelledby="faq-heading">
       <h2
         id="faq-heading"
         className="mb-6 leading-tight"
@@ -53,7 +53,7 @@ export default function HomeFAQ() {
             style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
           >
             <summary
-              className="text-sm font-semibold leading-snug cursor-pointer list-none flex items-center justify-between gap-2 px-4 py-3.5"
+              className="min-h-11 text-sm font-semibold leading-snug cursor-pointer list-none flex items-center justify-between gap-2 px-4 py-3.5"
               style={{ userSelect: "none" }}
             >
               <span>{q}</span>

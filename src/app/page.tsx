@@ -4,8 +4,6 @@ import HomeFAQ, { FAQS } from "./components/HomeFAQ";
 import { META } from "@/lib/homeCopy";
 import SiteNav from "./components/SiteNav";
 import SiteFooter from "./components/SiteFooter";
-import { FEATURED_DESTINATIONS } from "@/lib/cityPhotos";
-import { fetchCityPhotoUrl } from "@/lib/unsplashApi";
 import { getCitiesWithDeals, getDealsForOrigin } from "@/lib/drop/read";
 import CityLinks from "@/app/components/CityLinks";
 import { hoursInCity } from "@/lib/drop/stay";
@@ -88,14 +86,13 @@ async function loadStripDeals(): Promise<StripDeal[]> {
 }
 
 export default async function HomePage() {
-  const [galleryPhotos, initialDeals, cities] = await Promise.all([
-    Promise.all(FEATURED_DESTINATIONS.map((d) => fetchCityPhotoUrl(d.city))),
+  const [initialDeals, cities] = await Promise.all([
     loadStripDeals(),
     getCitiesWithDeals(),
   ]);
 
   return (
-    <>
+    <div data-page="home">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
@@ -113,9 +110,9 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
       <SiteNav />
-      <HomeClient galleryPhotos={galleryPhotos} faq={<HomeFAQ />} initialDeals={initialDeals} initialDealsOrigin={DEFAULT_ORIGIN} />
+      <HomeClient faq={<HomeFAQ />} initialDeals={initialDeals} initialDealsOrigin={DEFAULT_ORIGIN} />
       <CityLinks cities={cities} title="Dokąd na weekend" limit={8} />
-      <SiteFooter />
-    </>
+      <SiteFooter showQuizLink={false} />
+    </div>
   );
 }

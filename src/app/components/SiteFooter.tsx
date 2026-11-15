@@ -2,7 +2,7 @@ import Link from "next/link";
 import { POLISH_AIRPORTS } from "@/lib/airports";
 import { ORIGIN_GENITIVE } from "@/lib/drop/email";
 
-export default function SiteFooter() {
+export default function SiteFooter({ showQuizLink = true }: { showQuizLink?: boolean }) {
   return (
     <footer
       className="px-5 py-6 border-t mt-auto"
@@ -77,13 +77,13 @@ export default function SiteFooter() {
           >
             Prywatność
           </Link>
-          <Link
+          {showQuizLink && <Link
             href="/quiz"
             className="text-xs font-semibold inline-block py-1.5"
             style={{ color: "var(--accent)", textDecoration: "none" }}
           >
             Zaplanuj podróż →
-          </Link>
+          </Link>}
         </div>
       </div>
     </footer>
