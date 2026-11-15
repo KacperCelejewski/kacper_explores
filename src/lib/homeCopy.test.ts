@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FORBIDDEN_COPY, HOME, homeSubtitle } from "./homeCopy";
+import { FORBIDDEN_COPY, HOME, META, homeSubtitle } from "./homeCopy";
 import type { FeatureKey } from "./features";
 
 const ALL_OFF: Record<FeatureKey, boolean> = {
@@ -40,5 +40,25 @@ describe("HOME", () => {
   it("przy wyłączonych funkcjach nie wspomina terminu, biletów, rozliczeń ani zaproszeń", () => {
     const re = /termin|bilet|rozliczen|bez konta|zaproś/i;
     for (const s of [...strings(), homeSubtitle(ALL_OFF)]) expect(s).not.toMatch(re);
+  });
+});
+
+describe("META", () => {
+  it("title to nagłówek strony bez sufiksu (dodaje go szablon z layoutu)", () => {
+    expect(META.title).toBe("Wyjazd ze znajomymi: dokąd, za ile i jaki plan");
+  });
+
+  it("opis wymienia 6 pytań, plan godzina po godzinie i 7 polskich lotnisk", () => {
+    expect(META.description).toMatch(/6 pytań/);
+    expect(META.description).toMatch(/plan godzina po godzinie/);
+    expect(META.description).toMatch(/7 polskich lotnisk/);
+  });
+
+  it("nie mówi o solo w Europie ani nie obiecuje części 2–6", () => {
+    for (const s of Object.values(META)) {
+      expect(s).not.toMatch(/solo w Europie|budżetowy weekend solo/i);
+      expect(s).not.toMatch(/termin|bilet|rozliczen|bez konta|zaproś/i);
+      for (const re of FORBIDDEN_COPY) expect(s).not.toMatch(re);
+    }
   });
 });

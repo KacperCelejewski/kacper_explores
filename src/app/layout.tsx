@@ -7,6 +7,7 @@ import CookieBanner from "@/app/components/CookieBanner";
 import NewsletterPopup from "@/app/components/NewsletterPopup";
 import MotionProvider from "@/app/components/MotionProvider";
 import Analytics from "@/app/components/Analytics";
+import { META } from "@/lib/homeCopy";
 
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-body" });
@@ -20,24 +21,24 @@ const cormorant = Cormorant_Garamond({
 export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   title: {
-    default: "Włóczykij — budżetowe weekendy solo w Europie",
+    default: META.titleDefault,
     template: "%s | Włóczykij",
   },
-  description: "Odpowiedz na 6 pytań, a dostaniesz 6 kierunków w Twoim budżecie, ceny lotów z polskich lotnisk i plan godzina po godzinie. 2 plany za darmo co miesiąc.",
+  description: META.description,
   metadataBase: new URL("https://wloczykij.me"),
   openGraph: {
     type: "website",
     locale: "pl_PL",
     url: "https://wloczykij.me",
     siteName: "Włóczykij",
-    title: "Włóczykij — budżetowe weekendy solo w Europie",
-    description: "Odpowiedz na 6 pytań i dostań lot oraz plan godzina po godzinie. Ceny, knajpy i triki — w Twoim budżecie.",
-    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Włóczykij — budżetowy weekend w Europie" }],
+    title: META.titleDefault,
+    description: META.shortDescription,
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: META.ogAlt }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Włóczykij — budżetowe weekendy solo w Europie",
-    description: "Odpowiedz na 6 pytań i dostań lot oraz plan godzina po godzinie. Ceny, knajpy i triki — w Twoim budżecie.",
+    title: META.titleDefault,
+    description: META.shortDescription,
     images: ["/opengraph-image"],
   },
 };

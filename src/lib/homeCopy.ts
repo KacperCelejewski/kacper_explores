@@ -32,3 +32,16 @@ export const FORBIDDEN_COPY: RegExp[] = [
   /platform/i,
   /innowacyjn/i,
 ];
+
+// Metadane strony: ten sam sens w title, opisie, OG, Twitter, manifeście i schema.org
+export const META = {
+  title: "Wyjazd ze znajomymi: dokąd, za ile i jaki plan",
+  titleDefault: "Włóczykij: wyjazd ze znajomymi, dokąd, za ile i jaki plan",
+  description:
+    "Odpowiedz na 6 pytań: dostaniesz kierunki w Waszym budżecie, plan godzina po godzinie i ceny lotów z 7 polskich lotnisk w okazjach. 2 plany za darmo co miesiąc.",
+  shortDescription: "Odpowiedz na 6 pytań i dostań kierunki w Waszym budżecie oraz plan godzina po godzinie. Ceny, knajpy i triki.",
+  appDescription:
+    "Wyjazd ze znajomymi: kierunki w Waszym budżecie, plan godzina po godzinie z cenami, knajpami i trikami oraz okazje na weekend z polskich lotnisk.",
+  manifestDescription: "Wyjazd ze znajomymi: kierunki w budżecie, plan godzina po godzinie i okazje na weekend z Polski",
+  ogAlt: "Włóczykij: wyjazd ze znajomymi, dokąd, za ile i jaki plan",
+} as const;

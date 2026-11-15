@@ -2,6 +2,14 @@ import { PRICES } from "@/lib/prices";
 
 export const FAQS = [
   {
+    q: "Jedziemy ekipą, co dostajemy?",
+    a: "Mówisz, ilu Was jedzie, a my podajemy kierunki w Waszym budżecie, szacunek kosztu na osobę i razem oraz plan godzina po godzinie. Gotowy plan wysyłacie znajomym linkiem do podglądu.",
+  },
+  {
+    q: "Kto płaci?",
+    a: `Za sam plan nikt: dwa plany w miesiącu są za darmo. Gdy ich zabraknie, jedna osoba może dokupić Pack (5 planów za ${PRICES.pack.label}) albo wziąć Pro bez limitu za ${PRICES.proMonthly.label}/mies. Lotów i noclegów nie kupujemy za Was, linki prowadzą do wyszukiwarek.`,
+  },
+  {
     q: "Czy Włóczykij jest darmowy?",
     a: `Dwa plany w miesiącu tak. Odnawiają się co miesiąc i nie wymagają karty. Gdy ich zabraknie, możesz dokupić Pack (5 planów za ${PRICES.pack.label}) albo wziąć Pro bez limitu za ${PRICES.proMonthly.label}/mies. lub ${PRICES.proYearly.label}/rok. Okazje na weekend i Czwartkowy zrzut są darmowe bez konta. Po wygenerowaniu planu możesz go ocenić: za opinię dostajesz PDF albo jeden plan więcej.`,
   },
