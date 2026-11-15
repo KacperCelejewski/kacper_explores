@@ -1,3 +1,4 @@
+import { socialMeta } from "@/lib/seo/social";
 import type { Metadata } from "next";
 import { Fragment } from "react";
 import Link from "next/link";
@@ -39,7 +40,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   return {
     title,
     description,
-    openGraph: { title, description, url: `https://wloczykij.me/okazje/${origin.toLowerCase()}`, type: "website" },
+    ...socialMeta(title, description, `/okazje/${origin.toLowerCase()}`),
     alternates: { canonical: `https://wloczykij.me/okazje/${origin.toLowerCase()}` },
     // Modlin zwraca dane z Okęcia (kod miasta WAW), więc jego strona nie trafia do indeksu jako duplikat
     ...(origin === "WMI" ? { robots: { index: false, follow: true } } : {}),

@@ -1,3 +1,4 @@
+import { socialMeta } from "@/lib/seo/social";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -24,11 +25,10 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const hasDeals = (await getDealsForCity(dealCityName(city))).length > 0;
   const title = `${city.city} na weekend: loty z Polski i plan`;
   const description = `${city.description} Sprawdź ceny lotów z polskich lotnisk (kierunek: ${city.city}) i ułóż plan na weekend.`;
-  const url = `https://wloczykij.me/weekend/${citySlug(city)}`;
   return {
     // Bez świeżych cen strona jest cienka, więc nie trafia do indeksu; wraca, gdy dane się pojawią
     ...(hasDeals ? {} : { robots: { index: false, follow: true } }),
-    openGraph: { title, description, url, type: "website" },
+    ...socialMeta(title, description, `/weekend/${citySlug(city)}`),
     title,
     description,
     alternates: { canonical: `https://wloczykij.me/weekend/${citySlug(city)}` },
