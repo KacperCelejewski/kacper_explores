@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllPosts } from "@/lib/blog";
+import { BLOG_NAME } from "@/lib/seo/articleLd";
+import { breadcrumbLd, jsonLdScript } from "@/lib/seo/jsonld";
 import SiteNav from "../components/SiteNav";
 import SiteFooter from "../components/SiteFooter";
 import {
@@ -22,12 +24,12 @@ const COVER_ICONS: Record<string, IconFC> = {
 };
 
 export const metadata: Metadata = {
-  title: "Blog o podróżach solo",
-  description: "Praktyczne przewodniki po budżetowych podróżach solo po Europie. Jak podróżować tanio, bezpiecznie i na własnych zasadach.",
+  title: BLOG_NAME,
+  description: "Praktyczne przewodniki po budżetowych wyjazdach po Europie: wyjazd ze znajomymi, solo i we dwoje. Budżet, loty, kierunki i plany na weekend.",
   alternates: { canonical: "https://wloczykij.me/blog" },
   openGraph: {
-    title: "Blog o podróżach solo | Włóczykij",
-    description: "Praktyczne przewodniki po budżetowych podróżach solo po Europie.",
+    title: `${BLOG_NAME} | Włóczykij`,
+    description: "Praktyczne przewodniki po budżetowych wyjazdach po Europie: budżet, loty, kierunki i plany na weekend.",
     url: "https://wloczykij.me/blog",
     images: [{ url: "/opengraph-image", width: 1200, height: 630 }],
   },
@@ -36,9 +38,9 @@ export const metadata: Metadata = {
 const blogSchema = {
   "@context": "https://schema.org",
   "@type": "Blog",
-  name: "Włóczykij — Blog",
+  name: BLOG_NAME,
   url: "https://wloczykij.me/blog",
-  description: "Praktyczne przewodniki po budżetowych podróżach solo po Europie.",
+  description: "Praktyczne przewodniki po budżetowych wyjazdach po Europie: budżet, loty, kierunki i plany na weekend.",
   inLanguage: "pl",
   publisher: {
     "@type": "Organization",
@@ -52,10 +54,9 @@ export default function BlogPage() {
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(blogSchema) }}
-      />
+      {[blogSchema, breadcrumbLd([{ name: "Strona główna", path: "/" }, { name: BLOG_NAME, path: "/blog" }])].map((s, i) => (
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(s) }} />
+      ))}
       <SiteNav />
       <div className="flex flex-col flex-1 px-5 pb-10">
         <div className="pt-10 pb-6">
@@ -63,10 +64,10 @@ export default function BlogPage() {
             Blog
           </p>
           <h1 className="text-3xl font-bold leading-tight">
-            Podróże solo po Europie
+            {BLOG_NAME}
           </h1>
           <p className="text-sm mt-2 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-            Praktyczne przewodniki, triki budżetowe i inspiracje dla osób podróżujących solo.
+            Praktyczne przewodniki, triki budżetowe i inspiracje na wyjazd w ekipie, solo albo we dwoje.
           </p>
         </div>
 
