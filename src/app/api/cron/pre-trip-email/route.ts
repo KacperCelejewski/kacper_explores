@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { Resend } from "resend";
+import { isAuthorizedCron } from "@/lib/drop/cronAuth";
+import { escapeHtml } from "@/lib/escapeHtml";
 
 export const maxDuration = 60;
 
-function buildPreTripEmail(city: string, country: string, shareUrl: string): string {
+function buildPreTripEmail(rawCity: string, rawCountry: string, rawShareUrl: string): string {
+  const city = escapeHtml(rawCity);
+  const country = escapeHtml(rawCountry);
+  const shareUrl = escapeHtml(rawShareUrl);
   return `<!DOCTYPE html>
 <html lang="pl">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -67,9 +72,7 @@ function buildPreTripEmail(city: string, country: string, shareUrl: string): str
 
 export async function GET(req: NextRequest) {
   // Verify cron secret to prevent unauthorized triggering
-  const authHeader = req.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (!isAuthorizedCron(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
