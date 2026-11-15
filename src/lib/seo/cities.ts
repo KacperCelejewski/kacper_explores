@@ -59,9 +59,13 @@ export function cityAudience(c: CatalogEntry): string[] {
 }
 
 // Slugi miast z listy weekendowej, dla których w danych są okazje (nazwy z Travelpayouts); do sitemap
-export function slugsWithDeals(cityNames: string[]): string[] {
+export function citiesWithDeals(cityNames: string[]): CatalogEntry[] {
   const have = new Set(cityNames);
-  return weekendCities().filter((c) => have.has(dealCityName(c))).map(citySlug);
+  return weekendCities().filter((c) => have.has(dealCityName(c)));
+}
+
+export function slugsWithDeals(cityNames: string[]): string[] {
+  return citiesWithDeals(cityNames).map(citySlug);
 }
 
 // Miasta o największej liczbie wspólnych tagów katalogu; remis rozstrzyga kolejność w katalogu (wynik stały)

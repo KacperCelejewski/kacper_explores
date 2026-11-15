@@ -5,7 +5,8 @@ import SiteFooter from "@/app/components/SiteFooter";
 import DropSignup from "@/app/components/DropSignup";
 import { POLISH_AIRPORTS } from "@/lib/airports";
 import { ORIGIN_GENITIVE } from "@/lib/drop/email";
-import { getDealsForOrigin } from "@/lib/drop/read";
+import { getCitiesWithDeals, getDealsForOrigin } from "@/lib/drop/read";
+import CityLinks from "@/app/components/CityLinks";
 import { AIRPORT_FACTS } from "@/lib/seo/airportFacts";
 import { socialMeta } from "@/lib/seo/social";
 import { breadcrumbLd, itemListLd, jsonLdScript } from "@/lib/seo/jsonld";
@@ -24,6 +25,7 @@ export const metadata: Metadata = {
 const AIRPORTS = POLISH_AIRPORTS.filter((a) => a.code !== "WMI");
 
 export default async function DealsHubPage() {
+  const cities = await getCitiesWithDeals();
   const rows = await Promise.all(
     AIRPORTS.map(async (a) => {
       try {
@@ -80,6 +82,8 @@ export default async function DealsHubPage() {
             );
           })}
         </ul>
+
+        <CityLinks cities={cities} title="Wszystkie miasta z cenami lotów" />
 
         <div className="mt-12"><DropSignup /></div>
       </main>

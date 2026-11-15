@@ -6,7 +6,8 @@ import SiteNav from "./components/SiteNav";
 import SiteFooter from "./components/SiteFooter";
 import { FEATURED_DESTINATIONS } from "@/lib/cityPhotos";
 import { fetchCityPhotoUrl } from "@/lib/unsplashApi";
-import { getDealsForOrigin } from "@/lib/drop/read";
+import { getCitiesWithDeals, getDealsForOrigin } from "@/lib/drop/read";
+import CityLinks from "@/app/components/CityLinks";
 import { hoursInCity } from "@/lib/drop/stay";
 import type { StripDeal } from "./components/DealsStrip";
 
@@ -87,9 +88,10 @@ async function loadStripDeals(): Promise<StripDeal[]> {
 }
 
 export default async function HomePage() {
-  const [galleryPhotos, initialDeals] = await Promise.all([
+  const [galleryPhotos, initialDeals, cities] = await Promise.all([
     Promise.all(FEATURED_DESTINATIONS.map((d) => fetchCityPhotoUrl(d.city))),
     loadStripDeals(),
+    getCitiesWithDeals(),
   ]);
 
   return (
@@ -112,6 +114,7 @@ export default async function HomePage() {
       />
       <SiteNav />
       <HomeClient galleryPhotos={galleryPhotos} faq={<HomeFAQ />} initialDeals={initialDeals} initialDealsOrigin={DEFAULT_ORIGIN} />
+      <CityLinks cities={cities} title="Dokąd na weekend" limit={8} />
       <SiteFooter />
     </>
   );

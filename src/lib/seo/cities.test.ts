@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cityFromSlug, citySlug, similarCities, weekendCities } from "./cities";
+import { citiesWithDeals, cityFromSlug, citySlug, similarCities, slugsWithDeals, weekendCities } from "./cities";
 
 describe("weekendCities", () => {
   const cities = weekendCities();
@@ -71,5 +71,18 @@ describe("similarCities", () => {
     const out = similarCities(praga);
     expect(out.every((c) => c.tags.some((t) => praga.tags.includes(t)))).toBe(true);
     expect(similarCities(praga).map(citySlug)).toEqual(out.map(citySlug));
+  });
+});
+
+describe("citiesWithDeals", () => {
+  it("zwraca tylko miasta z listy weekendowej, które mają okazje, w kolejności katalogu", () => {
+    const out = citiesWithDeals(["Praga", "Tallinn", "Nieznane", "Bali"]);
+    expect(out.map((c) => c.city)).toEqual(expect.arrayContaining(["Praga", "Tallin"]));
+    expect(out.map((c) => c.city)).not.toContain("Bali");
+    expect(out).toHaveLength(2);
+  });
+  it("jest zgodna ze slugsWithDeals", () => {
+    const names = ["Praga", "Rzym", "Budapeszt"];
+    expect(citiesWithDeals(names).map(citySlug)).toEqual(slugsWithDeals(names));
   });
 });
