@@ -1,4 +1,4 @@
-import { readJsonBody } from "@/lib/http";
+import { readJsonBody, serverError } from "@/lib/http";
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createSupabaseServer } from "@/lib/supabase/server";
@@ -109,6 +109,6 @@ Bazuj na planie, ale możesz uzupełniać szczegółami. Nie wychodzisz poza tem
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     void logGeminiCall({ endpoint: "chat", model: "gemini-2.5-flash", success: false, error_code: msg.includes("429") ? "quota" : "error" });
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return serverError("chat", err);
   }
 }

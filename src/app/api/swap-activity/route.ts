@@ -1,4 +1,4 @@
-import { readJsonBody } from "@/lib/http";
+import { readJsonBody, serverError } from "@/lib/http";
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createSupabaseServer } from "@/lib/supabase/server";
@@ -113,8 +113,7 @@ Wymagania:
   }
 
   if (!newActivity) {
-    const msg = lastErr instanceof Error ? lastErr.message : String(lastErr);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return serverError("swap-activity", lastErr);
   }
 
   // Persist

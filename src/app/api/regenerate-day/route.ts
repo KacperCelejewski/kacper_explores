@@ -1,4 +1,4 @@
-import { readJsonBody } from "@/lib/http";
+import { readJsonBody, serverError } from "@/lib/http";
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createSupabaseServer } from "@/lib/supabase/server";
@@ -104,8 +104,7 @@ Zachowaj pole "day": ${existingDay.day} i "date": "${existingDay.date}" bez zmia
   }
 
   if (!newDay) {
-    const msg = lastErr instanceof Error ? lastErr.message : String(lastErr);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return serverError("regenerate-day", lastErr);
   }
 
   // Persist updated day in Supabase

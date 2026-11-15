@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
   const body = parsedBody.body;
 
   if (!validateQuizAnswers(body)) {
-    console.error("[destinations] validateQuizAnswers failed:", JSON.stringify(body));
+    console.error("[destinations] validateQuizAnswers failed");
     return NextResponse.json({ error: "Nieprawidłowe dane wejściowe.", detail: "validation_failed" }, { status: 400 });
   }
 

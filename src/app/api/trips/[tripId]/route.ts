@@ -1,4 +1,4 @@
-import { readJsonBody } from "@/lib/http";
+import { readJsonBody, serverError } from "@/lib/http";
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -76,7 +76,7 @@ export async function PATCH(
     .select("id")
     .maybeSingle();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return serverError("trips", error);
   if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({ ok: true, ...updates });
 }

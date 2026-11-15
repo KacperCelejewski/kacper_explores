@@ -1,4 +1,4 @@
-import { readJsonBody } from "@/lib/http";
+import { readJsonBody, serverError } from "@/lib/http";
 import { NextRequest, NextResponse } from "next/server";
 import { getUserProfile, canGenerate, isPro } from "@/lib/userProfile";
 import { freePlansLeft, plansAvailable } from "@/lib/credits";
@@ -71,7 +71,7 @@ export async function PATCH(req: NextRequest) {
     .update({ quiz_preferences, updated_at: new Date().toISOString() })
     .eq("id", user.id);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return serverError("profile", error);
 
   return NextResponse.json({ ok: true });
 }
@@ -84,7 +84,7 @@ export async function DELETE() {
   // Profil, wyjazdy i płatności usuwa ON DELETE CASCADE razem z kontem w auth.users.
   // Osobne usuwanie sesją użytkownika nic nie robiło: RLS nie ma polityk DELETE.
   const { error } = await createServiceRoleClient().auth.admin.deleteUser(user.id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return serverError("profile", error);
 
   return NextResponse.json({ ok: true });
 }
