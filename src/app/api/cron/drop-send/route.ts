@@ -145,7 +145,7 @@ export async function GET(req: NextRequest) {
     if (mine.length === 0) continue;
 
     const payload = mine.map(({ sub, deals: picked }) => {
-      const { subject, html } = renderDropEmail({
+      const { subject, html, text } = renderDropEmail({
         deals: picked,
         teasers,
         originCity: ORIGIN_GENITIVE[picked[0].origin] ?? picked[0].origin,
@@ -157,8 +157,10 @@ export async function GET(req: NextRequest) {
       return {
         from: FROM,
         to: sub.email,
+        replyTo: "hej@wloczykij.me",
         subject,
         html,
+        text,
         headers: {
           "List-Unsubscribe": `<${buildUnsubscribeUrl(appUrl, sub.unsubscribe_token)}>`,
           "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
