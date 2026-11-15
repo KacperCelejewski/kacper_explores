@@ -1,5 +1,6 @@
 "use client";
 
+import { EDGE_COPY, ServerMessage, friendlyError } from "@/lib/edgeCopy";
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -41,13 +42,14 @@ export default function ChatPanel({ tripId, city }: Props) {
         body: JSON.stringify({ tripId, messages: next }),
       });
       const data = await res.json();
-      if (data.text) {
-        setMessages((prev) => [...prev, { role: "model", parts: [{ text: data.text }] }]);
-      }
-    } catch {
+      // Limit zapytań ma własny, konkretny komunikat z czasem oczekiwania; resztę błędów zastępuje tekst marki
+      if (res.status === 429 && typeof data.error === "string") throw new ServerMessage(data.error);
+      if (!data.text) throw new Error("empty reply");
+      setMessages((prev) => [...prev, { role: "model", parts: [{ text: data.text }] }]);
+    } catch (err) {
       setMessages((prev) => [
         ...prev,
-        { role: "model", parts: [{ text: "Przepraszam, wystąpił błąd. Spróbuj ponownie." }] },
+        { role: "model", parts: [{ text: friendlyError(err, EDGE_COPY.chatFailed) }] },
       ]);
     } finally {
       setLoading(false);

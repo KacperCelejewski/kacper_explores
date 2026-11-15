@@ -42,3 +42,16 @@ export function edgeCopyStrings(): string[] {
 
 // Wspólne wzorce zakazane plus dwa, które BRAND.md wymienia osobno w stanach błędów.
 export const EDGE_FORBIDDEN: RegExp[] = [...FORBIDDEN_COPY, /niestety/i, /przepraszam/i, /wystąpił/i];
+
+// Komunikat z naszego serwera (po polsku, już w głosie marki) pokazujemy użytkownikowi, a każdy inny błąd
+// (sieć, "HTTP 500", "Failed to fetch") zastępujemy ciepłym tekstem zamiast surowego komunikatu.
+export class ServerMessage extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ServerMessage";
+  }
+}
+
+export function friendlyError(err: unknown, fallback: string): string {
+  return err instanceof ServerMessage && err.message.trim() ? err.message : fallback;
+}
