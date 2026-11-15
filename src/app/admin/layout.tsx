@@ -1,8 +1,5 @@
-import { redirect } from "next/navigation";
-import { createSupabaseServer } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/admin";
 import Link from "next/link";
-
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "hej@wloczykij.me";
 
 const NAV = [
   { href: "/admin", label: "API Monitor" },
@@ -10,12 +7,7 @@ const NAV = [
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createSupabaseServer();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user || user.email !== ADMIN_EMAIL) {
-    redirect("/");
-  }
+  await requireAdmin();
 
   return (
     <div style={{ minHeight: "100vh", background: "#0F0F0F", color: "#E5E5E5", fontFamily: "monospace" }}>
