@@ -86,8 +86,8 @@ describe("artykuły o mieście (frontmatter city)", () => {
   const cityPosts = files
     .map((f) => ({ f, data: matter(fs.readFileSync(path.join(DIR, f), "utf-8")).data }))
     .filter((x) => x.data.city);
-  it("są trzy plany 48 godzin z polem city", () => {
-    expect(cityPosts.map((x) => x.data.city).sort()).toEqual(["Praga", "Rzym", "Wilno"]);
+  it("są cztery plany 48 godzin z polem city", () => {
+    expect(cityPosts.map((x) => x.data.city).sort()).toEqual(["Budapeszt", "Praga", "Rzym", "Wilno"]);
   });
   it.each(cityPosts)("$f wskazuje miasto ze strony /weekend i linkuje do niej", ({ f, data }) => {
     const city = weekendCities().find((c) => c.city === data.city);
