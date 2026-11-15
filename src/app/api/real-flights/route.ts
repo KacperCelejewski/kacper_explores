@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { searchFlightOptions } from "@/lib/flights/rapidapi";
+import { parsePassengers, searchFlightOptions } from "@/lib/flights/rapidapi";
 import { checkRateLimit, LIMITS } from "@/lib/rateLimit";
 import { getClientIp } from "@/lib/validate";
 
@@ -27,11 +27,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Nieprawidłowe wartości month lub duration" }, { status: 400 });
   }
 
+  const passengers = parsePassengers(searchParams);
+  if (!passengers) {
+    return NextResponse.json({ error: "Nieprawidłowy skład grupy (adults, children, infants)" }, { status: 400 });
+  }
+
   if (!process.env.RAPIDAPI_KEY) {
     console.warn("[real-flights] RAPIDAPI_KEY not set — returning empty");
     return NextResponse.json({ flights: [], reason: "no_api_key" });
   }
 
-  const result = await searchFlightOptions(origin, dest, month, duration, 3);
+  const result = await searchFlightOptions(origin, dest, month, duration, 3, passengers);
   return NextResponse.json({ flights: result.flights, count: result.flights.length, reason: result.reason });
 }

@@ -1,3 +1,5 @@
+import type { FlightPassengers } from "@/lib/group";
+
 export type BudgetLevel = "low" | "medium";
 
 export type Companion = "solo" | "couple" | "family" | "friends";
@@ -56,7 +58,9 @@ export interface FlightOffer {
   id: string;
   origin: Airport;
   destination: Airport;
-  price: number; // PLN
+  price: number; // PLN za osobę
+  totalPrice?: number; // PLN za całą grupę
+  passengers?: FlightPassengers;
   realCost: number; // PLN (lot + dojazd do hubu)
   durationMinutes: number;
   airline: string;
