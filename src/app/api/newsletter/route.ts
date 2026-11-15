@@ -1,3 +1,4 @@
+import { readJsonBody } from "@/lib/http";
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { sendNewsletterConfirmation } from "@/lib/email";
@@ -16,8 +17,10 @@ export async function POST(req: NextRequest) {
 
   let email: string;
   try {
-    const body = await req.json();
-    email = (body.email ?? "").toString().trim().toLowerCase();
+    const parsedBody = await readJsonBody(req, 2 * 1024);
+    if (!parsedBody.ok) return parsedBody.response;
+    const body = (parsedBody.body ?? {}) as { email?: unknown };
+    email = String(body.email ?? "").trim().toLowerCase().slice(0, 254);
   } catch {
     return NextResponse.json({ error: "Nieprawidłowe dane." }, { status: 400 });
   }

@@ -1,3 +1,4 @@
+import { readJsonBody } from "@/lib/http";
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { logGeminiCall } from "@/lib/geminiLog";
@@ -41,12 +42,9 @@ export async function POST(req: NextRequest) {
   }
 
   // 4. Walidacja inputu
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Nieprawidłowy format żądania." }, { status: 400 });
-  }
+  const parsedBody = await readJsonBody(req, 64 * 1024);
+  if (!parsedBody.ok) return parsedBody.response;
+  const body = parsedBody.body;
 
   const { destination, quizAnswers, flightDetails } = body as {
     destination: unknown;

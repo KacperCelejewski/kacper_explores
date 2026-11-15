@@ -1,3 +1,4 @@
+import { readJsonBody } from "@/lib/http";
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -8,7 +9,11 @@ const NOTION_FEEDBACK_DB_ID =
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const parsedBody = await readJsonBody(req, 16 * 1024);
+    if (!parsedBody.ok) return parsedBody.response;
+    const body = (parsedBody.body ?? {}) as {
+      tripId?: string; type?: string; rating?: string; text?: string; city?: string; source?: string; answers?: Record<string, string>;
+    };
     const { tripId, type, rating, text, city, source, answers } = body;
 
     if (!tripId || !rating) {
