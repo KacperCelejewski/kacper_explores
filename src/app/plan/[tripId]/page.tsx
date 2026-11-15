@@ -367,11 +367,13 @@ export default function PlanPage() {
 
   const { plan, destination } = currentTrip;
   const dest = destination as DestinationRecommendation | null;
-  const tripQuiz = currentTrip.quizAnswers ?? quizAnswers;
-  const group = groupFromCompanion(tripQuiz.companion, tripQuiz.group);
+  // Wyjazd bez zapisanych odpowiedzi to solo: nie podpinamy bieżącego quizu.
+  const tripCompanion = currentTrip.quizAnswers ? currentTrip.quizAnswers.companion : "solo";
+  const tripGroup = currentTrip.quizAnswers?.group;
+  const group = groupFromCompanion(tripCompanion, tripGroup);
   const people = groupSize(group);
   // Plan jest liczony na osobę tylko przy jawnie zapisanej grupie znajomych lub rodziny.
-  const groupBudget = showGroupBudget(tripQuiz.companion, tripQuiz.group);
+  const groupBudget = showGroupBudget(tripCompanion, tripGroup);
   const scaleForGroup = (text: string) => (groupBudget ? scaleBudgetText(text, people) ?? text : text);
   const totalForGroup = groupBudget ? scaleBudgetText(plan.totalBudgetEstimate, people) : null;
 

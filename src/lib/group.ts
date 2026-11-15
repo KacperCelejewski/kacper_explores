@@ -14,9 +14,9 @@ const ADULT_FROM = 12;
 
 const DEFAULT_ADULTS: Record<Companion, number> = { solo: 1, couple: 2, friends: 4, family: 2 };
 
-// Skład grupy: jawnie podany wygrywa, w przeciwnym razie wynika z typu towarzystwa.
+// Skład grupy: jawnie podany liczy się tylko dla znajomych i rodziny, w przeciwnym razie wynika z typu towarzystwa.
 export function groupFromCompanion(companion: Companion | null, group?: GroupComposition): GroupComposition {
-  if (group) return group;
+  if (group && (companion === "friends" || companion === "family")) return group;
   return { adults: companion ? DEFAULT_ADULTS[companion] : 1, childrenAges: [] };
 }
 
@@ -44,6 +44,10 @@ export function isValidGroup(value: unknown): value is GroupComposition {
   if (!Number.isInteger(adults) || (adults as number) < 1 || (adults as number) > MAX_GROUP) return false;
   if (!Array.isArray(childrenAges)) return false;
   if (!childrenAges.every((a) => Number.isInteger(a) && a >= 0 && a <= 17)) return false;
+  // Niemowlę leci na kolanach dorosłego, więc nie może być ich więcej niż dorosłych.
+  if (childrenAges.length > MAX_GROUP) return false;
+  const infants = childrenAges.filter((a) => a < INFANT_BELOW).length;
+  if (infants > (adults as number)) return false;
   return groupSize({ adults: adults as number, childrenAges }) <= MAX_GROUP;
 }
 

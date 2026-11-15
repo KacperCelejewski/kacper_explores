@@ -45,6 +45,11 @@ describe("parsePassengers", () => {
     expect(parsePassengers(sp("adults=9&children=1"))).toBeNull();
     expect(parsePassengers(sp("adults=9&infants=2"))).toEqual({ adults: 9, children: 0, infants: 2 });
   });
+  it("niemowląt nie więcej niż dorosłych", () => {
+    expect(parsePassengers(sp("adults=2&infants=2"))).toEqual({ adults: 2, children: 0, infants: 2 });
+    expect(parsePassengers(sp("adults=1&infants=2"))).toBeNull();
+    expect(parsePassengers(sp("adults=1&infants=9"))).toBeNull();
+  });
 });
 
 describe("splitPrice", () => {

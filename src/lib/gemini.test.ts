@@ -136,6 +136,15 @@ describe("buildPlanPrompt", () => {
     expect(prompt).toContain("za osobę");
   });
 
+  it("group prompt states the cost basis in seats, excluding infants", () => {
+    const prompt = buildPlanPrompt(
+      destination,
+      { ...quiz, companion: "family", group: { adults: 2, childrenAges: [1, 4, 7] } } as never,
+      null,
+    );
+    expect(prompt).toContain("Koszty licz na jedno z 4 miejsc (niemowlęta poniżej 2 lat się nie liczą)");
+  });
+
   it("group prompt carries no names, only numbers", () => {
     const prompt = buildPlanPrompt(
       destination,

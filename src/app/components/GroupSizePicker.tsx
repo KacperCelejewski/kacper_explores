@@ -29,8 +29,8 @@ function StepButton({
       type="button"
       aria-label={label}
       aria-describedby={disabled ? describedBy : undefined}
-      disabled={disabled}
-      onClick={onClick}
+      aria-disabled={disabled ? "true" : undefined}
+      onClick={() => { if (!disabled) onClick(); }}
       className="flex items-center justify-center rounded-full text-xl font-semibold"
       style={{
         width: 44,
@@ -70,13 +70,9 @@ function CounterRow({
       </div>
       <div className="flex items-center gap-3">
         <StepButton label={minusLabel} onClick={onMinus} disabled={minusDisabled}>−</StepButton>
-        <span
-          className="text-lg font-bold text-center"
-          style={{ minWidth: 28 }}
-          role="status"
-          aria-label={valueLabel}
-        >
-          {value}
+        <span className="text-lg font-bold text-center" style={{ minWidth: 28 }}>
+          <span aria-hidden="true">{value}</span>
+          <span className="sr-only" role="status">{valueLabel}</span>
         </span>
         <StepButton label={plusLabel} onClick={onPlus} disabled={plusDisabled} describedBy={limitId}>+</StepButton>
       </div>
@@ -128,6 +124,9 @@ export default function GroupSizePicker({ companion, group, onChange }: Props) {
   }
 
   const ages = current.childrenAges;
+  const infantCount = ages.filter((a) => a < INFANT_BELOW).length;
+  // Niemowląt nie może być więcej niż dorosłych (lecą na kolanach).
+  const infantsFull = infantCount >= current.adults;
   const setAge = (i: number, age: number) =>
     onChange({ adults: current.adults, childrenAges: ages.map((a, idx) => (idx === i ? age : a)) });
 
@@ -139,7 +138,7 @@ export default function GroupSizePicker({ companion, group, onChange }: Props) {
         valueLabel={`Liczba dorosłych: ${current.adults}`}
         minusLabel="Mniej dorosłych"
         plusLabel="Więcej dorosłych"
-        minusDisabled={current.adults <= 1}
+        minusDisabled={current.adults <= 1 || infantCount > current.adults - 1}
         plusDisabled={atLimit}
         limitId={limitId}
         onMinus={() => onChange({ adults: current.adults - 1, childrenAges: ages })}
@@ -180,7 +179,14 @@ export default function GroupSizePicker({ companion, group, onChange }: Props) {
                 >
                   {Array.from({ length: MAX_CHILD_AGE + 1 }, (_, a) => (
                     // Niemowlę nie zajmuje miejsca, więc przy limicie nie może zostać starsze
-                    <option key={a} value={a} disabled={atLimit && age < INFANT_BELOW && a >= INFANT_BELOW}>
+                    <option
+                      key={a}
+                      value={a}
+                      disabled={
+                        (atLimit && age < INFANT_BELOW && a >= INFANT_BELOW) ||
+                        (infantsFull && age >= INFANT_BELOW && a < INFANT_BELOW)
+                      }
+                    >
                       {a === 0 ? "poniżej roku" : a === 1 ? "1 rok" : a < 5 ? `${a} lata` : `${a} lat`}
                     </option>
                   ))}

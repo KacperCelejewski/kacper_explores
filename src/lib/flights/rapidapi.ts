@@ -139,6 +139,8 @@ export function parsePassengers(searchParams: URLSearchParams): FlightPassengers
   const infants = read("infants", 0, 0);
   if (adults === null || children === null || infants === null) return null;
   if (adults + children > MAX_GROUP) return null;
+  // Niemowlę leci na kolanach dorosłego.
+  if (infants > adults) return null;
   return { adults, children, infants };
 }
 

@@ -20,9 +20,16 @@ describe("groupFromCompanion", () => {
     expect(groupFromCompanion(null)).toEqual({ adults: 1, childrenAges: [] });
   });
 
-  it("przekazany skład wygrywa", () => {
+  it("przekazany skład wygrywa dla znajomych i rodziny", () => {
     const g = { adults: 3, childrenAges: [5] };
-    expect(groupFromCompanion("solo", g)).toBe(g);
+    expect(groupFromCompanion("friends", g)).toBe(g);
+    expect(groupFromCompanion("family", g)).toBe(g);
+  });
+
+  it("stary zapisany skład jest ignorowany dla solo i pary", () => {
+    const g = { adults: 3, childrenAges: [5] };
+    expect(groupFromCompanion("solo", g)).toEqual({ adults: 1, childrenAges: [] });
+    expect(groupFromCompanion("couple", g)).toEqual({ adults: 2, childrenAges: [] });
   });
 });
 
@@ -53,6 +60,17 @@ describe("isValidGroup", () => {
     expect(isValidGroup({ adults: 2, childrenAges: [4.5] })).toBe(false);
     expect(isValidGroup({ adults: 2, childrenAges: "x" })).toBe(false);
     expect(isValidGroup(null)).toBe(false);
+  });
+
+  it("niemowląt nie może być więcej niż dorosłych", () => {
+    expect(isValidGroup({ adults: 2, childrenAges: [0, 1] })).toBe(true);
+    expect(isValidGroup({ adults: 2, childrenAges: [0, 1, 0] })).toBe(false);
+    expect(isValidGroup({ adults: 1, childrenAges: [0, 0] })).toBe(false);
+  });
+
+  it("liczba dzieci nie przekracza MAX_GROUP", () => {
+    expect(isValidGroup({ adults: 9, childrenAges: Array(MAX_GROUP).fill(0) })).toBe(true);
+    expect(isValidGroup({ adults: 9, childrenAges: Array(MAX_GROUP + 1).fill(0) })).toBe(false);
   });
 
   it("odrzuca skład ponad MAX_GROUP miejsc", () => {

@@ -50,7 +50,8 @@ export async function GET(req: NextRequest) {
       const solo = await searchFlightForDates(origin, dest, best.departureDate, best.returnDate, SOLO);
       const soloBest = solo?.[0];
       // FlightOffer.soloPrice czyta FlightCard (PartnerLinks) przez soloComparisonNote.
-      if (soloBest) best.soloPrice = soloBest.price;
+      // Kopia, bo best to ta sama referencja co wpis w pamięciowym cache.
+      if (soloBest) result.flights[0] = { ...best, soloPrice: soloBest.price };
     } catch {
       // porównanie jest dodatkiem
     }
