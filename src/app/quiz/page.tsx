@@ -416,7 +416,7 @@ function QuizPageInner() {
         <div className="mt-2 flex flex-wrap items-center gap-1.5" style={{ minHeight: 28 }} aria-live="polite">
           {trail.length === 0 ? (
             <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-              Na końcu: kierunki w Twoim budżecie i prawdziwe ceny lotów.
+              Na końcu: kierunki w Twoim budżecie i plan godzina po godzinie.
             </p>
           ) : (
             <AnimatePresence initial={false}>
