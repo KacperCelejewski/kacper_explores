@@ -23,13 +23,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Za dużo prób. Spróbuj za godzinę." }, { status: 429 });
   }
 
-  let body: Record<string, unknown>;
   const parsedBody = await readJsonBody(req, 8 * 1024);
   if (!parsedBody.ok) return parsedBody.response;
   if (!parsedBody.body || typeof parsedBody.body !== "object") {
     return NextResponse.json({ error: "Nieprawidłowe dane." }, { status: 400 });
   }
-  body = parsedBody.body as Record<string, unknown>;
+  const body = parsedBody.body as Record<string, unknown>;
 
   const fromProfile = body.fromProfile === true;
   let input: unknown = body;

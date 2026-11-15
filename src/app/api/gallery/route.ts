@@ -1,3 +1,4 @@
+import { serverError } from "@/lib/http";
 import { NextResponse } from "next/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 
@@ -18,7 +19,7 @@ export async function GET() {
     .order("created_at", { ascending: false })
     .limit(30);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return serverError("gallery", error);
 
   return NextResponse.json({ trips: data ?? [] });
 }

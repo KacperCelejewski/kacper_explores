@@ -1,4 +1,4 @@
-import { readJsonBody } from "@/lib/http";
+import { GENERIC_SERVER_ERROR, readJsonBody } from "@/lib/http";
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { logGeminiCall } from "@/lib/geminiLog";
@@ -204,7 +204,7 @@ export async function POST(req: NextRequest) {
         if (message.includes("429") || message.includes("quota") || message.includes("Too Many Requests")) {
           send(controller, { error: "Na dziś wyczerpaliśmy limit planowania. Wróć za kilka minut albo jutro.", code: "QUOTA_EXCEEDED" });
         } else {
-          send(controller, { error: "Coś poszło nie tak. Spróbuj jeszcze raz — zwykle działa za drugim.", detail: message });
+          send(controller, { error: GENERIC_SERVER_ERROR });
         }
       } finally {
         controller.close();

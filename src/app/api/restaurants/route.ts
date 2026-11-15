@@ -1,4 +1,4 @@
-import { readJsonBody } from "@/lib/http";
+import { readJsonBody, serverError } from "@/lib/http";
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createSupabaseServer } from "@/lib/supabase/server";
@@ -83,6 +83,6 @@ Tylko JSON, bez komentarzy.`;
       success: false,
       error_code: msg.includes("429") ? "quota" : "error",
     });
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return serverError("restaurants", err);
   }
 }
