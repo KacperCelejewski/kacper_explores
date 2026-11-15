@@ -60,6 +60,7 @@ export interface FlightOffer {
   destination: Airport;
   price: number; // PLN za osobę
   totalPrice?: number; // PLN za całą grupę
+  soloPrice?: number | null; // PLN za jedną osobę, te same daty (porównanie z grupą)
   passengers?: FlightPassengers;
   realCost: number; // PLN (lot + dojazd do hubu)
   durationMinutes: number;

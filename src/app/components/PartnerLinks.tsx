@@ -4,6 +4,7 @@ import type { DayActivity, FlightOffer } from "@/types";
 import {
   bookingLink, flightLink, hostelworldLink, isFreeCost, luggageLink, partnerLinkProps, ticketsLink,
 } from "@/lib/affiliate";
+import { soloComparisonNote } from "@/lib/flights/soloComparison";
 import { IconBed, IconBackpack, IconPlane } from "./Icons";
 
 export function PartnerNote({ show }: { show: boolean }) {
@@ -64,6 +65,9 @@ export function FlightCard({ offer, city }: { offer: FlightOffer | undefined; ci
   const from = shortDate(offer.departureDate);
   const to = shortDate(offer.returnDate);
   const dates = from && to ? ` · ${from}–${to}` : "";
+  const seats = offer.passengers ? offer.passengers.adults + offer.passengers.children : 1;
+  const isGroup = seats > 1;
+  const soloNote = isGroup ? soloComparisonNote(offer.price, offer.soloPrice ?? null, seats) : null;
 
   return (
     <div className="px-5 mb-4 no-print">
@@ -75,8 +79,13 @@ export function FlightCard({ offer, city }: { offer: FlightOffer | undefined; ci
         <div>
           <p className="text-sm font-bold flex items-center gap-1.5" style={{ color: "var(--accent)" }}><IconPlane size={16} />Lot do {city}</p>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-            {offer.origin.city} ({offer.origin.code}) · {offer.price} zł{dates}
+            {offer.origin.city} ({offer.origin.code}) · {isGroup
+              ? `${offer.price} zł za osobę · ${offer.totalPrice ?? offer.price * seats} zł razem · ${seats} ${seats < 5 ? "osoby" : "osób"}`
+              : `${offer.price} zł`}{dates}
           </p>
+          {soloNote && (
+            <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{soloNote}</p>
+          )}
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
             cena z ostatnich wyszukiwań, może się zmienić
           </p>
