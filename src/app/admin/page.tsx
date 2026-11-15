@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/admin";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 
 // RapidAPI flight search removed — real-flight stats are legacy
@@ -191,6 +192,7 @@ function Stat({ label, value, sub }: { label: string; value: string | number; su
 }
 
 export default async function AdminPage() {
+  await requireAdmin();
   const stats = await getStats();
   const now = new Date().toLocaleString("pl-PL", { timeZone: "UTC", dateStyle: "short", timeStyle: "short" });
 
