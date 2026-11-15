@@ -76,3 +76,20 @@ describe("planGeneratedParams", () => {
     expect(planGeneratedParams("Rzym", 3, quiz).group_size).toBe(3);
   });
 });
+
+import { quizGaEventName } from "./analytics";
+
+describe("quizGaEventName", () => {
+  it("dodaje prefiks quiz_ do zdarzeń kroków", () => {
+    expect(quizGaEventName("step_view")).toBe("quiz_step_view");
+    expect(quizGaEventName("step_complete")).toBe("quiz_step_complete");
+  });
+
+  it("nie dubluje prefiksu: quiz_complete to quiz_complete, nie quiz_quiz_complete", () => {
+    expect(quizGaEventName("quiz_complete")).toBe("quiz_complete");
+  });
+
+  it("zdarzenia źródła ruchu zostają from_*, bez prefiksu", () => {
+    expect(quizGaEventName("from_ig_ekipa")).toBe("from_ig_ekipa");
+  });
+});
