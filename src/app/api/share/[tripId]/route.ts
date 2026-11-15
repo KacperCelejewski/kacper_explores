@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { sharedCrewFromQuiz } from "@/lib/groupFlow";
 
 export async function GET(
   _req: NextRequest,
@@ -15,7 +16,7 @@ export async function GET(
 
   const { data, error } = await supabase
     .from("trips")
-    .select("id, city, country, ai_plan_json, destination_data")
+    .select("id, city, country, ai_plan_json, destination_data, quiz_answers")
     .eq("id", tripId)
     .eq("is_public", true)
     .maybeSingle();
@@ -30,5 +31,7 @@ export async function GET(
     country: data.country,
     plan: data.ai_plan_json,
     destination: data.destination_data ?? null,
+    // Tylko skład ekipy (do podpisu "na osobę" i "razem"); reszta odpowiedzi quizu zostaje na serwerze
+    crew: sharedCrewFromQuiz(data.quiz_answers),
   });
 }

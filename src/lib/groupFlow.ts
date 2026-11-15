@@ -1,5 +1,5 @@
 import type { BudgetLevel, Companion, GroupComposition } from "@/types";
-import { groupLabel, groupSize, scaleBudgetText, showGroupBudget } from "@/lib/group";
+import { groupLabel, groupSize, isValidGroup, scaleBudgetText, showGroupBudget } from "@/lib/group";
 import { formatFlightPLN } from "@/lib/flights/card-price";
 
 // Nazewnictwo ścieżki grupowej. Zasada: "znajomi" to kategoria w quizie i SEO (H1, karta wyboru),
@@ -108,4 +108,27 @@ export function sendPlanTitle(companion: Companion | null | undefined, group?: G
 // Publiczny adres planu do wklejenia na czacie
 export function shareUrl(origin: string, tripId: string): string {
   return `${origin.replace(/\/$/, "")}/share/${encodeURIComponent(tripId)}`;
+}
+
+export interface SharedCrew {
+  companion: "friends";
+  group: GroupComposition;
+}
+
+// Z zapisanych odpowiedzi quizu wyciąga tylko liczbę osób ekipy znajomych do publicznego widoku planu.
+// Nic poza tym nie opuszcza serwera: ani budżet, ani lotniska, ani preferencje. Rodziny celowo pomijamy,
+// żeby wiek dzieci nie trafiał do publicznego adresu.
+export function sharedCrewFromQuiz(quizAnswers: unknown): SharedCrew | null {
+  if (typeof quizAnswers !== "object" || quizAnswers === null) return null;
+  const { companion, group } = quizAnswers as { companion?: unknown; group?: unknown };
+  if (companion !== "friends") return null;
+  if (!isValidGroup(group)) return null;
+  return { companion, group: { adults: group.adults, childrenAges: [] } };
+}
+
+// Koszt całkowity dla całej ekipy z szacunku na osobę; null, gdy plan nie jest grupowy.
+export function crewTotalBudget(perPersonEstimate: string, crew: SharedCrew | null): string | null {
+  if (!crew || !perPersonEstimate) return null;
+  if (!showGroupBudget(crew.companion, crew.group)) return null;
+  return scaleBudgetText(perPersonEstimate, groupSize(crew.group));
 }

@@ -5,6 +5,8 @@ import {
   companionTrailLabel,
   crewBudgetNote,
   crewSummary,
+  crewTotalBudget,
+  sharedCrewFromQuiz,
   flightTotalNote,
   isCrewTrip,
   quizCompanionHint,
@@ -126,5 +128,38 @@ describe("CREW_COPY", () => {
 
   it("używa spójnej nazwy ekipy i nie mówi 'grupa'", () => {
     for (const s of strings) expect(s, s).not.toMatch(/grup[aąyęie]/i);
+  });
+});
+
+describe("sharedCrewFromQuiz", () => {
+  it("zwraca tylko skład ekipy, bez reszty odpowiedzi", () => {
+    const crew = sharedCrewFromQuiz({ companion: "friends", group: FOUR, budget: "low", airports: ["WRO"] });
+    expect(crew).toEqual({ companion: "friends", group: FOUR });
+    expect(Object.keys(crew ?? {})).toEqual(["companion", "group"]);
+  });
+
+  it("odrzuca solo, parę, brak składu i niepoprawny skład", () => {
+    expect(sharedCrewFromQuiz({ companion: "solo" })).toBeNull();
+    expect(sharedCrewFromQuiz({ companion: "couple", group: FOUR })).toBeNull();
+    // wiek dzieci nie trafia do publicznego widoku
+    expect(sharedCrewFromQuiz({ companion: "family", group: { adults: 2, childrenAges: [4] } })).toBeNull();
+    expect(sharedCrewFromQuiz({ companion: "friends" })).toBeNull();
+    expect(sharedCrewFromQuiz({ companion: "friends", group: { adults: 99, childrenAges: [] } })).toBeNull();
+    expect(sharedCrewFromQuiz(null)).toBeNull();
+    expect(sharedCrewFromQuiz("x")).toBeNull();
+  });
+});
+
+describe("crewTotalBudget", () => {
+  const crew = { companion: "friends" as const, group: FOUR };
+
+  it("mnoży szacunek na osobę przez liczbę osób", () => {
+    expect(crewTotalBudget("1200–1500 PLN", crew)).toBe("4 800–6 000 PLN");
+  });
+
+  it("nie liczy nic bez ekipy ani dla jednej osoby", () => {
+    expect(crewTotalBudget("1200 PLN", null)).toBeNull();
+    expect(crewTotalBudget("1200 PLN", { companion: "friends", group: { adults: 1, childrenAges: [] } })).toBeNull();
+    expect(crewTotalBudget("", crew)).toBeNull();
   });
 });
