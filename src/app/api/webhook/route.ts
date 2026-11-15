@@ -19,8 +19,18 @@ export async function POST(req: NextRequest) {
 
   const supabase = createServiceClient();
 
-  if (event.type === "checkout.session.completed") {
+  if (
+    event.type === "checkout.session.completed" ||
+    event.type === "checkout.session.async_payment_succeeded"
+  ) {
     const session = event.data.object as Stripe.Checkout.Session;
+
+    // Sesja może być ukończona, a nadal niezapłacona (metody z opóźnionym rozliczeniem).
+    // Wtedy czekamy na async_payment_succeeded.
+    if (session.payment_status !== "paid" && session.payment_status !== "no_payment_required") {
+      return NextResponse.json({ ok: true });
+    }
+
     const userId = session.metadata?.supabase_user_id;
     const planKey = session.metadata?.plan_key as PlanKey | undefined;
 
@@ -31,8 +41,9 @@ export async function POST(req: NextRequest) {
 
     const plan = PLANS[planKey];
 
-    // Log payment
-    await supabase.from("payments").insert({
+    // Idempotencja: stripe_session_id jest UNIQUE, więc drugi insert tej samej sesji
+    // (ponowienie webhooka, completed + async_payment_succeeded) kończy się konfliktem.
+    const { error: insertError } = await supabase.from("payments").insert({
       user_id: userId,
       stripe_session_id: session.id,
       stripe_price_id: plan.priceId,
@@ -41,41 +52,49 @@ export async function POST(req: NextRequest) {
       credits_added: plan.credits,
       plan_type: planKey,
     });
+    if (insertError) {
+      if (insertError.code === "23505") return NextResponse.json({ ok: true });
+      console.error("Webhook: payment insert failed", session.id, insertError.message);
+      return NextResponse.json({ error: "Payment log failed" }, { status: 500 });
+    }
 
-    // WhatsApp notification
+    let grantError: { message: string } | null = null;
+    if (planKey === "pack_5") {
+      const { error } = await supabase.rpc("add_credits", {
+        p_user_id: userId,
+        p_credits: plan.credits,
+      });
+      grantError = error;
+    } else if (planKey === "pro_monthly" || planKey === "pro_yearly") {
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + (planKey === "pro_monthly" ? 35 : 370));
+      const { error } = await supabase
+        .from("user_profiles")
+        .update({
+          subscription_tier: "pro",
+          subscription_expires_at: expiresAt.toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", userId);
+      grantError = error;
+    }
+
+    if (grantError) {
+      // Cofamy wpis płatności, żeby ponowienie ze strony Stripe mogło przyznać dostęp.
+      console.error("Webhook: grant failed", session.id, grantError.message);
+      await supabase.from("payments").delete().eq("stripe_session_id", session.id);
+      return NextResponse.json({ error: "Grant failed" }, { status: 500 });
+    }
+
     const amountStr = session.amount_total ? `${(session.amount_total / 100).toFixed(2)} ${(session.currency ?? "pln").toUpperCase()}` : "?";
     void sendSlack(
       `💰 *Nowa płatność!*\nPlan: \`${planKey}\`\nKwota: *${amountStr}*\nUser: \`${userId.slice(0, 8)}...\``
     );
+  }
 
-    if (planKey === "pack_5") {
-      await supabase.rpc("add_credits", {
-        p_user_id: userId,
-        p_credits: plan.credits,
-      });
-    } else if (planKey === "pro_monthly") {
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 35);
-      await supabase
-        .from("user_profiles")
-        .update({
-          subscription_tier: "pro",
-          subscription_expires_at: expiresAt.toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", userId);
-    } else if (planKey === "pro_yearly") {
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 370);
-      await supabase
-        .from("user_profiles")
-        .update({
-          subscription_tier: "pro",
-          subscription_expires_at: expiresAt.toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", userId);
-    }
+  if (event.type === "checkout.session.async_payment_failed") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    console.warn("Webhook: async payment failed", session.id);
   }
 
   // Extend Pro subscription on renewal
