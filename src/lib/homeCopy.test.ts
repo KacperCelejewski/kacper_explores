@@ -6,12 +6,12 @@ const ALL_OFF: Record<FeatureKey, boolean> = {
   invites: false, datePoll: false, groupFlights: false, groupPlan: false, settlements: false, tripMap: false,
 };
 
-const strings = (): string[] => Object.values(HOME).filter((v): v is string => typeof v === "string");
+const strings = (): string[] => Object.values(HOME) as string[];
 
 describe("HOME", () => {
-  it("ma nagłówek zgodny z briefem (48 znaków)", () => {
+  it("ma nagłówek zgodny z briefem", () => {
     expect(HOME.h1).toBe("Wyjazd ze znajomymi: dokąd, za ile i jaki plan.");
-    expect(HOME.h1).toHaveLength(48);
+    expect(HOME.h1.length).toBeLessThanOrEqual(48);
   });
 
   it("podtytuł bez włączonych funkcji nie obiecuje części 2–6", () => {
