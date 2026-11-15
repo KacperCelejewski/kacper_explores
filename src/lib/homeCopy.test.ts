@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import { describe, expect, it } from "vitest";
 import { FORBIDDEN_COPY, HOME, META, homeSubtitle } from "./homeCopy";
 import type { FeatureKey } from "./features";
@@ -29,6 +31,13 @@ describe("HOME", () => {
   it("dwa CTA prowadzą do quizu z parametrami", () => {
     expect(HOME.ctaTeamHref).toBe("/quiz?companion=friends&src=home-ekipa");
     expect(HOME.ctaSoloHref).toBe("/quiz?src=home-solo");
+  });
+
+  it("link do poradnika prowadzi do istniejącego artykułu i ma etykietę z briefu", () => {
+    expect(HOME.guideLink).toBe("Jak ustalić budżet i kierunek, gdy jedzie ekipa");
+    const slug = HOME.guideHref.replace("/blog/", "");
+    expect(HOME.guideHref.startsWith("/blog/")).toBe(true);
+    expect(fs.existsSync(path.join(process.cwd(), "src/content/blog", `${slug}.mdx`))).toBe(true);
   });
 
   it("żaden tekst nie łamie reguł głosu marki", () => {

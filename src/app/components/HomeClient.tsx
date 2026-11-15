@@ -918,6 +918,11 @@ export default function HomeClient({
           <p style={{ color: "rgba(245,239,224,0.78)", fontSize: 13, marginTop: 14 }}>
             {HOME.micro}
           </p>
+          <p style={{ fontSize: 14, marginTop: 14 }}>
+            <Link href={HOME.guideHref} style={{ color: "var(--bg-primary)", textDecoration: "underline", textUnderlineOffset: 4, fontWeight: 600 }}>
+              {HOME.guideLink}
+            </Link>
+          </p>
         </div>
 
         <DuskPoster />

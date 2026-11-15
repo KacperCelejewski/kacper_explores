@@ -14,6 +14,8 @@ export const HOME = {
   quickHref: "/quick",
   dropLink: "Co czwartek 3 okazje: zapisz się",
   dropHref: "#zrzut",
+  guideLink: "Jak ustalić budżet i kierunek, gdy jedzie ekipa",
+  guideHref: "/blog/wyjazd-ze-znajomymi-jak-ustalic-budzet-i-kierunek",
   finalTitle: "W piątek rano możesz już być w drodze.",
 } as const;
 
