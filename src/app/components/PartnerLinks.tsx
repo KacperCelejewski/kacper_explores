@@ -4,6 +4,7 @@ import type { DayActivity, FlightOffer, GroupComposition } from "@/types";
 import {
   bookingLink, flightLink, hostelworldLink, isFreeCost, luggageLink, partnerLinkProps, ticketsLink,
 } from "@/lib/affiliate";
+import { droppedPassengersNote } from "@/lib/flights/droppedPassengers";
 import { soloComparisonNote } from "@/lib/flights/soloComparison";
 import { IconBed, IconBackpack, IconPlane } from "./Icons";
 
@@ -69,6 +70,8 @@ export function FlightCard({ offer, city }: { offer: FlightOffer | undefined; ci
   const isGroup = seats > 1;
   const soloNote = isGroup ? soloComparisonNote(offer.price, offer.soloPrice ?? null, seats) : null;
 
+  const droppedNote = droppedPassengersNote(link.partner, offer.passengers);
+
   return (
     <div className="px-5 mb-4 no-print">
       <a
@@ -89,6 +92,9 @@ export function FlightCard({ offer, city }: { offer: FlightOffer | undefined; ci
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
             cena z ostatnich wyszukiwań, może się zmienić
           </p>
+          {droppedNote && (
+            <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{droppedNote}</p>
+          )}
         </div>
         <span className="text-xs font-semibold" style={{ color: "var(--accent)" }}>Sprawdź lot →</span>
       </a>

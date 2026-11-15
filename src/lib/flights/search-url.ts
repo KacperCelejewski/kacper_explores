@@ -30,14 +30,14 @@ export function buildSkyscannerUrl(
   return `https://www.skyscanner.pl/transport/loty/${origin}/${dest}/${datePart}?adultsv2=${passengers?.adults ?? 1}&cabin_class=economy`;
 }
 
+// Ścieżka niesie dorosłych, potem dzieci (cyfra dzieci pomijana przy 0). Niemowląt nie kodujemy.
+// Obie liczby są jednocyfrowe, bo dorośli i dzieci razem nie przekraczają MAX_GROUP (9).
 function passengerCode(p?: FlightPassengers): string {
   if (!p) return "1";
-  const tail = p.infants > 0 ? `${p.children}${p.infants}` : p.children > 0 ? String(p.children) : "";
-  return `${p.adults}${tail}`;
+  return `${p.adults}${p.children > 0 ? p.children : ""}`;
 }
 
 // Format wyszukiwania Aviasales: WRO0512BCN08121 = z WRO 5.12, powrót 8.12, 1 dorosły.
-// Dzieci i niemowlęta dopisujemy po adults: lata, dorośli, dzieci, niemowlęta (np. 2 dorosłych i dziecko to 21).
 // Skyscanner dostaje tylko dorosłych, bo format wieku dzieci w adresie nie jest potwierdzony.
 // Dzień i miesiąc bierzemy z tekstu daty, żeby lot po północy nie wypadał dzień wcześniej.
 export function buildAviasalesUrl(

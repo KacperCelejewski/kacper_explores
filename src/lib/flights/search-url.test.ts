@@ -62,12 +62,13 @@ describe("linki dla grupy", () => {
     expect(url).not.toContain("infants");
   });
 
-  it("Aviasales dopisuje do ścieżki dorosłych, dzieci i niemowlęta", () => {
+  it("Aviasales dopisuje do ścieżki dorosłych i dzieci, bez niemowląt", () => {
     const path = (p: { adults: number; children: number; infants: number }) =>
       buildAviasalesUrl("WRO", "BCN", "2026-12-05", "2026-12-08", "", p);
+    expect(path({ adults: 1, children: 0, infants: 0 })).toBe("https://www.aviasales.com/search/WRO0512BCN08121");
     expect(path({ adults: 2, children: 0, infants: 0 })).toBe("https://www.aviasales.com/search/WRO0512BCN08122");
     expect(path({ adults: 2, children: 1, infants: 0 })).toBe("https://www.aviasales.com/search/WRO0512BCN081221");
-    expect(path({ adults: 2, children: 0, infants: 1 })).toBe("https://www.aviasales.com/search/WRO0512BCN0812201");
-    expect(path({ adults: 2, children: 2, infants: 1 })).toBe("https://www.aviasales.com/search/WRO0512BCN0812221");
+    expect(path({ adults: 2, children: 1, infants: 1 })).toBe("https://www.aviasales.com/search/WRO0512BCN081221");
+    expect(path({ adults: 2, children: 0, infants: 1 })).toBe("https://www.aviasales.com/search/WRO0512BCN08122");
   });
 });
