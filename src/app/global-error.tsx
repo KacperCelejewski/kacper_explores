@@ -50,6 +50,8 @@ export default function GlobalError({ error, retry }: { error: unknown; retry: (
             {EDGE_COPY.error.retry}
           </button>
           <p style={{ marginTop: 20 }}>
+            {/* Zwykły link: po błędzie w układzie głównym potrzebne jest pełne przeładowanie, nie nawigacja klienta */}
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
             <a href="/" style={{ color: "#A04B20", fontWeight: 600, display: "inline-block", padding: "12px 8px" }}>
               {EDGE_COPY.error.home}
             </a>
