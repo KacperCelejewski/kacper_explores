@@ -1,3 +1,4 @@
+import { readJsonBody } from "@/lib/http";
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { checkRateLimit, LIMITS } from "@/lib/rateLimit";
@@ -84,12 +85,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Nieprawidłowy format żądania." }, { status: 400 });
-  }
+  const parsedBody = await readJsonBody(req, 16 * 1024);
+  if (!parsedBody.ok) return parsedBody.response;
+  const body = parsedBody.body;
 
   if (!validateQuizAnswers(body)) {
     console.error("[destinations] validateQuizAnswers failed:", JSON.stringify(body));

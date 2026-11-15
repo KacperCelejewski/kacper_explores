@@ -1,9 +1,12 @@
+import { readJsonBody } from "@/lib/http";
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export async function POST(req: NextRequest) {
   try {
-    const { session_id, event, step } = await req.json() as {
+    const parsedBody = await readJsonBody(req, 1024);
+    if (!parsedBody.ok) return parsedBody.response;
+    const { session_id, event, step } = parsedBody.body as {
       session_id: string;
       event: string;
       step?: number;
