@@ -18,7 +18,7 @@ import type { DayPlan, DayActivity, TripPlan, DestinationRecommendation, QuizAns
 import { getCityPhotoUrl } from "@/lib/cityPhotos";
 import { PRICES } from "@/lib/prices";
 import { isFreeCost } from "@/lib/affiliate";
-import { groupFromCompanion, groupSize, scaleBudgetText } from "@/lib/group";
+import { groupFromCompanion, groupSize, scaleBudgetText, showGroupBudget } from "@/lib/group";
 
 const ACTIVITY_COLORS: Record<string, string> = {
   attraction: "var(--accent-light)",
@@ -370,9 +370,10 @@ export default function PlanPage() {
   const tripQuiz = currentTrip.quizAnswers ?? quizAnswers;
   const group = groupFromCompanion(tripQuiz.companion, tripQuiz.group);
   const people = groupSize(group);
-  // Budżet z planu jest na osobę; dla grupy liczymy też sumę.
-  const scaleForGroup = (text: string) => (people > 1 ? scaleBudgetText(text, people) ?? text : text);
-  const totalForGroup = people > 1 ? scaleBudgetText(plan.totalBudgetEstimate, people) : null;
+  // Plan jest liczony na osobę tylko przy jawnie zapisanej grupie znajomych lub rodziny.
+  const groupBudget = showGroupBudget(tripQuiz.companion, tripQuiz.group);
+  const scaleForGroup = (text: string) => (groupBudget ? scaleBudgetText(text, people) ?? text : text);
+  const totalForGroup = groupBudget ? scaleBudgetText(plan.totalBudgetEstimate, people) : null;
 
   return (
     <div className="flex flex-col flex-1 pb-8" id="plan-print-area">
@@ -440,7 +441,7 @@ export default function PlanPage() {
             <span className="text-sm" style={{ color: "var(--text-muted)" }}>
               Szacowany całkowity koszt
             </span>
-            {people > 1 ? (
+            {groupBudget && plan.totalBudgetEstimate ? (
               <div className="text-right">
                 <div className="text-base font-bold" style={{ color: "var(--accent)" }}>
                   {plan.totalBudgetEstimate}

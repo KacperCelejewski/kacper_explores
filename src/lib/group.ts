@@ -49,8 +49,24 @@ export function isValidGroup(value: unknown): value is GroupComposition {
 
 const formatThousands = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
-// Liczba ze spacją tysięcy (zwykłą lub twardą) i ułamkiem po przecinku lub kropce.
-const NUMBER_RE = /\d{1,3}(?:[ \u00a0]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?/g;
+// Liczba z separatorem tysięcy (spacja, twarda spacja, kropka lub przecinek przed dokładnie trzema cyframi)
+// i opcjonalnym ułamkiem po przecinku lub kropce.
+const NUMBER_RE = /(\d{1,3}(?:[ \u00a0.,]\d{3}(?!\d))+)([.,]\d+)?|\d+(?:[.,]\d+)?/g;
+
+function parseNumber(match: string, thousands?: string, decimals?: string): number {
+  if (thousands) return Number(thousands.replace(/[ \u00a0.,]/g, "") + (decimals ? `.${decimals.slice(1)}` : ""));
+  return Number(match.replace(",", "."));
+}
+
+// Czy wyjazd ma jawnie zapisaną grupę, czyli plan liczony jest na osobę.
+export function isGroupTrip(companion: Companion | null, group?: GroupComposition): boolean {
+  return (companion === "friends" || companion === "family") && group != null;
+}
+
+// Czy nagłówek budżetu ma pokazać "na osobę" i "razem".
+export function showGroupBudget(companion: Companion | null, group?: GroupComposition): boolean {
+  return isGroupTrip(companion, group) && group != null && groupSize(group) > 1;
+}
 
 // Mnoży liczby w tekście budżetu, np. "1200-1500 PLN" x 4 daje "4 800–6 000 PLN".
 export function scaleBudgetText(text: string, factor: number): string | null {
@@ -59,7 +75,7 @@ export function scaleBudgetText(text: string, factor: number): string | null {
   if (factor === 1) return text;
   return text
     .replace(/(\d)\s*[-–]\s*(\d)/g, "$1–$2")
-    .replace(NUMBER_RE, (n) => formatThousands(Math.round(Number(n.replace(/[ \u00a0]/g, "").replace(",", ".")) * factor)))
+    .replace(NUMBER_RE, (m, th?: string, dec?: string) => formatThousands(Math.round(parseNumber(m, th, dec) * factor)))
     .replace(/~/g, "")
     .trim();
 }

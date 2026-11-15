@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
   MAX_GROUP,
+  isGroupTrip,
+  showGroupBudget,
   groupFromCompanion,
   groupSize,
   toFlightPassengers,
@@ -70,6 +72,13 @@ describe("scaleBudgetText", () => {
     expect(scaleBudgetText("1\u00a0200 PLN", 2)).toBe("2 400 PLN");
   });
 
+  it("kropka lub przecinek przed dokładnie trzema cyframi to separator tysięcy", () => {
+    expect(scaleBudgetText("1.200 PLN", 2)).toBe("2 400 PLN");
+    expect(scaleBudgetText("1,200 PLN", 2)).toBe("2 400 PLN");
+    expect(scaleBudgetText("1.200–1.500 PLN", 2)).toBe("2 400–3 000 PLN");
+    expect(scaleBudgetText("1 200,50 PLN", 2)).toBe("2 401 PLN");
+  });
+
   it("obsługuje ułamki z przecinkiem i kropką", () => {
     expect(scaleBudgetText("2,5 PLN", 2)).toBe("5 PLN");
     expect(scaleBudgetText("2.5 PLN", 3)).toBe("8 PLN");
@@ -104,5 +113,30 @@ describe("groupLabel", () => {
     expect(groupLabel({ adults: 2, childrenAges: [4, 7] })).toBe("2 dorosłych, dzieci: 4 i 7 lat");
     expect(groupLabel({ adults: 2, childrenAges: [2, 4, 7] })).toBe("2 dorosłych, dzieci: 2, 4 i 7 lat");
     expect(groupLabel({ adults: 1, childrenAges: [3] })).toBe("1 dorosły, dziecko: 3 lata");
+  });
+});
+
+describe("isGroupTrip i showGroupBudget", () => {
+  it("para z domyślnym składem to nie wyjazd grupowy", () => {
+    expect(isGroupTrip("couple", undefined)).toBe(false);
+    expect(isGroupTrip("couple", { adults: 2, childrenAges: [] })).toBe(false);
+  });
+
+  it("znajomi bez zapisanej grupy to nie wyjazd grupowy", () => {
+    expect(isGroupTrip("friends", undefined)).toBe(false);
+    expect(isGroupTrip("solo", { adults: 1, childrenAges: [] })).toBe(false);
+    expect(isGroupTrip(null, undefined)).toBe(false);
+  });
+
+  it("znajomi i rodzina z zapisaną grupą to wyjazd grupowy", () => {
+    expect(isGroupTrip("friends", { adults: 4, childrenAges: [] })).toBe(true);
+    expect(isGroupTrip("family", { adults: 1, childrenAges: [] })).toBe(true);
+  });
+
+  it("nagłówek grupowy tylko dla grupy większej niż 1 osoba", () => {
+    expect(showGroupBudget("friends", { adults: 4, childrenAges: [] })).toBe(true);
+    expect(showGroupBudget("family", { adults: 1, childrenAges: [] })).toBe(false);
+    expect(showGroupBudget("couple", undefined)).toBe(false);
+    expect(showGroupBudget("friends", undefined)).toBe(false);
   });
 });
