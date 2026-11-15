@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { purchaseAction, purchaseFromSession, rememberPurchase } from "./analytics";
+import { planGeneratedParams, purchaseAction, purchaseFromSession, rememberPurchase } from "./analytics";
 
 function memoryStorage() {
   const map = new Map<string, string>();
@@ -53,5 +53,26 @@ describe("purchaseFromSession", () => {
 
   it("ignores sessions without an amount", () => {
     expect(purchaseFromSession({ ...paid, amount_total: null })).toBeNull();
+  });
+});
+
+describe("planGeneratedParams", () => {
+  it("passes city and days with the group size", () => {
+    expect(planGeneratedParams("Rzym", 4, { companion: "solo" })).toEqual({ city: "Rzym", days: 4, group_size: 1 });
+  });
+
+  it("derives the size from the companion when no group is given", () => {
+    expect(planGeneratedParams("Rzym", 3, { companion: "couple" }).group_size).toBe(2);
+    expect(planGeneratedParams("Rzym", 3, { companion: null }).group_size).toBe(1);
+  });
+
+  it("prefers an explicit group", () => {
+    const quiz = { companion: "friends" as const, group: { adults: 5, childrenAges: [] } };
+    expect(planGeneratedParams("Rzym", 3, quiz).group_size).toBe(5);
+  });
+
+  it("does not count an infant as a seat", () => {
+    const quiz = { companion: "family" as const, group: { adults: 2, childrenAges: [1, 7] } };
+    expect(planGeneratedParams("Rzym", 3, quiz).group_size).toBe(3);
   });
 });

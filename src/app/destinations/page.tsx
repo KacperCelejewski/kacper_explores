@@ -1,6 +1,6 @@
 "use client";
 
-import { trackEvent } from "@/lib/analytics";
+import { planGeneratedParams, trackEvent } from "@/lib/analytics";
 import { flightLink, partnerLinkProps, type PartnerLink } from "@/lib/affiliate";
 import { PartnerNote } from "@/app/components/PartnerLinks";
 import { useEffect, useRef, useState } from "react";
@@ -784,7 +784,7 @@ export default function DestinationsPage() {
             }
           }
           if (msg.done) {
-            trackEvent("plan_generated", { city: dest.city, days: (msg.plan as import("@/types").TripPlan).days?.length ?? 0 });
+            trackEvent("plan_generated", planGeneratedParams(dest.city, (msg.plan as import("@/types").TripPlan).days?.length ?? 0, quizAnswers));
             setCurrentTrip({
               id: msg.tripId as string,
               destination: dest,

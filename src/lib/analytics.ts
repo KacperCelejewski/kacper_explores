@@ -1,3 +1,6 @@
+import type { QuizAnswers } from "@/types";
+import { groupFromCompanion, groupSize } from "./group";
+
 // Google Analytics 4 — Consent Mode v2. Zdarzenia lecą tylko do GA, a pełne
 // ciasteczka dopiero po zgodzie z bannera (inaczej GA dostaje anonimowe pingi).
 export const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
@@ -57,4 +60,13 @@ export function purchaseFromSession(session: {
     currency: (session.currency ?? "pln").toUpperCase(),
     plan: session.metadata?.plan_key ?? "unknown",
   };
+}
+
+// Parametry zdarzenia plan_generated; tylko liczba miejsc, bez danych osobowych.
+export function planGeneratedParams(
+  city: string,
+  days: number,
+  quiz: Pick<QuizAnswers, "companion" | "group">,
+) {
+  return { city, days, group_size: groupSize(groupFromCompanion(quiz.companion, quiz.group)) };
 }
