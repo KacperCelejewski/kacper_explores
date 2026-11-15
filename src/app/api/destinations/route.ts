@@ -4,6 +4,7 @@ import { checkRateLimit, LIMITS } from "@/lib/rateLimit";
 import { validateQuizAnswers, getClientIp } from "@/lib/validate";
 import { logGeminiCall } from "@/lib/geminiLog";
 import { MONTH_NAMES, VIBE_LABELS, PLACE_LABELS, DESTINATION_CACHE_TTL_MS } from "@/lib/constants";
+import { excludeOriginCities, originExclusionPrompt } from "@/lib/originCities";
 import type { DestinationRecommendation, TravelStyle, TravelVibe, PlaceType } from "@/types";
 
 export const maxDuration = 30;
@@ -44,6 +45,7 @@ PROFIL:
 - Miesiąc: ${monthName}
 - Długość: ${duration ? `${duration} dni` : "nieokreślona"}
 - ${originDesc}
+${originExclusionPrompt(airports)}
 
 Zwróć tablicę JSON "destinations" z dokładnie 6 obiektami. Każdy obiekt MUSI mieć te pola:
 - city (string): nazwa miasta
@@ -138,7 +140,9 @@ export async function POST(req: NextRequest) {
       const raw = Array.isArray(parsed.destinations) ? parsed.destinations : [];
       console.log(`[destinations] parsed ${raw.length} destinations`);
 
-      const destinations: DestinationRecommendation[] = raw
+      // Prompt prosi o pominięcie miast wylotu, ale model bywa nieposłuszny, więc filtrujemy też odpowiedź.
+      const originAirports = (body as { airports?: string[] }).airports ?? ["WRO"];
+      const candidates: DestinationRecommendation[] = raw
         .filter((d) => d && typeof d === "object" && d.city && d.country)
         .map((d) => ({
           city: String(d.city),
@@ -152,6 +156,7 @@ export async function POST(req: NextRequest) {
           vibes: ((d.vibes ?? []) as string[]) as TravelVibe[],
           placeTypes: ((d.placeTypes ?? []) as string[]) as PlaceType[],
         }));
+      const destinations = excludeOriginCities(candidates, originAirports);
 
       void logGeminiCall({ endpoint: "destinations", model: modelName, success: true });
       destCache.set(key, { data: destinations, ts: Date.now() });
