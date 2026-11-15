@@ -37,7 +37,7 @@ import {
 import type { Companion, GroupComposition } from "@/types";
 import GroupSizePicker from "@/app/components/GroupSizePicker";
 import { groupFromCompanion } from "@/lib/group";
-import { parseHomeParams } from "@/lib/homeParams";
+import { parseHomeParams, homeFriendsAnswers, srcEventName } from "@/lib/homeParams";
 
 type IconFC = React.FC<{ size?: number }>;
 
@@ -223,7 +223,7 @@ function QuizPageInner() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ session_id: sessionId.current, event, step }),
-    });
+    }).catch(() => {});
   };
 
   const cancelAdvance = () => {
@@ -249,10 +249,13 @@ function QuizPageInner() {
       // store trzyma krok i odpowiedzi z poprzedniej wizyty; bez auto-advance, żeby dało się ustawić liczbę osób
       setCurrentQuizStep(0);
       setHomeStepReset(true);
-      setQuizAnswer("companion", "friends");
-      setQuizAnswer("group", groupFromCompanion("friends"));
+      const next = homeFriendsAnswers({ companion: quizAnswers.companion, group: quizAnswers.group });
+      setQuizAnswer("companion", next.companion);
+      setQuizAnswer("group", next.group);
     }
-    if (homeParams.src) track(`from_${homeParams.src}`);
+    if (homeParams.src) track(srcEventName(homeParams.src));
+    // parametry zadziałały raz; bez nich odświeżenie strony nie cofa kroku ani liczby osób i nie liczy kliknięcia drugi raz
+    if (homeFriends || homeParams.src) router.replace("/quiz", { scroll: false });
     track("step_view", 0);
 
     fetch("/api/profile")

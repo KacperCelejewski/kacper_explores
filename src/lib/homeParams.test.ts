@@ -29,3 +29,30 @@ describe("parseHomeParams", () => {
     expect(parseHomeParams({ get: (n) => (n === "companion" ? "friends" : null) })).toEqual({ companion: "friends", src: null });
   });
 });
+
+import { homeFriendsAnswers, srcEventName } from "./homeParams";
+
+describe("srcEventName", () => {
+  it("zamienia myślnik na podkreślnik, bo GA4 odrzuca myślniki w nazwach zdarzeń", () => {
+    expect(srcEventName("home-ekipa")).toBe("from_home_ekipa");
+    expect(srcEventName("home-solo")).toBe("from_home_solo");
+  });
+});
+
+describe("homeFriendsAnswers", () => {
+  const def = { adults: 4, childrenAges: [] as number[] };
+
+  it("ustawia domyślną grupę, gdy quiz nie miał jeszcze Znajomych", () => {
+    expect(homeFriendsAnswers({ companion: null, group: undefined })).toEqual({ companion: "friends", group: def });
+    expect(homeFriendsAnswers({ companion: "couple", group: undefined })).toEqual({ companion: "friends", group: def });
+  });
+
+  it("zachowuje liczbę osób, którą ktoś już ustawił jako Znajomi", () => {
+    const g = { adults: 6, childrenAges: [] as number[] };
+    expect(homeFriendsAnswers({ companion: "friends", group: g })).toEqual({ companion: "friends", group: g });
+  });
+
+  it("dla Znajomych bez zapisanej grupy daje domyślną", () => {
+    expect(homeFriendsAnswers({ companion: "friends", group: undefined })).toEqual({ companion: "friends", group: def });
+  });
+});
