@@ -19,7 +19,7 @@ export const HOME = {
   finalTitle: "W piątek rano możesz już być w drodze.",
 } as const;
 
-const SUBTITLE_BASE = "Powiedz, kto jedzie. Dostaniesz kierunki w Waszym budżecie i plan godzina po godzinie.";
+const SUBTITLE_BASE = "Powiedz, ilu Was jedzie. Dostaniesz kierunki w Waszym budżecie, koszt na osobę i razem oraz plan do wysłania ekipie.";
 const SUBTITLE_INVITES = "Ustalacie to w jednym miejscu, a na grupie wklejacie tylko link.";
 
 export function homeSubtitle(features: Record<FeatureKey, boolean> = FEATURES): string {
