@@ -18,6 +18,9 @@ const COVER_ICONS = new Set(["compass", "globe", "coin", "plane", "mountain"]);
 export const PRICE_RE = /\d[\d\s.,\u00a0]*\s*(zł|zlotych|złotych|pln|eur|euro|usd|gbp|czk|huf)(?![\p{L}])|[€£$]\s*\d|\d\s*(€|£|\$|%)|(?<![\p{L}])(procent|procentów)(?![\p{L}])/iu;
 export const FIRST_PERSON_RE = /(?<![\p{L}])(oceniłem|oceniłam|zebrałem|zebrałam|sprawdziłem|sprawdziłam|przetestowałem|przetestowałam|byłem|byłam|wybrałem|wybrałam|polecam|uważam|mój|moja|moje|moim zdaniem)(?![\p{L}])|od 6 lat/iu;
 
+// Zwroty, które udają źródło, choć żadnego nie podają
+export const UNSOURCED_RE = /badania pokazuj|statystycznie|według badań|jak wynika z badań|ranking[ui]? (\p{L}+ )?wygrywa/iu;
+
 function validRoute(href: string): boolean {
   const [pathname] = href.replace(/\/$/, "").split(/[?#]/);
   if (STATIC_ROUTES.has(pathname)) return true;
@@ -43,7 +46,8 @@ describe.each(files)("artykuł %s", (file) => {
     expect(COVER_ICONS.has(data.coverIcon)).toBe(true);
     expect(Array.isArray(data.tags) && data.tags.length > 0).toBe(true);
     // literówka w author po cichu zmieniłaby podpis na głos założyciela
-    expect([undefined, "redakcja"]).toContain(data.author);
+    // marka nie ma twarzy ani imienia: każdy artykuł podpisuje redakcja
+    expect(data.author, `${file}: brak author: redakcja`).toBe("redakcja");
     expect(data.readingTime).toBeGreaterThan(0);
   });
 
@@ -56,7 +60,10 @@ describe.each(files)("artykuł %s", (file) => {
     for (const href of links) expect(validRoute(href), `${file}: ${href}`).toBe(true);
   });
 
-  if (data.author === "redakcja") {
+  {
+    it("nie powołuje się na niezweryfikowane badania ani statystyki", () => {
+      expect(content).not.toMatch(UNSOURCED_RE);
+    });
     it("tekst redakcji nie podaje cen ani liczb, których nie da się sprawdzić", () => {
       expect(content).not.toMatch(PRICE_RE);
     });
@@ -86,12 +93,13 @@ describe("reguły treści redakcji", () => {
     }
     expect(FIRST_PERSON_RE.test("polecamy sprawdzić regulamin")).toBe(false);
   });
+  it("wykrywają zwroty udające źródło", () => {
+    for (const t of ["Badania pokazują, że", "Statystycznie najtańsze", "według badań"]) expect(UNSOURCED_RE.test(t), t).toBe(true);
+  });
 });
 
 describe("getAllPosts", () => {
-  it("zwraca wszystkie artykuły z poprawnym autorem", () => {
-    const posts = getAllPosts();
-    expect(posts.length).toBe(files.length);
-    for (const p of posts) expect(["founder", "editorial"]).toContain(p.author);
+  it("zwraca wszystkie artykuły", () => {
+    expect(getAllPosts().length).toBe(files.length);
   });
 });

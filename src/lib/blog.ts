@@ -12,8 +12,6 @@ export interface PostMeta {
   coverIcon: string;
   tags: string[];
   readingTime: number;
-  /** "editorial": tekst redakcji (frontmatter `author: redakcja`); domyślnie głos założyciela */
-  author: "founder" | "editorial";
   /** data ostatniej istotnej zmiany treści (frontmatter `updated`); używana w dateModified i sitemapie */
   updated?: string;
   /** pytania i odpowiedzi (frontmatter `faq`); muszą zgadzać się z widoczną sekcją artykułu */
@@ -38,7 +36,6 @@ function parseMeta(slug: string, data: Record<string, unknown>): PostMeta {
     coverIcon: (data.coverIcon as string) ?? "plane",
     tags: (data.tags as string[]) ?? [],
     readingTime: (data.readingTime as number) ?? 5,
-    author: data.author === "redakcja" ? "editorial" : "founder",
     ...(typeof data.updated === "string" ? { updated: data.updated } : {}),
     ...(faq.length > 0 ? { faq } : {}),
   };

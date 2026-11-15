@@ -6,7 +6,7 @@ import { splitAtHeading } from "@/lib/blogSplit";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { getAllPosts, getPost } from "@/lib/blog";
 import { faqLd, jsonLdScript } from "@/lib/seo/jsonld";
-import { articleLd, articleBreadcrumbLd } from "@/lib/seo/articleLd";
+import { articleLd, articleBreadcrumbLd, EDITORIAL_AUTHOR } from "@/lib/seo/articleLd";
 import SiteNav from "../../components/SiteNav";
 import SiteFooter from "../../components/SiteFooter";
 import {
@@ -176,16 +176,14 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
               style={{ background: "var(--accent)", color: "white" }}
               aria-hidden="true"
             >
-              {post.author === "editorial" ? "W" : "K"}
+              W
             </div>
             <div>
               <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>
-                {post.author === "editorial" ? "Redakcja Włóczykija" : "Włóczykij"}
+                {EDITORIAL_AUTHOR}
               </p>
               <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                {post.author === "editorial"
-                  ? "Poradnik oparty na ogólnych zasadach; ceny i warunki sprawdź u przewoźnika"
-                  : "Założyciel Włóczykij · podróżuje solo od 6 lat"}
+                Poradnik oparty na ogólnych zasadach; ceny i warunki sprawdź u przewoźnika
               </p>
             </div>
           </div>
