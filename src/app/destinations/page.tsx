@@ -1,7 +1,10 @@
 "use client";
 
 import { planGeneratedParams, trackEvent } from "@/lib/analytics";
-import { flightLink, partnerLinkProps, type PartnerLink } from "@/lib/affiliate";
+import { flightLink, flightSearchLink, partnerLinkProps, type PartnerLink } from "@/lib/affiliate";
+import { useAffiliateConfig } from "@/app/components/AffiliateProvider";
+import { groupFromCompanion, toFlightPassengers } from "@/lib/group";
+import { CATALOG } from "@/lib/destinations/catalog";
 import { PartnerNote } from "@/app/components/PartnerLinks";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -36,11 +39,6 @@ function buildGoogleFlightsUrl(dest: DestinationRecommendation, airports: string
   });
   if (month) params.set("hl", "pl");
   return `${base}?${params}`;
-}
-
-function buildSkyscannerUrl(dest: DestinationRecommendation, airports: string[]): string {
-  const origin = airports[0] ?? "WRO";
-  return `https://www.skyscanner.pl/transport/flights/${origin.toLowerCase()}/${dest.city.toLowerCase().replace(/\s/g, "-")}/`;
 }
 
 // ── Generating overlay (shown during plan generation) ─────────────────────────
@@ -313,7 +311,13 @@ function DestCard({
 }) {
   const highlights = (dest as DestinationRecommendation & { highlights?: string[] }).highlights ?? [];
   const [photoUrl, setPhotoUrl] = useState(() => getCityPhotoUrl(dest.city, 800));
-  const flight: PartnerLink = flightLink(dest.bestOffer) ?? { href: buildSkyscannerUrl(dest, airports), partner: "skyscanner", paid: false };
+  const config = useAffiliateConfig();
+  const quiz = useAppStore((state) => state.quizAnswers);
+  const passengers = toFlightPassengers(groupFromCompanion(quiz.companion, quiz.group));
+  const catalogCity = CATALOG.find((entry) => entry.city.toLocaleLowerCase("pl") === dest.city.toLocaleLowerCase("pl"));
+  const origin = airports[0] ?? "WRO";
+  const destination = origin === "BER" ? catalogCity?.iataBer ?? catalogCity?.iataWro : catalogCity?.iataWro;
+  const flight: PartnerLink = flightLink(dest.bestOffer, config, passengers) ?? flightSearchLink({ origin, destination: destination ?? "", passengers }, config);
   const fetchedRef = useRef(false);
 
   useEffect(() => {

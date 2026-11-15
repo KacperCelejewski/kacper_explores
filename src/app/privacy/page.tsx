@@ -52,7 +52,7 @@ const Ul = ({ children }: { children: React.ReactNode }) => (
 );
 
 export default function PrivacyPage() {
-  const updatedAt = "15 maja 2026";
+  const updatedAt = "15 listopada 2026";
   const adminEmail = "hej@wloczykij.me";
 
   const schema = {
@@ -157,6 +157,16 @@ export default function PrivacyPage() {
                   Polityce Cookies
                 </Link>
                 .
+              </Li>
+              <Li>
+                <strong>Linki partnerskie:</strong> po zgodzie w bannerze linki do Aviasales,
+                Tiqets i Radical Storage korzystają z Travelpayouts. Adres przekazuje parametry
+                wyszukiwania, np. trasę, daty, skład podróżnych lub nazwę atrakcji i miasto,
+                oraz publiczny identyfikator partnera i projektu. Nie umieszczamy w nich
+                e-maila ani identyfikatora konta. Po kliknięciu usługodawca otrzymuje
+                dane techniczne połączenia zgodnie ze swoją polityką prywatności.
+                Bez zgody link nie zawiera identyfikatorów afiliacyjnych. Zgodę zmienisz
+                przyciskiem na stronie Polityki Cookies.
               </Li>
             </Ul>
           </Section>

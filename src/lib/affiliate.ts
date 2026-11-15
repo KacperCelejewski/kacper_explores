@@ -1,29 +1,52 @@
 import type { FlightOffer, GroupComposition } from "@/types";
+import type { FlightPassengers } from "./group";
+import { buildAviasalesUrl } from "./flights/search-url";
 
 export type Partner =
   | "aviasales" | "skyscanner" | "booking" | "hostelworld"
-  | "getyourguide" | "tiqets" | "radical_storage" | "bounce";
+  | "getyourguide" | "tiqets" | "radical_storage" | "radical" | "bounce";
 export type Placement = "flight" | "hotel" | "tickets" | "luggage";
 
 export interface PartnerLink {
   href: string;
   partner: Partner;
   paid: boolean;
+  directHref?: string;
 }
 
 export type PartnerConfig = Partial<
   Record<"booking" | "hostelworld" | "getyourguide" | "tiqets" | "radical_storage" | "bounce", string | undefined>
->;
+> & { marker?: string; projectId?: string };
 
-// Next wstawia NEXT_PUBLIC_* do paczki tylko przy dosłownym odczycie, nie przez process.env[klucz]
-const PARTNER_CONFIG: PartnerConfig = {
-  booking: process.env.NEXT_PUBLIC_AFFILIATE_BOOKING,
-  hostelworld: process.env.NEXT_PUBLIC_AFFILIATE_HOSTELWORLD,
-  getyourguide: process.env.NEXT_PUBLIC_AFFILIATE_GETYOURGUIDE,
-  tiqets: process.env.NEXT_PUBLIC_AFFILIATE_TIQETS,
-  radical_storage: process.env.NEXT_PUBLIC_AFFILIATE_RADICAL_STORAGE,
-  bounce: process.env.NEXT_PUBLIC_AFFILIATE_BOUNCE,
-};
+export const AFFILIATE_PROGRAMS = {
+  aviasales: { campaignId: "100", promoId: "4114", hosts: ["aviasales.com", "www.aviasales.com"] },
+  tiqets: { campaignId: "89", promoId: "2074", hosts: ["tiqets.com", "www.tiqets.com"] },
+  radical: { campaignId: "209", promoId: "5867", hosts: ["radicalstorage.com", "www.radicalstorage.com"] },
+} as const;
+
+// Read on the server; only these two public IDs are passed to the client provider.
+export function readAffiliateConfig(): PartnerConfig {
+  return { marker: process.env.TRAVELPAYOUTS_MARKER, projectId: process.env.TRAVELPAYOUTS_PROJECT_ID };
+}
+
+export function travelpayoutsLink(partner: keyof typeof AFFILIATE_PROGRAMS, target: string, config: PartnerConfig = {}): PartnerLink {
+  if (!Object.hasOwn(AFFILIATE_PROGRAMS, partner)) throw new Error("Unsupported affiliate program");
+  const program = AFFILIATE_PROGRAMS[partner];
+  const url = new URL(target);
+  if (url.protocol !== "https:" || !(program.hosts as readonly string[]).includes(url.hostname) || url.username || url.password) {
+    throw new Error("Unsupported affiliate destination");
+  }
+  const marker = config.marker?.trim();
+  const project = config.projectId?.trim();
+  if (!marker || !project) return { href: target, partner, paid: false };
+  const query = new URLSearchParams({ campaign_id: program.campaignId, marker, p: program.promoId, trs: project, u: target });
+  return { href: `https://tp.media/r?${query}`, directHref: target, partner, paid: true };
+}
+
+export function withAffiliateConsent(link: PartnerLink, consent: "accepted" | "rejected" | null): PartnerLink {
+  if (!link.paid || consent === "accepted") return link;
+  return { href: link.directHref ?? "https://www.aviasales.com/", partner: link.partner, paid: false };
+}
 
 // Konfiguracja partnera: parametr dopisywany do adresu (np. aid=123) albo szablon z {url}.
 // Pusta konfiguracja daje null, czyli link bez prowizji.
@@ -35,15 +58,12 @@ export function applyPartner(url: string, config: string | undefined): string | 
   return `${url}${url.includes("?") ? "&" : "?"}${param}`;
 }
 
-function link(url: string, partner: Partner, config: string | undefined): PartnerLink {
-  const paidUrl = applyPartner(url, config);
-  return { href: paidUrl ?? url, partner, paid: paidUrl !== null };
-}
-
 export function bookingLink(
   input: { city: string; country: string; checkin?: string; checkout?: string; label?: string; group?: GroupComposition },
-  config: PartnerConfig = PARTNER_CONFIG,
+  _config: PartnerConfig = {},
 ): PartnerLink {
+  // Kept for call-site compatibility; legacy partner settings are deliberately ignored.
+  void _config;
   const group = input.group;
   const params = new URLSearchParams({ ss: input.country ? `${input.city}, ${input.country}` : input.city, group_adults: String(group?.adults ?? 1) });
   // Booking chce liczbę dzieci i wiek każdego z nich (parametr age powtórzony)
@@ -56,41 +76,42 @@ export function bookingLink(
   if (input.checkout) params.set("checkout", input.checkout);
   // label pozwala w raporcie Bookinga odróżnić, z której strony przyszła rezerwacja
   if (input.label) params.set("label", input.label);
-  return link(`https://www.booking.com/search.html?${params}`, "booking", config.booking);
+  return { href: `https://www.booking.com/search.html?${params}`, partner: "booking", paid: false };
 }
 
-export function hostelworldLink(city: string, config: PartnerConfig = PARTNER_CONFIG): PartnerLink {
-  return link(`https://www.hostelworld.com/search?search=${encodeURIComponent(city)}`, "hostelworld", config.hostelworld);
+export function hostelworldLink(city: string, _config: PartnerConfig = {}): PartnerLink {
+  void _config;
+  return { href: `https://www.hostelworld.com/search?search=${encodeURIComponent(city)}`, partner: "hostelworld", paid: false };
 }
 
-// Najpierw partner z ustawionym ID (GetYourGuide, potem Tiqets); bez żadnego wraca GetYourGuide bez prowizji
-export function ticketsLink(input: { title: string; city: string }, config: PartnerConfig = PARTNER_CONFIG): PartnerLink {
+export function ticketsLink(input: { title: string; city: string }, config: PartnerConfig = {}): PartnerLink {
   const q = encodeURIComponent(`${input.title} ${input.city}`);
-  const gyg = `https://www.getyourguide.com/s/?q=${q}`;
   const tiqets = `https://www.tiqets.com/en/search?q=${q}`;
-  if (applyPartner(gyg, config.getyourguide)) return link(gyg, "getyourguide", config.getyourguide);
-  if (applyPartner(tiqets, config.tiqets)) return link(tiqets, "tiqets", config.tiqets);
-  return link(gyg, "getyourguide", undefined);
+  return travelpayoutsLink("tiqets", tiqets, config);
 }
 
-export function luggageLink(config: PartnerConfig = PARTNER_CONFIG): PartnerLink {
-  const radical = "https://radicalstorage.com/";
-  const bounce = "https://usebounce.com/";
-  if (applyPartner(radical, config.radical_storage)) return link(radical, "radical_storage", config.radical_storage);
-  if (applyPartner(bounce, config.bounce)) return link(bounce, "bounce", config.bounce);
-  return link(radical, "radical_storage", undefined);
+export function luggageLink(config: PartnerConfig = {}): PartnerLink {
+  return travelpayoutsLink("radical", "https://radicalstorage.com/", config);
 }
 
-// Link do lotu powstaje na serwerze (marker Travelpayouts); tu tylko go rozpoznajemy.
-export function flightLink(offer: FlightOffer | null | undefined): PartnerLink | null {
+export function flightSearchLink(input: { origin: string; destination: string; depart?: string; returnDate?: string; passengers?: FlightPassengers }, config: PartnerConfig = {}): PartnerLink {
+  return travelpayoutsLink("aviasales", buildAviasalesUrl(input.origin, input.destination, input.depart ?? "", input.returnDate ?? "", "", input.passengers), config);
+}
+
+// Rebuild saved URLs so stale markers and Skyscanner URLs never override current consent/config.
+export function flightLink(offer: FlightOffer | null | undefined, config: PartnerConfig = {}, passengers?: FlightPassengers): PartnerLink | null {
+  if (offer?.origin?.code && offer.destination?.code) {
+    return flightSearchLink({ origin: offer.origin.code, destination: offer.destination.code, depart: offer.departureDate, returnDate: offer.returnDate, passengers: passengers ?? offer.passengers }, config);
+  }
   const raw = offer?.affiliateUrl;
   if (!raw) return null;
   let url: URL;
   try { url = new URL(raw); } catch { return null; }
-  if (url.hostname.includes("aviasales.")) {
-    return { href: raw, partner: "aviasales", paid: !!url.searchParams.get("marker") };
+  if (url.protocol === "https:" && !url.username && !url.password && ["aviasales.com", "www.aviasales.com"].includes(url.hostname)) {
+    url.searchParams.delete("marker");
+    url.searchParams.delete("trs");
+    return travelpayoutsLink("aviasales", url.toString(), config);
   }
-  if (url.hostname.includes("skyscanner.")) return { href: raw, partner: "skyscanner", paid: false };
   return null;
 }
 

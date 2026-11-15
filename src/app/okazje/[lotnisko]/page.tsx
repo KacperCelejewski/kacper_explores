@@ -5,10 +5,10 @@ import { notFound } from "next/navigation";
 import SiteNav from "@/app/components/SiteNav";
 import SiteFooter from "@/app/components/SiteFooter";
 import DropSignup from "@/app/components/DropSignup";
-import { PartnerNote } from "@/app/components/PartnerLinks";
+import { AffiliateAnchor } from "@/app/components/AffiliateProvider";
 import { AIRLINE_NAMES } from "@/lib/flights/airlines";
 import { POLISH_AIRPORTS } from "@/lib/airports";
-import { bookingLink, partnerLinkProps } from "@/lib/affiliate";
+import { bookingLink, partnerLinkProps, readAffiliateConfig } from "@/lib/affiliate";
 import { ORIGIN_GENITIVE, formatLocal, transfersLabel } from "@/lib/drop/email";
 import { buildFlightLink, buildPlanUrl } from "@/lib/drop/links";
 import { getDealsForOrigin, originFromSlug } from "@/lib/drop/read";
@@ -52,7 +52,7 @@ export default async function DealsPage({ params }: { params: Params }) {
 
   const from = ORIGIN_GENITIVE[origin] ?? origin;
   const { deals, teasers } = await getDealsForOrigin(origin);
-  const marker = process.env.TRAVELPAYOUTS_MARKER;
+  const { marker, projectId } = readAffiliateConfig();
   const hint = deals[0] ? { from, price: deals[0].price, thirdPrice: (deals[2] ?? deals[deals.length - 1]).price } : null;
   const seen = deals[0]
     ? new Date(deals[0].fetched_at).toLocaleDateString("pl-PL", { timeZone: "Europe/Warsaw", day: "numeric", month: "long" })
@@ -135,7 +135,7 @@ export default async function DealsPage({ params }: { params: Params }) {
             {deals.map((deal, index) => {
               const hours = hoursInCity(deal);
               const teaser = teasers.get(deal.city_code);
-              const flight = buildFlightLink(deal, marker, deal.week, "web");
+              const flight = buildFlightLink(deal, marker, deal.week, "web", projectId);
               const hotel = bookingLink({
                 city: deal.city_name, country: "",
                 checkin: deal.departure_at.slice(0, 10), checkout: deal.return_at.slice(0, 10),
@@ -158,13 +158,13 @@ export default async function DealsPage({ params }: { params: Params }) {
                   ))}
                   {teaser?.teaser && <p className="text-sm mt-3 leading-relaxed" style={{ color: "var(--text-secondary)" }}>{teaser.teaser}</p>}
                   <div className="grid grid-cols-2 gap-2 mt-4">
-                    <a
-                      {...partnerLinkProps(flight, "flight", deal.city_name)}
+                    <AffiliateAnchor
+                      link={flight} placement="flight" city={deal.city_name}
                       className="text-sm font-bold px-3 py-3 rounded-xl text-center"
                       style={{ background: "var(--accent)", color: "#fff", minHeight: 44 }}
                     >
                       Lot {deal.price} zł ↗
-                    </a>
+                    </AffiliateAnchor>
                     <a
                       {...partnerLinkProps(hotel, "hotel", deal.city_name)}
                       className="text-sm font-bold px-3 py-3 rounded-xl text-center"
@@ -181,7 +181,6 @@ export default async function DealsPage({ params }: { params: Params }) {
                     >
                       Plan na ten weekend →
                     </Link>
-                    <PartnerNote show={flight.paid || hotel.paid} />
                   </div>
                 </li>
                 {index === 2 && deals.length > 4 && (

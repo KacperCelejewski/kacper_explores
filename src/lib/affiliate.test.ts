@@ -26,15 +26,15 @@ describe("applyPartner", () => {
 });
 
 describe("partner links", () => {
-  it("keeps today's Booking search and adds the partner", () => {
+  it("keeps Booking search without commission even with obsolete config", () => {
     const link = bookingLink(
       { city: "Lizbona", country: "Portugalia", checkin: "2026-12-05", checkout: "2026-12-08" },
       { booking: "aid=1" },
     );
     expect(link).toEqual({
-      href: "https://www.booking.com/search.html?ss=Lizbona%2C+Portugalia&group_adults=1&no_rooms=1&checkin=2026-12-05&checkout=2026-12-08&aid=1",
+      href: "https://www.booking.com/search.html?ss=Lizbona%2C+Portugalia&group_adults=1&no_rooms=1&checkin=2026-12-05&checkout=2026-12-08",
       partner: "booking",
-      paid: true,
+      paid: false,
     });
   });
 
@@ -46,38 +46,38 @@ describe("partner links", () => {
     });
   });
 
-  it("prefers GetYourGuide, then Tiqets, then unpaid GetYourGuide", () => {
+  it("uses Tiqets and ignores obsolete GetYourGuide configuration", () => {
     const input = { title: "Wieża Belém", city: "Lizbona" };
-    expect(ticketsLink(input, { getyourguide: "partner_id=G", tiqets: "partner=T" }).partner).toBe("getyourguide");
+    expect(ticketsLink(input, { getyourguide: "partner_id=G", tiqets: "partner=T" }).partner).toBe("tiqets");
     expect(ticketsLink(input, { tiqets: "partner=T" }).partner).toBe("tiqets");
     expect(ticketsLink(input, {})).toEqual({
-      href: `https://www.getyourguide.com/s/?q=${encodeURIComponent("Wieża Belém Lizbona")}`,
-      partner: "getyourguide",
+      href: `https://www.tiqets.com/en/search?q=${encodeURIComponent("Wieża Belém Lizbona")}`,
+      partner: "tiqets",
       paid: false,
     });
   });
 
-  it("prefers Radical Storage, then Bounce", () => {
-    expect(luggageLink({ bounce: "ref=B" })).toEqual({ href: "https://usebounce.com/?ref=B", partner: "bounce", paid: true });
-    expect(luggageLink({})).toEqual({ href: "https://radicalstorage.com/", partner: "radical_storage", paid: false });
+  it("uses Radical Storage and ignores obsolete Bounce configuration", () => {
+    expect(luggageLink({ bounce: "ref=B" })).toEqual({ href: "https://radicalstorage.com/", partner: "radical", paid: false });
+    expect(luggageLink({})).toEqual({ href: "https://radicalstorage.com/", partner: "radical", paid: false });
   });
 });
 
 describe("flightLink", () => {
   const aviasales = "https://www.aviasales.com/search/WRO0512BCN08121";
 
-  it("recognizes a paid Aviasales link", () => {
+  it("removes stored attribution without current config", () => {
     expect(flightLink({ affiliateUrl: `${aviasales}?marker=abc` } as FlightOffer)).toEqual({
-      href: `${aviasales}?marker=abc`,
+      href: aviasales,
       partner: "aviasales",
-      paid: true,
+      paid: false,
     });
   });
 
-  it("treats Aviasales without a marker and Skyscanner as unpaid", () => {
+  it("keeps plain Aviasales and rejects Skyscanner without route data", () => {
     expect(flightLink({ affiliateUrl: aviasales } as FlightOffer)).toMatchObject({ partner: "aviasales", paid: false });
     expect(flightLink({ affiliateUrl: "https://www.skyscanner.pl/transport/loty/wro/bcn/" } as FlightOffer))
-      .toMatchObject({ partner: "skyscanner", paid: false });
+      .toBeNull();
   });
 
   it("returns null without a usable flight link", () => {

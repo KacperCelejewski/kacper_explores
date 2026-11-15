@@ -8,6 +8,8 @@ import NewsletterPopup from "@/app/components/NewsletterPopup";
 import MotionProvider from "@/app/components/MotionProvider";
 import Analytics from "@/app/components/Analytics";
 import { META } from "@/lib/homeCopy";
+import { AffiliateProvider } from "@/app/components/AffiliateProvider";
+import { readAffiliateConfig } from "@/lib/affiliate";
 
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-body" });
@@ -54,12 +56,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <a href="#main-content" className="skip-link">Przejdź do treści</a>
         <MotionProvider>
+          <AffiliateProvider config={readAffiliateConfig()}>
           <main id="main-content" className="app-shell">
             {children}
             <GlobalMenu />
             <CookieBanner />
             <NewsletterPopup />
           </main>
+          </AffiliateProvider>
         </MotionProvider>
         <Analytics />
         <Script

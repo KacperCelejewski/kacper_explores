@@ -1,4 +1,5 @@
-import type { PartnerLink } from "@/lib/affiliate";
+import { travelpayoutsLink, type PartnerLink } from "@/lib/affiliate";
+import { buildAviasalesUrl } from "@/lib/flights/search-url";
 import type { DropDeal, WeekKey } from "./types";
 
 const AVIASALES = "https://www.aviasales.com";
@@ -36,8 +37,18 @@ export function buildSettingsUrl(appUrl: string, token: string): string {
 }
 
 // Link do lotu dla strony: z markerem partnerskim, a bez niego zwykły link bez prowizji (nie udajemy partnera)
-export function buildFlightLink(deal: DropDeal, marker: string | undefined, week: WeekKey, medium: string): PartnerLink {
-  if (marker) return { href: buildAffiliateUrl(deal, marker, week, medium), partner: "aviasales", paid: true };
-  const href = deal.link.startsWith("http") ? deal.link : `${AVIASALES}${deal.link}`;
-  return { href, partner: "aviasales", paid: false };
+export function buildFlightLink(deal: DropDeal, marker: string | undefined, week: WeekKey, medium: string, projectId?: string): PartnerLink {
+  let url: URL;
+  try {
+    const raw = deal.link.startsWith("http") ? deal.link : `${AVIASALES}${deal.link}`;
+    // Validate external data before either the paid link or direct fallback is used.
+    url = new URL(travelpayoutsLink("aviasales", raw).href);
+  } catch {
+    url = new URL(buildAviasalesUrl(deal.origin, deal.city_code, deal.departure_at, deal.return_at, ""));
+  }
+  url.searchParams.delete("marker");
+  url.searchParams.delete("trs");
+  if (!marker?.trim() || !projectId?.trim()) return { href: url.toString(), partner: "aviasales", paid: false };
+  for (const [key, value] of new URLSearchParams(utm(deal, week, medium))) url.searchParams.set(key, value);
+  return travelpayoutsLink("aviasales", url.toString(), { marker, projectId });
 }
