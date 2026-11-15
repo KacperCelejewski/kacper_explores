@@ -61,6 +61,12 @@ describe.each(files)("artykuł %s", (file) => {
   });
 
   {
+    it("ma sekcję „Zobacz też”: min. 2 linki do artykułów i 1 do okazji lub miasta", () => {
+      const section = content.split("## Zobacz też")[1] ?? "";
+      const links = [...section.matchAll(/\]\((\/[^)\s]*)\)/g)].map((m) => m[1]);
+      expect(links.filter((l) => l.startsWith("/blog/")).length, `${file}: linki do artykułów`).toBeGreaterThanOrEqual(2);
+      expect(links.some((l) => /^\/(okazje|weekend)/.test(l)), `${file}: link do okazji/miasta`).toBe(true);
+    });
     it("nie powołuje się na niezweryfikowane badania ani statystyki", () => {
       expect(content).not.toMatch(UNSOURCED_RE);
     });
@@ -74,6 +80,17 @@ describe.each(files)("artykuł %s", (file) => {
       expect(content).toMatch(/\]\(\/(okazje|weekend)/);
     });
   }
+});
+
+describe("klaster wyjazdu ze znajomymi", () => {
+  const TARGET = "/blog/wyjazd-ze-znajomymi-jak-ustalic-budzet-i-kierunek";
+  it.each(["z-czego-sklada-sie-budzet-weekendu-w-europie", "jak-wybrac-kierunek-na-weekend-pieciu-pytan"])(
+    "%s linkuje do artykułu o ekipie",
+    (slug) => {
+      const raw = fs.readFileSync(path.join(DIR, `${slug}.mdx`), "utf-8");
+      expect(raw).toContain(`](${TARGET})`);
+    },
+  );
 });
 
 describe("reguły treści redakcji", () => {
