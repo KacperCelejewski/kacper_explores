@@ -3,6 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { logGeminiCall } from "@/lib/geminiLog";
 
 export const maxDuration = 60;
+import { isValidISODate } from "@/lib/ics";
 import { buildPlanPrompt, parseNdjsonStream, validateAndFixPlan } from "@/lib/gemini";
 import { checkRateLimit, LIMITS } from "@/lib/rateLimit";
 import { validateQuizAnswers, validateDestination, getClientIp } from "@/lib/validate";
@@ -152,6 +153,8 @@ export async function POST(req: NextRequest) {
 
             const rawPlan = { ...header, days };
             plan = validateAndFixPlan(rawPlan, duration);
+            // Zapisz prawdziwą datę dnia 1, żeby eksport do kalendarza nie zgadywał.
+            if (isValidISODate(details?.arrivalDate)) plan.startDate = details?.arrivalDate;
             break;
           } catch (err) {
             lastErr = err;

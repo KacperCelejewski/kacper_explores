@@ -133,6 +133,8 @@ export interface TripPlan {
   };
   generalTips: string[];
   days: DayPlan[];
+  /** Real calendar date of day 1 ("2026-11-27"), saved with the plan when the traveller gave flight dates. */
+  startDate?: string;
 }
 
 export interface Trip {
