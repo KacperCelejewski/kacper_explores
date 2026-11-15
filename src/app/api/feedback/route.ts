@@ -43,7 +43,17 @@ export async function POST(req: NextRequest) {
           p_user_id: user.id,
           p_credits: 1,
         });
-        if (!error) creditAdded = true;
+        if (!error) {
+          creditAdded = true;
+        } else {
+          // Bez kredytu nie zostawiamy wyjazdu oznaczonego jako nagrodzony: kolejna próba może go przyznać
+          console.error("[feedback/credit]", error.message);
+          await db
+            .from("trips")
+            .update({ feedback_credited_at: null })
+            .eq("id", tripId)
+            .eq("user_id", user.id);
+        }
       }
     }
 
