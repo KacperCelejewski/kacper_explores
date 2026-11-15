@@ -1,3 +1,4 @@
+import { GENERIC_SERVER_ERROR, readJsonBody } from "@/lib/http";
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { logGeminiCall } from "@/lib/geminiLog";
@@ -42,12 +43,9 @@ export async function POST(req: NextRequest) {
   }
 
   // 4. Walidacja inputu
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Nieprawidłowy format żądania." }, { status: 400 });
-  }
+  const parsedBody = await readJsonBody(req, 64 * 1024);
+  if (!parsedBody.ok) return parsedBody.response;
+  const body = parsedBody.body;
 
   const { destination, quizAnswers, flightDetails } = body as {
     destination: unknown;
@@ -206,7 +204,7 @@ export async function POST(req: NextRequest) {
         if (message.includes("429") || message.includes("quota") || message.includes("Too Many Requests")) {
           send(controller, { error: "Na dziś wyczerpaliśmy limit planowania. Wróć za kilka minut albo jutro.", code: "QUOTA_EXCEEDED" });
         } else {
-          send(controller, { error: "Coś poszło nie tak. Spróbuj jeszcze raz — zwykle działa za drugim.", detail: message });
+          send(controller, { error: GENERIC_SERVER_ERROR });
         }
       } finally {
         controller.close();

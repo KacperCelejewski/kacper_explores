@@ -1,3 +1,4 @@
+import { readJsonBody } from "@/lib/http";
 import { NextRequest, NextResponse } from "next/server";
 import { stripe, PLANS, type PlanKey } from "@/lib/stripe";
 import { createSupabaseServer } from "@/lib/supabase/server";
@@ -20,7 +21,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Zaloguj się, żeby kupić." }, { status: 401 });
   }
 
-  const { planKey, returnTo }: { planKey: PlanKey; returnTo?: unknown } = await req.json();
+  const parsedBody = await readJsonBody(req, 2 * 1024);
+  if (!parsedBody.ok) return parsedBody.response;
+  const { planKey, returnTo } = (parsedBody.body ?? {}) as { planKey: PlanKey; returnTo?: unknown };
   const plan = PLANS[planKey];
   if (!plan) {
     return NextResponse.json({ error: "Nieprawidłowy plan." }, { status: 400 });

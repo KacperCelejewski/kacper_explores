@@ -1,3 +1,4 @@
+import { readJsonBody, serverError } from "@/lib/http";
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -47,10 +48,9 @@ export async function PATCH(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  let body: unknown;
-  try { body = await req.json(); } catch {
-    return NextResponse.json({ error: "Nieprawidłowy format." }, { status: 400 });
-  }
+  const parsedBody = await readJsonBody(req, 512 * 1024);
+  if (!parsedBody.ok) return parsedBody.response;
+  const body = parsedBody.body;
 
   const { is_public, ai_plan_json } = body as { is_public?: boolean; ai_plan_json?: unknown };
 
@@ -76,7 +76,7 @@ export async function PATCH(
     .select("id")
     .maybeSingle();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return serverError("trips", error);
   if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({ ok: true, ...updates });
 }

@@ -1,3 +1,4 @@
+import { readJsonBody } from "@/lib/http";
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { checkRateLimit } from "@/lib/rateLimit";
@@ -14,14 +15,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Za dużo prób. Spróbuj za godzinę." }, { status: 429 });
   }
 
-  let body: Record<string, unknown>;
-  try {
-    const parsed = await req.json();
-    if (!parsed || typeof parsed !== "object") throw new Error("bad body");
-    body = parsed;
-  } catch {
+  const parsedBody = await readJsonBody(req, 8 * 1024);
+  if (!parsedBody.ok) return parsedBody.response;
+  if (!parsedBody.body || typeof parsedBody.body !== "object") {
     return NextResponse.json({ error: "Nieprawidłowe dane." }, { status: 400 });
   }
+  const body = parsedBody.body as Record<string, unknown>;
 
   const token = typeof body.token === "string" ? body.token : "";
   if (!token) return NextResponse.json({ error: "Ten link jest nieaktualny." }, { status: 404 });

@@ -1,10 +1,11 @@
+import { safeNextPath } from "./safeRedirect";
+
 const GENERIC_ERROR = "Płatność się nie otworzyła. Spróbuj jeszcze raz — zwykle działa za drugim.";
 
 /** In-app path or null: never lets a return link point at another host. */
 export function safeReturnPath(value: unknown): string | null {
-  return typeof value === "string" && value.startsWith("/") && !value.startsWith("//") && !value.includes("\\")
-    ? value
-    : null;
+  const path = safeNextPath(value, "");
+  return path === "" ? null : path;
 }
 
 /** Stripe success_url; carries the plan to go back to, unless they started from pricing. */

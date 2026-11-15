@@ -1,3 +1,4 @@
+import { readJsonBody, serverError } from "@/lib/http";
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createSupabaseServer } from "@/lib/supabase/server";
@@ -6,14 +7,10 @@ import { guardAiCall } from "@/lib/aiGuard";
 import { checkRateLimit, LIMITS } from "@/lib/rateLimit";
 import { getClientIp } from "@/lib/validate";
 import { CHAT_MAX_OUTPUT_TOKENS } from "@/lib/constants";
+import { parseChatMessages, type ChatMessage } from "@/lib/chatMessages";
 import type { TripPlan } from "@/types";
 
 export const maxDuration = 30;
-
-interface ChatMessage {
-  role: "user" | "model";
-  parts: [{ text: string }];
-}
 
 export async function POST(req: NextRequest) {
   const supabase = await createSupabaseServer();
@@ -26,22 +23,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Dużo pytań naraz. Kolejne za ${rl.resetInSeconds} s.` }, { status: 429 });
   }
 
-  let body: unknown;
-  try { body = await req.json(); } catch {
-    return NextResponse.json({ error: "Nieprawidłowy format." }, { status: 400 });
-  }
+  const parsedBody = await readJsonBody(req, 64 * 1024);
+  if (!parsedBody.ok) return parsedBody.response;
+  const body = parsedBody.body;
 
-  const { tripId, messages } = body as { tripId: string; messages: ChatMessage[] };
-  if (!tripId || !Array.isArray(messages) || messages.length === 0) {
+  const { tripId, messages: rawMessages } = (body ?? {}) as { tripId?: unknown; messages?: unknown };
+  if (typeof tripId !== "string" || !tripId) {
     return NextResponse.json({ error: "Brak wymaganych pól." }, { status: 400 });
   }
-  if (messages.length > 50) {
-    return NextResponse.json({ error: "Historia rozmowy jest zbyt długa." }, { status: 400 });
-  }
-  const lastText = messages[messages.length - 1]?.parts?.[0]?.text ?? "";
-  if (lastText.length > 2000) {
-    return NextResponse.json({ error: "Za długa wiadomość. Zmieść się w 2000 znaków." }, { status: 400 });
-  }
+  const parsedMessages = parseChatMessages(rawMessages);
+  if (!parsedMessages.ok) return NextResponse.json({ error: parsedMessages.error }, { status: 400 });
+  const messages = parsedMessages.messages;
 
   const { data: trip } = await supabase
     .from("trips")
@@ -117,6 +109,6 @@ Bazuj na planie, ale możesz uzupełniać szczegółami. Nie wychodzisz poza tem
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     void logGeminiCall({ endpoint: "chat", model: "gemini-2.5-flash", success: false, error_code: msg.includes("429") ? "quota" : "error" });
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return serverError("chat", err);
   }
 }

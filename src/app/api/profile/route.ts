@@ -1,3 +1,4 @@
+import { readJsonBody, serverError } from "@/lib/http";
 import { NextRequest, NextResponse } from "next/server";
 import { getUserProfile, canGenerate, isPro } from "@/lib/userProfile";
 import { freePlansLeft, plansAvailable } from "@/lib/credits";
@@ -54,10 +55,9 @@ export async function PATCH(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  let body: unknown;
-  try { body = await req.json(); } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
+  const parsedBody = await readJsonBody(req, 32 * 1024);
+  if (!parsedBody.ok) return parsedBody.response;
+  const body = parsedBody.body;
 
   const { quiz_preferences } = body as Record<string, unknown>;
 
@@ -71,7 +71,7 @@ export async function PATCH(req: NextRequest) {
     .update({ quiz_preferences, updated_at: new Date().toISOString() })
     .eq("id", user.id);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return serverError("profile", error);
 
   return NextResponse.json({ ok: true });
 }
@@ -84,7 +84,7 @@ export async function DELETE() {
   // Profil, wyjazdy i płatności usuwa ON DELETE CASCADE razem z kontem w auth.users.
   // Osobne usuwanie sesją użytkownika nic nie robiło: RLS nie ma polityk DELETE.
   const { error } = await createServiceRoleClient().auth.admin.deleteUser(user.id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return serverError("profile", error);
 
   return NextResponse.json({ ok: true });
 }

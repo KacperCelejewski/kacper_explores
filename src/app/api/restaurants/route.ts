@@ -1,3 +1,4 @@
+import { readJsonBody, serverError } from "@/lib/http";
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createSupabaseServer } from "@/lib/supabase/server";
@@ -20,10 +21,9 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  let body: unknown;
-  try { body = await req.json(); } catch {
-    return NextResponse.json({ error: "Nieprawidłowy format." }, { status: 400 });
-  }
+  const parsedBody = await readJsonBody(req, 4 * 1024);
+  if (!parsedBody.ok) return parsedBody.response;
+  const body = parsedBody.body;
 
   const { city, country } = body as { city: string; country: string };
   if (!city || !country) return NextResponse.json({ error: "Brak danych destynacji." }, { status: 400 });
@@ -83,6 +83,6 @@ Tylko JSON, bez komentarzy.`;
       success: false,
       error_code: msg.includes("429") ? "quota" : "error",
     });
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return serverError("restaurants", err);
   }
 }

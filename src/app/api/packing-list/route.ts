@@ -1,3 +1,4 @@
+import { readJsonBody, serverError } from "@/lib/http";
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createSupabaseServer } from "@/lib/supabase/server";
@@ -13,10 +14,9 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  let body: unknown;
-  try { body = await req.json(); } catch {
-    return NextResponse.json({ error: "Nieprawidłowy format." }, { status: 400 });
-  }
+  const parsedBody = await readJsonBody(req, 16 * 1024);
+  if (!parsedBody.ok) return parsedBody.response;
+  const body = parsedBody.body;
 
   const { city, country, quizAnswers } = body as {
     city: string;
@@ -66,6 +66,6 @@ Zwróć JSON z kategoriami: Dokumenty, Ubrania, Elektronika, Toaleta, Apteczka, 
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     void logGeminiCall({ endpoint: "packing-list", model: "gemini-2.5-flash", success: false, error_code: msg.includes("429") ? "quota" : "error" });
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return serverError("packing-list", err);
   }
 }

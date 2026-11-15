@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/admin";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { plansAvailable } from "@/lib/credits";
 import { countAirports, isMissingTableError, latestWeeks } from "@/lib/drop/adminStats";
@@ -327,6 +328,7 @@ function FunnelBar({ label, value, total, color }: { label: string; value: numbe
 }
 
 export default async function AnalyticsPage() {
+  await requireAdmin();
   const s = await getAnalytics();
   const now = new Date().toLocaleString("pl-PL", { timeZone: "UTC", dateStyle: "short", timeStyle: "short" });
 

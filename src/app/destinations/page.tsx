@@ -311,6 +311,7 @@ function DestCard({
 }) {
   const highlights = (dest as DestinationRecommendation & { highlights?: string[] }).highlights ?? [];
   const [photoUrl, setPhotoUrl] = useState(() => getCityPhotoUrl(dest.city, 800));
+  const [photoFailed, setPhotoFailed] = useState(false);
   const config = useAffiliateConfig();
   const quiz = useAppStore((state) => state.quizAnswers);
   const passengers = toFlightPassengers(groupFromCompanion(quiz.companion, quiz.group));
@@ -325,7 +326,7 @@ function DestCard({
     fetchedRef.current = true;
     fetch(`/api/city-photo?city=${encodeURIComponent(dest.city)}`)
       .then((r) => r.json())
-      .then((d) => { if (d.url) setPhotoUrl(d.url); })
+      .then((d) => { if (d.url) { setPhotoUrl(d.url); setPhotoFailed(false); } })
       .catch(() => {});
   }, [dest.city]);
 
@@ -339,23 +340,23 @@ function DestCard({
     >
       {/* Photo */}
       <div className="relative h-44 overflow-hidden">
-        <img
-          src={photoUrl}
-          alt={dest.city}
-          className="w-full h-full object-cover"
-          loading="lazy"
-          onError={(e) => {
-            (e.currentTarget as HTMLImageElement).style.display = "none";
-            const parent = e.currentTarget.parentElement;
-            if (parent) {
-              parent.style.background = "linear-gradient(135deg, var(--accent) 0%, var(--accent-poster) 100%)";
-              parent.style.display = "flex";
-              parent.style.alignItems = "center";
-              parent.style.justifyContent = "center";
-              parent.innerHTML = `<span style="font-size:4rem">${dest.coverImage}</span>`;
-            }
-          }}
-        />
+        {photoFailed ? (
+          // Fallback jako tekst Reacta: coverImage pochodzi z odpowiedzi AI i nie może trafić do HTML-a
+          <div
+            className="w-full h-full flex items-center justify-center"
+            style={{ background: "linear-gradient(135deg, var(--accent) 0%, var(--accent-poster) 100%)" }}
+          >
+            <span style={{ fontSize: "4rem" }}>{dest.coverImage}</span>
+          </div>
+        ) : (
+          <img
+            src={photoUrl}
+            alt={dest.city}
+            className="w-full h-full object-cover"
+            loading="lazy"
+            onError={() => setPhotoFailed(true)}
+          />
+        )}
         {/* Gradient overlay */}
         <div
           className="absolute inset-0"
