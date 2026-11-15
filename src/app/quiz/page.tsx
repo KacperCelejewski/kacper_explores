@@ -38,7 +38,7 @@ import {
 import type { Companion, GroupComposition } from "@/types";
 import GroupSizePicker from "@/app/components/GroupSizePicker";
 import { groupFromCompanion } from "@/lib/group";
-import { parseHomeParams, homeFriendsAnswers, srcEventName } from "@/lib/homeParams";
+import { parseHomeParams, homeFriendsAnswers, srcEventName, keepUtmQuery } from "@/lib/homeParams";
 
 type IconFC = React.FC<{ size?: number }>;
 
@@ -258,7 +258,7 @@ function QuizPageInner() {
     }
     if (homeParams.src) track(srcEventName(homeParams.src));
     // parametry zadziałały raz; bez nich odświeżenie strony nie cofa kroku ani liczby osób i nie liczy kliknięcia drugi raz
-    if (homeFriends || homeParams.src) router.replace("/quiz", { scroll: false });
+    if (homeFriends || homeParams.src) router.replace(`/quiz${keepUtmQuery(searchParams)}`, { scroll: false });
     track("step_view", 0);
 
     fetch("/api/profile")
