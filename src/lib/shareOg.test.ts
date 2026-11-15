@@ -59,7 +59,7 @@ describe("buildShareOgModel", () => {
   });
 
   it("obcina bardzo długie nazwy i śmieci w polach", () => {
-    const m = buildShareOgModel({ city: "X".repeat(200), country: 5, ai_plan_json: "tekst" });
+    const m = buildShareOgModel({ city: "X".repeat(200), country: 5 as unknown as string, ai_plan_json: "tekst" });
     expect(m?.city.length).toBeLessThanOrEqual(40);
     expect(m?.country).toBe("");
     expect(m?.when).toBeNull();
