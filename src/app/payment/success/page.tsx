@@ -2,15 +2,17 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { IconBackpack } from "@/app/components/Icons";
 import { stripe } from "@/lib/stripe";
+import { safeReturnPath } from "@/lib/checkoutFlow";
 import PurchaseTracker from "./PurchaseTracker";
 import { purchaseFromSession } from "@/lib/analytics";
 
 interface Props {
-  searchParams: Promise<{ session_id?: string }>;
+  searchParams: Promise<{ session_id?: string; return?: string }>;
 }
 
 export default async function PaymentSuccessPage({ searchParams }: Props) {
-  const { session_id } = await searchParams;
+  const { session_id, return: returnParam } = await searchParams;
+  const returnPath = safeReturnPath(returnParam);
   // Bez identyfikatora sesji nie ma czego potwierdzać; człowiek trafił tu z zakładki albo ze starego linku
   if (!session_id) redirect("/pricing");
 
@@ -48,12 +50,26 @@ export default async function PaymentSuccessPage({ searchParams }: Props) {
           : "Masz na koncie 5 planów więcej. Dokąd tym razem?"}
       </p>
 
+      {returnPath && (
+        <Link
+          href={returnPath}
+          className="btn-primary"
+          style={{ display: "block", textAlign: "center", textDecoration: "none", marginTop: "2rem" }}
+        >
+          Wróć do planu →
+        </Link>
+      )}
+
       <Link
         href="/quiz"
-        className="btn-primary"
-        style={{ display: "block", textAlign: "center", textDecoration: "none", marginTop: "2rem" }}
+        className={returnPath ? undefined : "btn-primary"}
+        style={
+          returnPath
+            ? { display: "block", textAlign: "center", marginTop: "1rem", fontSize: 14, color: "var(--text-muted)" }
+            : { display: "block", textAlign: "center", textDecoration: "none", marginTop: "2rem" }
+        }
       >
-        Zaplanuj wyjazd →
+        {returnPath ? "Zaplanuj nowy wyjazd →" : "Zaplanuj wyjazd →"}
       </Link>
 
       <Link href="/profile">

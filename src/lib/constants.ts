@@ -29,3 +29,12 @@ export const DESTINATION_CACHE_TTL_MS = 10 * 60 * 1000;
 export const FLIGHT_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
 export const STRIPE_NEWSLETTER_COUPON_ID = "newsletter_10pct_yearly";
 export const CHAT_MAX_OUTPUT_TOKENS = 512;
+
+/** Budżet z quizu to kwota na osobę za cały wyjazd (z lotem). Te same progi pokazuje karta w quizie. */
+export const BUDGET_CAPS_PLN = { low: 1500, medium: 3000 } as const;
+
+export function budgetPromptLabel(budget: "low" | "medium" | null | undefined): string {
+  return budget === "low"
+    ? `niski (backpacker, do ${BUDGET_CAPS_PLN.low} PLN na osobę za cały wyjazd, z lotem)`
+    : `średni (komfortowy, ${BUDGET_CAPS_PLN.low}–${BUDGET_CAPS_PLN.medium} PLN na osobę za cały wyjazd, z lotem)`;
+}

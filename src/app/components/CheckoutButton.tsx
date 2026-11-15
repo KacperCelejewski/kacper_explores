@@ -4,6 +4,7 @@ import { useState, type CSSProperties, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { trackEvent } from "@/lib/analytics";
 import { planPrice } from "@/lib/prices";
+import { checkoutErrorMessage } from "@/lib/checkoutFlow";
 
 interface Props {
   planKey: string;
@@ -34,9 +35,9 @@ export default function CheckoutButton({ planKey, cta, gate, returnTo = "/pricin
         body: JSON.stringify({ planKey, returnTo }),
       });
       if (res.status === 401) { router.push(`/login?next=${encodeURIComponent(returnTo)}`); return; }
-      const data = await res.json();
-      if (data.url) window.location.href = data.url;
-      else setError("Płatność się nie otworzyła. Spróbuj jeszcze raz — zwykle działa za drugim.");
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.url) window.location.href = data.url;
+      else setError(checkoutErrorMessage(res.status, data));
     } catch {
       setError("Nie ma połączenia. Sprawdź internet i kliknij jeszcze raz.");
     } finally {

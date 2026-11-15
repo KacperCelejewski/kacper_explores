@@ -12,9 +12,37 @@ function escapeICS(str: string): string {
   return str.replace(/[\\;,]/g, (c) => `\\${c}`).replace(/\n/g, "\\n");
 }
 
-export function generateICS(plan: TripPlan, startDate?: string): string {
-  const base = startDate ? new Date(startDate) : new Date();
-  base.setHours(0, 0, 0, 0);
+const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+/** Parses "YYYY-MM-DD" as a local calendar date (no UTC shift); null when invalid. */
+function parseISODate(value: string | undefined | null): Date | null {
+  const m = value ? ISO_DATE.exec(value) : null;
+  if (!m) return null;
+  const date = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  return date.getMonth() === Number(m[2]) - 1 ? date : null;
+}
+
+/** True for a real calendar date in YYYY-MM-DD form. */
+export function isValidISODate(value: string | undefined | null): boolean {
+  return parseISODate(value) !== null;
+}
+
+/** Real trip start: the date saved with the plan (arrival date), else the offer's departure date. */
+export function resolveIcsStartDate(input: {
+  planStartDate?: string | null;
+  offerDepartureDate?: string | null;
+}): string | null {
+  for (const candidate of [input.planStartDate, input.offerDepartureDate]) {
+    if (parseISODate(candidate)) return candidate as string;
+  }
+  return null;
+}
+
+export function generateICS(plan: TripPlan, startDate: string): string {
+  const base = parseISODate(startDate);
+  if (!base) {
+    throw new Error("Brakuje prawidłowej daty początku wyjazdu (RRRR-MM-DD).");
+  }
 
   const lines: string[] = [
     "BEGIN:VCALENDAR",

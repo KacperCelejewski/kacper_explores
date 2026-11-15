@@ -3,7 +3,7 @@
 import { generateICS } from "@/lib/ics";
 import type { TripPlan } from "@/types";
 
-export function downloadICS(plan: TripPlan, startDate?: string): void {
+export function downloadICS(plan: TripPlan, startDate: string): void {
   const content = generateICS(plan, startDate);
   const blob = new Blob([content], { type: "text/calendar;charset=utf-8" });
   const url = URL.createObjectURL(blob);

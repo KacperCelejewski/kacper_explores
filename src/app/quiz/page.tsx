@@ -8,6 +8,7 @@ import { useAppStore } from "@/lib/store";
 import type { TravelStyle, TripDuration, TravelVibe, PlaceType, QuizAnswers } from "@/types";
 import { MONTH_NAMES } from "@/lib/constants";
 import { trackEvent } from "@/lib/analytics";
+import { cityAfterLogin, quizLoginNext } from "@/lib/quizLogin";
 import { parseDropParams } from "@/lib/drop/quizParams";
 import QuizProgress from "@/components/quiz/QuizProgress";
 import {
@@ -242,8 +243,10 @@ function QuizPageInner() {
       setDropStepReset(true);
       trackEvent("drop_plan_started", { city: dropPrefill.preferredCity });
     } else if (searchParams.get("afterLogin") !== "1") {
-      // po powrocie z logowania zostaje miasto zapisane w store
       setQuizAnswer("preferredCity", searchParams.get("city") ?? undefined);
+    } else {
+      // po powrocie z logowania miasto jest w URL; store bywa pusty (link z maila w innej przeglądarce)
+      setQuizAnswer("preferredCity", cityAfterLogin(searchParams.get("city"), quizAnswers.preferredCity));
     }
     if (homeFriends) {
       // store trzyma krok i odpowiedzi z poprzedniej wizyty; bez auto-advance, żeby dało się ustawić liczbę osób
@@ -291,7 +294,9 @@ function QuizPageInner() {
 
   const handleUseSaved = () => {
     if (!savedPrefs) return;
+    const keepCity = quizAnswers.preferredCity;
     resetQuiz();
+    if (keepCity) setQuizAnswer("preferredCity", keepCity);
     if (savedPrefs.budget)   setQuizAnswer("budget",    savedPrefs.budget);
     if (savedPrefs.vibe)     setQuizAnswer("vibe",      savedPrefs.vibe);
     if (savedPrefs.placeType) setQuizAnswer("placeType", savedPrefs.placeType);
@@ -326,7 +331,7 @@ function QuizPageInner() {
       track("quiz_complete");
       const profile = await fetch("/api/profile").then((r) => r.json()).catch(() => ({}));
       if (!profile.authenticated) {
-        router.push("/login?next=/quiz%3FafterLogin%3D1");
+        router.push(`/login?next=${encodeURIComponent(quizLoginNext(quizAnswers.preferredCity))}`);
       } else {
         router.push("/destinations");
       }
@@ -416,7 +421,7 @@ function QuizPageInner() {
         <div className="mt-2 flex flex-wrap items-center gap-1.5" style={{ minHeight: 28 }} aria-live="polite">
           {trail.length === 0 ? (
             <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-              Na końcu: kierunki w Twoim budżecie i prawdziwe ceny lotów.
+              Na końcu: kierunki w Twoim budżecie i plan godzina po godzinie.
             </p>
           ) : (
             <AnimatePresence initial={false}>
@@ -670,7 +675,7 @@ function StepBudget({
 
   return (
     <div>
-      <StepHeader title="Jaki masz budżet?" hint="Całkowity koszt wyjazdu — loty, noclegi, jedzenie." />
+      <StepHeader title="Jaki masz budżet?" hint="Na osobę, za cały wyjazd: loty, noclegi, jedzenie." />
       <div className="flex flex-col gap-3" role="radiogroup" aria-label="Wybierz budżet">
         {opts.map((opt) => (
           <OptionCard key={opt.value} className="quiz-option--roomy" selected={budget === opt.value} onClick={() => onPick(opt.value)}>

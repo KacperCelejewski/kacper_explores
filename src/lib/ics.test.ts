@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateICS } from "./ics";
+import { generateICS, resolveIcsStartDate } from "./ics";
 import type { TripPlan } from "@/types";
 
 const plan: TripPlan = {
@@ -62,5 +62,36 @@ describe("generateICS", () => {
     const [day1] = events(generateICS(plan, "2026-06-12"));
 
     expect(day1).toMatch(/UID:kacper-explores-san-sebastián-day1-\d+/);
+  });
+
+  it("refuses to guess a start date when none is given", () => {
+    expect(() => generateICS(plan, undefined as unknown as string)).toThrow(/daty/i);
+    expect(() => generateICS(plan, "")).toThrow(/daty/i);
+    expect(() => generateICS(plan, "not-a-date")).toThrow(/daty/i);
+  });
+
+  it("dates days from the calendar date given, across month boundaries", () => {
+    const [day1, day2] = events(generateICS(plan, "2026-11-30"));
+
+    expect(day1).toContain("DTSTART;VALUE=DATE:20261130");
+    expect(day1).toContain("DTEND;VALUE=DATE:20261201");
+    expect(day2).toContain("DTSTART;VALUE=DATE:20261201");
+  });
+});
+
+describe("resolveIcsStartDate", () => {
+  it("prefers the start date saved with the plan", () => {
+    expect(
+      resolveIcsStartDate({ planStartDate: "2026-11-27", offerDepartureDate: "2026-11-26" }),
+    ).toBe("2026-11-27");
+  });
+
+  it("falls back to the offer departure date", () => {
+    expect(resolveIcsStartDate({ offerDepartureDate: "2026-11-27" })).toBe("2026-11-27");
+  });
+
+  it("returns null when no real date is known", () => {
+    expect(resolveIcsStartDate({})).toBeNull();
+    expect(resolveIcsStartDate({ planStartDate: "2026-02-31", offerDepartureDate: "garbage" })).toBeNull();
   });
 });

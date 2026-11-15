@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { useAppStore } from "@/lib/store";
 import { downloadICS } from "@/app/utils/ics-download";
+import { adjustPlanBudget } from "@/lib/budgetAdjust";
+import { resolveIcsStartDate } from "@/lib/ics";
 import ChatPanel from "@/app/components/ChatPanel";
 import BudgetTracker from "@/app/components/BudgetTracker";
 import FeedbackWidget from "@/app/components/FeedbackWidget";
@@ -64,6 +66,8 @@ export default function PlanPage() {
   const params = useParams<{ tripId: string }>();
   const planPath = params?.tripId ? `/plan/${params.tripId}` : "/pricing";
   const { currentTrip, setCurrentTrip, updateTripDay, updateTripActivity, addTripActivity, resetQuiz, quizAnswers } = useAppStore();
+  const [icsAsk, setIcsAsk] = useState(false);
+  const [icsDate, setIcsDate] = useState("");
   const [activeDay, setActiveDay] = useState(0);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -179,8 +183,22 @@ export default function PlanPage() {
 
   const handleICS = () => {
     if (!currentTrip?.plan) return;
-    const startDate = currentTrip.destination?.bestOffer?.departureDate;
+    const startDate = resolveIcsStartDate({
+      planStartDate: currentTrip.plan.startDate,
+      offerDepartureDate: currentTrip.destination?.bestOffer?.departureDate,
+    });
+    if (!startDate) {
+      // Nie zgadujemy daty: bez niej kalendarz wylądowałby w złym dniu.
+      setIcsAsk(true);
+      return;
+    }
     downloadICS(currentTrip.plan, startDate);
+  };
+
+  const handleICSWithDate = () => {
+    if (!currentTrip?.plan || !icsDate) return;
+    downloadICS(currentTrip.plan, icsDate);
+    setIcsAsk(false);
   };
 
   const handlePackingList = async () => {
@@ -264,7 +282,9 @@ export default function PlanPage() {
     await fetch(`/api/trips/${currentTrip.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ai_plan_json: { ...currentTrip.plan, days: updatedDays } }),
+      body: JSON.stringify({
+        ai_plan_json: adjustPlanBudget(currentTrip.plan, { ...currentTrip.plan, days: updatedDays }),
+      }),
     }).catch(() => {});
   };
 
@@ -766,6 +786,33 @@ export default function PlanPage() {
             <IconCalendar size={14} /> Kalendarz
           </button>
         </div>
+
+        {icsAsk && (
+          <div
+            className="no-print rounded-2xl p-3 flex flex-wrap items-center gap-2"
+            style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
+          >
+            <label htmlFor="ics-start" className="text-xs" style={{ color: "var(--text-secondary)" }}>
+              Nie znam daty wyjazdu. Podaj dzień pierwszy planu:
+            </label>
+            <input
+              id="ics-start"
+              type="date"
+              value={icsDate}
+              onChange={(e) => setIcsDate(e.target.value)}
+              className="rounded-xl px-2 py-1 text-xs"
+              style={{ background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
+            />
+            <button
+              onClick={handleICSWithDate}
+              disabled={!icsDate}
+              className="py-1.5 px-3 rounded-xl text-xs font-semibold disabled:opacity-40"
+              style={{ background: "var(--accent)", color: "#fff" }}
+            >
+              Pobierz
+            </button>
+          </div>
+        )}
 
 {/* is_public toggle */}
         <button

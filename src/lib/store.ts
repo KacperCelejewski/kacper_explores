@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { adjustPlanBudget } from "@/lib/budgetAdjust";
 import type { QuizAnswers, DestinationRecommendation, FlightDetails, Trip, DayPlan, DayActivity } from "@/types";
 
 
@@ -121,7 +122,7 @@ export const useAppStore = create<AppState>()(
           return {
             currentTrip: {
               ...state.currentTrip,
-              plan: { ...state.currentTrip.plan, days },
+              plan: adjustPlanBudget(state.currentTrip.plan, { ...state.currentTrip.plan, days }),
             },
           };
         }),
@@ -138,7 +139,7 @@ export const useAppStore = create<AppState>()(
           return {
             currentTrip: {
               ...state.currentTrip,
-              plan: { ...state.currentTrip.plan, days },
+              plan: adjustPlanBudget(state.currentTrip.plan, { ...state.currentTrip.plan, days }),
             },
           };
         }),
@@ -153,7 +154,7 @@ export const useAppStore = create<AppState>()(
           return {
             currentTrip: {
               ...state.currentTrip,
-              plan: { ...state.currentTrip.plan, days },
+              plan: adjustPlanBudget(state.currentTrip.plan, { ...state.currentTrip.plan, days }),
             },
           };
         }),
