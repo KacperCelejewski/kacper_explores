@@ -26,7 +26,7 @@ export function checkoutErrorMessage(status: number, body: { error?: unknown } |
  */
 export function checkoutTrackingEvent(
   status: number,
-  body: { url?: unknown } | null,
+  body: { url?: unknown; error?: unknown } | null,
 ): "begin_checkout" | "checkout_login_required" | null {
   if (status === 401) return "checkout_login_required";
   if (status >= 200 && status < 300 && typeof body?.url === "string" && body.url) return "begin_checkout";

@@ -1,6 +1,7 @@
 import { requireAdmin } from "@/lib/admin";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { plansAvailable } from "@/lib/credits";
+import { isRealPayment, revenueCents, splitPro } from "@/lib/adminRevenue";
 import { countAirports, isMissingTableError, latestWeeks } from "@/lib/drop/adminStats";
 
 function getServiceClient() {
@@ -29,6 +30,7 @@ interface TripRow {
 
 interface PaymentRow {
   user_id: string;
+  stripe_session_id: string;
   amount_cents: number;
   plan_type: string | null;
   created_at: string;
@@ -128,7 +130,7 @@ async function getAnalytics() {
     sb.auth.admin.listUsers({ perPage: 1000 }),
     sb.from("user_profiles").select("id,subscription_tier,credits_remaining,free_plans_used,free_plans_period,created_at,stripe_customer_id"),
     sb.from("trips").select("user_id,city,country,created_at").gte("created_at", thirtyDaysAgo.toISOString()),
-    sb.from("payments").select("user_id,amount_cents,plan_type,created_at"),
+    sb.from("payments").select("user_id,stripe_session_id,amount_cents,plan_type,created_at"),
     getDropStats(sb),
   ]);
 
@@ -141,18 +143,22 @@ async function getAnalytics() {
 
   const profiles: ProfileRow[] = profilesRes.data ?? [];
   const trips: TripRow[] = tripsRes.data ?? [];
-  const payments: PaymentRow[] = paymentsRes.data ?? [];
+  const allPayments: PaymentRow[] = paymentsRes.data ?? [];
+  // Tylko płatności z webhooka Stripe w trybie live i z kwotą > 0; reszta (testy, 0 zł) jest liczona osobno
+  const payments = allPayments.filter(isRealPayment);
+  const ignoredPayments = allPayments.length - payments.length;
 
   // ── Totals ──
   const totalUsers = authUsers.length;
   const proUsers = profiles.filter((p) => p.subscription_tier === "pro").length;
+  const proSplit = splitPro(profiles, allPayments);
   const freeNoCredits = profiles.filter(
     (p) => p.subscription_tier === "free" && plansAvailable(p) === 0
   ).length;
   const freeWithCredits = profiles.filter(
     (p) => p.subscription_tier === "free" && plansAvailable(p) > 0
   ).length;
-  const conversionRate = totalUsers > 0 ? ((proUsers / totalUsers) * 100).toFixed(1) : "0";
+  const conversionRate = totalUsers > 0 ? ((proSplit.paid / totalUsers) * 100).toFixed(1) : "0";
 
   // ── New users per day (last 7 days) ──
   const signupDayStats: { date: string; count: number }[] = [];
@@ -199,17 +205,9 @@ async function getAnalytics() {
   const usersWithPayment = new Set(payments.map((p) => p.user_id)).size;
 
   // ── Revenue ──
-  const totalRevenueCents = payments.reduce((s, p) => s + (p.amount_cents ?? 0), 0);
-  const revenueThisMonth = payments
-    .filter(() => {
-      const monthStart = new Date(now.getUTCFullYear(), now.getUTCMonth(), 1).toISOString();
-      return true; // will filter below
-    })
-    .filter((p) => {
-      const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
-      return p.created_at >= monthStart;
-    })
-    .reduce((s, p) => s + (p.amount_cents ?? 0), 0);
+  const totalRevenueCents = revenueCents(allPayments);
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+  const revenueThisMonth = revenueCents(allPayments, monthStart);
 
   const planBreakdown: Record<string, number> = {};
   for (const p of payments) {
@@ -245,6 +243,9 @@ async function getAnalytics() {
   return {
     totalUsers,
     proUsers,
+    proPaid: proSplit.paid,
+    proManual: proSplit.manual,
+    ignoredPayments,
     freeNoCredits,
     freeWithCredits,
     conversionRate,
@@ -352,7 +353,7 @@ export default async function AnalyticsPage() {
         <Stat label="Nowi dziś" value={s.newUsersToday} sub={`+${s.newUsersWeek} ostatnie 7 dni`} accent="#6366F1" />
         <Stat label="Aktywni dziś" value={s.activeToday} sub={`${s.activeWeek} ten tydzień`} accent="#22C55E" />
         <Stat label="Plany dziś" value={s.tripsToday} sub="wygenerowanych" accent="#F59E0B" />
-        <Stat label="Pro" value={s.proUsers} sub={`konwersja ${s.conversionRate}%`} accent="#FF6B35" />
+        <Stat label="Pro" value={s.proUsers} sub={`opłacone ${s.proPaid}, nadane ręcznie ${s.proManual}`} accent="#FF6B35" />
       </div>
 
       {/* Charts row */}
@@ -381,7 +382,7 @@ export default async function AnalyticsPage() {
             <FunnelBar label="Zarejestrowani" value={s.totalUsers} total={s.totalUsers} color="#6366F1" />
             <FunnelBar label="Wygenerowali plan" value={s.usersWithTrip} total={s.totalUsers} color="#F59E0B" />
             <FunnelBar label="Zapłacili" value={s.usersWithPayment} total={s.totalUsers} color="#22C55E" />
-            <FunnelBar label="Pro aktywne" value={s.proUsers} total={s.totalUsers} color="#FF6B35" />
+            <FunnelBar label="Pro opłacone" value={s.proPaid} total={s.totalUsers} color="#FF6B35" />
           </div>
         </div>
 
@@ -390,7 +391,8 @@ export default async function AnalyticsPage() {
           <p style={{ margin: "0 0 20px", fontSize: 11, color: "#666", textTransform: "uppercase", letterSpacing: 2 }}>Segmenty</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {[
-              { label: "Pro", value: s.proUsers, color: "#FF6B35" },
+              { label: "Pro opłacone", value: s.proPaid, color: "#FF6B35" },
+              { label: "Pro nadane ręcznie", value: s.proManual, color: "#A855F7", note: "bez płatności" },
               { label: "Free z planami", value: s.freeWithCredits, color: "#22C55E" },
               { label: "Free bez planów", value: s.freeNoCredits, color: "#EF4444", note: "do konwersji" },
             ].map(({ label, value, color, note }) => (
@@ -409,7 +411,7 @@ export default async function AnalyticsPage() {
         <div style={{ background: "#1A1A1A", border: "1px solid #2A2A2A", borderRadius: 12, padding: "20px 24px" }}>
           <p style={{ margin: "0 0 20px", fontSize: 11, color: "#666", textTransform: "uppercase", letterSpacing: 2 }}>Przychód</p>
           <div style={{ marginBottom: 16 }}>
-            <p style={{ margin: "0 0 2px", fontSize: 11, color: "#555" }}>łącznie</p>
+            <p style={{ margin: "0 0 2px", fontSize: 11, color: "#555" }}>łącznie (płatności live z webhooka Stripe)</p>
             <p style={{ margin: 0, fontSize: 28, fontWeight: 800, color: "#22C55E" }}>
               {(s.totalRevenueCents / 100).toFixed(2)} zł
             </p>
@@ -420,6 +422,11 @@ export default async function AnalyticsPage() {
               {(s.revenueThisMonth / 100).toFixed(2)} zł
             </p>
           </div>
+          {s.ignoredPayments > 0 && (
+            <p style={{ margin: "0 0 12px", fontSize: 11, color: "#777" }}>
+              Pominięto {s.ignoredPayments} wpisów: tryb testowy Stripe albo zamówienie 0 zł.
+            </p>
+          )}
           <div style={{ borderTop: "1px solid #2A2A2A", paddingTop: 12 }}>
             <p style={{ margin: "0 0 8px", fontSize: 10, color: "#555", textTransform: "uppercase", letterSpacing: 1 }}>Pakiety</p>
             {Object.entries(s.planBreakdown).map(([plan, count]) => (
