@@ -8,6 +8,7 @@ import DropSignup from "@/app/components/DropSignup";
 import DealsStrip, { type StripDeal } from "@/app/components/DealsStrip";
 import { ORIGIN_GENITIVE } from "@/lib/drop/email";
 import { resolveOrigin } from "@/lib/drop/defaults";
+import { HOME, homeSubtitle } from "@/lib/homeCopy";
 import { getCityPhotoUrl, FEATURED_DESTINATIONS } from "@/lib/cityPhotos";
 
 // ─── Static data ────────────────────────────────────────────────────────────
@@ -308,7 +309,7 @@ export default function HomeClient({
               letterSpacing: "0.02em",
             }}
           >
-            Loty z 7 polskich lotnisk
+            {HOME.badge}
           </motion.p>
 
           {/* Headline — Cormorant Garamond, massive, editorial */}
@@ -324,9 +325,7 @@ export default function HomeClient({
               marginBottom: 18,
             }}
           >
-            Masz wolny weekend<br />
-            i trochę kasy?<br />
-            <em style={{ fontStyle: "italic", color: ACCENT }}>My mamy plan.</em>
+            {HOME.h1}
           </motion.h1>
 
           <motion.p
@@ -339,8 +338,7 @@ export default function HomeClient({
               marginBottom: 30,
             }}
           >
-            Odpowiedz na 6 pytań. Dostaniesz 6 kierunków
-            dopasowanych do Ciebie i plan godzina po godzinie.
+            {homeSubtitle()}
           </motion.p>
 
           {/* CTAs */}
@@ -349,7 +347,7 @@ export default function HomeClient({
             style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}
           >
             <Link
-              href="/quiz"
+              href={HOME.ctaTeamHref}
               style={{
                 display: "inline-block",
                 background: "var(--accent)",
@@ -363,10 +361,10 @@ export default function HomeClient({
                 boxShadow: "0 6px 20px rgba(196,98,45,0.28)",
               }}
             >
-              Zaplanuj wyjazd — za darmo →
+              {HOME.ctaTeam}
             </Link>
             <Link
-              href="/quick"
+              href={HOME.ctaSoloHref}
               style={{
                 color: "var(--text-primary)",
                 textDecoration: "underline",
@@ -377,7 +375,7 @@ export default function HomeClient({
                 padding: "12px 0",
               }}
             >
-              Wiesz już dokąd? 4 kroki →
+              {HOME.ctaSolo}
             </Link>
           </motion.div>
 
@@ -385,15 +383,18 @@ export default function HomeClient({
             initial={false}
             style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 14 }}
           >
-            6 pytań · darmowe konto · 2 plany gratis co miesiąc, bez karty
+            {HOME.micro}
           </motion.p>
           <motion.p
             initial={false}
             style={{ color: "var(--text-secondary)", fontSize: 14, marginTop: 10 }}
           >
-            Albo co czwartek 3 okazje z Twojego lotniska:{" "}
-            <a href="#zrzut" style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "underline", textUnderlineOffset: 3 }}>
-              zapisz się za darmo
+            <Link href={HOME.quickHref} style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "underline", textUnderlineOffset: 3 }}>
+              {HOME.quickLink}
+            </Link>
+            {" · "}
+            <a href={HOME.dropHref} style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "underline", textUnderlineOffset: 3 }}>
+              {HOME.dropLink}
             </a>
           </motion.p>
         </div>
@@ -891,7 +892,7 @@ export default function HomeClient({
             transition={{ delay: 0.2 }}
           >
             <Link
-              href="/quiz"
+              href={HOME.ctaTeamHref}
               style={{
                 display: "inline-block",
                 background: "var(--accent)",
@@ -904,12 +905,18 @@ export default function HomeClient({
                 letterSpacing: "0.01em",
               }}
             >
-              Zaplanuj wyjazd za darmo →
+              {HOME.ctaTeam}
+            </Link>
+            <Link
+              href={HOME.ctaSoloHref}
+              style={{ display: "inline-block", color: "var(--bg-primary)", textDecoration: "underline", textUnderlineOffset: 4, fontSize: 15, fontWeight: 600, padding: "16px 20px" }}
+            >
+              {HOME.ctaSolo}
             </Link>
           </motion.div>
 
           <p style={{ color: "rgba(245,239,224,0.78)", fontSize: 13, marginTop: 14 }}>
-            6 pytań · darmowe konto · 2 plany gratis co miesiąc, bez karty
+            {HOME.micro}
           </p>
         </div>
 

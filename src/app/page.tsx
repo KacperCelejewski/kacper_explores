@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import HomeClient from "./components/HomeClient";
 import HomeFAQ, { FAQS } from "./components/HomeFAQ";
+import { META } from "@/lib/homeCopy";
 import SiteNav from "./components/SiteNav";
 import SiteFooter from "./components/SiteFooter";
 import { FEATURED_DESTINATIONS } from "@/lib/cityPhotos";
@@ -10,8 +11,8 @@ import { hoursInCity } from "@/lib/drop/stay";
 import type { StripDeal } from "./components/DealsStrip";
 
 export const metadata: Metadata = {
-  title: "Budżetowy weekend solo w Europie — lot i plan w 3 minuty",
-  description: "Odpowiedz na 6 pytań, a dostaniesz 6 kierunków w Twoim budżecie, ceny lotów z polskich lotnisk i plan godzina po godzinie. 2 plany za darmo co miesiąc.",
+  title: `${META.title} | Włóczykij`,
+  description: META.description,
   alternates: {
     canonical: "https://wloczykij.me",
   },
@@ -33,7 +34,7 @@ const webAppSchema = {
   "@type": "WebApplication",
   name: "Włóczykij",
   url: "https://wloczykij.me",
-  description: "Budżetowe weekendy solo w Europie: lot z Polski i plan godzina po godzinie z cenami, knajpami i trikami, jak wydać mniej.",
+  description: META.appDescription,
   applicationCategory: "TravelApplication",
   operatingSystem: "Web",
   inLanguage: "pl",

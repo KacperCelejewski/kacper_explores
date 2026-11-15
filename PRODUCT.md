@@ -14,7 +14,7 @@ Primary: people aged roughly 22–35 travelling solo or as a pair on a budget. T
 
 Archetype (from BRAND.md): Marek, 27, remote developer in Wrocław, sees a clip of Porto on Thursday night, answers six questions, flies out Friday morning.
 
-Secondary: families and groups of friends. The quiz supports them, but product, copy and content decisions are aimed at the solo/pair spontaneous weekend.
+Two paths, the first one leads. Groups of friends and families (the person organising a trip for the whole crew) are the headline audience: the homepage speaks to them first. Solo travellers and pairs keep their own path next to it ("Solo albo we dwoje") and the spontaneous-weekend flow stays as it is. Copy must not promise group features that are not shipped yet (shared date voting, shared flights, expense settling); the state of each is tracked in `src/lib/features.ts`.
 
 Other audiences: the admin (Kacper) using the usage and cost dashboard at `/admin`.
 
@@ -25,6 +25,8 @@ Włóczykij turns a short quiz (budget, dates, travel style, who's going) into a
 Success: the visitor goes from "I want to go somewhere" to a bookable flight and a plan they trust in about three minutes, and then actually goes.
 
 ## Positioning
+
+Headline niche: organising a trip with friends, "od A do Z" (where, how much, what plan; later date, flights and costs), in one place. The homepage promise is the one that works today: destinations in the group's budget, cost per person and in total, an hour-by-hour plan. "Od A do Z" is not stated as a promise until the later parts ship.
 
 Not another flight aggregator and not a generic "travel planner". Włóczykij is the clever friend who always knows how to fly for pennies and what to do once you land. The quiz → real fares → editable streamed itinerary flow, priced in PLN from Polish airports, is the core mechanism.
 

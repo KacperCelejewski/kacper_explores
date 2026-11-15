@@ -1,7 +1,7 @@
 {
   "name": "Włóczykij",
   "short_name": "Włóczykij",
-  "description": "Budżetowe podróże solo z Polski — okazje na weekend i plan godzina po godzinie",
+  "description": "Wyjazd ze znajomymi: kierunki w budżecie, plan godzina po godzinie i okazje na weekend z Polski",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F5EFE0",

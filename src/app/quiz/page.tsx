@@ -37,6 +37,7 @@ import {
 import type { Companion, GroupComposition } from "@/types";
 import GroupSizePicker from "@/app/components/GroupSizePicker";
 import { groupFromCompanion } from "@/lib/group";
+import { parseHomeParams, homeFriendsAnswers, srcEventName } from "@/lib/homeParams";
 
 type IconFC = React.FC<{ size?: number }>;
 
@@ -205,9 +206,13 @@ function QuizPageInner() {
   const dropPrefill = useMemo(() => parseDropParams(searchParams), [searchParams]);
   // Do czasu zresetowania kroku z poprzedniej wizyty link ze zrzutu zaczyna od pytania 0
   const [dropStepReset, setDropStepReset] = useState(false);
-  const currentQuizStep = dropPrefill && !dropStepReset ? 0 : storeStep;
+  // Link ze strony głównej („Jedziemy ekipą”) zaczyna od pytania 0 z zaznaczonymi Znajomymi
+  const homeParams = useMemo(() => parseHomeParams(searchParams), [searchParams]);
+  const homeFriends = homeParams.companion === "friends" && !dropPrefill;
+  const [homeStepReset, setHomeStepReset] = useState(false);
+  const currentQuizStep = dropPrefill && !dropStepReset ? 0 : homeFriends && !homeStepReset ? 0 : storeStep;
   const totalSteps = dropPrefill ? DROP_TOTAL_STEPS : TOTAL_STEPS;
-  const [maxVisitedStep, setMaxVisitedStep] = useState(dropPrefill ? 0 : currentQuizStep);
+  const [maxVisitedStep, setMaxVisitedStep] = useState(dropPrefill || homeFriends ? 0 : currentQuizStep);
 
   // Stable session ID for this quiz attempt (not persisted — resets on page refresh)
   const sessionId = useRef(crypto.randomUUID());
@@ -218,7 +223,7 @@ function QuizPageInner() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ session_id: sessionId.current, event, step }),
-    });
+    }).catch(() => {});
   };
 
   const cancelAdvance = () => {
@@ -240,6 +245,17 @@ function QuizPageInner() {
       // po powrocie z logowania zostaje miasto zapisane w store
       setQuizAnswer("preferredCity", searchParams.get("city") ?? undefined);
     }
+    if (homeFriends) {
+      // store trzyma krok i odpowiedzi z poprzedniej wizyty; bez auto-advance, żeby dało się ustawić liczbę osób
+      setCurrentQuizStep(0);
+      setHomeStepReset(true);
+      const next = homeFriendsAnswers({ companion: quizAnswers.companion, group: quizAnswers.group });
+      setQuizAnswer("companion", next.companion);
+      setQuizAnswer("group", next.group);
+    }
+    if (homeParams.src) track(srcEventName(homeParams.src));
+    // parametry zadziałały raz; bez nich odświeżenie strony nie cofa kroku ani liczby osób i nie liczy kliknięcia drugi raz
+    if (homeFriends || homeParams.src) router.replace("/quiz", { scroll: false });
     track("step_view", 0);
 
     fetch("/api/profile")

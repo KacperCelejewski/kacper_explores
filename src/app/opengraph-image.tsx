@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { BRAND_MARK_DATA_URI, BRAND_MARK_RATIO } from "@/lib/brandMark";
 
-export const alt = "Włóczykij: budżetowe weekendy w Europie. Obudź w sobie Włóczykija.";
+export const alt = "Włóczykij: wyjazd ze znajomymi, dokąd, za ile i jaki plan. Obudź w sobie Włóczykija.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
