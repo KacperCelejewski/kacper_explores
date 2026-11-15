@@ -4,6 +4,7 @@ import { planGeneratedParams, trackEvent } from "@/lib/analytics";
 import { flightLink, flightSearchLink, partnerLinkProps, type PartnerLink } from "@/lib/affiliate";
 import { useAffiliateConfig } from "@/app/components/AffiliateProvider";
 import { groupFromCompanion, toFlightPassengers } from "@/lib/group";
+import { CREW_COPY, crewBudgetNote, crewSummary, flightTotalNote } from "@/lib/groupFlow";
 import { CATALOG } from "@/lib/destinations/catalog";
 import { PartnerNote } from "@/app/components/PartnerLinks";
 import { useEffect, useRef, useState } from "react";
@@ -324,6 +325,7 @@ function DestCard({
   const destination = origin === "BER" ? catalogCity?.iataBer ?? catalogCity?.iataWro : catalogCity?.iataWro;
   const freshQuote = quote;
   const priceCopy = cardFlightPriceCopy(freshQuote);
+  const flightTotal = freshQuote ? flightTotalNote(freshQuote.price, quiz.companion, quiz.group) : null;
   const flight: PartnerLink = freshQuote
     ? flightSearchLink({ origin: freshQuote.origin, destination: freshQuote.destination,
         depart: freshQuote.departDate, returnDate: freshQuote.returnDate, passengers }, config)
@@ -441,6 +443,9 @@ function DestCard({
             {freshQuote && (
               <>
                 <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Za osobę, w obie strony · {freshQuote.origin} → {dest.city}</p>
+                {flightTotal && (
+                  <p className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>{flightTotal}</p>
+                )}
                 <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                   {freshQuote.departDate.split("-").reverse().join(".")}–{freshQuote.returnDate.split("-").reverse().join(".")}
                 </p>
@@ -452,15 +457,15 @@ function DestCard({
           <div className="flex gap-2">
             <a
               {...partnerLinkProps(flight, "flight", dest.city)}
-              className="text-xs font-medium px-3 py-2 rounded-xl transition-opacity hover:opacity-70"
-              style={{ background: "var(--bg-surface)", color: "var(--text-muted)", border: "1px solid var(--border)" }}
+              className="text-xs font-medium px-3 rounded-xl transition-opacity hover:opacity-70 inline-flex items-center"
+              style={{ background: "var(--bg-surface)", color: "var(--text-muted)", border: "1px solid var(--border)", minHeight: 44 }}
             >
               Szukaj lotów ↗
             </a>
             <button
               onClick={() => onPlan(dest)}
-              className="text-xs font-bold px-3 py-2 rounded-xl transition-opacity hover:opacity-85"
-              style={{ background: "var(--accent)", color: "#fff" }}
+              className="text-xs font-bold px-3 rounded-xl transition-opacity hover:opacity-85"
+              style={{ background: "var(--accent)", color: "#fff", minHeight: 44 }}
             >
               Planuj wyjazd →
             </button>
@@ -689,6 +694,8 @@ export default function DestinationsPage() {
   const [userStatus, setUserStatus]     = useState<UserStatus | null>(null);
   const [fetchKey, setFetchKey]         = useState(0);
   const flightPrices = useFlightPrices(destinations, quizAnswers, _hasHydrated && !loading);
+  const crew = crewSummary(quizAnswers.companion, quizAnswers.group);
+  const budgetNote = crewBudgetNote(quizAnswers.budget, quizAnswers.companion, quizAnswers.group);
 
   const [planModal, setPlanModal]       = useState<DestinationRecommendation | null>(null);
   const [upgradeModal, setUpgradeModal] = useState(false);
@@ -893,8 +900,37 @@ export default function DestinationsPage() {
           Twoje destynacje
         </h1>
         <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-          Dopasowane do Twojego budżetu i stylu. Kliknij &ldquo;Planuj wyjazd&rdquo; i podaj daty lotu.
+          {crew
+            ? "Dopasowane do Waszego budżetu i stylu. "
+            : "Dopasowane do Twojego budżetu i stylu. "}
+          Kliknij &ldquo;Planuj wyjazd&rdquo; i podaj daty lotu.
         </p>
+        {crew && (
+          <div
+            className="mt-3 rounded-2xl px-4 py-3"
+            style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
+            aria-label="Skład ekipy"
+          >
+            <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>
+              {crew.title}: {crew.detail}
+            </p>
+            {budgetNote && (
+              <p className="text-xs mt-1" style={{ color: "var(--text-secondary)" }}>
+                Budżet: {budgetNote}
+              </p>
+            )}
+            <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+              {CREW_COPY.destinationsPerPerson}
+            </p>
+            <button
+              onClick={() => { setCurrentQuizStep(0); router.push("/quiz"); }}
+              className="text-xs font-semibold underline mt-1 -mb-2"
+              style={{ color: "var(--accent)", minHeight: 44 }}
+            >
+              Zmień skład
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Save preferences prompt */}

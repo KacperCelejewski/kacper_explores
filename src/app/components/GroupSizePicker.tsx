@@ -3,6 +3,7 @@
 import { useId } from "react";
 import type { Companion, GroupComposition } from "@/types";
 import { MAX_GROUP, groupFromCompanion, groupSize } from "@/lib/group";
+import { CREW_COPY } from "@/lib/groupFlow";
 
 const FRIENDS_MIN = 3;
 const DEFAULT_CHILD_AGE = 5;
@@ -70,7 +71,7 @@ function CounterRow({
       </div>
       <div className="flex items-center gap-3">
         <StepButton label={minusLabel} onClick={onMinus} disabled={minusDisabled}>−</StepButton>
-        <span className="text-lg font-bold text-center" style={{ minWidth: 28 }}>
+        <span className="text-2xl font-bold text-center" style={{ minWidth: 32 }}>
           <span aria-hidden="true">{value}</span>
           <span className="sr-only" role="status">{valueLabel}</span>
         </span>
@@ -95,19 +96,20 @@ export default function GroupSizePicker({ companion, group, onChange }: Props) {
       className="text-xs mt-3"
       style={{ color: "var(--text-muted)" }}
     >
-      {atLimit ? `Osiągnięto limit. ${limitHint}.` : `${limitHint}.`}
+      {atLimit ? `Osiągnięto limit. ${limitHint}.` : companion === "friends" ? `Od ${FRIENDS_MIN} do ${MAX_GROUP} osób: tyle mieści jedna rezerwacja lotów.` : `${limitHint}.`}
     </p>
   );
 
   const box = "p-4 rounded-2xl";
-  const boxStyle = { background: "var(--bg-surface)", border: "1.5px solid var(--border)" };
+  // Pole liczby osób to kluczowy wybór ekipy, więc wyróżnia się od zwykłej karty
+  const boxStyle = { background: "var(--accent-light)", border: "1.5px solid var(--accent)" };
 
   if (companion === "friends") {
     return (
       <div className={box} style={boxStyle} role="group" aria-label="Ile osób jedzie">
         <CounterRow
-          title="Ile osób jedzie"
-          hint={`Od ${FRIENDS_MIN} osób`}
+          title={CREW_COPY.sizeTitle}
+          hint={CREW_COPY.sizeHint}
           value={current.adults}
           valueLabel={`Liczba osób: ${current.adults}`}
           minusLabel="Mniej osób"

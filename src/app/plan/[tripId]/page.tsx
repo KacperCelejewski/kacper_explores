@@ -15,12 +15,14 @@ import CheckoutButton from "@/app/components/CheckoutButton";
 import DropSignup from "@/app/components/DropSignup";
 import DropProfileButton from "@/app/components/DropProfileButton";
 import { FlightCard, HotelLinks, LuggageTile, TicketsLink } from "@/app/components/PartnerLinks";
-import { IconPlane, IconBed, IconFork, IconTicket, IconLink, IconLock, IconDownload, IconCalendar, IconGlobe, IconCheck, IconClose, IconRefresh, IconPin, IconSuitcase } from "@/app/components/Icons";
+import { IconPlane, IconBed, IconFork, IconTicket, IconLock, IconDownload, IconCalendar, IconGlobe, IconCheck, IconClose, IconRefresh, IconPin, IconSuitcase } from "@/app/components/Icons";
 import type { DayPlan, DayActivity, TripPlan, DestinationRecommendation, QuizAnswers } from "@/types";
 import { getCityPhotoUrl } from "@/lib/cityPhotos";
 import { PRICES } from "@/lib/prices";
 import { isFreeCost } from "@/lib/affiliate";
 import { groupFromCompanion, groupSize, scaleBudgetText, showGroupBudget } from "@/lib/group";
+import { CREW_COPY, crewSummary, sendPlanTitle } from "@/lib/groupFlow";
+import SendPlanCard from "@/app/components/SendPlanCard";
 
 const ACTIVITY_COLORS: Record<string, string> = {
   attraction: "var(--accent-light)",
@@ -69,7 +71,6 @@ export default function PlanPage() {
   const [icsAsk, setIcsAsk] = useState(false);
   const [icsDate, setIcsDate] = useState("");
   const [activeDay, setActiveDay] = useState(0);
-  const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
   const [userCredits, setUserCredits] = useState<{ credits: number; isPro: boolean } | null>(null);
   // null = jeszcze nie wiemy; formularz zrzutu pokazujemy dopiero po sprawdzeniu profilu
@@ -86,16 +87,20 @@ export default function PlanPage() {
   const [isPublic, setIsPublic] = useState(false);
   const [publicToggling, setPublicToggling] = useState(false);
 
-  const handleTogglePublic = async () => {
-    if (!currentTrip?.id || publicToggling) return;
+  // Jedna flaga is_public otwiera link /share/[tripId] i galerię Odkryj
+  const setPublic = async (value: boolean): Promise<boolean> => {
+    if (!currentTrip?.id || publicToggling) return false;
     setPublicToggling(true);
     try {
       const res = await fetch(`/api/trips/${currentTrip.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ is_public: !isPublic }),
+        body: JSON.stringify({ is_public: value }),
       });
-      if (res.ok) setIsPublic((p) => !p);
+      if (res.ok) setIsPublic(value);
+      return res.ok;
+    } catch {
+      return false;
     } finally {
       setPublicToggling(false);
     }
@@ -125,21 +130,6 @@ export default function PlanPage() {
 
   // Transient error banner for regen/swap failures
   const [actionError, setActionError] = useState<string | null>(null);
-
-  const handleShare = () => {
-    if (!currentTrip?.id) return;
-    if (!isPublic) {
-      // Plan must be public before sharing — nudge user to toggle below
-      setCopied(true);
-      setTimeout(() => setCopied(false), 3000);
-      return;
-    }
-    const url = `${window.location.origin}/share/${currentTrip.id}`;
-    navigator.clipboard.writeText(url).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    });
-  };
 
   const handlePrint = () => window.print();
 
@@ -396,6 +386,7 @@ export default function PlanPage() {
   const groupBudget = showGroupBudget(tripCompanion, tripGroup);
   const scaleForGroup = (text: string) => (groupBudget ? scaleBudgetText(text, people) ?? text : text);
   const totalForGroup = groupBudget ? scaleBudgetText(plan.totalBudgetEstimate, people) : null;
+  const crew = crewSummary(tripCompanion, tripGroup);
 
   return (
     <div className="flex flex-col flex-1 pb-8" id="plan-print-area">
@@ -451,6 +442,17 @@ export default function PlanPage() {
             <h1>{plan.city} {dest?.countryFlag ?? ""} — {plan.duration} dni · {plan.country}</h1>
           </div>
 
+          {crew && (
+            <p className="text-sm font-bold mb-3" style={{ color: "var(--accent)" }}>
+              {crew.title}: {crew.detail}
+              {groupBudget && (
+                <span className="block text-xs font-normal mt-0.5" style={{ color: "var(--text-muted)" }}>
+                  Loty, nocleg, jedzenie i atrakcje poniżej są {CREW_COPY.perPerson}; koszt całkowity podajemy też {CREW_COPY.total}.
+                </span>
+              )}
+            </p>
+          )}
+
           {/* Budget breakdown */}
           <div className="grid grid-cols-2 gap-3">
             <BudgetItem label="Loty" value={plan.budgetBreakdown.flights} Icon={IconPlane} />
@@ -483,6 +485,17 @@ export default function PlanPage() {
             )}
           </div>
         </motion.div>
+      </div>
+
+      {/* Wyślij plan: główna akcja ekipy, widoczna bez przewijania całego planu */}
+      <div className="px-5 mb-4 no-print">
+        <SendPlanCard
+          tripId={currentTrip.id}
+          city={plan.city}
+          title={sendPlanTitle(tripCompanion, tripGroup)}
+          isPublic={isPublic}
+          onMakePublic={() => setPublic(true)}
+        />
       </div>
 
       {/* Lot i noclegi */}
@@ -756,22 +769,13 @@ export default function PlanPage() {
           <span>Plan zapisany na Twoim koncie</span>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 no-print">
-          <button
-            onClick={handleShare}
-            className="py-3 rounded-2xl text-xs font-semibold flex items-center justify-center gap-1 transition-all"
-            style={{
-              background: copied && !isPublic ? "var(--accent-light)" : copied ? "var(--success-bg)" : "var(--bg-surface)",
-              color: copied && !isPublic ? "var(--accent)" : copied ? "var(--success)" : "var(--text-secondary)",
-            }}
-          >
-            {copied && !isPublic ? "↓ Najpierw udostępnij plan" : copied ? <><IconCheck size={14} /> Skopiowano</> : <><IconLink size={14} /> Udostępnij</>}
-          </button>
+        <div className="grid grid-cols-2 gap-2 no-print">
           <button
             onClick={handlePDF}
             disabled={pdfLoading}
-            className="py-3 rounded-2xl text-xs font-semibold flex items-center justify-center gap-1 transition-all hover:opacity-80 relative"
+            className="rounded-2xl text-xs font-semibold flex items-center justify-center gap-1 transition-all hover:opacity-80 relative"
             style={{
+              minHeight: 44,
               background: userCredits?.isPro || feedbackGiven ? "var(--bg-surface)" : "var(--accent-light)",
               color: userCredits?.isPro || feedbackGiven ? "var(--text-secondary)" : "var(--accent)",
             }}
@@ -780,8 +784,8 @@ export default function PlanPage() {
           </button>
           <button
             onClick={handleICS}
-            className="py-3 rounded-2xl text-xs font-semibold flex items-center justify-center gap-1 transition-all hover:opacity-80"
-            style={{ background: "var(--bg-surface)", color: "var(--text-secondary)" }}
+            className="rounded-2xl text-xs font-semibold flex items-center justify-center gap-1 transition-all hover:opacity-80"
+            style={{ minHeight: 44, background: "var(--bg-surface)", color: "var(--text-secondary)" }}
           >
             <IconCalendar size={14} /> Kalendarz
           </button>
@@ -814,17 +818,19 @@ export default function PlanPage() {
           </div>
         )}
 
-{/* is_public toggle */}
+{/* Widoczność planu: ta sama flaga otwiera link dla ekipy i galerię Odkryj */}
         <button
-          onClick={handleTogglePublic}
+          onClick={() => setPublic(!isPublic)}
           disabled={publicToggling}
-          className="py-3 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 transition-opacity hover:opacity-80 no-print disabled:opacity-40"
+          aria-pressed={isPublic}
+          className="rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 transition-opacity hover:opacity-80 no-print disabled:opacity-40"
           style={{
+            minHeight: 48,
             background: isPublic ? "var(--success-bg)" : "var(--bg-surface)",
             color: isPublic ? "var(--success)" : "var(--text-secondary)",
           }}
         >
-          {publicToggling ? "…" : isPublic ? <><IconCheck size={16} /> Plan widoczny w galerii</> : <><IconGlobe size={16} /> Udostępnij w galerii Odkryj</>}
+          {publicToggling ? "…" : isPublic ? <><IconCheck size={16} /> Plan jest publiczny (link i galeria). Wyłącz</> : <><IconGlobe size={16} /> Pokaż plan w galerii Odkryj</>}
         </button>
 
         <button

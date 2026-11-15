@@ -16,18 +16,18 @@ import { getCityPhotoUrl, FEATURED_DESTINATIONS } from "@/lib/cityPhotos";
 const STEPS = [
   {
     num: "01",
-    title: "6 pytań o Ciebie",
-    desc: "Kto jedzie, kiedy, jaki masz budżet i co lubisz robić. Zajmuje mniej niż 3 minuty.",
+    title: "6 pytań o Was",
+    desc: "Ilu Was jedzie, kiedy, jaki budżet na osobę i co lubicie robić. Zajmuje mniej niż 3 minuty.",
   },
   {
     num: "02",
-    title: "Dostajesz 6 kierunków skrojonych pod Ciebie",
-    desc: "Patrzymy na budżet, styl i termin, i dobieramy 6 miejsc, które mieszczą się w Twoich widełkach. Z cenami lotów z Twojego lotniska.",
+    title: "6 kierunków w Waszym budżecie",
+    desc: "Patrzymy na budżet, styl i termin, i dobieramy 6 miejsc, które mieszczą się w widełkach. Z ceną lotu z Waszego lotniska, gdy mamy świeżą wycenę.",
   },
   {
     num: "03",
-    title: "Plan godzina po godzinie",
-    desc: "Śniadania, muzea, restauracje — z cenami, trasami i trikami budżetowymi. Gotowy od razu.",
+    title: "Plan godzina po godzinie, do wysłania ekipie",
+    desc: "Śniadania, muzea, restauracje: z cenami, trasami i trikami budżetowymi. Koszt na osobę i razem. Link do planu wklejacie na czacie, otwiera się bez konta.",
   },
 ];
 

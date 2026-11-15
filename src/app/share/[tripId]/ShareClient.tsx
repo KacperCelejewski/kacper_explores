@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { IconPlane, IconBed, IconFork, IconTicket, IconCheck, IconPin } from "@/app/components/Icons";
 import type { TripPlan, DayPlan, DayActivity, DestinationRecommendation } from "@/types";
 import Link from "next/link";
+import { CREW_COPY, crewSummary, crewTotalBudget, type SharedCrew } from "@/lib/groupFlow";
 
 const ACTIVITY_COLORS: Record<string, string> = {
   attraction: "var(--accent-light)",
@@ -38,6 +39,7 @@ interface SharedTrip {
   country: string;
   plan: TripPlan;
   destination: DestinationRecommendation | null;
+  crew?: SharedCrew | null;
 }
 
 export default function ShareClient() {
@@ -101,6 +103,8 @@ export default function ShareClient() {
   if (!trip) return null;
 
   const { plan, destination } = trip;
+  const crew = crewSummary(trip.crew?.companion, trip.crew?.group);
+  const crewTotal = crewTotalBudget(plan.totalBudgetEstimate, trip.crew ?? null);
 
   return (
     <div className="flex flex-col flex-1 pb-8">
@@ -116,8 +120,9 @@ export default function ShareClient() {
           </p>
           <button
             onClick={handleCopy}
-            className="flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full transition-all"
+            className="flex-shrink-0 text-xs font-semibold px-4 rounded-full transition-all inline-flex items-center gap-1"
             style={{
+              minHeight: 44,
               background: copied ? "var(--success-bg)" : "var(--accent)",
               color: copied ? "var(--success)" : "white",
             }}
@@ -139,6 +144,15 @@ export default function ShareClient() {
             </div>
           </div>
 
+          {crew && (
+            <p className="mt-3 text-sm font-bold" style={{ color: "var(--accent)" }}>
+              {CREW_COPY.shareCrewTitle}: {crew.detail}
+              <span className="block text-xs font-normal mt-0.5" style={{ color: "var(--text-muted)" }}>
+                Kwoty poniżej są {CREW_COPY.perPerson}; koszt całkowity jest też podany {CREW_COPY.total}.
+              </span>
+            </p>
+          )}
+
           <div className="mt-4 pt-4 border-t grid grid-cols-2 gap-3" style={{ borderColor: "var(--border)" }}>
             {[
               { label: "Loty", value: plan.budgetBreakdown.flights, Icon: IconPlane },
@@ -158,7 +172,20 @@ export default function ShareClient() {
 
           <div className="mt-3 pt-3 border-t flex items-center justify-between" style={{ borderColor: "var(--border)" }}>
             <span className="text-sm" style={{ color: "var(--text-muted)" }}>Szacowany całkowity koszt</span>
-            <span className="text-base font-bold" style={{ color: "var(--accent)" }}>{plan.totalBudgetEstimate}</span>
+            {crewTotal ? (
+              <div className="text-right">
+                <div className="text-base font-bold" style={{ color: "var(--accent)" }}>
+                  {plan.totalBudgetEstimate}
+                  <span className="text-xs font-normal ml-1" style={{ color: "var(--text-muted)" }}>{CREW_COPY.perPerson}</span>
+                </div>
+                <div className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
+                  {crewTotal} {CREW_COPY.total}
+                  <span className="text-xs ml-1">(szacunek)</span>
+                </div>
+              </div>
+            ) : (
+              <span className="text-base font-bold" style={{ color: "var(--accent)" }}>{plan.totalBudgetEstimate}</span>
+            )}
           </div>
         </motion.div>
       </div>
@@ -217,13 +244,13 @@ export default function ShareClient() {
           style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
         >
           <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>
-            Ułóż swój plan →
+            {crew ? CREW_COPY.shareStartOwn : "Ułóż swój plan"} →
           </p>
           <p className="text-xs mt-1 mb-4" style={{ color: "var(--text-muted)" }}>
-            Odpowiedz na 6 pytań, a ułożymy Twój plan godzina po godzinie
+            Odpowiedz na 6 pytań, a ułożymy plan godzina po godzinie
           </p>
           <Link
-            href="/"
+            href={crew ? "/quiz?companion=friends" : "/"}
             className="btn-primary"
             style={{ display: "block", textAlign: "center", textDecoration: "none", fontSize: "0.875rem" }}
           >

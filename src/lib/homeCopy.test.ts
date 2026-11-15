@@ -18,7 +18,7 @@ describe("HOME", () => {
 
   it("podtytuł bez włączonych funkcji nie obiecuje części 2–6", () => {
     expect(homeSubtitle(ALL_OFF)).toBe(
-      "Powiedz, kto jedzie. Dostaniesz kierunki w Waszym budżecie i plan godzina po godzinie.",
+      "Powiedz, ilu Was jedzie. Dostaniesz kierunki w Waszym budżecie, koszt na osobę i razem oraz plan do wysłania ekipie.",
     );
   });
 
