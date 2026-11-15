@@ -14,6 +14,8 @@ import type { DestinationRecommendation, FlightDetails } from "@/types";
 import { getCityPhotoUrl } from "@/lib/cityPhotos";
 import { formatPlans } from "@/lib/formatPlans";
 import { IconPin, IconPlane, IconCheck } from "@/app/components/Icons";
+import { cardFlightPriceCopy, type CardFlightPrice } from "@/lib/flights/card-price";
+import { useFlightPrices } from "./useFlightPrices";
 
 interface UserStatus {
   authenticated: boolean;
@@ -303,11 +305,13 @@ function DestCard({
   onPlan,
   airports,
   month,
+  quote,
 }: {
   dest: DestinationRecommendation;
   onPlan: (dest: DestinationRecommendation) => void;
   airports: string[];
   month: number | null;
+  quote: CardFlightPrice | null;
 }) {
   const highlights = (dest as DestinationRecommendation & { highlights?: string[] }).highlights ?? [];
   const [photoUrl, setPhotoUrl] = useState(() => getCityPhotoUrl(dest.city, 800));
@@ -318,7 +322,12 @@ function DestCard({
   const catalogCity = CATALOG.find((entry) => entry.city.toLocaleLowerCase("pl") === dest.city.toLocaleLowerCase("pl"));
   const origin = airports[0] ?? "WRO";
   const destination = origin === "BER" ? catalogCity?.iataBer ?? catalogCity?.iataWro : catalogCity?.iataWro;
-  const flight: PartnerLink = flightLink(dest.bestOffer, config, passengers) ?? flightSearchLink({ origin, destination: destination ?? "", passengers }, config);
+  const freshQuote = quote;
+  const priceCopy = cardFlightPriceCopy(freshQuote);
+  const flight: PartnerLink = freshQuote
+    ? flightSearchLink({ origin: freshQuote.origin, destination: freshQuote.destination,
+        depart: freshQuote.departDate, returnDate: freshQuote.returnDate, passengers }, config)
+    : flightLink(dest.bestOffer, config, passengers) ?? flightSearchLink({ origin, destination: destination ?? "", passengers }, config);
   const fetchedRef = useRef(false);
 
   useEffect(() => {
@@ -420,14 +429,24 @@ function DestCard({
 
         {/* Flight cost + actions */}
         <div
-          className="flex items-center justify-between pt-3"
+          className="flex flex-wrap items-center justify-between gap-3 pt-3"
           style={{ borderTop: "1px solid var(--border)" }}
         >
           <div>
             <p className="text-xs" style={{ color: "var(--text-muted)" }}>Cena lotu</p>
             <p className="font-bold text-sm" style={{ color: "var(--accent)" }}>
-              Sprawdź na żywo
+              {priceCopy.amount}
             </p>
+            <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{priceCopy.note}</p>
+            {freshQuote && (
+              <>
+                <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Za osobę, w obie strony · {freshQuote.origin} → {dest.city}</p>
+                <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                  {freshQuote.departDate.split("-").reverse().join(".")}–{freshQuote.returnDate.split("-").reverse().join(".")}
+                </p>
+                <p className="text-xs" style={{ color: "var(--text-muted)" }}>Cena może się zmienić.</p>
+              </>
+            )}
             <PartnerNote show={flight.paid} />
           </div>
           <div className="flex gap-2">
@@ -669,6 +688,7 @@ export default function DestinationsPage() {
   const [error, setError]               = useState<string | null>(null);
   const [userStatus, setUserStatus]     = useState<UserStatus | null>(null);
   const [fetchKey, setFetchKey]         = useState(0);
+  const flightPrices = useFlightPrices(destinations, quizAnswers, _hasHydrated && !loading);
 
   const [planModal, setPlanModal]       = useState<DestinationRecommendation | null>(null);
   const [upgradeModal, setUpgradeModal] = useState(false);
@@ -940,13 +960,14 @@ export default function DestinationsPage() {
 
       {/* Destination cards */}
       <div className="flex flex-col gap-4">
-        {destinations.map((dest) => (
+        {destinations.map((dest, index) => (
           <DestCard
             key={`${dest.city}-${dest.country}`}
             dest={dest}
             onPlan={handlePlanClick}
             airports={quizAnswers.airports}
             month={quizAnswers.month}
+            quote={flightPrices[index] ?? null}
           />
         ))}
       </div>
