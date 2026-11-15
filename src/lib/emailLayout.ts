@@ -96,11 +96,11 @@ export function mailParagraph(html: string, opts: { muted?: boolean; size?: numb
 function footerHtml(footer: MailFooterInput): string {
   const links = (footer.links ?? [])
     .map((l) => `<a href="${esc(l.url)}" class="m-accent" style="color:${MAIL_COLORS.accent};text-decoration:underline;">${esc(l.label)}</a>`)
-    .join(" &middot; ");
+    .join(' <span style="padding:0 4px;">&middot;</span> ');
   return `<tr>
     <td class="m-pad m-line" style="padding:20px 32px 28px;border-top:1px solid ${MAIL_COLORS.line};">
       <p class="m-muted" style="margin:0 0 8px;color:${MAIL_COLORS.muted};font-family:${SANS};font-size:13px;line-height:1.5;">${footer.reason}</p>
-      ${links ? `<p class="m-muted" style="margin:0 0 8px;font-family:${SANS};font-size:13px;line-height:1.5;">${links}</p>` : ""}
+      ${links ? `<p class="m-muted" style="margin:0 0 8px;color:${MAIL_COLORS.muted};font-family:${SANS};font-size:13px;line-height:1.5;">${links}</p>` : ""}
       <p class="m-muted" style="margin:0;color:${MAIL_COLORS.muted};font-family:${SANS};font-size:12px;line-height:1.5;">Włóczykij &middot; <a href="${MAIL_SITE}" class="m-accent" style="color:${MAIL_COLORS.accent};text-decoration:underline;">wloczykij.me</a> &middot; <a href="mailto:${MAIL_CONTACT}" class="m-accent" style="color:${MAIL_COLORS.accent};text-decoration:underline;">${MAIL_CONTACT}</a></p>
     </td>
   </tr>`;
