@@ -670,7 +670,7 @@ function StepBudget({
 
   return (
     <div>
-      <StepHeader title="Jaki masz budżet?" hint="Całkowity koszt wyjazdu — loty, noclegi, jedzenie." />
+      <StepHeader title="Jaki masz budżet?" hint="Na osobę, za cały wyjazd: loty, noclegi, jedzenie." />
       <div className="flex flex-col gap-3" role="radiogroup" aria-label="Wybierz budżet">
         {opts.map((opt) => (
           <OptionCard key={opt.value} className="quiz-option--roomy" selected={budget === opt.value} onClick={() => onPick(opt.value)}>

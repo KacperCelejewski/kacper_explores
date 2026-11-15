@@ -1,5 +1,5 @@
 import type { QuizAnswers, DestinationRecommendation, FlightDetails, TripPlan, DayPlan } from "@/types";
-import { MONTH_NAMES, STYLE_LABELS, VIBE_LABELS, PLACE_LABELS } from "@/lib/constants";
+import { budgetPromptLabel, MONTH_NAMES, STYLE_LABELS, VIBE_LABELS, PLACE_LABELS } from "@/lib/constants";
 import { groupLabel, groupSize } from "@/lib/group";
 import { calcTripSchedule, formatScheduleForPrompt } from "@/lib/tripSchedule";
 
@@ -10,7 +10,7 @@ export function buildPlanPrompt(
 ): string {
   const monthName = quiz.month ? MONTH_NAMES[quiz.month - 1] : "nieokreślony";
   const stylesList = quiz.styles.map((s) => STYLE_LABELS[s] ?? s).join(", ") || "brak preferencji";
-  const budgetLabel = quiz.budget === "low" ? "niski (backpacker)" : "średni (komfortowy)";
+  const budgetLabel = budgetPromptLabel(quiz.budget);
   const vibeLabel = quiz.vibe ? VIBE_LABELS[quiz.vibe] : null;
   const placeLabel = quiz.placeType ? PLACE_LABELS[quiz.placeType] : null;
   const duration = quiz.duration ?? 3;

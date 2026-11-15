@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { checkRateLimit, LIMITS } from "@/lib/rateLimit";
 import { validateQuizAnswers, getClientIp } from "@/lib/validate";
 import { logGeminiCall } from "@/lib/geminiLog";
-import { MONTH_NAMES, VIBE_LABELS, PLACE_LABELS, DESTINATION_CACHE_TTL_MS } from "@/lib/constants";
+import { budgetPromptLabel, MONTH_NAMES, VIBE_LABELS, PLACE_LABELS, DESTINATION_CACHE_TTL_MS } from "@/lib/constants";
 import { excludeOriginCities, originExclusionPrompt } from "@/lib/originCities";
 import type { DestinationRecommendation, TravelStyle, TravelVibe, PlaceType } from "@/types";
 
@@ -29,7 +29,7 @@ function buildPrompt(body: Record<string, unknown>): string {
   const preferredCity = (body.preferredCity as string | undefined) ?? null;
 
   const monthName = month ? MONTH_NAMES[month - 1] : "dowolny";
-  const budgetLabel = budget === "low" ? "niski (backpacker, do 1500 PLN łącznie)" : "średni (komfortowy, do 2500 PLN łącznie)";
+  const budgetLabel = budgetPromptLabel(budget === "low" ? "low" : "medium");
 
   const originDesc = airports.length === 1
     ? `lotnisko wylotu: ${airports[0]}`
