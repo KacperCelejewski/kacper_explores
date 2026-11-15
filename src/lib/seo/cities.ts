@@ -59,7 +59,22 @@ export function cityAudience(c: CatalogEntry): string[] {
 }
 
 // Slugi miast z listy weekendowej, dla których w danych są okazje (nazwy z Travelpayouts); do sitemap
-export function slugsWithDeals(cityNames: string[]): string[] {
+export function citiesWithDeals(cityNames: string[]): CatalogEntry[] {
   const have = new Set(cityNames);
-  return weekendCities().filter((c) => have.has(dealCityName(c))).map(citySlug);
+  return weekendCities().filter((c) => have.has(dealCityName(c)));
+}
+
+export function slugsWithDeals(cityNames: string[]): string[] {
+  return citiesWithDeals(cityNames).map(citySlug);
+}
+
+// Miasta o największej liczbie wspólnych tagów katalogu; remis rozstrzyga kolejność w katalogu (wynik stały)
+export function similarCities(c: CatalogEntry, n = 3): CatalogEntry[] {
+  return weekendCities()
+    .filter((o) => o.city !== c.city)
+    .map((o, i) => ({ o, i, shared: o.tags.filter((t) => c.tags.includes(t)).length }))
+    .filter((x) => x.shared > 0)
+    .sort((a, b) => b.shared - a.shared || a.i - b.i)
+    .slice(0, n)
+    .map((x) => x.o);
 }

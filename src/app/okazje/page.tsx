@@ -5,8 +5,10 @@ import SiteFooter from "@/app/components/SiteFooter";
 import DropSignup from "@/app/components/DropSignup";
 import { POLISH_AIRPORTS } from "@/lib/airports";
 import { ORIGIN_GENITIVE } from "@/lib/drop/email";
-import { getDealsForOrigin } from "@/lib/drop/read";
+import { getCitiesWithDeals, getDealsForOrigin } from "@/lib/drop/read";
+import CityLinks from "@/app/components/CityLinks";
 import { AIRPORT_FACTS } from "@/lib/seo/airportFacts";
+import { socialMeta } from "@/lib/seo/social";
 import { breadcrumbLd, itemListLd, jsonLdScript } from "@/lib/seo/jsonld";
 
 // Okazje zmieniają się raz w tygodniu; godzina cache wystarcza i oszczędza zapytania do bazy
@@ -16,18 +18,14 @@ export const metadata: Metadata = {
   title: "Tanie loty na weekend z polskich lotnisk",
   description: "Najtańsze wyjazdy na najbliższy weekend z Wrocławia, Katowic, Krakowa, Warszawy, Poznania i Gdańska. Ceny lotów, daty i ile godzin zostaje na miejscu, odświeżane co tydzień.",
   alternates: { canonical: "https://wloczykij.me/okazje" },
-  openGraph: {
-    title: "Tanie loty na weekend z polskich lotnisk",
-    description: "Najtańsze wyjazdy na najbliższy weekend z polskich lotnisk, odświeżane co tydzień.",
-    url: "https://wloczykij.me/okazje",
-    type: "website",
-  },
+  ...socialMeta("Tanie loty na weekend z polskich lotnisk", "Najtańsze wyjazdy na najbliższy weekend z polskich lotnisk, odświeżane co tydzień.", "/okazje"),
 };
 
 // Modlin pokazuje dane z Okęcia (kod miasta WAW), więc nie jest tu osobną pozycją
 const AIRPORTS = POLISH_AIRPORTS.filter((a) => a.code !== "WMI");
 
 export default async function DealsHubPage() {
+  const cities = await getCitiesWithDeals();
   const rows = await Promise.all(
     AIRPORTS.map(async (a) => {
       try {
@@ -84,6 +82,8 @@ export default async function DealsHubPage() {
             );
           })}
         </ul>
+
+        <CityLinks cities={cities} title="Wszystkie miasta z cenami lotów" />
 
         <div className="mt-12"><DropSignup /></div>
       </main>

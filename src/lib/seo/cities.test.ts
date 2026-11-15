@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cityFromSlug, citySlug, weekendCities } from "./cities";
+import { citiesWithDeals, cityFromSlug, citySlug, similarCities, slugsWithDeals, weekendCities } from "./cities";
 
 describe("weekendCities", () => {
   const cities = weekendCities();
@@ -55,5 +55,34 @@ describe("nazwy z Travelpayouts", () => {
     expect(cityFromDealName("Tallinn")?.city).toBe("Tallin");
     expect(cityFromDealName("Reykjavík")?.city).toBe("Reykjavik");
     expect(slugsWithDeals(["Tallinn"])).toEqual(["tallin"]);
+  });
+});
+
+describe("similarCities", () => {
+  const praga = cityFromSlug("praga")!;
+  it("zwraca 3 inne miasta z listy weekendowej, bez duplikatów", () => {
+    const out = similarCities(praga);
+    expect(out).toHaveLength(3);
+    expect(out.map((c) => c.city)).not.toContain(praga.city);
+    expect(new Set(out.map(citySlug)).size).toBe(3);
+    for (const c of out) expect(weekendCities()).toContain(c);
+  });
+  it("wybiera miasta ze wspólnymi tagami i jest deterministyczne", () => {
+    const out = similarCities(praga);
+    expect(out.every((c) => c.tags.some((t) => praga.tags.includes(t)))).toBe(true);
+    expect(similarCities(praga).map(citySlug)).toEqual(out.map(citySlug));
+  });
+});
+
+describe("citiesWithDeals", () => {
+  it("zwraca tylko miasta z listy weekendowej, które mają okazje, w kolejności katalogu", () => {
+    const out = citiesWithDeals(["Praga", "Tallinn", "Nieznane", "Bali"]);
+    expect(out.map((c) => c.city)).toEqual(expect.arrayContaining(["Praga", "Tallin"]));
+    expect(out.map((c) => c.city)).not.toContain("Bali");
+    expect(out).toHaveLength(2);
+  });
+  it("jest zgodna ze slugsWithDeals", () => {
+    const names = ["Praga", "Rzym", "Budapeszt"];
+    expect(citiesWithDeals(names).map(citySlug)).toEqual(slugsWithDeals(names));
   });
 });

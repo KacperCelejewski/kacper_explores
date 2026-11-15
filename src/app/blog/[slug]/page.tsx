@@ -5,6 +5,8 @@ import DropSignup from "@/app/components/DropSignup";
 import { splitAtHeading } from "@/lib/blogSplit";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { getAllPosts, getPost } from "@/lib/blog";
+import { faqLd, jsonLdScript } from "@/lib/seo/jsonld";
+import { articleLd, articleBreadcrumbLd, EDITORIAL_AUTHOR } from "@/lib/seo/articleLd";
 import SiteNav from "../../components/SiteNav";
 import SiteFooter from "../../components/SiteFooter";
 import {
@@ -47,6 +49,7 @@ export async function generateMetadata(
       images: [{ url: "/opengraph-image", width: 1200, height: 630 }],
       type: "article",
       publishedTime: post.date,
+      ...(post.updated ? { modifiedTime: post.updated } : {}),
       tags: post.tags,
     },
     twitter: {
@@ -110,33 +113,17 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   // Zapis na zrzut w okolicy 40% artykułu; zimny czytelnik z Google dostaje najpierw coś mniejszego niż konto
   const [introPart, restPart] = splitAtHeading(post.content, 0.4);
 
-  const articleSchema = {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    headline: post.title,
-    description: post.description,
-    datePublished: post.date,
-    dateModified: post.date,
-    inLanguage: "pl",
-    url: `https://wloczykij.me/blog/${slug}`,
-    mainEntityOfPage: `https://wloczykij.me/blog/${slug}`,
-    image: "https://wloczykij.me/opengraph-image",
-    author: { "@type": "Organization", name: "Włóczykij", url: "https://wloczykij.me" },
-    publisher: {
-      "@type": "Organization",
-      name: "Włóczykij",
-      url: "https://wloczykij.me",
-      logo: { "@type": "ImageObject", url: "https://wloczykij.me/logo.svg" },
-    },
-    keywords: post.tags.join(", "),
-  };
+  const schemas = [
+    articleLd(post, slug),
+    articleBreadcrumbLd(post.title, slug),
+    ...(post.faq ? [faqLd(post.faq)] : []),
+  ];
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
-      />
+      {schemas.map((s, i) => (
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(s) }} />
+      ))}
       <SiteNav />
       <article className="flex flex-col flex-1 px-5 pb-10">
         {/* Back */}
@@ -189,16 +176,14 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
               style={{ background: "var(--accent)", color: "white" }}
               aria-hidden="true"
             >
-              {post.author === "editorial" ? "W" : "K"}
+              W
             </div>
             <div>
               <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>
-                {post.author === "editorial" ? "Redakcja Włóczykija" : "Włóczykij"}
+                {EDITORIAL_AUTHOR}
               </p>
               <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                {post.author === "editorial"
-                  ? "Poradnik oparty na ogólnych zasadach; ceny i warunki sprawdź u przewoźnika"
-                  : "Założyciel Włóczykij · podróżuje solo od 6 lat"}
+                Poradnik oparty na ogólnych zasadach; ceny i warunki sprawdź u przewoźnika
               </p>
             </div>
           </div>

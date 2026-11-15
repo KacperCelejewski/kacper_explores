@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
 import { describe, expect, it } from "vitest";
-import { getAllPosts } from "./blog";
+import { getAllPosts, postForCity } from "./blog";
 import { POLISH_AIRPORTS } from "./airports";
 import { citySlug, weekendCities } from "./seo/cities";
 
@@ -17,6 +17,9 @@ const COVER_ICONS = new Set(["compass", "globe", "coin", "plane", "mountain"]);
 // \b w JS zna tylko ASCII, więc „zł” i polskie słowa łapiemy przez granice liter z flagą u
 export const PRICE_RE = /\d[\d\s.,\u00a0]*\s*(zł|zlotych|złotych|pln|eur|euro|usd|gbp|czk|huf)(?![\p{L}])|[€£$]\s*\d|\d\s*(€|£|\$|%)|(?<![\p{L}])(procent|procentów)(?![\p{L}])/iu;
 export const FIRST_PERSON_RE = /(?<![\p{L}])(oceniłem|oceniłam|zebrałem|zebrałam|sprawdziłem|sprawdziłam|przetestowałem|przetestowałam|byłem|byłam|wybrałem|wybrałam|polecam|uważam|mój|moja|moje|moim zdaniem)(?![\p{L}])|od 6 lat/iu;
+
+// Zwroty, które udają źródło, choć żadnego nie podają
+export const UNSOURCED_RE = /badania pokazuj|statystycznie|według badań|jak wynika z badań|ranking[ui]? (\p{L}+ )?wygrywa/iu;
 
 function validRoute(href: string): boolean {
   const [pathname] = href.replace(/\/$/, "").split(/[?#]/);
@@ -43,7 +46,8 @@ describe.each(files)("artykuł %s", (file) => {
     expect(COVER_ICONS.has(data.coverIcon)).toBe(true);
     expect(Array.isArray(data.tags) && data.tags.length > 0).toBe(true);
     // literówka w author po cichu zmieniłaby podpis na głos założyciela
-    expect([undefined, "redakcja"]).toContain(data.author);
+    // marka nie ma twarzy ani imienia: każdy artykuł podpisuje redakcja
+    expect(data.author, `${file}: brak author: redakcja`).toBe("redakcja");
     expect(data.readingTime).toBeGreaterThan(0);
   });
 
@@ -56,7 +60,16 @@ describe.each(files)("artykuł %s", (file) => {
     for (const href of links) expect(validRoute(href), `${file}: ${href}`).toBe(true);
   });
 
-  if (data.author === "redakcja") {
+  {
+    it("ma sekcję „Zobacz też”: min. 2 linki do artykułów i 1 do okazji lub miasta", () => {
+      const section = content.split("## Zobacz też")[1] ?? "";
+      const links = [...section.matchAll(/\]\((\/[^)\s]*)\)/g)].map((m) => m[1]);
+      expect(links.filter((l) => l.startsWith("/blog/")).length, `${file}: linki do artykułów`).toBeGreaterThanOrEqual(2);
+      expect(links.some((l) => /^\/(okazje|weekend)/.test(l)), `${file}: link do okazji/miasta`).toBe(true);
+    });
+    it("nie powołuje się na niezweryfikowane badania ani statystyki", () => {
+      expect(content).not.toMatch(UNSOURCED_RE);
+    });
     it("tekst redakcji nie podaje cen ani liczb, których nie da się sprawdzić", () => {
       expect(content).not.toMatch(PRICE_RE);
     });
@@ -67,6 +80,36 @@ describe.each(files)("artykuł %s", (file) => {
       expect(content).toMatch(/\]\(\/(okazje|weekend)/);
     });
   }
+});
+
+describe("artykuły o mieście (frontmatter city)", () => {
+  const cityPosts = files
+    .map((f) => ({ f, data: matter(fs.readFileSync(path.join(DIR, f), "utf-8")).data }))
+    .filter((x) => x.data.city);
+  it("są trzy plany 48 godzin z polem city", () => {
+    expect(cityPosts.map((x) => x.data.city).sort()).toEqual(["Praga", "Rzym", "Wilno"]);
+  });
+  it.each(cityPosts)("$f wskazuje miasto ze strony /weekend i linkuje do niej", ({ f, data }) => {
+    const city = weekendCities().find((c) => c.city === data.city);
+    expect(city, `${f}: nieznane miasto ${data.city}`).toBeTruthy();
+    const content = fs.readFileSync(path.join(DIR, f), "utf-8");
+    expect(content).toContain(`](/weekend/${citySlug(city!)})`);
+  });
+  it("postForCity zwraca artykuł dla miasta i null dla pozostałych", () => {
+    expect(postForCity("praga")?.slug).toBe("weekend-w-pradze-plan-na-48-godzin");
+    expect(postForCity("barcelona")).toBeNull();
+  });
+});
+
+describe("klaster wyjazdu ze znajomymi", () => {
+  const TARGET = "/blog/wyjazd-ze-znajomymi-jak-ustalic-budzet-i-kierunek";
+  it.each(["z-czego-sklada-sie-budzet-weekendu-w-europie", "jak-wybrac-kierunek-na-weekend-pieciu-pytan"])(
+    "%s linkuje do artykułu o ekipie",
+    (slug) => {
+      const raw = fs.readFileSync(path.join(DIR, `${slug}.mdx`), "utf-8");
+      expect(raw).toContain(`](${TARGET})`);
+    },
+  );
 });
 
 describe("reguły treści redakcji", () => {
@@ -86,12 +129,13 @@ describe("reguły treści redakcji", () => {
     }
     expect(FIRST_PERSON_RE.test("polecamy sprawdzić regulamin")).toBe(false);
   });
+  it("wykrywają zwroty udające źródło", () => {
+    for (const t of ["Badania pokazują, że", "Statystycznie najtańsze", "według badań"]) expect(UNSOURCED_RE.test(t), t).toBe(true);
+  });
 });
 
 describe("getAllPosts", () => {
-  it("zwraca wszystkie artykuły z poprawnym autorem", () => {
-    const posts = getAllPosts();
-    expect(posts.length).toBe(files.length);
-    for (const p of posts) expect(["founder", "editorial"]).toContain(p.author);
+  it("zwraca wszystkie artykuły", () => {
+    expect(getAllPosts().length).toBe(files.length);
   });
 });

@@ -1,6 +1,8 @@
 import { cache } from "react";
 import { POLISH_AIRPORTS } from "@/lib/airports";
 import { createServiceClient } from "@/lib/supabase/service";
+import { citiesWithDeals } from "@/lib/seo/cities";
+import type { CatalogEntry } from "@/lib/destinations/catalog";
 import type { CityTeaser, DropDeal } from "./types";
 
 // Segment adresu (/okazje/wro) na kod polskiego lotniska; reszta to 404
@@ -95,6 +97,19 @@ export const getDealsForCity = cache(async (cityName: string): Promise<DropDeal[
     return bestPerOrigin(upcomingDeals(pickLatestWeek(data as DropDeal[])));
   } catch (err) {
     console.error("[drop/read] city", err instanceof Error ? err.message : err);
+    return [];
+  }
+});
+
+// Miasta z listy weekendowej, do których w ostatnim tygodniu są ceny (te strony są w indeksie); przy błędzie bazy pusto.
+// Stały spis miast na /okazje i na stronie głównej, żeby każda indeksowalna strona miasta miała wejście z linku.
+export const getCitiesWithDeals = cache(async (): Promise<CatalogEntry[]> => {
+  try {
+    const { data } = await createServiceClient().from("drop_deals").select("city_name, week").order("week", { ascending: false }).limit(1500);
+    if (!data) return [];
+    return citiesWithDeals(pickLatestWeek(data as { week: string; city_name: string }[]).map((r) => r.city_name));
+  } catch (err) {
+    console.error("[drop/read] cities", err instanceof Error ? err.message : err);
     return [];
   }
 });

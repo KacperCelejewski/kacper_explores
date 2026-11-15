@@ -37,7 +37,7 @@ Not another flight aggregator and not a generic "travel planner". Włóczykij is
 - Entry paths: full quiz (`/quiz`), quick path (`/quick`), destinations browser (`/destinations`), weekend deals (`/okazje/[lotnisko]`).
 - Plan view (`/plan/[tripId]`): streamed days, regenerate a single day, swap one activity, packing list, restaurant picks, Leaflet map, budget tracker, chat, PDF and `.ics` export, public share link (`/share/[tripId]`).
 - Pre-trip reminder e-mail (Vercel Cron, daily 07:00), newsletter with double opt-in.
-- Blog in MDX (`src/content/blog`) for SEO, focused on budget solo travel in Europe.
+- Blog in MDX (`src/content/blog`, "Blog Włóczykija") for SEO: group-trip cluster, weekend guides and budget travel in Europe. Every article is signed "Redakcja Włóczykija" (no founder name or face on the brand channel).
 - Typical moment of use: on a phone, Thursday evening, deciding quickly.
 
 ## Capabilities and Constraints
@@ -63,7 +63,7 @@ Source of truth: [BRAND.md](BRAND.md).
 ## Evidence on Hand
 
 - The product is live, with real functionality: quiz, real flight prices, streamed plans, payments, e-mails, admin panel.
-- Real content: five Polish blog articles in `src/content/blog`, a sample Barcelona itinerary on the homepage, logo at `public/logo.svg`, city photos via Unsplash API.
+- Real content: Polish blog articles in `src/content/blog`, a sample Barcelona itinerary on the homepage, logo at `public/logo.svg`, city photos via Unsplash API.
 - **Absent:** testimonials, reviews, user counts, trip counts, press, partner logos and benchmarks. Do not invent any of them. Factual claims allowed: "2 plany za darmo co miesiąc", "6 pytań", the prices above, and features that exist in code.
 - README notes a missing screenshot/GIF of the quiz → plan flow.
 
