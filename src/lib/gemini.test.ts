@@ -103,4 +103,45 @@ describe("buildPlanPrompt", () => {
     expect(prompt).toContain('"flights":"Sprawdź w wyszukiwarce"');
     expect(prompt).toMatch(/BEZ lotów/);
   });
+
+  it("solo prompt keeps the unchanged companion line and has no group wording", () => {
+    const prompt = buildPlanPrompt(destination, { ...quiz, companion: "solo" } as never, null);
+    expect(prompt).toContain("Kto podróżuje: solo (samotny podróżnik)");
+    expect(prompt).not.toContain("za osobę");
+    expect(prompt).not.toContain("Skład grupy");
+  });
+
+  it("friends prompt shows the composition and asks for per-person costs", () => {
+    const prompt = buildPlanPrompt(
+      destination,
+      { ...quiz, companion: "friends", group: { adults: 4, childrenAges: [] } } as never,
+      null,
+    );
+    expect(prompt).toContain("Skład grupy: 4 osoby");
+    expect(prompt).toContain("za osobę");
+    expect(prompt).toMatch(/taksówk/i);
+    expect(prompt).toMatch(/apartament/i);
+    expect(prompt).toMatch(/rezerwacj\w+ stolika/i);
+  });
+
+  it("family prompt lists children's ages and hints at family tickets", () => {
+    const prompt = buildPlanPrompt(
+      destination,
+      { ...quiz, companion: "family", group: { adults: 2, childrenAges: [4, 7] } } as never,
+      null,
+    );
+    expect(prompt).toContain("4 i 7 lat");
+    expect(prompt).toContain("bilety rodzinne");
+    expect(prompt).toMatch(/darmow\w+ wejści\w+ dla dzieci/);
+    expect(prompt).toContain("za osobę");
+  });
+
+  it("group prompt carries no names, only numbers", () => {
+    const prompt = buildPlanPrompt(
+      destination,
+      { ...quiz, companion: "family", group: { adults: 2, childrenAges: [4, 7] } } as never,
+      null,
+    );
+    expect(prompt).not.toMatch(/\b(Ania|Kasia|Tomek)\b/);
+  });
 });

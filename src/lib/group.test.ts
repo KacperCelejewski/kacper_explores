@@ -65,6 +65,28 @@ describe("scaleBudgetText", () => {
     expect(scaleBudgetText("~300 PLN", 2)).toBe("600 PLN");
   });
 
+  it("traktuje spację tysięcy jako część liczby", () => {
+    expect(scaleBudgetText("1 200–1 500 PLN", 4)).toBe("4 800–6 000 PLN");
+    expect(scaleBudgetText("1\u00a0200 PLN", 2)).toBe("2 400 PLN");
+  });
+
+  it("obsługuje ułamki z przecinkiem i kropką", () => {
+    expect(scaleBudgetText("2,5 PLN", 2)).toBe("5 PLN");
+    expect(scaleBudgetText("2.5 PLN", 3)).toBe("8 PLN");
+  });
+
+  it("dla mnożnika 1 zwraca tekst bez zmian, razem z tyldą", () => {
+    expect(scaleBudgetText("~300 PLN", 1)).toBe("~300 PLN");
+    expect(scaleBudgetText("1200-1500 PLN", 1)).toBe("1200-1500 PLN");
+  });
+
+  it("zwraca null dla niepoprawnego mnożnika", () => {
+    expect(scaleBudgetText("300 PLN", 0)).toBeNull();
+    expect(scaleBudgetText("300 PLN", -2)).toBeNull();
+    expect(scaleBudgetText("300 PLN", Number.NaN)).toBeNull();
+    expect(scaleBudgetText("300 PLN", Infinity)).toBeNull();
+  });
+
   it("zwraca null bez cyfr", () => {
     expect(scaleBudgetText("Free", 4)).toBeNull();
     expect(scaleBudgetText("", 4)).toBeNull();

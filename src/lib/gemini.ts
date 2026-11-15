@@ -1,5 +1,6 @@
 import type { QuizAnswers, DestinationRecommendation, FlightDetails, TripPlan, DayPlan } from "@/types";
 import { MONTH_NAMES, STYLE_LABELS, VIBE_LABELS, PLACE_LABELS } from "@/lib/constants";
+import { groupLabel } from "@/lib/group";
 import { calcTripSchedule, formatScheduleForPrompt } from "@/lib/tripSchedule";
 
 export function buildPlanPrompt(
@@ -31,6 +32,14 @@ export function buildPlanPrompt(
     ? "Grupa znajomych — aktywności grupowe, wieczorne wyjścia, bary i imprezy, podział kosztów noclegów."
     : "Solo — wskazówki bezpieczeństwa, miejsca do poznania innych podróżnych (hostelowe bary, free tours, food markety).";
 
+  // Skład grupy liczy się tylko dla znajomych i rodziny z jawnie podaną grupą.
+  const hasGroup = (quiz.companion === "friends" || quiz.companion === "family") && !!quiz.group;
+  const groupProfile = hasGroup && quiz.group ? `\n- Skład grupy: ${groupLabel(quiz.group)}` : "";
+  const groupGuide = !hasGroup ? ""
+    : quiz.companion === "family"
+    ? "\nGRUPA: wszystkie koszty podawaj za osobę. Nocleg to udział jednej osoby w realnej opcji dla tej rodziny (np. apartament rodzinny podzielony na wszystkie osoby). Wskaż, gdzie liczba osób zmienia rachunek: taksówka z lotniska zamiast kilku biletów komunikacji, apartament zamiast pokoi w hostelu, bilety rodzinne i grupowe, darmowe wejścia dla dzieci, rezerwacja stolika dla większej grupy."
+    : "\nGRUPA: wszystkie koszty podawaj za osobę. Nocleg to udział jednej osoby w realnej opcji dla tej grupy (np. apartament dla czterech podzielony na czterech). Wskaż, gdzie liczba osób zmienia rachunek: taksówka z lotniska zamiast kilku biletów komunikacji, apartament zamiast łóżek w hostelu, bilety grupowe, rezerwacja stolika dla dużej grupy.";
+
   const vibeGuide = quiz.vibe === "chill"
     ? "Spokojne tempo — ranki na kawie, popołudnia na spacerach, wieczory w lokalnych barach. Bez pośpiechu."
     : quiz.vibe === "intense"
@@ -53,7 +62,7 @@ export function buildPlanPrompt(
 ${flightNote}
 
 PROFIL PODRÓŻNIKA:
-- Kto podróżuje: ${companionLabel}
+- Kto podróżuje: ${companionLabel}${groupProfile}
 - Budżet: ${budgetLabel}
 - Zainteresowania: ${stylesList}
 ${vibeInstruction}
@@ -67,14 +76,14 @@ ${schedulePrompt}
 
 STYL PLANOWANIA:
 ${vibeGuide}
-${companionGuide}
+${companionGuide}${groupGuide}
 
 ZASADY DLA WSZYSTKICH DNI — BEZWZGLĘDNIE OBOWIĄZUJĄCE:
 1. KONKRETNE NAZWY: ZAWSZE podawaj pełną, prawdziwą nazwę miejsca. NIE "lokalne muzeum" — tylko "Muzeum Archeologiczne im. X" albo "Narodowe Muzeum Sztuki Nowoczesnej". NIE "dobra restauracja" — tylko "Restauracja Azahar" albo "Bar El Nacional przy Passeig de Gràcia". NIE "spacer po centrum" — tylko "Spacer po Dzielnicy Gotyckiej: ulica Carrer del Bisbe i Plac Sant Jaume".
 2. Tanie miejsca do jedzenia — konkretne miejsca z adresem lub dzielnicą
 3. Darmowe lub tanie atrakcje (priorytet!) — z konkretnymi nazwami
 4. Praktyczne wskazówki budżetowe
-5. Szacunkowe koszty każdej aktywności w PLN
+5. Szacunkowe koszty każdej aktywności w PLN${hasGroup ? " (za osobę)" : ""}
 6. Pole "location" — pełna nazwa miejsca z ulicą lub dzielnicą (nie dla transportu i wskazówek)
 
 KRYTYCZNE WYMAGANIA DOTYCZĄCE LICZBY DNI:

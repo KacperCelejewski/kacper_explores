@@ -18,7 +18,7 @@ import type { DayPlan, DayActivity, TripPlan, DestinationRecommendation, QuizAns
 import { getCityPhotoUrl } from "@/lib/cityPhotos";
 import { PRICES } from "@/lib/prices";
 import { isFreeCost } from "@/lib/affiliate";
-import { groupFromCompanion } from "@/lib/group";
+import { groupFromCompanion, groupSize, scaleBudgetText } from "@/lib/group";
 
 const ACTIVITY_COLORS: Record<string, string> = {
   attraction: "var(--accent-light)",
@@ -367,6 +367,12 @@ export default function PlanPage() {
 
   const { plan, destination } = currentTrip;
   const dest = destination as DestinationRecommendation | null;
+  const tripQuiz = currentTrip.quizAnswers ?? quizAnswers;
+  const group = groupFromCompanion(tripQuiz.companion, tripQuiz.group);
+  const people = groupSize(group);
+  // Budżet z planu jest na osobę; dla grupy liczymy też sumę.
+  const scaleForGroup = (text: string) => (people > 1 ? scaleBudgetText(text, people) ?? text : text);
+  const totalForGroup = people > 1 ? scaleBudgetText(plan.totalBudgetEstimate, people) : null;
 
   return (
     <div className="flex flex-col flex-1 pb-8" id="plan-print-area">
@@ -434,9 +440,24 @@ export default function PlanPage() {
             <span className="text-sm" style={{ color: "var(--text-muted)" }}>
               Szacowany całkowity koszt
             </span>
-            <span className="text-base font-bold" style={{ color: "var(--accent)" }}>
-              {plan.totalBudgetEstimate}
-            </span>
+            {people > 1 ? (
+              <div className="text-right">
+                <div className="text-base font-bold" style={{ color: "var(--accent)" }}>
+                  {plan.totalBudgetEstimate}
+                  <span className="text-xs font-normal ml-1" style={{ color: "var(--text-muted)" }}>na osobę</span>
+                </div>
+                {totalForGroup && (
+                  <div className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
+                    {totalForGroup} razem
+                    <span className="text-xs ml-1">(szacunek)</span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <span className="text-base font-bold" style={{ color: "var(--accent)" }}>
+                {plan.totalBudgetEstimate}
+              </span>
+            )}
           </div>
         </motion.div>
       </div>
@@ -448,10 +469,7 @@ export default function PlanPage() {
         country={plan.country}
         checkin={dest?.bestOffer?.departureDate}
         checkout={dest?.bestOffer?.returnDate}
-        group={groupFromCompanion(
-          (currentTrip?.quizAnswers ?? quizAnswers).companion,
-          (currentTrip?.quizAnswers ?? quizAnswers).group,
-        )}
+        group={group}
       />
 
       {/* Restaurants */}
@@ -693,8 +711,13 @@ export default function PlanPage() {
         <div className="px-5 mt-4 no-print">
           <BudgetTracker
             tripId={currentTrip.id}
-            plannedBreakdown={plan.budgetBreakdown}
-            plannedTotal={plan.totalBudgetEstimate}
+            plannedBreakdown={{
+              flights: scaleForGroup(plan.budgetBreakdown.flights),
+              accommodation: scaleForGroup(plan.budgetBreakdown.accommodation),
+              food: scaleForGroup(plan.budgetBreakdown.food),
+              attractions: scaleForGroup(plan.budgetBreakdown.attractions),
+            }}
+            plannedTotal={scaleForGroup(plan.totalBudgetEstimate)}
           />
         </div>
       )}

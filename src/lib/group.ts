@@ -49,12 +49,17 @@ export function isValidGroup(value: unknown): value is GroupComposition {
 
 const formatThousands = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
+// Liczba ze spacją tysięcy (zwykłą lub twardą) i ułamkiem po przecinku lub kropce.
+const NUMBER_RE = /\d{1,3}(?:[ \u00a0]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?/g;
+
 // Mnoży liczby w tekście budżetu, np. "1200-1500 PLN" x 4 daje "4 800–6 000 PLN".
 export function scaleBudgetText(text: string, factor: number): string | null {
+  if (!Number.isFinite(factor) || factor <= 0) return null;
   if (!/\d/.test(text)) return null;
+  if (factor === 1) return text;
   return text
     .replace(/(\d)\s*[-–]\s*(\d)/g, "$1–$2")
-    .replace(/\d+/g, (n) => formatThousands(Number(n) * factor))
+    .replace(NUMBER_RE, (n) => formatThousands(Math.round(Number(n.replace(/[ \u00a0]/g, "").replace(",", ".")) * factor)))
     .replace(/~/g, "")
     .trim();
 }
