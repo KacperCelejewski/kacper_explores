@@ -38,6 +38,7 @@ import {
 import type { Companion, GroupComposition } from "@/types";
 import GroupSizePicker from "@/app/components/GroupSizePicker";
 import { groupFromCompanion } from "@/lib/group";
+import { CREW_COPY, companionTrailLabel, quizCompanionHint } from "@/lib/groupFlow";
 import { parseHomeParams, homeFriendsAnswers, srcEventName, keepUtmQuery } from "@/lib/homeParams";
 
 type IconFC = React.FC<{ size?: number }>;
@@ -154,7 +155,7 @@ const slideTransition = { duration: 0.3, ease: [0.22, 1, 0.36, 1] as const };
 // What the visitor has told us so far, in the order they told it
 function answeredLabels(a: QuizAnswers, upTo: number): string[] {
   const out: string[] = [];
-  if (upTo > 0 && a.companion) out.push(COMPANION_LABELS[a.companion]);
+  if (upTo > 0 && a.companion) out.push(companionTrailLabel(a.companion, a.group, COMPANION_LABELS[a.companion]));
   if (upTo > 1 && a.budget)    out.push(BUDGET_LABELS[a.budget]);
   if (upTo > 2 && a.vibe)      out.push(VIBE_LABELS[a.vibe]);
   if (upTo > 3 && a.styles.length > 0) {
@@ -624,7 +625,7 @@ const COMPANION_OPTIONS: { value: Companion; label: string; Icon: CompanionIconF
   { value: "solo",    label: "Sam/a",    Icon: IconSolo,         desc: "Porady bezpieczeństwa, miejsca do poznania ludzi" },
   { value: "couple",  label: "Para",     Icon: IconCouple,       desc: "Romantyczne kolacje, wspólne aktywności" },
   { value: "family",  label: "Rodzina",  Icon: IconFamily,       desc: "Spokojne tempo, atrakcje dla dzieci, bezpieczeństwo" },
-  { value: "friends", label: "Znajomi",  Icon: IconGroupFriends, desc: "Aktywności grupowe, wieczory w barach, podział kosztów" },
+  { value: "friends", label: "Znajomi",  Icon: IconGroupFriends, desc: CREW_COPY.companionFriendsDesc },
 ];
 
 function StepCompanion({
@@ -638,9 +639,17 @@ function StepCompanion({
   onPick: (v: Companion) => void;
   onGroupChange: (g: GroupComposition) => void;
 }) {
+  const sizeRef = useRef<HTMLDivElement>(null);
+  const needsSize = companion === "friends" || companion === "family";
+  // Liczba osób nie może zostać pod lepkim przyciskiem "Dalej": po wyborze ekipy pokazujemy ją od razu.
+  useEffect(() => {
+    if (!needsSize) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    sizeRef.current?.scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
+  }, [needsSize, companion]);
   return (
     <div>
-      <StepHeader title="Kto jedzie?" hint="Dobierzemy atrakcje, restauracje i wskazówki do Twojej grupy." />
+      <StepHeader title="Kto jedzie?" hint={quizCompanionHint(companion)} />
       <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Wybierz kto podróżuje">
         {COMPANION_OPTIONS.map((opt) => (
           <OptionCard key={opt.value} selected={companion === opt.value} onClick={() => onPick(opt.value)}>
@@ -653,7 +662,7 @@ function StepCompanion({
         ))}
       </div>
       {(companion === "friends" || companion === "family") && (
-        <div className="mt-4">
+        <div ref={sizeRef} className="mt-4" style={{ scrollMarginBottom: 140 }}>
           <GroupSizePicker companion={companion} group={group} onChange={onGroupChange} />
         </div>
       )}

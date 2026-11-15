@@ -448,9 +448,9 @@ body.is-home section[id] {
 }
 
 @media (hover: hover) {
+  /* Najechanie zmienia tylko obrys: wypełnienie i znaczek zostają znakiem wybranej odpowiedzi */
   .quiz-option:hover {
     border-color: var(--accent);
-    background: var(--accent-light);
   }
 }
 

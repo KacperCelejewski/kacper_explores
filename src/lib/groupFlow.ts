@@ -9,7 +9,11 @@ import { formatFlightPLN } from "@/lib/flights/card-price";
 export const CREW_COPY = {
   // Karta "Znajomi" w quizie: co ekipa dostaje, bez słów o rozliczeniach
   companionFriendsDesc: "Kierunki w Waszym budżecie, koszt na osobę i razem",
-  // Krok "kto jedzie": pole z liczbą osób
+  // Krok "kto jedzie": podtytuł zależny od wyboru, potem pole z liczbą osób
+  quizHintDefault: "Dobierzemy atrakcje, restauracje i wskazówki do Waszego wyjazdu.",
+  quizHintFriends:
+    "Powiedz, ilu Was jedzie: dostaniecie kierunki w budżecie, koszt na osobę i razem oraz plan do wysłania ekipie.",
+  quizHintFamily: "Podaj skład rodziny: policzymy loty i koszt na osobę oraz dla wszystkich razem.",
   sizeTitle: "Ilu Was jedzie?",
   sizeHint: "Dzięki temu policzymy loty i koszt na osobę oraz dla całej ekipy.",
   sizeHintFamily: "Dzięki temu policzymy loty i koszt na osobę oraz dla całej rodziny.",
@@ -35,6 +39,12 @@ export const CREW_COPY = {
   perPerson: "na osobę",
   total: "razem",
 } as const;
+
+export function quizCompanionHint(companion: Companion | null | undefined): string {
+  if (companion === "friends") return CREW_COPY.quizHintFriends;
+  if (companion === "family") return CREW_COPY.quizHintFamily;
+  return CREW_COPY.quizHintDefault;
+}
 
 export function isCrewTrip(companion: Companion | null | undefined, group?: GroupComposition | null): boolean {
   return (companion === "friends" || companion === "family") && group != null;

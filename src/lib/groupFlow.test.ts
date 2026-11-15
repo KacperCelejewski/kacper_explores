@@ -7,6 +7,7 @@ import {
   crewSummary,
   flightTotalNote,
   isCrewTrip,
+  quizCompanionHint,
   sendPlanTitle,
   shareUrl,
 } from "./groupFlow";
@@ -83,6 +84,20 @@ describe("flightTotalNote", () => {
     expect(flightTotalNote(450, "solo", undefined)).toBeNull();
     expect(flightTotalNote(0, "friends", FOUR)).toBeNull();
     expect(flightTotalNote(Number.NaN, "friends", FOUR)).toBeNull();
+  });
+});
+
+describe("quizCompanionHint", () => {
+  it("dla znajomych mówi, co dostanie ekipa", () => {
+    const hint = quizCompanionHint("friends");
+    expect(hint).toContain("ilu Was jedzie");
+    expect(hint).toContain("koszt na osobę i razem");
+    expect(hint).toContain("plan do wysłania ekipie");
+  });
+
+  it("dla pozostałych jest ogólny albo rodzinny", () => {
+    expect(quizCompanionHint("family")).toContain("rodziny");
+    expect(quizCompanionHint("solo")).toBe(quizCompanionHint(null));
   });
 });
 
