@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { ORIGIN_GENITIVE } from "@/lib/drop/email";
+import { MAIL_CONTACT, esc, mailButton, mailParagraph, mailShell, mailTextFooter } from "@/lib/emailLayout";
 
 // Klient tworzony przy pierwszym wysłaniu, bo build bez klucza (np. preview) inaczej się wywala.
 let client: Resend | undefined;
@@ -8,122 +9,94 @@ const resend = {
     send: (...args: Parameters<Resend["emails"]["send"]>) => (client ??= new Resend(process.env.RESEND_API_KEY)).emails.send(...args),
   },
 };
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "hej@wloczykij.me";
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? MAIL_CONTACT;
 
-export async function sendNewsletterConfirmation(email: string, verifyUrl: string) {
-  await resend.emails.send({
-    from: "Włóczykij <hej@wloczykij.me>",
-    to: email,
-    subject: "Potwierdź zapis — odbierz 10% na Pro Roczny",
-    html: `
-<!DOCTYPE html>
-<html lang="pl">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#F7F7F5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#F7F7F5;padding:40px 0;">
-    <tr><td align="center">
-      <table width="100%" style="max-width:480px;background:#FFFFFF;border-radius:20px;overflow:hidden;border:1px solid #EBEBEB;">
+/** Adres, na który trafiają odpowiedzi na maile z nadawców technicznych (zrzut@, przypomnienie@). */
+export const REPLY_TO = MAIL_CONTACT;
 
-        <!-- Header -->
-        <tr>
-          <td style="background:#A04B20;padding:28px 32px;">
-            <p style="margin:0;color:white;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">Włóczykij</p>
-            <h1 style="margin:8px 0 0;color:white;font-size:22px;font-weight:800;line-height:1.3;">
-              Potwierdź zapis<br>i odbierz 10% na Pro Roczny
-            </h1>
-          </td>
-        </tr>
-
-        <!-- Body -->
-        <tr>
-          <td style="padding:32px;">
-            <p style="margin:0 0 20px;color:#4B5563;font-size:15px;line-height:1.6;">
-              Dzięki za zapisanie się do newslettera!<br>
-              Kliknij poniżej, żeby potwierdzić swój adres e-mail i dostać <strong style="color:#A04B20;">unikalny kod na 10% zniżki</strong> na subskrypcję Pro Roczny.
-            </p>
-
-            <table width="100%" cellpadding="0" cellspacing="0">
-              <tr>
-                <td align="center" style="padding:8px 0 24px;">
-                  <a href="${verifyUrl}"
-                    style="display:inline-block;background:#A04B20;color:white;text-decoration:none;font-size:15px;font-weight:700;padding:14px 32px;border-radius:14px;">
-                    Potwierdź i odbierz kod →
-                  </a>
-                </td>
-              </tr>
-            </table>
-
-            <p style="margin:0;color:#9CA3AF;font-size:12px;line-height:1.6;">
-              Link jest ważny przez 48 godzin. Jeśli nie zapisywałeś się do newslettera, zignoruj tę wiadomość.
-            </p>
-          </td>
-        </tr>
-
-        <!-- Footer -->
-        <tr>
-          <td style="padding:16px 32px 24px;border-top:1px solid #EBEBEB;">
-            <p style="margin:0;color:#9CA3AF;font-size:11px;text-align:center;">
-              © 2026 Włóczykij · <a href="https://wloczykij.me" style="color:#A04B20;text-decoration:none;">wloczykij.me</a>
-            </p>
-          </td>
-        </tr>
-
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`,
-  });
+interface TransactionalMail {
+  from: string;
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
 }
 
-function dropMailLayout(title: string, body: string, ctaUrl: string, cta: string, footnote: string): string {
-  return `
-<!DOCTYPE html>
-<html lang="pl">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#F7F7F5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#F7F7F5;padding:40px 0;">
-    <tr><td align="center">
-      <table width="100%" style="max-width:480px;background:#FFFFFF;border-radius:20px;overflow:hidden;border:1px solid #EBEBEB;">
-        <tr>
-          <td style="background:#A04B20;padding:28px 32px;">
-            <p style="margin:0;color:white;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">Włóczykij</p>
-            <h1 style="margin:8px 0 0;color:white;font-size:22px;font-weight:800;line-height:1.3;">${title}</h1>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:32px;">
-            <p style="margin:0 0 20px;color:#4B5563;font-size:15px;line-height:1.6;">${body}</p>
-            <table width="100%" cellpadding="0" cellspacing="0">
-              <tr>
-                <td align="center" style="padding:8px 0 24px;">
-                  <a href="${ctaUrl}"
-                    style="display:inline-block;background:#A04B20;color:white;text-decoration:none;font-size:15px;font-weight:700;padding:14px 32px;border-radius:14px;">
-                    ${cta}
-                  </a>
-                </td>
-              </tr>
-            </table>
-            <p style="margin:0;color:#9CA3AF;font-size:12px;line-height:1.6;">${footnote}</p>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:16px 32px 24px;border-top:1px solid #EBEBEB;">
-            <p style="margin:0;color:#9CA3AF;font-size:11px;text-align:center;">
-              © 2026 Włóczykij · <a href="https://wloczykij.me" style="color:#A04B20;text-decoration:none;">wloczykij.me</a>
-            </p>
-          </td>
-        </tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
+async function sendTransactional(mail: TransactionalMail) {
+  await resend.emails.send({ ...mail, replyTo: REPLY_TO });
+}
+
+export function newsletterConfirmationMail(verifyUrl: string) {
+  const subject = "Potwierdź zapis i odbierz 10% na Pro Roczny";
+  const preheader = "Jedno kliknięcie i kod na 10% zniżki jest Twój.";
+  const html = mailShell({
+    title: subject,
+    preheader,
+    heading: "Potwierdź zapis i odbierz 10% na Pro Roczny",
+    content:
+      mailParagraph(`Dzięki, że chcesz być w kontakcie. Potwierdź adres, a dostaniesz <strong>kod na 10% zniżki</strong> na subskrypcję Pro Roczny.`) +
+      `<div style="margin:8px 0 20px;">${mailButton(verifyUrl, "Potwierdź i odbierz kod")}</div>` +
+      mailParagraph(`Link jest ważny 48 godzin. Jeśli to nie Ty, zignoruj tę wiadomość: bez potwierdzenia nic do Ciebie nie wyślemy.`, { muted: true, size: 14 }) +
+      mailParagraph(`Przycisk nie działa? Wklej ten adres do przeglądarki:<br><span style="word-break:break-all;">${esc(verifyUrl)}</span>`, { muted: true, size: 13 }),
+    footer: { reason: "Dostajesz tę wiadomość, bo ktoś podał ten adres na wloczykij.me." },
+  });
+  const text = [
+    "Potwierdź zapis i odbierz 10% na Pro Roczny",
+    "",
+    "Dzięki, że chcesz być w kontakcie. Potwierdź adres, a dostaniesz kod na 10% zniżki na subskrypcję Pro Roczny.",
+    "",
+    `Potwierdź i odbierz kod: ${verifyUrl}`,
+    "",
+    "Link jest ważny 48 godzin. Jeśli to nie Ty, zignoruj tę wiadomość: bez potwierdzenia nic do Ciebie nie wyślemy.",
+    "",
+    mailTextFooter("Dostajesz tę wiadomość, bo ktoś podał ten adres na wloczykij.me."),
+  ].join("\n");
+  return { subject, html, text };
+}
+
+export async function sendNewsletterConfirmation(email: string, verifyUrl: string) {
+  await sendTransactional({
+    from: "Włóczykij <hej@wloczykij.me>",
+    to: email,
+    ...newsletterConfirmationMail(verifyUrl),
+  });
 }
 
 function airportsLabel(airports: string[]): string {
   const names = airports.map((c) => ORIGIN_GENITIVE[c] ?? c);
   return names.length > 1 ? `${names.slice(0, -1).join(", ")} i ${names[names.length - 1]}` : names[0] ?? "";
+}
+
+export function dropConfirmationMail(verifyUrl: string, opts: { airports: string[]; maxPrice: number }) {
+  const subject = "Potwierdź zapis na czwartkowy zrzut";
+  const where = airportsLabel(opts.airports);
+  const preheader = `Co czwartek jeden mail z maksymalnie 3 wyjazdami z ${where} do ${opts.maxPrice} zł.`;
+  const html = mailShell({
+    title: subject,
+    preheader,
+    kicker: "Czwartkowy zrzut",
+    heading: "Potwierdź zapis na czwartkowy zrzut",
+    content:
+      mailParagraph(`Co czwartek dostaniesz jeden mail z maksymalnie 3 wyjazdami z ${esc(where)} do ${esc(opts.maxPrice)} zł. Wypiszesz się w każdej chwili.`) +
+      mailParagraph(`Na start dorzucamy <strong>kod na 10% zniżki</strong> na Pro Roczny. Odbierzesz go po potwierdzeniu.`) +
+      `<div style="margin:8px 0 20px;">${mailButton(verifyUrl, "Potwierdź zapis")}</div>` +
+      mailParagraph(`Link jest ważny 48 godzin. Jeśli to nie Ty, zignoruj tę wiadomość: bez potwierdzenia zrzut nie ruszy.`, { muted: true, size: 14 }) +
+      mailParagraph(`Przycisk nie działa? Wklej ten adres do przeglądarki:<br><span style="word-break:break-all;">${esc(verifyUrl)}</span>`, { muted: true, size: 13 }),
+    footer: { reason: "Dostajesz tę wiadomość, bo ktoś zapisał ten adres na czwartkowy zrzut na wloczykij.me." },
+  });
+  const text = [
+    "Potwierdź zapis na czwartkowy zrzut",
+    "",
+    `Co czwartek dostaniesz jeden mail z maksymalnie 3 wyjazdami z ${where} do ${opts.maxPrice} zł. Wypiszesz się w każdej chwili.`,
+    "Na start dorzucamy kod na 10% zniżki na Pro Roczny. Odbierzesz go po potwierdzeniu.",
+    "",
+    `Potwierdź zapis: ${verifyUrl}`,
+    "",
+    "Link jest ważny 48 godzin. Jeśli to nie Ty, zignoruj tę wiadomość: bez potwierdzenia zrzut nie ruszy.",
+    "",
+    mailTextFooter("Dostajesz tę wiadomość, bo ktoś zapisał ten adres na czwartkowy zrzut na wloczykij.me."),
+  ].join("\n");
+  return { subject, html, text };
 }
 
 /** Double opt-in dla zapisu na czwartkowy zrzut; zachowuje wzmiankę o kodzie 10%. */
@@ -132,33 +105,47 @@ export async function sendDropConfirmation(
   verifyUrl: string,
   opts: { airports: string[]; maxPrice: number },
 ) {
-  await resend.emails.send({
+  await sendTransactional({
     from: "Włóczykij <zrzut@wloczykij.me>",
     to: email,
-    subject: "Potwierdź zapis na czwartkowy zrzut",
-    html: dropMailLayout(
-      "Potwierdź zapis<br>na czwartkowy zrzut",
-      `Co czwartek dostaniesz jeden mail z maksymalnie 3 wyjazdami z ${airportsLabel(opts.airports)} do ${opts.maxPrice} zł. Wypiszesz się w każdej chwili.<br><br>Na start dorzucamy <strong style="color:#A04B20;">kod na 10% zniżki</strong> na Pro Roczny. Odbierzesz go po potwierdzeniu.`,
-      verifyUrl,
-      "Potwierdź zapis →",
-      "Link jest ważny przez 48 godzin. Jeśli nie zapisywałeś się na zrzut, zignoruj tę wiadomość.",
-    ),
+    ...dropConfirmationMail(verifyUrl, opts),
   });
+}
+
+export function dropManageLinkMail(manageUrl: string) {
+  const subject = "Twój czwartkowy zrzut: ustawienia";
+  const html = mailShell({
+    title: subject,
+    preheader: "Lotniska, budżet i wypis zmienisz na stronie ustawień.",
+    kicker: "Czwartkowy zrzut",
+    heading: "Ustawienia czwartkowego zrzutu",
+    content:
+      mailParagraph(`Ktoś (pewnie Ty) zapisał ten adres na czwartkowy zrzut jeszcze raz. Lotniska, budżet i wypis zmienisz na stronie ustawień.`) +
+      `<div style="margin:8px 0 20px;">${mailButton(manageUrl, "Otwórz ustawienia")}</div>` +
+      mailParagraph(`Jeśli to nie Ty, nic nie rób. Nic się nie zmieniło.`, { muted: true, size: 14 }) +
+      mailParagraph(`Przycisk nie działa? Wklej ten adres do przeglądarki:<br><span style="word-break:break-all;">${esc(manageUrl)}</span>`, { muted: true, size: 13 }),
+    footer: { reason: "Dostajesz tę wiadomość, bo ten adres jest zapisany na czwartkowy zrzut na wloczykij.me." },
+  });
+  const text = [
+    "Ustawienia czwartkowego zrzutu",
+    "",
+    "Ktoś (pewnie Ty) zapisał ten adres na czwartkowy zrzut jeszcze raz. Lotniska, budżet i wypis zmienisz na stronie ustawień.",
+    "",
+    `Otwórz ustawienia: ${manageUrl}`,
+    "",
+    "Jeśli to nie Ty, nic nie rób. Nic się nie zmieniło.",
+    "",
+    mailTextFooter("Dostajesz tę wiadomość, bo ten adres jest zapisany na czwartkowy zrzut na wloczykij.me."),
+  ].join("\n");
+  return { subject, html, text };
 }
 
 /** Mail dla potwierdzonego adresu, który zapisał się ponownie bez logowania. */
 export async function sendDropManageLink(email: string, manageUrl: string) {
-  await resend.emails.send({
+  await sendTransactional({
     from: "Włóczykij <zrzut@wloczykij.me>",
     to: email,
-    subject: "Twój czwartkowy zrzut: ustawienia",
-    html: dropMailLayout(
-      "Ustawienia<br>czwartkowego zrzutu",
-      "Ktoś (pewnie Ty) zapisał ten adres na czwartkowy zrzut. Lotniska, budżet i wypis zmienisz na stronie ustawień.",
-      manageUrl,
-      "Otwórz ustawienia →",
-      "Jeśli to nie Ty, nic nie rób. Nic się nie zmieniło.",
-    ),
+    ...dropManageLinkMail(manageUrl),
   });
 }
 
