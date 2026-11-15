@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
+import { SkeletonBlock } from "@/app/components/Skeleton";
 import SiteNav from "@/app/components/SiteNav";
 import { CONTINENTS, getContinent, type Continent } from "@/lib/continents";
 import { getCityPhotoUrl } from "@/lib/cityPhotos";
@@ -161,11 +162,9 @@ export default function OdkryjPage() {
         </AnimatePresence>
 
         {loading ? (
-          <div className="flex justify-center py-16">
-            <div
-              className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin"
-              style={{ borderColor: "var(--accent)", borderTopColor: "transparent" }}
-            />
+          <div role="status" aria-busy="true" className="flex flex-col gap-3 py-4">
+            <span className="sr-only">Ładujemy galerię planów…</span>
+            {[0, 1, 2].map((i) => <SkeletonBlock key={i} height={140} radius={20} />)}
           </div>
         ) : filtered.length === 0 && trips.length > 0 ? (
           <motion.div

@@ -54,6 +54,17 @@
   inset: -8px -4px;
 }
 
+/* Szkielet ładowania: kształt docelowej strony zamiast spinnera, bez skoku układu */
+.skeleton {
+  background: var(--bg-surface);
+  border-radius: 12px;
+  animation: skeleton-pulse 1.6s ease-in-out infinite;
+}
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
 /* Screen-reader-only utility */
 .sr-only {
   position: absolute;

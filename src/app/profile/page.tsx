@@ -1,6 +1,7 @@
 "use client";
 
 import { EDGE_COPY } from "@/lib/edgeCopy";
+import { ProfileSkeleton } from "@/app/components/Skeleton";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -145,11 +146,7 @@ export default function ProfilePage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex flex-col flex-1 items-center justify-center">
-        <div className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "var(--accent)", borderTopColor: "transparent" }} />
-      </div>
-    );
+    return <ProfileSkeleton />;
   }
 
   if (!data?.authenticated) return null;
