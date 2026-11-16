@@ -96,20 +96,14 @@ const CookieTable = ({ rows }: { rows: CookieRow[] }) => (
 );
 
 export default function CookiesPage() {
-  const updatedAt = "15 listopada 2026";
+  const updatedAt = "16 listopada 2026";
 
   const necessaryCookies: CookieRow[] = [
     {
       name: "sb-*",
       provider: "Supabase",
       purpose: "Sesja użytkownika, uwierzytelnianie",
-      expiry: "7 dni",
-    },
-    {
-      name: "__Host-authjs.*",
-      provider: "Włóczykij",
-      purpose: "Bezpieczeństwo sesji OAuth",
-      expiry: "Sesja",
+      expiry: "Do 400 dni (domyślnie biblioteki Supabase), kasowane przy wylogowaniu",
     },
     {
       name: "cookie_consent (localStorage)",
@@ -121,10 +115,34 @@ export default function CookiesPage() {
 
   const functionalCookies: CookieRow[] = [
     {
-      name: "quiz-state",
+      name: "kacper-explores-store",
       provider: "Włóczykij",
-      purpose: "Zachowanie stanu kreatora podróży (localStorage)",
-      expiry: "LocalStorage",
+      purpose: "Stan kreatora: odpowiedzi z quizu, wybrany kierunek, dane lotu (localStorage)",
+      expiry: "Do usunięcia danych strony",
+    },
+    {
+      name: "deals_origin",
+      provider: "Włóczykij",
+      purpose: "Zapamiętane lotnisko w okazjach na weekend (localStorage)",
+      expiry: "Do usunięcia danych strony",
+    },
+    {
+      name: "newsletter_popup_seen",
+      provider: "Włóczykij",
+      purpose: "Żeby okienko newslettera nie wracało co chwilę (localStorage)",
+      expiry: "Do usunięcia danych strony",
+    },
+    {
+      name: "wloczykij-budget-*, feedback-*",
+      provider: "Włóczykij",
+      purpose: "Twój licznik wydatków i informacja, że opinia o planie już poszła (localStorage, osobno dla każdego planu)",
+      expiry: "Do usunięcia danych strony",
+    },
+    {
+      name: "purchase_sent_* (sessionStorage)",
+      provider: "Włóczykij",
+      purpose: "Żeby zakup nie zliczył się dwa razy w statystykach",
+      expiry: "Do zamknięcia karty",
     },
   ];
 
@@ -199,9 +217,13 @@ export default function CookiesPage() {
 
           <Section title="3. Funkcjonalne pliki cookie / localStorage">
             <P>
-              Używamy localStorage (a nie cookies) do przechowywania stanu
-              kreatora podróży — Twoje odpowiedzi na etapach quizu nie są
-              wysyłane na serwer przed ukończeniem formularza.
+              Używamy localStorage (a nie cookies) do zapamiętania stanu
+              kreatora, wybranego lotniska i drobnych ustawień. Odpowiedzi z quizu
+              nie są wysyłane na serwer przed wygenerowaniem planu; do naszej bazy
+              trafia tylko losowy identyfikator sesji i numer etapu (statystyki
+              bez cookies). Zapisany plan w koncie to osobna sprawa, opisana w
+              Polityce Prywatności. Wszystko z tej tabeli kasuje czyszczenie
+              danych strony w przeglądarce.
             </P>
             <CookieTable rows={functionalCookies} />
           </Section>
@@ -210,15 +232,19 @@ export default function CookiesPage() {
             <P>
               Za Twoją zgodą korzystamy z <strong>Google Analytics 4</strong>
               (Google Ireland Ltd.), żeby wiedzieć, które strony oglądasz, w co
-              klikasz i jak głęboko przewijasz. Dane są zbiorcze, bez imienia i
-              e-maila. Bez zgody Google dostaje tylko anonimowe sygnały bez
-              plików cookie (cookies <code>_ga*</code>). Zgodę wycofasz w każdej
-              chwili, czyszcząc dane strony w przeglądarce. Nie używamy Meta
+              klikasz i jak głęboko przewijasz. Mierzymy odsłony, kliknięcia
+              (jaki przycisk lub link i na której stronie), głębokość przewijania oraz
+              zakup (kwota i rodzaj planu, bez e-maila). Bez imienia i e-maila. Bez zgody
+              skrypt Google nadal się ładuje, ale wysyła tylko sygnały bez plików cookie
+              (cookies <code>_ga*</code> nie powstają). Zgodę wycofasz w każdej chwili
+              przyciskiem „Zmień zgodę na cookies” poniżej. Nie używamy Meta
               Pixel. Linki partnerskie Travelpayouts do Aviasales, Tiqets i Radical Storage
               włączamy dopiero po akceptacji w bannerze. Bez zgody prowadzą bezpośrednio
               do usługodawcy, bez parametrów afiliacyjnych. Samo wyświetlenie planu
               nie ładuje skryptów ani cookies Travelpayouts. Po kliknięciu partner może
-              poprosić o własną zgodę na cookies zgodnie ze swoją polityką.
+              poprosić o własną zgodę na cookies zgodnie ze swoją polityką. Wyjątek:
+              linki do lotów w e-mailach z Czwartkowego zrzutu mają identyfikator
+              partnera od razu, bo zapis na zrzut jest osobną zgodą na ten e-mail.
             </P>
             <P>
               Kliknięcia linków mierzymy zdarzeniem affiliate_click (partner, miasto, miejsce
