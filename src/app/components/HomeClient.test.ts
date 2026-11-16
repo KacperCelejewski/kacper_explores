@@ -43,14 +43,15 @@ describe("homepage server-rendered content", () => {
       expect(html).toContain(HOME.micro);
       expect(html).toContain("home-destinations");
       const hero = html.match(/<section class="home-hero">([\s\S]*?)<\/section>/)?.[1];
-      expect(hero).toContain("home-poster-art");
-      expect(hero).toContain("W czwartek pomysł.");
-      expect(hero).not.toMatch(/zł|EUR|Przykład/);
+      expect(hero).toContain("home-chat-frame");
+      expect(hero).toContain("ok. 450 zł na osobę (szacunek)");
+      expect(hero).toContain("Przykład, nie Wasz wyjazd");
+      expect(hero).not.toContain("home-poster-art");
       expect(html).not.toContain("hero-hop");
       expect(html).not.toContain("scroll-snap");
       expect(html).not.toContain("images.unsplash.com");
       // Sections stay readable without hydration or an IntersectionObserver.
-      expect(html).not.toMatch(/opacity:0(?:;|")/);
+      expect(html.replace(/<style[\s\S]*?<\/style>/g, "")).not.toMatch(/opacity:0(?:;|")/);
     });
   }
 });

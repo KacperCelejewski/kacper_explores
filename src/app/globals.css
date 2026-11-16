@@ -285,15 +285,73 @@ body:has([data-page="home"]) .global-fab {
 .home-secondary-links { display: flex; flex-wrap: wrap; align-items: center; gap: 0 8px; }
 .home-secondary-links a { display: inline-flex; align-items: center; }
 
+@media (max-width: 374px) and (max-height: 667px) {
+  .home-title { font-size: 32px; }
+  .home-hero-copy .home-subtitle { font-size: 14px !important; line-height: 1.35 !important; }
+}
+
+/* D: final product frame is the base style; CSS alone runs three finite cycles. */
+.home-chat-animation { width: 100%; max-width: 720px; min-width: 0; margin-inline: auto; }
+.home-chat-frame { position: relative; isolation: isolate; aspect-ratio: 16 / 10; border: 1px solid #18324F; border-radius: 12px; background: var(--bg-surface); color: #18324F; }
+.home-chat-frame::after { content: ''; position: absolute; inset: 0; z-index: 2; border-radius: inherit; pointer-events: none; opacity: .12; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M1 2h1m5 8h1m6-5h1M3 14h1' stroke='%2318324F' stroke-opacity='.4'/%3E%3C/svg%3E") repeat; }
+.home-chat-map { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .08; border-radius: inherit; }
+.home-chat-map-labels { position: absolute; inset: 8px 12px auto; display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; }
+.home-chat-crew { position: absolute; bottom: 10px; left: 12px; display: flex; gap: 4px; }
+.home-chat-crew span { display: grid; place-items: center; width: 24px; height: 24px; border: 1px solid #18324F; border-radius: 50%; background: var(--bg-primary); font-size: 14px; font-weight: 700; }
+.home-chat-scene { position: absolute; inset: 36px 12px 44px; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 12px; }
+.home-chat-panel { min-width: 0; }
+.home-chat-panel-title { font-size: 14px; line-height: 1.2; font-weight: 700; margin-bottom: 12px; }
+.home-chat-group { display: grid; gap: 10px; opacity: .84; }
+.home-chat-bubble { padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px 10px 10px 2px; background: var(--bg-primary); color: var(--text-primary); font-size: 14px; line-height: 1.35; }
+.home-chat-bubble strong { color: var(--green); }
+.home-chat-product { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 14px; padding: 14px; }
+.home-chat-answer { font-size: 14px; line-height: 1.3; }
+.home-chat-answer + .home-chat-answer { margin-top: 12px; }
+:is(.home-chat-answer-destination, .home-chat-summary-destination) { font-family: var(--font-heading), Georgia, serif; font-size: 28px; font-weight: 700; color: #18324F; }
+:is(.home-chat-answer-cost, .home-chat-summary-cost) { border-block: 1px solid var(--border); padding-block: 10px; font-weight: 700; color: var(--accent); }
+.home-chat-total { color: var(--text-secondary); font-size: 14px; font-weight: 400; margin-top: 4px; }
+:is(.home-chat-answer-plan, .home-chat-summary-plan) { color: var(--green); font-weight: 700; }
+.home-chat-caption { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; font-size: 14px; color: var(--text-secondary); }
+.home-chat-caption button { min-width: 92px; min-height: 44px; padding: 8px 12px; border: 1px solid var(--accent); border-radius: 8px; color: var(--accent); font-size: 14px; font-weight: 700; cursor: pointer; }
+.home-chat-caption button:disabled { cursor: default; }
+.home-chat-animation[data-paused="true"] .home-chat-scene,
+.home-chat-animation[data-paused="true"] .home-chat-scene *,
+.home-chat-animation[data-paused="true"] .home-chat-map { animation-play-state: paused !important; }
+@media (max-width: 767px) {
+  .home-chat-scene { inset: 8px 8px 22px; gap: 6px; }
+  .home-chat-map-labels { inset: auto 8px 6px; }
+  .home-chat-crew { left: 50%; bottom: 4px; transform: translateX(-50%); gap: 2px; }
+  .home-chat-crew span { width: 20px; height: 20px; }
+  .home-chat-panel-title { margin-bottom: 6px; }
+  .home-chat-group { gap: 4px; }
+  .home-chat-bubble { padding: 4px; line-height: 1.12; border-radius: 5px; }
+  .home-chat-product { padding: 6px; border-radius: 7px; }
+  .home-chat-answer { line-height: 1.12; }
+  .home-chat-answer + .home-chat-answer { margin-top: 6px; }
+  :is(.home-chat-answer-destination, .home-chat-summary-destination) { font-size: 20px; }
+  :is(.home-chat-answer-cost, .home-chat-summary-cost) { padding-block: 5px; }
+  .home-chat-total { margin-top: 3px; }
+}
+@media (max-width: 374px) {
+  .home-chat-scene { inset: 4px 5px 18px; gap: 4px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .home-chat-panel-title { margin-bottom: 4px; line-height: 1; }
+  .home-chat-crew { bottom: 1px; }
+  .home-chat-crew span { width: 16px; height: 16px; }
+  .home-chat-map-labels { bottom: 1px; line-height: 1; }
+  .home-chat-bubble { padding: 2px; line-height: 1; }
+  .home-chat-product { padding: 3px; }
+  .home-chat-answer { line-height: 1; }
+  .home-chat-answer + .home-chat-answer { margin-top: 3px; }
+  :is(.home-chat-answer-cost, .home-chat-summary-cost) { padding-block: 3px; }
+  .home-chat-total { margin-top: 2px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-chat-animation *, .home-chat-animation { animation: none !important; }
+}
+
 /* A complete printed scene is the default. JS only starts a short, finite story. */
 .home-poster-art { display: block; width: 100%; height: auto; background: #18324F; }
-/* Hero: obraz poziomy, który wycina niebo i dół równo, a nie wypycha podpisu poza ekran. */
-.home-hero-poster .home-poster-art { aspect-ratio: 440 / 360; max-height: calc(100svh - 300px); min-height: 200px; }
 .home-poster-label { color: #A04B20; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; }
-.home-hero-poster { padding: 10px; border: 1px solid #18324F; background: #F5EFE0; color: #1C1008; box-shadow: 7px 7px 0 #18324F; max-width: 520px; width: 100%; margin: 0 auto; }
-.home-hero-poster figcaption { padding: 12px 8px 4px; }
-.home-poster-caption { font-family: var(--font-heading); font-size: clamp(22px, 2.6vw, 28px); line-height: 1.1; font-weight: 700; text-wrap: balance; margin-block: 0 4px; }
-.home-poster-place { font-size: 12px; color: #18324F; }
 
 .home-destinations { padding-block: 16px 40px; }
 .home-dreams-intro { display: grid; gap: 16px; }
@@ -353,8 +411,8 @@ body:has([data-page="home"]) .global-fab {
 
 @media (min-width: 768px) {
   [data-page="home"] > nav a[href="/blog"] { display: inline-flex; align-items: center; }
-  .home-hero { padding-block: 112px 56px; }
-  .home-title { font-size: 48px; }
+  .home-hero { padding-block: 88px 40px; }
+  .home-title { font-size: 44px; }
   .home-hero-actions { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 0 16px; }
   .home-destinations { padding-block: 16px 56px; }
   .home-dreams-controls { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
@@ -370,6 +428,7 @@ body:has([data-page="home"]) .global-fab {
   }
   .home-hero-grid { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 40px; align-items: start; }
   .home-hero { padding-top: 88px; }
+  .home-chat-animation { max-width: min(100%, calc((100svh - 160px) * 1.6)); }
   .home-title { font-size: clamp(36px, 4vw, 56px); }
   .home-dreams-intro { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 40px; align-items: end; }
   .home-dream-card .home-poster-art { height: 240px; }

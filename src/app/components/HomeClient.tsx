@@ -8,7 +8,6 @@ import DealsStrip, { type StripDeal } from "@/app/components/DealsStrip";
 import { ORIGIN_GENITIVE } from "@/lib/drop/email";
 import { resolveOrigin } from "@/lib/drop/defaults";
 import { HOME, homeSubtitle } from "@/lib/homeCopy";
-import HomePoster from "./HomePoster";
 import HomeDreams from "./HomeDreams";
 
 import { IconCompass, IconClock, IconBook, IconCoin } from "./Icons";
@@ -129,6 +128,8 @@ function DuskPoster() {
 
 export default function HomeClient({
   faq,
+  heroAnimation,
+  exampleSummary,
   initialDeals = [],
   initialDealsOrigin = "WRO",
 }: {
@@ -137,6 +138,8 @@ export default function HomeClient({
   initialDealsOrigin?: string;
   /** Objection handling, rendered before the final call to action */
   faq?: React.ReactNode;
+  heroAnimation?: React.ReactNode;
+  exampleSummary?: React.ReactNode;
 }) {
   /* ── lotnisko dla zapisu na zrzut: to samo, które wybrano w pasku okazji ── */
   const [dropOrigin, setDropOrigin] = useState(initialDealsOrigin);
@@ -149,7 +152,7 @@ export default function HomeClient({
     <div className="home-content">
 
       {/* ════════════════════════════════════════════════════════════════════
-          §1  HERO — two paths and a railway poster
+          §1  HERO — two paths and the group chat story
           ════════════════════════════════════════════════════════════════════ */}
       <section className="home-hero">
         <div className="home-container home-hero-grid">
@@ -256,13 +259,7 @@ export default function HomeClient({
             </a>
           </motion.p>
         </div>
-        <figure className="home-hero-poster">
-          <HomePoster city="Lizbona" />
-          <figcaption>
-            <p className="home-poster-caption">W czwartek pomysł. <em>W piątek w drogę.</em></p>
-            <p className="home-poster-place">Lizbona · ilustracja</p>
-          </figcaption>
-        </figure>
+        {heroAnimation}
         </div>
       </section>
 
@@ -421,7 +418,7 @@ export default function HomeClient({
             }}
           >
             Barcelona, weekend.<br />
-            <em style={{ fontStyle: "italic", color: "var(--accent)" }}>Łącznie 2 200 zł.</em>
+            <em style={{ fontStyle: "italic", color: "var(--accent)" }}>Przykład dla 4 osób.</em>
           </motion.h2>
 
           <motion.p
@@ -454,6 +451,7 @@ export default function HomeClient({
               boxShadow: "0 10px 40px rgba(28,16,8,0.1)",
             }}
           >
+            {exampleSummary}
             {/* Card header */}
             <div
               style={{

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import HomeClient from "./components/HomeClient";
+import HomeChatAnimation from "./components/HomeChatAnimation";
+import HomeExampleSummary from "./components/HomeExampleSummary";
 import HomeFAQ, { FAQS } from "./components/HomeFAQ";
 import { META } from "@/lib/homeCopy";
 import SiteNav from "./components/SiteNav";
@@ -110,7 +112,7 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
       <SiteNav />
-      <HomeClient faq={<HomeFAQ />} initialDeals={initialDeals} initialDealsOrigin={DEFAULT_ORIGIN} />
+      <HomeClient exampleSummary={<HomeExampleSummary />} heroAnimation={<HomeChatAnimation />} faq={<HomeFAQ />} initialDeals={initialDeals} initialDealsOrigin={DEFAULT_ORIGIN} />
       <CityLinks cities={cities} title="Dokąd na weekend" limit={8} />
       <SiteFooter showQuizLink={false} />
     </div>
