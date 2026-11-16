@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/lib/store";
-import { getCityPhotoUrl } from "@/lib/cityPhotos";
+import CityPhoto from "@/app/components/CityPhoto";
 import type { Companion, GroupComposition, TravelVibe, TravelStyle, DestinationRecommendation, FlightDetails, QuizAnswers } from "@/types";
 import { IconPin, IconPlane, IconCheck } from "@/app/components/Icons";
 import GroupSizePicker from "@/app/components/GroupSizePicker";
@@ -570,11 +570,9 @@ function StepDestination({
           className="mt-5 p-4 rounded-2xl flex items-center gap-3"
           style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
         >
-          <img
-            src={getCityPhotoUrl(city, 400)}
-            alt={city}
-            className="w-14 h-14 rounded-xl object-cover flex-shrink-0"
-          />
+          <div className="rounded-xl overflow-hidden flex-shrink-0" style={{ width: 110, height: 120 }}>
+            <CityPhoto city={city} width={300} sizes="110px" />
+          </div>
           <div>
             <p className="font-bold text-base">{city}, {country}</p>
             <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>Ułożymy plan dla tej destynacji</p>

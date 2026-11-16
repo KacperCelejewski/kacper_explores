@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
+import CityPhoto from "./CityPhoto";
 import { motion } from "framer-motion";
 import { useRef, useState, useEffect, useCallback } from "react";
 import DropSignup from "@/app/components/DropSignup";
@@ -9,7 +9,7 @@ import DealsStrip, { type StripDeal } from "@/app/components/DealsStrip";
 import { ORIGIN_GENITIVE } from "@/lib/drop/email";
 import { resolveOrigin } from "@/lib/drop/defaults";
 import { HOME, homeSubtitle } from "@/lib/homeCopy";
-import { getCityPhotoUrl, FEATURED_DESTINATIONS } from "@/lib/cityPhotos";
+import { FEATURED_DESTINATIONS, type CityPhoto as Photo } from "@/lib/cityPhotos";
 
 // ─── Static data ────────────────────────────────────────────────────────────
 
@@ -241,7 +241,7 @@ export default function HomeClient({
   initialDeals = [],
   initialDealsOrigin = "WRO",
 }: {
-  galleryPhotos?: string[];
+  galleryPhotos?: Photo[];
   /** Okazje z domyślnego lotniska, pobrane na serwerze, żeby pasek nie wskakiwał po załadowaniu */
   initialDeals?: StripDeal[];
   initialDealsOrigin?: string;
@@ -756,77 +756,67 @@ export default function HomeClient({
                 boxShadow: "0 10px 36px rgba(28,16,8,0.2)",
               }}
             >
-              <Link
-                href={`/quiz?city=${encodeURIComponent(dest.city)}`}
-                style={{ display: "block", height: "100%", textDecoration: "none" }}
-              >
-                <Image
-                  src={galleryPhotos[i] || getCityPhotoUrl(dest.city, 800)}
-                  alt={dest.city}
-                  fill
-                  sizes="360px"
-                  className="object-cover"
-                  // Warm, slightly faded print so the photos sit in the poster palette
-                  style={{ filter: "sepia(0.32) saturate(0.82) contrast(1.04)" }}
-                />
-                {/* Gradient overlay */}
-                <div
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    background:
-                      "linear-gradient(to top, rgba(0,0,0,0.94) 0%, rgba(0,0,0,0.18) 55%, transparent 100%)",
-                  }}
-                />
-                {/* Tag */}
-                <div style={{ position: "absolute", top: 14, left: 14 }}>
-                  <span
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 800,
-                      padding: "4px 10px",
-                      borderRadius: 999,
-                      background: "var(--accent)",
-                      color: "white",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.06em",
-                    }}
-                  >
-                    {dest.tag}
-                  </span>
-                </div>
-                {/* Card content */}
-                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "0 18px 18px" }}>
-                  <p
-                    style={{
-                      color: "white",
-                      fontSize: 28,
-                      fontWeight: 800,
-                      lineHeight: 1.05,
-                      fontFamily: "var(--font-heading)",
-                      letterSpacing: "-0.025em",
-                    }}
-                  >
-                    {dest.city}
-                  </p>
-                  <p style={{ color: "rgba(255,255,255,0.82)", fontSize: 13, marginTop: 3 }}>
-                    {dest.flag}&nbsp;{dest.country}
-                  </p>
+              <CityPhoto city={dest.city} photo={galleryPhotos[i]} sizes="360px">
+                <Link
+                  href={`/quiz?city=${encodeURIComponent(dest.city)}`}
+                  style={{ display: "block", position: "absolute", inset: 0, textDecoration: "none" }}
+                >
+                  {/* Gradient overlay */}
                   <div
                     style={{
-                      display: "flex",
-                      alignItems: "baseline",
-                      justifyContent: "space-between",
-                      marginTop: 10,
+                      position: "absolute",
+                      inset: 0,
+                      background:
+                        "linear-gradient(to top, rgba(0,0,0,0.94) 0%, rgba(0,0,0,0.18) 55%, transparent 100%)",
                     }}
-                  >
-                    <p style={{ color: ACCENT, fontSize: 16, fontWeight: 800, letterSpacing: "-0.01em" }}>
-                      {dest.priceFrom}
-                    </p>
-                    <span style={{ color: "white", fontSize: 14, fontWeight: 700 }}>Zaplanuj →</span>
+                  />
+                  {/* Tag */}
+                  <div style={{ position: "absolute", top: 14, left: 14 }}>
+                    <span
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 800,
+                        padding: "4px 10px",
+                        borderRadius: 999,
+                        background: "var(--accent)",
+                        color: "white",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.06em",
+                      }}
+                    >
+                      {dest.tag}
+                    </span>
                   </div>
-                </div>
-              </Link>
+                  {/* Card content */}
+                  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "0 18px 18px" }}>
+                    <p
+                      style={{
+                        color: "white",
+                        fontSize: 28,
+                        fontWeight: 800,
+                        lineHeight: 1.05,
+                        fontFamily: "var(--font-heading)",
+                        letterSpacing: "-0.025em",
+                      }}
+                    >
+                      {dest.city}
+                    </p>
+                    <p style={{ color: "rgba(255,255,255,0.82)", fontSize: 13, marginTop: 3 }}>
+                      {dest.flag}&nbsp;{dest.country}
+                    </p>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "baseline",
+                        justifyContent: "space-between",
+                        marginTop: 10,
+                      }}
+                    >
+                      <span style={{ color: "white", fontSize: 14, fontWeight: 700 }}>Zaplanuj →</span>
+                    </div>
+                  </div>
+                </Link>
+              </CityPhoto>
             </motion.div>
           ))}
         </div>

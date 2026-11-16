@@ -5,7 +5,7 @@ import { META } from "@/lib/homeCopy";
 import SiteNav from "./components/SiteNav";
 import SiteFooter from "./components/SiteFooter";
 import { FEATURED_DESTINATIONS } from "@/lib/cityPhotos";
-import { fetchCityPhotoUrl } from "@/lib/unsplashApi";
+import { fetchCityPhoto } from "@/lib/unsplashApi";
 import { getCitiesWithDeals, getDealsForOrigin } from "@/lib/drop/read";
 import CityLinks from "@/app/components/CityLinks";
 import { hoursInCity } from "@/lib/drop/stay";
@@ -89,7 +89,7 @@ async function loadStripDeals(): Promise<StripDeal[]> {
 
 export default async function HomePage() {
   const [galleryPhotos, initialDeals, cities] = await Promise.all([
-    Promise.all(FEATURED_DESTINATIONS.map((d) => fetchCityPhotoUrl(d.city))),
+    Promise.all(FEATURED_DESTINATIONS.map((d) => fetchCityPhoto(d.city))),
     loadStripDeals(),
     getCitiesWithDeals(),
   ]);

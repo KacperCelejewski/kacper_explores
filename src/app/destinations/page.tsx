@@ -12,7 +12,8 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/lib/store";
 import type { DestinationRecommendation, FlightDetails } from "@/types";
-import { getCityPhotoUrl } from "@/lib/cityPhotos";
+import { getCityPhoto, type CityPhoto as Photo } from "@/lib/cityPhotos";
+import CityPhoto from "@/app/components/CityPhoto";
 import { formatPlans } from "@/lib/formatPlans";
 import { IconPin, IconPlane, IconCheck } from "@/app/components/Icons";
 import { cardFlightPriceCopy, type CardFlightPrice } from "@/lib/flights/card-price";
@@ -315,8 +316,7 @@ function DestCard({
   quote: CardFlightPrice | null;
 }) {
   const highlights = (dest as DestinationRecommendation & { highlights?: string[] }).highlights ?? [];
-  const [photoUrl, setPhotoUrl] = useState(() => getCityPhotoUrl(dest.city, 800));
-  const [photoFailed, setPhotoFailed] = useState(false);
+  const [photo, setPhoto] = useState<Photo>(() => getCityPhoto(dest.city, 800));
   const config = useAffiliateConfig();
   const quiz = useAppStore((state) => state.quizAnswers);
   const passengers = toFlightPassengers(groupFromCompanion(quiz.companion, quiz.group));
@@ -330,15 +330,13 @@ function DestCard({
     ? flightSearchLink({ origin: freshQuote.origin, destination: freshQuote.destination,
         depart: freshQuote.departDate, returnDate: freshQuote.returnDate, passengers }, config)
     : flightLink(dest.bestOffer, config, passengers) ?? flightSearchLink({ origin, destination: destination ?? "", passengers }, config);
-  const fetchedRef = useRef(false);
-
   useEffect(() => {
-    if (fetchedRef.current) return;
-    fetchedRef.current = true;
-    fetch(`/api/city-photo?city=${encodeURIComponent(dest.city)}`)
+    const controller = new AbortController();
+    fetch(`/api/city-photo?city=${encodeURIComponent(dest.city)}`, { signal: controller.signal })
       .then((r) => r.json())
-      .then((d) => { if (d.url) { setPhotoUrl(d.url); setPhotoFailed(false); } })
+      .then((d: Photo) => { if (d.url && !controller.signal.aborted) setPhoto(d); })
       .catch(() => {});
+    return () => controller.abort();
   }, [dest.city]);
 
   return (
@@ -351,50 +349,35 @@ function DestCard({
     >
       {/* Photo */}
       <div className="relative h-44 overflow-hidden">
-        {photoFailed ? (
-          // Fallback jako tekst Reacta: coverImage pochodzi z odpowiedzi AI i nie może trafić do HTML-a
+        <CityPhoto city={dest.city} photo={photo}>
+          {/* Gradient overlay */}
           <div
-            className="w-full h-full flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, var(--accent) 0%, var(--accent-poster) 100%)" }}
-          >
-            <span style={{ fontSize: "4rem" }}>{dest.coverImage}</span>
-          </div>
-        ) : (
-          <img
-            src={photoUrl}
-            alt={dest.city}
-            className="w-full h-full object-cover"
-            loading="lazy"
-            onError={() => setPhotoFailed(true)}
+            className="absolute inset-0"
+            style={{ background: "linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 60%)" }}
           />
-        )}
-        {/* Gradient overlay */}
-        <div
-          className="absolute inset-0"
-          style={{ background: "linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 60%)" }}
-        />
-        {/* City name */}
-        <div className="absolute bottom-0 left-0 p-4">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">{dest.coverImage}</span>
-            <div>
-              <h2 className="text-white font-bold text-xl leading-tight">{dest.city}</h2>
-              <p className="text-white/75 text-sm">{dest.country}</p>
+          {/* City name */}
+          <div className="absolute bottom-0 left-0 p-4">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">{dest.coverImage}</span>
+              <div>
+                <h2 className="text-white font-bold text-xl leading-tight">{dest.city}</h2>
+                <p className="text-white/75 text-sm">{dest.country}</p>
+              </div>
             </div>
           </div>
-        </div>
-        {/* Budget badge */}
-        <div className="absolute top-3 right-3">
-          <span
-            className="text-xs font-bold px-2.5 py-1 rounded-full"
-            style={{
-              background: dest.budgetLevel === "low" ? "var(--success)" : "var(--accent)",
-              color: "#fff",
-            }}
-          >
-            {dest.budgetLevel === "low" ? "Tanie" : "Średnie"}
-          </span>
-        </div>
+          {/* Budget badge */}
+          <div className="absolute top-3 right-3">
+            <span
+              className="text-xs font-bold px-2.5 py-1 rounded-full"
+              style={{
+                background: dest.budgetLevel === "low" ? "var(--success)" : "var(--accent)",
+                color: "#fff",
+              }}
+            >
+              {dest.budgetLevel === "low" ? "Tanie" : "Średnie"}
+            </span>
+          </div>
+        </CityPhoto>
       </div>
 
       {/* Body */}

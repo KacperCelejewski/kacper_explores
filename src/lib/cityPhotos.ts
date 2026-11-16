@@ -1,121 +1,64 @@
-// Curated Unsplash photo IDs for popular European destinations.
-// CDN IDs verified by fetching each photo page — NOT the URL slug IDs.
-// URL format: https://images.unsplash.com/photo-{ID}?w={w}&q=75&auto=format&fit=crop
-const CITY_PHOTOS: Record<string, string> = {
-  // Iberian Peninsula
-  "barcelona": "1578095172812-dcc191c5aed8",  // Sagrada Familia golden hour
-  "lizbona": "1744580162134-b9b64645f7c8",    // Alfama district under blue sky
-  "lisbon": "1744580162134-b9b64645f7c8",
-  "porto": "1569959595862-1c84553361c1",      // Aerial — Dom Luís bridge
-  "madryt": "1681311869080-8609bc510c29",     // fallback — Paris-style cityscape
-  "madrid": "1681311869080-8609bc510c29",
-  "sewilla": "1681311869080-8609bc510c29",
-  "seville": "1681311869080-8609bc510c29",
-  // Italy
-  "rzym": "1514896856000-91cb6de818e0",       // Colosseum daytime
-  "rome": "1514896856000-91cb6de818e0",
-  "florencja": "1514896856000-91cb6de818e0",
-  "florence": "1514896856000-91cb6de818e0",
-  "wenecja": "1569959595862-1c84553361c1",    // canal/bridge — closest verified
-  "venice": "1569959595862-1c84553361c1",
-  "mediolan": "1514896856000-91cb6de818e0",
-  "milan": "1514896856000-91cb6de818e0",
-  "neapol": "1514896856000-91cb6de818e0",
-  "naples": "1514896856000-91cb6de818e0",
-  // Greece
-  "ateny": "1754069620359-dc54d97591ce",      // Acropolis from above
-  "athens": "1754069620359-dc54d97591ce",
-  "santorini": "1536253253742-6c8195fd0c1e",  // Iconic white & blue domes
-  "mykonos": "1536253253742-6c8195fd0c1e",
-  "thessaloniki": "1754069620359-dc54d97591ce",
-  // France
-  "paryż": "1681311869080-8609bc510c29",      // Eiffel tower over Paris
-  "paris": "1681311869080-8609bc510c29",
-  "nicea": "1681311869080-8609bc510c29",
-  "nice": "1681311869080-8609bc510c29",
-  // Germany & Austria
-  "berlin": "1564613655657-7f7a7df91177",    // Reichstag building
-  "monachium": "1564613655657-7f7a7df91177",
-  "munich": "1564613655657-7f7a7df91177",
-  "wiedeń": "1662119431157-40e08341aff5",     // Schönbrunn Palace
-  "vienna": "1662119431157-40e08341aff5",
-  "hamburg": "1564613655657-7f7a7df91177",
-  // Netherlands & Belgium
-  "amsterdam": "1753810809056-4d5ddb6eeca2", // Canal with buildings and bikes
-  "bruksela": "1536880756060-98a6a140f0a7",  // Amsterdam canal daytime (fallback)
-  "brussels": "1536880756060-98a6a140f0a7",
-  "brugia": "1536880756060-98a6a140f0a7",
-  "bruges": "1536880756060-98a6a140f0a7",
-  // Central Europe
-  "praga": "1747466402645-b9776499efb7",      // Prague castle and colorful buildings
-  "prague": "1747466402645-b9776499efb7",
-  "budapeszt": "1756413664903-159797c47477",  // Parliament + Chain Bridge at sunset
-  "budapest": "1756413664903-159797c47477",
-  "bratysława": "1747466402645-b9776499efb7",
-  "bratislava": "1747466402645-b9776499efb7",
-  "warszawa": "1747466402645-b9776499efb7",
-  "warsaw": "1747466402645-b9776499efb7",
-  "kraków": "1747466402645-b9776499efb7",
-  "krakow": "1747466402645-b9776499efb7",
-  "gdańsk": "1747466402645-b9776499efb7",
-  "gdansk": "1747466402645-b9776499efb7",
-  "wrocław": "1747466402645-b9776499efb7",
-  "wroclaw": "1747466402645-b9776499efb7",
-  // Croatia & Balkans
-  "dubrownik": "1750624580601-38c1f151d0e5", // Old town on Adriatic
-  "dubrovnik": "1750624580601-38c1f151d0e5",
-  "split": "1629997865848-f4353a9296c9",      // Aerial city near sea
-  "zadar": "1629997865848-f4353a9296c9",
-  "zagreb": "1629997865848-f4353a9296c9",
-  // Nordics
-  "kopenhaga": "1536880756060-98a6a140f0a7",
-  "copenhagen": "1536880756060-98a6a140f0a7",
-  "sztokholm": "1536880756060-98a6a140f0a7",
-  "stockholm": "1536880756060-98a6a140f0a7",
-  "oslo": "1536880756060-98a6a140f0a7",
-  "helsinki": "1536880756060-98a6a140f0a7",
-  "reykjavik": "1536880756060-98a6a140f0a7",
-  // UK & Ireland
-  "londyn": "1681311869080-8609bc510c29",
-  "london": "1681311869080-8609bc510c29",
-  "edinburgh": "1681311869080-8609bc510c29",
-  "edynburg": "1681311869080-8609bc510c29",
-  "dublin": "1681311869080-8609bc510c29",
-  // Baltics & Eastern
-  "tallinn": "1747466402645-b9776499efb7",
-  "ryga": "1747466402645-b9776499efb7",
-  "riga": "1747466402645-b9776499efb7",
-  "wilno": "1747466402645-b9776499efb7",
-  "vilnius": "1747466402645-b9776499efb7",
-  // Mediterranean islands
-  "valletta": "1536253253742-6c8195fd0c1e",
-  "palma": "1536253253742-6c8195fd0c1e",
-  "ibiza": "1536253253742-6c8195fd0c1e",
+export type CityPhoto = {
+  source: "unsplash";
+  url: string;
+  photoId: string;
+  authorName: string;
+  authorUrl: string;
+  photoUrl: string;
+  verifiedCity: string;
+} | {
+  source: "illustration";
+  url: string;
 };
 
-const DEFAULT_ID = "1681311869080-8609bc510c29"; // Eiffel tower — recognizable fallback
+export const CITY_ILLUSTRATION: CityPhoto = {
+  source: "illustration",
+  url: "/illustrations/journey-poster.svg",
+};
 
-export function getCityPhotoUrl(city: string, width = 800): string {
-  const keyWithDiacritics = city.toLowerCase();
-  const keyNormalized = city
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "");
-  const id =
-    CITY_PHOTOS[keyWithDiacritics] ??
-    CITY_PHOTOS[keyNormalized] ??
-    DEFAULT_ID;
-  return `https://images.unsplash.com/photo-${id}?w=${width}&q=85&auto=format&fit=crop&crop=center`;
+export function unsplashReferralUrl(url: string): string {
+  const link = new URL(url);
+  link.searchParams.set("utm_source", "wloczykij");
+  link.searchParams.set("utm_medium", "referral");
+  return link.toString();
 }
 
-// Featured destinations shown on the homepage
+// Only manually verified places, with the photographer and source page.
+// Verification and expansion policy: docs/city-photos.md. Never substitute a nearby city.
+const VERIFIED_PHOTOS = [
+  { city: "Barcelona", aliases: ["barcelona"], id: "b1v7_djQNuk", cdn: "1792766806020-4ef39eaf0e94", author: "Jeffrey Eisen", username: "jeisen" },
+  { city: "Lizbona", aliases: ["lizbona", "lisbon", "lisboa"], id: "M0ywxxUOIkE", cdn: "1744580162134-b9b64645f7c8", author: "Get Golden Visa", username: "getgoldenvisa" },
+  { city: "Rzym", aliases: ["rzym", "rome", "roma"], id: "VhlLC2eNSuo", cdn: "1526026697130-3f870884a6e3", author: "Cristina Gottardi", username: "cristina_gottardi" },
+  { city: "Ateny", aliases: ["ateny", "athens"], id: "oxZwLNRTZ1Q", cdn: "1781545134540-f24f5c169b85", author: "Michal Vrba", username: "mis_hik" },
+  { city: "Praga", aliases: ["praga", "prague", "praha"], id: "GxOyvWUWPrY", cdn: "1779111717273-c72882884cfd", author: "Mikheil Kuzmidi", username: "mikkuz" },
+  { city: "Dubrownik", aliases: ["dubrownik", "dubrovnik"], id: "odcVzDcfS1s", cdn: "1750624580601-38c1f151d0e5", author: "Hongbin", username: "hbsun2013" },
+  { city: "Budapeszt", aliases: ["budapeszt", "budapest"], id: "Jv2wfhVptR0", cdn: "1791128812711-aa103a019ec9", author: "Martin Guido", username: "martinguido" },
+  { city: "Porto", aliases: ["porto"], id: "4p_BzPvxm0s", cdn: "1792802140834-3f0cf56572e5", author: "Vincent Yap", username: "chonky_films" },
+];
+
+export function getCityPhoto(city: string, width = 800): CityPhoto {
+  const key = city.trim().toLocaleLowerCase("pl");
+  const photo = VERIFIED_PHOTOS.find((entry) => entry.aliases.includes(key));
+  if (!photo) return CITY_ILLUSTRATION;
+  return {
+    source: "unsplash",
+    url: `https://images.unsplash.com/photo-${photo.cdn}?w=${width}&q=85&auto=format&fit=crop&crop=center`,
+    photoId: photo.id,
+    authorName: photo.author,
+    authorUrl: unsplashReferralUrl(`https://unsplash.com/@${photo.username}`),
+    photoUrl: unsplashReferralUrl(`https://unsplash.com/photos/${photo.id}`),
+    verifiedCity: photo.city,
+  };
+}
+
+// Inspiration, not flight offers. Prices belong to dated data from the flight cache.
 export const FEATURED_DESTINATIONS = [
-  { city: "Barcelona", country: "Hiszpania", flag: "🇪🇸", priceFrom: "wyjazd od ~1 400 zł", tag: "Gorący" },
-  { city: "Lizbona", country: "Portugalia", flag: "🇵🇹", priceFrom: "wyjazd od ~900 zł", tag: "Tanie loty" },
-  { city: "Rzym", country: "Włochy", flag: "🇮🇹", priceFrom: "wyjazd od ~1 100 zł", tag: "Klasyk" },
-  { city: "Ateny", country: "Grecja", flag: "🇬🇷", priceFrom: "wyjazd od ~1 000 zł", tag: "Słońce" },
-  { city: "Praga", country: "Czechy", flag: "🇨🇿", priceFrom: "wyjazd od ~500 zł", tag: "Blisko" },
-  { city: "Dubrownik", country: "Chorwacja", flag: "🇭🇷", priceFrom: "wyjazd od ~800 zł", tag: "Lato" },
-  { city: "Budapeszt", country: "Węgry", flag: "🇭🇺", priceFrom: "wyjazd od ~400 zł", tag: "Blisko" },
-  { city: "Porto", country: "Portugalia", flag: "🇵🇹", priceFrom: "wyjazd od ~950 zł", tag: "Tanie loty" },
+  { city: "Barcelona", country: "Hiszpania", flag: "🇪🇸", tag: "Gorący" },
+  { city: "Lizbona", country: "Portugalia", flag: "🇵🇹", tag: "Nad oceanem" },
+  { city: "Rzym", country: "Włochy", flag: "🇮🇹", tag: "Klasyk" },
+  { city: "Ateny", country: "Grecja", flag: "🇬🇷", tag: "Słońce" },
+  { city: "Praga", country: "Czechy", flag: "🇨🇿", tag: "Blisko" },
+  { city: "Dubrownik", country: "Chorwacja", flag: "🇭🇷", tag: "Lato" },
+  { city: "Budapeszt", country: "Węgry", flag: "🇭🇺", tag: "Blisko" },
+  { city: "Porto", country: "Portugalia", flag: "🇵🇹", tag: "Nad oceanem" },
 ];
