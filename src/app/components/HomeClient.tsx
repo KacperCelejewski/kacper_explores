@@ -253,7 +253,6 @@ export default function HomeClient({
             <Link href={HOME.quickHref} style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "underline", textUnderlineOffset: 3 }}>
               {HOME.quickLink}
             </Link>
-            {" · "}
             <a href={HOME.dropHref} style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "underline", textUnderlineOffset: 3 }}>
               {HOME.dropLink}
             </a>

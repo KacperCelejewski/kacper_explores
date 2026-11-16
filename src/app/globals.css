@@ -301,7 +301,7 @@ body:has([data-page="home"]) .global-fab {
 .home-hero-grid { display: grid; gap: 32px; }
 .home-title { font-size: 36px; }
 .home-hero-actions { display: flex; flex-direction: column; align-items: flex-start; }
-.home-secondary-links { display: flex; flex-wrap: wrap; align-items: center; gap: 0 8px; }
+.home-secondary-links { display: flex; flex-wrap: wrap; align-items: center; gap: 0 20px; }
 .home-secondary-links a { display: inline-flex; align-items: center; }
 
 @media (max-width: 374px) and (max-height: 667px) {
@@ -313,7 +313,7 @@ body:has([data-page="home"]) .global-fab {
 .home-chat-animation { width: 100%; max-width: 720px; min-width: 0; margin-inline: auto; }
 .home-chat-frame { position: relative; isolation: isolate; aspect-ratio: 16 / 10; border: 1px solid #18324F; border-radius: 12px; background: var(--bg-surface); color: #18324F; }
 .home-chat-frame::after { content: ''; position: absolute; inset: 0; z-index: 2; border-radius: inherit; pointer-events: none; opacity: .12; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M1 2h1m5 8h1m6-5h1M3 14h1' stroke='%2318324F' stroke-opacity='.4'/%3E%3C/svg%3E") repeat; }
-.home-chat-map { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .08; border-radius: inherit; }
+.home-chat-map { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .2; border-radius: inherit; }
 .home-chat-map-labels { position: absolute; inset: 8px 12px auto; display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; }
 .home-chat-crew { position: absolute; bottom: 10px; left: 12px; display: flex; gap: 4px; }
 .home-chat-crew span { display: grid; place-items: center; width: 24px; height: 24px; border: 1px solid #18324F; border-radius: 50%; background: var(--bg-primary); font-size: 14px; font-weight: 700; }
@@ -337,32 +337,11 @@ body:has([data-page="home"]) .global-fab {
 .home-chat-animation[data-paused="true"] .home-chat-scene *,
 .home-chat-animation[data-paused="true"] .home-chat-map { animation-play-state: paused !important; }
 @media (max-width: 767px) {
-  .home-chat-scene { inset: 8px 8px 22px; gap: 6px; }
-  .home-chat-map-labels { inset: auto 8px 6px; }
-  .home-chat-crew { left: 50%; bottom: 4px; transform: translateX(-50%); gap: 2px; }
-  .home-chat-crew span { width: 20px; height: 20px; }
-  .home-chat-panel-title { margin-bottom: 6px; }
-  .home-chat-group { gap: 4px; }
-  .home-chat-bubble { padding: 4px; line-height: 1.12; border-radius: 5px; }
-  .home-chat-product { padding: 6px; border-radius: 7px; }
-  .home-chat-answer { line-height: 1.12; }
-  .home-chat-answer + .home-chat-answer { margin-top: 6px; }
-  :is(.home-chat-answer-destination, .home-chat-summary-destination) { font-size: 20px; }
-  :is(.home-chat-answer-cost, .home-chat-summary-cost) { padding-block: 5px; }
-  .home-chat-total { margin-top: 3px; }
-}
-@media (max-width: 374px) {
-  .home-chat-scene { inset: 4px 5px 18px; gap: 4px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  .home-chat-panel-title { margin-bottom: 4px; line-height: 1; }
-  .home-chat-crew { bottom: 1px; }
-  .home-chat-crew span { width: 16px; height: 16px; }
-  .home-chat-map-labels { bottom: 1px; line-height: 1; }
-  .home-chat-bubble { padding: 2px; line-height: 1; }
-  .home-chat-product { padding: 3px; }
-  .home-chat-answer { line-height: 1; }
-  .home-chat-answer + .home-chat-answer { margin-top: 3px; }
-  :is(.home-chat-answer-cost, .home-chat-summary-cost) { padding-block: 3px; }
-  .home-chat-total { margin-top: 2px; }
+  /* Telefon: bez stałych proporcji. Czat i karta jedno pod drugim w normalnym rozmiarze, nic się nie ściska. */
+  .home-chat-frame { aspect-ratio: auto; padding: 44px 14px 52px; }
+  .home-chat-scene { position: static; grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .home-chat-crew { left: 14px; bottom: 14px; }
+  .home-chat-map-labels { inset: 12px 14px auto; }
 }
 @media (prefers-reduced-motion: reduce) {
   .home-chat-animation *, .home-chat-animation { animation: none !important; }
@@ -370,6 +349,7 @@ body:has([data-page="home"]) .global-fab {
 
 /* A complete printed scene is the default. JS only starts a short, finite story. */
 .home-poster-art { display: block; width: 100%; height: auto; background: #18324F; }
+.home-dream-card .home-poster-art { height: auto; aspect-ratio: 440 / 330; }
 .home-poster-label { color: #A04B20; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; }
 
 .home-destinations { padding-block: 16px 40px; }
@@ -386,7 +366,6 @@ body:has([data-page="home"]) .global-fab {
 .home-dreams-summary { font-size: 14px; line-height: 1.6; padding-block: 20px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
 .home-dreams-cards { display: grid; gap: 24px; align-items: start; }
 .home-dream-card { min-width: 0; border: 1px solid #18324F; padding: 8px; background: #F5EFE0; color: #1C1008; }
-.home-dream-card .home-poster-art { height: 200px; }
 .home-dream-card-copy { padding: 18px 10px 10px; }
 .home-dream-card h3 { font-size: 32px; line-height: 1.1; margin-block: 6px 10px; }
 .home-dream-card-copy > p:not(.home-poster-label) { font-size: 14px; line-height: 1.6; }
@@ -435,8 +414,7 @@ body:has([data-page="home"]) .global-fab {
   .home-hero-actions { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 0 16px; }
   .home-destinations { padding-block: 16px 56px; }
   .home-dreams-controls { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
-  .home-dreams-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
-  .home-dream-card .home-poster-art { height: 180px; }
+  .home-dreams-cards { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 20px; }
   .home-section { padding-block: 72px 80px; }
 }
 
@@ -450,7 +428,6 @@ body:has([data-page="home"]) .global-fab {
   .home-chat-animation { max-width: min(100%, calc((100svh - 160px) * 1.6)); }
   .home-title { font-size: clamp(36px, 4vw, 56px); }
   .home-dreams-intro { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 40px; align-items: end; }
-  .home-dream-card .home-poster-art { height: 240px; }
   .home-discovery:has(> .deals-strip) { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); align-items: start; }
   .home-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
   .home-steps > div { flex-direction: column; }
