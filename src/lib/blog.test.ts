@@ -76,6 +76,16 @@ describe.each(files)("artykuł %s", (file) => {
     it("nie mówi głosem założyciela w pierwszej osobie", () => {
       expect(content).not.toMatch(FIRST_PERSON_RE);
     });
+    it("FAQ z frontmattera jest zgodne z widoczną sekcją „Najczęstsze pytania”", () => {
+      const faq = (data.faq ?? []) as { q: string; a: string }[];
+      if (faq.length === 0) return;
+      // widoczna sekcja może mieć linki markdown, JSON-LD z frontmattera nie
+      const section = (content.split("## Najczęstsze pytania")[1] ?? "").replace(/\[([^\]]+)\]\([^)]*\)/g, "$1");
+      for (const { q, a } of faq) {
+        expect(section, `${file}: brak pytania „${q}” w widocznej sekcji`).toContain(`### ${q}`);
+        expect(section, `${file}: odpowiedź na „${q}” różni się od frontmattera`).toContain(a);
+      }
+    });
     it("ma linki do okazji lub stron miast (linkowanie wewnętrzne)", () => {
       expect(content).toMatch(/\]\(\/(okazje|weekend)/);
     });
