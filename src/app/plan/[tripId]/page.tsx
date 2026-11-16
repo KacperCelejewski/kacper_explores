@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
+import CityPhoto from "@/app/components/CityPhoto";
 import { PlanSkeleton } from "@/app/components/Skeleton";
 import { useAppStore } from "@/lib/store";
 import { downloadICS } from "@/app/utils/ics-download";
@@ -18,7 +18,6 @@ import DropProfileButton from "@/app/components/DropProfileButton";
 import { FlightCard, HotelLinks, LuggageTile, TicketsLink } from "@/app/components/PartnerLinks";
 import { IconPlane, IconBed, IconFork, IconTicket, IconLock, IconDownload, IconCalendar, IconGlobe, IconCheck, IconClose, IconRefresh, IconPin, IconSuitcase } from "@/app/components/Icons";
 import type { DayPlan, DayActivity, TripPlan, DestinationRecommendation, QuizAnswers } from "@/types";
-import { getCityPhotoUrl } from "@/lib/cityPhotos";
 import { PRICES } from "@/lib/prices";
 import { isFreeCost } from "@/lib/affiliate";
 import { groupFromCompanion, groupSize, scaleBudgetText, showGroupBudget } from "@/lib/group";
@@ -385,37 +384,31 @@ export default function PlanPage() {
         className="relative w-full overflow-hidden no-print"
         style={{ height: 220 }}
       >
-        <Image
-          src={getCityPhotoUrl(plan.city, 1600)}
-          alt={plan.city}
-          fill
-          sizes="100vw"
-          priority
-          className="object-cover"
-        />
-        <div
-          className="absolute inset-0"
-          style={{
-            background: "linear-gradient(to bottom, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.05) 40%, rgba(0,0,0,0.55) 100%)",
-          }}
-        />
-        <div className="absolute top-4 left-5">
-          <button
-            onClick={() => router.push("/destinations")}
-            className="text-sm transition-opacity hover:opacity-70 no-print"
-            style={{ color: "rgba(255,255,255,0.9)" }}
-          >
-            ← Zmień kierunek
-          </button>
-        </div>
-        <div className="absolute bottom-5 left-5 right-5">
-          <h1 className="text-2xl font-bold text-white leading-tight">
-            {plan.city} {dest?.countryFlag ?? ""}
-          </h1>
-          <p className="text-sm mt-0.5" style={{ color: "rgba(255,255,255,0.75)" }}>
-            {plan.duration} dni · {plan.country}
-          </p>
-        </div>
+        <CityPhoto city={plan.city} width={1600} eager>
+          <div
+            className="absolute inset-0"
+            style={{
+              background: "linear-gradient(to bottom, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.05) 40%, rgba(0,0,0,0.55) 100%)",
+            }}
+          />
+          <div className="absolute top-4 left-5">
+            <button
+              onClick={() => router.push("/destinations")}
+              className="text-sm transition-opacity hover:opacity-70 no-print"
+              style={{ color: "rgba(255,255,255,0.9)" }}
+            >
+              ← Zmień kierunek
+            </button>
+          </div>
+          <div className="absolute bottom-5 left-5 right-5">
+            <h1 className="text-2xl font-bold text-white leading-tight">
+              {plan.city} {dest?.countryFlag ?? ""}
+            </h1>
+            <p className="text-sm mt-0.5" style={{ color: "rgba(255,255,255,0.75)" }}>
+              {plan.duration} dni · {plan.country}
+            </p>
+          </div>
+        </CityPhoto>
       </motion.div>
 
       {/* Header */}
