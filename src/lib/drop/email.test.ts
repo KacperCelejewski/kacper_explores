@@ -84,6 +84,8 @@ describe("renderDropEmail", () => {
     expect(html).toContain("https://wloczykij.me/api/drop/unsubscribe?token=tok123");
     expect(html).toContain("https://wloczykij.me/zrzut/ustawienia?token=tok123");
     expect(html).toContain("To będzie w Pro.");
+    // Linki z identyfikatorem partnera muszą być oznaczone w samym mailu
+    expect(html).toContain("linki partnerskie");
   });
 
   it("bez zajawki nie ma undefined", () => {

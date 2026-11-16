@@ -153,6 +153,9 @@ ${cards}
             <p style="margin:0 0 8px;color:#6B7280;font-size:12px;text-align:center;">
               Chcesz alert na konkretne miasto? To będzie w Pro.
             </p>
+            <p style="margin:0 0 8px;color:#9CA3AF;font-size:11px;text-align:center;">
+              Linki do lotów to linki partnerskie: jeśli kupisz bilet, dostajemy prowizję, a Ty płacisz tyle samo.
+            </p>
             <p style="margin:0;color:#9CA3AF;font-size:11px;text-align:center;">
               <a href="${esc(settingsUrl)}" style="color:#A04B20;text-decoration:none;">Zmień lotnisko lub budżet</a>
               · <a href="${esc(unsubscribeUrl)}" style="color:#A04B20;text-decoration:none;">Wypisz się ze zrzutu</a>
