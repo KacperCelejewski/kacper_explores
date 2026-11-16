@@ -1,0 +1,14 @@
+Temat: Potwierdź zapis na czwartkowy zrzut
+
+Potwierdź zapis na czwartkowy zrzut
+
+Co czwartek dostaniesz jeden mail z maksymalnie 3 wyjazdami z Wrocławia i Katowic do 400 zł. Wypiszesz się w każdej chwili.
+Na start dorzucamy kod na 10% zniżki na Pro Roczny. Odbierzesz go po potwierdzeniu.
+
+Potwierdź zapis: https://wloczykij.me/api/newsletter/verify?token=PODGLAD
+
+Link jest ważny 48 godzin. Jeśli to nie Ty, zignoruj tę wiadomość: bez potwierdzenia zrzut nie ruszy.
+
+--
+Dostajesz tę wiadomość, bo ktoś zapisał ten adres na czwartkowy zrzut na wloczykij.me.
+Włóczykij · https://wloczykij.me · hej@wloczykij.me
