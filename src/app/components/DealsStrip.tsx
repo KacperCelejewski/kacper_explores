@@ -82,8 +82,8 @@ export default function DealsStrip({
   const slug = origin.toLowerCase();
 
   return (
-    <section data-track-section="okazje" style={{ background: "var(--bg-primary)", padding: "64px 28px 8px" }}>
-      <div style={{ maxWidth: 560, margin: "0 auto" }}>
+    <section className="deals-strip" data-track-section="okazje" style={{ background: "var(--bg-primary)" }}>
+      <div>
         <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--accent)", margin: "0 0 10px" }}>
           Okazje na weekend
         </p>
@@ -95,7 +95,7 @@ export default function DealsStrip({
             aria-label="Lotnisko wylotu"
             value={origin}
             onChange={(e) => choose(e.target.value)}
-            style={{ fontSize: 14, minHeight: 40, padding: "6px 10px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--bg-surface)" }}
+            style={{ fontSize: 14, minHeight: 44, padding: "6px 10px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--bg-surface)" }}
           >
             {POLISH_AIRPORTS.map((a) => <option key={a.code} value={a.code}>{a.city}</option>)}
           </select>

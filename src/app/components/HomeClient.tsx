@@ -1,15 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import CityPhoto from "./CityPhoto";
 import { motion } from "framer-motion";
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import DropSignup from "@/app/components/DropSignup";
 import DealsStrip, { type StripDeal } from "@/app/components/DealsStrip";
 import { ORIGIN_GENITIVE } from "@/lib/drop/email";
 import { resolveOrigin } from "@/lib/drop/defaults";
 import { HOME, homeSubtitle } from "@/lib/homeCopy";
-import { FEATURED_DESTINATIONS, type CityPhoto as Photo } from "@/lib/cityPhotos";
+import HomeDreams from "./HomeDreams";
+
+import { IconCompass, IconClock, IconBook, IconCoin } from "./Icons";
 
 // ─── Static data ────────────────────────────────────────────────────────────
 
@@ -32,11 +33,11 @@ const STEPS = [
 ];
 
 const EXAMPLE_PLAN = [
-  { time: "08:30", emoji: "☕", text: "Śniadanie w lokalnej piekarni — croissant + kawa, ~4 EUR" },
-  { time: "10:00", emoji: "🏛️", text: "Park Güell — wejście 10 EUR, widok na całą Barcelonę" },
-  { time: "13:00", emoji: "🥘", text: "Obiad na Mercat de Santa Caterina — 2x tapas za 9 EUR" },
-  { time: "16:00", emoji: "🏖️", text: "Plaża Barceloneta — bezpłatna, leżak 3 EUR" },
-  { time: "20:00", emoji: "🍷", text: "Aperitivo na Las Ramblas — wino + pintxos ~12 EUR" },
+  { time: "08:30", Icon: IconClock, text: "Śniadanie w lokalnej piekarni — croissant + kawa, ~4 EUR" },
+  { time: "10:00", Icon: IconBook, text: "Park Güell — wejście 10 EUR, widok na całą Barcelonę" },
+  { time: "13:00", Icon: IconCoin, text: "Obiad na Mercat de Santa Caterina — 2x tapas za 9 EUR" },
+  { time: "16:00", Icon: IconCompass, text: "Plaża Barceloneta — bezpłatna, leżak 3 EUR" },
+  { time: "20:00", Icon: IconClock, text: "Aperitivo na Las Ramblas — wino + pintxos ~12 EUR" },
 ];
 
 // ─── Shared style tokens ─────────────────────────────────────────────────────
@@ -53,9 +54,8 @@ const OVERLINE: React.CSSProperties = {
   marginBottom: 14,
 };
 
-// ─── Hero poster ─────────────────────────────────────────────────────────────
-// Flat railway-poster scene from the brand palette. The walker is the logo's
-// silhouette, hopping across stepping stones in a stream and back again.
+// ─── Closing poster ──────────────────────────────────────────────────────────
+// The existing static footer illustration keeps the brand silhouette.
 
 const WALKER_PATHS = [
   "M 4 78 C 28 64, 96 58, 154 62 C 168 64, 176 72, 170 78 C 168 82, 156 84, 138 86 C 90 92, 38 92, 14 88 C 4 86, -2 82, 4 78 Z",
@@ -66,115 +66,6 @@ const WALKER_PATHS = [
   "M 88 220 L 76 264 L 60 290 L 48 296 L 52 300 L 92 300 L 98 268 L 110 220 Z",
   "M 112 220 L 118 244 L 130 268 L 154 274 L 166 270 L 160 264 L 146 260 L 134 252 L 126 232 L 122 220 Z",
 ];
-
-// Stepping stones, right to left. `top` is where the walker's feet land; the
-// hop offsets in globals.css (.hero-hop-*) are measured from the first stone.
-const STONES = [
-  { x: 1300, w: 112, h: 36 },
-  { x: 1150, w: 96, h: 32 },
-  { x: 1000, w: 108, h: 40 },
-  { x: 850, w: 120, h: 34 },
-];
-const STREAM_BED = 882;
-const stoneTop = (h: number) => STREAM_BED - 0.75 * h;
-
-// `crop` picks the window onto the 1440×900 scene: the full sky behind the copy
-// from tablet up, a tight frame on the sun and walker on phones.
-function HeroPoster({ id, crop, className }: { id: string; crop: string; className: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox={crop}
-      preserveAspectRatio="xMaxYMax slice"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <defs>
-        {/* Woodcut cuts through the lower half of the sun */}
-        <mask id={`${id}-sun-cuts`}>
-          <rect width="1440" height="900" fill="white" />
-          {[0, 1, 2, 3, 4].map((i) => (
-            <rect key={i} x="0" y={772 + i * 20} width="1440" height={6 + i * 3} fill="black" />
-          ))}
-        </mask>
-        {/* Grain fades in toward the land so the sky meets the page without a seam */}
-        <linearGradient id={`${id}-grain-fade`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0.6" stopColor="white" stopOpacity="0" />
-          <stop offset="0.8" stopColor="white" stopOpacity="1" />
-        </linearGradient>
-        <mask id={`${id}-grain-mask`}>
-          <rect width="1440" height="900" fill={`url(#${id}-grain-fade)`} />
-        </mask>
-        <filter id={`${id}-grain`}>
-          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch" />
-          <feColorMatrix type="saturate" values="0" />
-          <feComponentTransfer>
-            <feFuncA type="table" tableValues="0 0.22" />
-          </feComponentTransfer>
-        </filter>
-      </defs>
-
-      <circle cx="1180" cy="760" r="160" fill="var(--accent-poster)" mask={`url(#${id}-sun-cuts)`} />
-
-      {/* Far ridge */}
-      <path
-        d="M0 806 C 220 786, 420 792, 640 774 C 860 760, 1040 792, 1240 786 C 1340 783, 1400 776, 1440 772 L1440 900 L0 900 Z"
-        fill="var(--border)"
-      />
-      {/* Middle ridge */}
-      <path
-        d="M0 846 C 260 828, 520 838, 760 822 C 960 810, 1100 830, 1300 826 C 1370 824, 1420 821, 1440 819 L1440 900 L0 900 Z"
-        fill="var(--text-muted)"
-      />
-      {/* Near bank */}
-      <path
-        d="M0 886 C 300 876, 620 882, 880 870 C 1000 864, 1060 858, 1140 859 C 1240 860, 1340 868, 1440 872 L1440 900 L0 900 Z"
-        fill="var(--green)"
-      />
-      {/* Stream across the foreground */}
-      <path
-        d="M0 888 C 360 880, 720 884, 1000 877 C 1180 873, 1320 875, 1440 879 L1440 900 L0 900 Z"
-        fill="var(--water)"
-      />
-
-      {STONES.map(({ x, w, h }) => (
-        <g key={x}>
-          <path
-            d={`M${x - w / 2 - 10} ${STREAM_BED + 2} h${w + 20}`}
-            stroke="var(--bg-primary)"
-            strokeOpacity="0.45"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-          <path
-            d={`M${x - w / 2} ${STREAM_BED} C ${x - w / 2} ${STREAM_BED - h}, ${x + w / 2} ${STREAM_BED - h}, ${x + w / 2} ${STREAM_BED} Z`}
-            fill="var(--text-secondary)"
-          />
-          <ellipse cx={x - w * 0.12} cy={stoneTop(h) + 4} rx={w * 0.22} ry="3" fill="var(--text-muted)" />
-        </g>
-      ))}
-
-      {/* Feet sit at the local origin so the squash and the turn pivot on the stone */}
-      <g transform={`translate(${STONES[0].x} ${stoneTop(STONES[0].h)})`} fill="var(--text-primary)">
-        <g className="hero-hop-x">
-          <g className="hero-hop-y">
-            <g className="hero-hop-face">
-              <g className="hero-hop-squash">
-                <g transform="scale(0.72) translate(-88 -300)">
-                  {WALKER_PATHS.map((d) => (
-                    <path key={d} d={d} />
-                  ))}
-                </g>
-              </g>
-            </g>
-          </g>
-        </g>
-      </g>
-
-      <rect width="1440" height="900" filter={`url(#${id}-grain)`} mask={`url(#${id}-grain-mask)`} />
-    </svg>
-  );
-}
 
 // Closing scene: same poster world at dusk, the walker heading off toward the sun.
 function DuskPoster() {
@@ -236,62 +127,35 @@ function DuskPoster() {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function HomeClient({
-  galleryPhotos = [],
   faq,
+  heroAnimation,
+  exampleSummary,
   initialDeals = [],
   initialDealsOrigin = "WRO",
 }: {
-  galleryPhotos?: Photo[];
   /** Okazje z domyślnego lotniska, pobrane na serwerze, żeby pasek nie wskakiwał po załadowaniu */
   initialDeals?: StripDeal[];
   initialDealsOrigin?: string;
   /** Objection handling, rendered before the final call to action */
   faq?: React.ReactNode;
+  heroAnimation?: React.ReactNode;
+  exampleSummary?: React.ReactNode;
 }) {
-  /* ── full-width + dark nav override ── */
-  useEffect(() => {
-    document.body.classList.add("is-home");
-    return () => document.body.classList.remove("is-home");
-  }, []);
-
   /* ── lotnisko dla zapisu na zrzut: to samo, które wybrano w pasku okazji ── */
   const [dropOrigin, setDropOrigin] = useState(initialDealsOrigin);
   useEffect(() => {
     try { setDropOrigin(resolveOrigin(window.localStorage.getItem("deals_origin"))); } catch { /* storage zablokowany */ }
   }, []);
 
-  /* ── destinations carousel ── */
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [activeCard, setActiveCard] = useState(0);
-
-  const handleScroll = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const card = el.querySelector<HTMLElement>("[data-card]");
-    if (!card) return;
-    const cardWidth = card.offsetWidth + 12;
-    setActiveCard(
-      Math.min(Math.round(el.scrollLeft / cardWidth), FEATURED_DESTINATIONS.length - 1)
-    );
-  }, []);
-
-  const scrollToCard = (i: number) => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const cards = el.querySelectorAll<HTMLElement>("[data-card]");
-    cards[i]?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
-  };
-
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div>
+    <div className="home-content">
 
       {/* ════════════════════════════════════════════════════════════════════
-          §1  HERO — sand railway poster: walker hopping stones, setting sun
+          §1  HERO — two paths and the group chat story
           ════════════════════════════════════════════════════════════════════ */}
       <section className="home-hero">
-        <HeroPoster id="hero-wide" crop="0 0 1440 900" className="home-hero-art home-hero-art--wide" />
-        <HeroPoster id="hero-phone" crop="720 540 720 360" className="home-hero-art home-hero-art--phone" />
+        <div className="home-container home-hero-grid">
 
         {/* ── Content ── */}
         <div className="home-hero-copy">
@@ -305,46 +169,43 @@ export default function HomeClient({
               padding: "6px 14px",
               fontSize: 12,
               fontWeight: 700,
-              marginBottom: 22,
+              marginBottom: 12,
               letterSpacing: "0.02em",
             }}
           >
             {HOME.badge}
           </motion.p>
 
-          {/* Headline — Cormorant Garamond, massive, editorial */}
-          <motion.h1
+          {/* Headline — Cormorant Garamond */}
+          <motion.h1 className="home-title"
             initial={false}
             style={{
               fontFamily: "var(--font-heading)",
-              fontSize: "clamp(44px, min(12vw, 9vh), 86px)",
               lineHeight: 1.02,
               fontWeight: 700,
               color: "var(--text-primary)",
               letterSpacing: "-0.03em",
-              marginBottom: 18,
+              marginBottom: 12,
             }}
           >
             {HOME.h1}
           </motion.h1>
 
-          <motion.p
+          <motion.p className="home-subtitle"
             initial={false}
             style={{
               color: "var(--text-secondary)",
-              fontSize: "clamp(15px, 3.5vw, 17px)",
-              lineHeight: 1.7,
-              maxWidth: 400,
-              marginBottom: 30,
+              fontSize: 15,
+              lineHeight: 1.5,
+              marginBottom: 16,
             }}
           >
             {homeSubtitle()}
           </motion.p>
 
           {/* CTAs */}
-          <motion.div
+          <motion.div className="home-hero-actions"
             initial={false}
-            style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}
           >
             <Link
               href={HOME.ctaTeamHref}
@@ -379,34 +240,38 @@ export default function HomeClient({
             </Link>
           </motion.div>
 
-          <motion.p
+          <motion.p className="home-micro"
             initial={false}
-            style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 14 }}
+            style={{ color: "var(--text-muted)", fontSize: 14, marginTop: 8 }}
           >
             {HOME.micro}
           </motion.p>
-          <motion.p
+          <motion.p className="home-secondary-links"
             initial={false}
             style={{ color: "var(--text-secondary)", fontSize: 14, marginTop: 10 }}
           >
             <Link href={HOME.quickHref} style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "underline", textUnderlineOffset: 3 }}>
               {HOME.quickLink}
             </Link>
-            {" · "}
             <a href={HOME.dropHref} style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "underline", textUnderlineOffset: 3 }}>
               {HOME.dropLink}
             </a>
           </motion.p>
         </div>
+        {heroAnimation}
+        </div>
       </section>
 
+      <HomeDreams />
+
+      <div className="home-discovery home-container">
       <DealsStrip initialDeals={initialDeals} initialOrigin={initialDealsOrigin} onOriginChange={setDropOrigin} />
 
       {/* ════════════════════════════════════════════════════════════════════
           CZWARTKOWY ZRZUT — zapis na tygodniowy mail z lotami na weekend, zaraz pod okazjami
           ════════════════════════════════════════════════════════════════════ */}
-      <section id="zrzut" style={{ background: "var(--bg-surface)", padding: "56px 28px 64px", scrollMarginTop: 16 }}>
-        <div style={{ maxWidth: 480, margin: "0 auto" }}>
+      <section id="zrzut" className="home-signup" style={{ background: "var(--bg-surface)" }}>
+        <div>
           <DropSignup
             defaultAirports={[dropOrigin]}
             cheapestHint={dropOrigin === initialDealsOrigin && initialDeals[0]
@@ -416,16 +281,18 @@ export default function HomeClient({
         </div>
       </section>
 
+      </div>
+
       {/* ════════════════════════════════════════════════════════════════════
           §3  HOW IT WORKS — dark, editorial, numbered steps
           ════════════════════════════════════════════════════════════════════ */}
       <section
-        id="jak-to-dziala"
-        style={{ background: DARK, color: "white", padding: "88px 28px 96px" }}
+        id="jak-to-dziala" className="home-section"
+        style={{ background: DARK, color: "white" }}
       >
-        <div style={{ maxWidth: 560, margin: "0 auto" }}>
+        <div className="home-container">
           <motion.p
-            initial={{ opacity: 0, y: 8 }}
+            initial={false}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             style={{ ...OVERLINE, color: ACCENT }}
@@ -434,7 +301,7 @@ export default function HomeClient({
           </motion.p>
 
           <motion.h2
-            initial={{ opacity: 0, y: 20 }}
+            initial={false}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.08 }}
@@ -451,11 +318,11 @@ export default function HomeClient({
             <em style={{ color: ACCENT, fontStyle: "italic" }}>do gotowego planu.</em>
           </motion.h2>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 44 }}>
+          <div className="home-steps">
             {STEPS.map((step, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, x: -26 }}
+                initial={false}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.12, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
@@ -492,7 +359,7 @@ export default function HomeClient({
           </div>
 
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
+            initial={false}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.42 }}
@@ -523,10 +390,11 @@ export default function HomeClient({
       {/* ════════════════════════════════════════════════════════════════════
           §4  PLAN PREVIEW — product demo in warm section
           ════════════════════════════════════════════════════════════════════ */}
-      <section style={{ background: "var(--bg-surface)", padding: "88px 28px 96px" }}>
-        <div style={{ maxWidth: 560, margin: "0 auto" }}>
+      <section className="home-section" style={{ background: "var(--bg-surface)" }}>
+        <div className="home-container home-preview">
+          <div>
           <motion.p
-            initial={{ opacity: 0, y: 8 }}
+            initial={false}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             style={OVERLINE}
@@ -535,7 +403,7 @@ export default function HomeClient({
           </motion.p>
 
           <motion.h2
-            initial={{ opacity: 0, y: 20 }}
+            initial={false}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.08 }}
@@ -549,11 +417,11 @@ export default function HomeClient({
             }}
           >
             Barcelona, weekend.<br />
-            <em style={{ fontStyle: "italic", color: "var(--accent)" }}>Łącznie 2 200 zł.</em>
+            <em style={{ fontStyle: "italic", color: "var(--accent)" }}>Przykład dla 4 osób.</em>
           </motion.h2>
 
           <motion.p
-            initial={{ opacity: 0 }}
+            initial={false}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ delay: 0.18 }}
@@ -568,9 +436,10 @@ export default function HomeClient({
             <br />Tyle wystarczy na niezapomniany wyjazd.
           </motion.p>
 
+          </div>
           {/* The actual plan card */}
           <motion.div
-            initial={{ opacity: 0, y: 24 }}
+            initial={false}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.2, duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
@@ -581,6 +450,7 @@ export default function HomeClient({
               boxShadow: "0 10px 40px rgba(28,16,8,0.1)",
             }}
           >
+            {exampleSummary}
             {/* Card header */}
             <div
               style={{
@@ -597,7 +467,7 @@ export default function HomeClient({
                   Dzień 1 — Piątek
                 </p>
                 <p style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-0.01em" }}>
-                  Barcelona, Katalonia 🇪🇸
+                  Barcelona, Katalonia
                 </p>
               </div>
               <div style={{ textAlign: "right" }}>
@@ -632,7 +502,7 @@ export default function HomeClient({
                 >
                   {item.time}
                 </span>
-                <span style={{ flexShrink: 0, fontSize: 15 }}>{item.emoji}</span>
+                <span style={{ flexShrink: 0, paddingTop: 3 }}><item.Icon size={18} /></span>
                 <p style={{ fontSize: 14, lineHeight: 1.6, color: "var(--text-primary)" }}>
                   {item.text}
                 </p>
@@ -641,7 +511,7 @@ export default function HomeClient({
 
             {/* Co jeszcze potrafi plan */}
             <p style={{ padding: "12px 20px", fontSize: 13, lineHeight: 1.6, color: "var(--text-muted)", borderTop: "1px solid var(--border)" }}>
-              To tylko 5 godzin jednego dnia. W swoim planie zmienisz dzień, podmienisz atrakcję, sprawdzisz budżet i mapę, pobierzesz PDF i wrzucisz wyjazd do kalendarza.
+              To fragment jednego dnia. W swoim planie zmienisz dzień, podmienisz atrakcję, sprawdzisz budżet i mapę, pobierzesz PDF i wrzucisz wyjazd do kalendarza.
             </p>
 
             {/* Footer CTA */}
@@ -672,193 +542,15 @@ export default function HomeClient({
         </div>
       </section>
 
-      {/* ════════════════════════════════════════════════════════════════════
-          §5  DESTINATIONS — big photo cards, horizontal snap carousel
-          ════════════════════════════════════════════════════════════════════ */}
-      <section style={{ background: "var(--bg-primary)", padding: "88px 0 60px" }}>
-        {/* Section header */}
-        <div style={{ padding: "0 28px", marginBottom: 30, maxWidth: 560, margin: "0 auto 30px" }}>
-          <motion.p
-            initial={{ opacity: 0, y: 8 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            style={OVERLINE}
-          >
-            Destynacje
-          </motion.p>
-          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
-            <motion.h2
-              initial={{ opacity: 0, y: 18 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.08 }}
-              style={{
-                fontFamily: "var(--font-heading)",
-                fontSize: "clamp(30px, 9vw, 46px)",
-                fontWeight: 700,
-                lineHeight: 1.06,
-                letterSpacing: "-0.025em",
-              }}
-            >
-              Gdzie chcesz<br />lecieć?
-            </motion.h2>
-            <Link
-              href="/okazje/wro"
-              style={{
-                display: "inline-block",
-                padding: "12px 0",
-                fontSize: 13,
-                fontWeight: 700,
-                color: "var(--accent)",
-                textDecoration: "none",
-                flexShrink: 0,
-                marginLeft: 16,
-              }}
-            >
-              Okazje na weekend →
-            </Link>
-          </div>
-        </div>
-
-        {/* Snap carousel — full-bleed */}
-        <div
-          ref={scrollRef}
-          onScroll={handleScroll}
-          style={{
-            display: "flex",
-            overflowX: "auto",
-            scrollSnapType: "x mandatory",
-            scrollbarWidth: "none",
-            msOverflowStyle: "none",
-            WebkitOverflowScrolling: "touch",
-            paddingLeft: "max(24px, calc((100vw - 560px) / 2 + 28px))",
-            scrollPaddingLeft: "max(24px, calc((100vw - 560px) / 2 + 28px))",
-          }}
-        >
-
-          {FEATURED_DESTINATIONS.map((dest, i) => (
-            <motion.div
-              key={dest.city}
-              initial={{ opacity: 0, scale: 0.94 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true, margin: "-40px" }}
-              transition={{ duration: 0.45, delay: i * 0.055 }}
-              data-card
-              style={{
-                flexShrink: 0,
-                position: "relative",
-                borderRadius: 22,
-                overflow: "hidden",
-                width: "min(calc(100vw - 72px), 360px)",
-                height: 368,
-                scrollSnapAlign: "start",
-                marginRight: i < FEATURED_DESTINATIONS.length - 1 ? 12 : 28,
-                boxShadow: "0 10px 36px rgba(28,16,8,0.2)",
-              }}
-            >
-              <CityPhoto city={dest.city} photo={galleryPhotos[i]} sizes="360px">
-                <Link
-                  href={`/quiz?city=${encodeURIComponent(dest.city)}`}
-                  style={{ display: "block", position: "absolute", inset: 0, textDecoration: "none" }}
-                >
-                  {/* Gradient overlay */}
-                  <div
-                    style={{
-                      position: "absolute",
-                      inset: 0,
-                      background:
-                        "linear-gradient(to top, rgba(0,0,0,0.94) 0%, rgba(0,0,0,0.18) 55%, transparent 100%)",
-                    }}
-                  />
-                  {/* Tag */}
-                  <div style={{ position: "absolute", top: 14, left: 14 }}>
-                    <span
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 800,
-                        padding: "4px 10px",
-                        borderRadius: 999,
-                        background: "var(--accent)",
-                        color: "white",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.06em",
-                      }}
-                    >
-                      {dest.tag}
-                    </span>
-                  </div>
-                  {/* Card content */}
-                  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "0 18px 18px" }}>
-                    <p
-                      style={{
-                        color: "white",
-                        fontSize: 28,
-                        fontWeight: 800,
-                        lineHeight: 1.05,
-                        fontFamily: "var(--font-heading)",
-                        letterSpacing: "-0.025em",
-                      }}
-                    >
-                      {dest.city}
-                    </p>
-                    <p style={{ color: "rgba(255,255,255,0.82)", fontSize: 13, marginTop: 3 }}>
-                      {dest.flag}&nbsp;{dest.country}
-                    </p>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "baseline",
-                        justifyContent: "space-between",
-                        marginTop: 10,
-                      }}
-                    >
-                      <span style={{ color: "white", fontSize: 14, fontWeight: 700 }}>Zaplanuj →</span>
-                    </div>
-                  </div>
-                </Link>
-              </CityPhoto>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Dot indicators */}
-        <div
-          style={{ display: "flex", justifyContent: "center", gap: 0, marginTop: 12, padding: "0 28px" }}
-        >
-          {FEATURED_DESTINATIONS.map((dest, i) => (
-            <button
-              key={i}
-              onClick={() => scrollToCard(i)}
-              aria-label={`Pokaż ${dest.city}`}
-              aria-current={i === activeCard ? "true" : undefined}
-              style={{
-                // 28px hit area around an 8px dot
-                width: i === activeCard ? 36 : 24,
-                height: 28,
-                padding: "10px 8px",
-                borderRadius: 14,
-                border: "none",
-                flexShrink: 0,
-                cursor: "pointer",
-                transition: "all 0.22s",
-                background: i === activeCard ? "var(--accent)" : "var(--border)",
-                // After `background`, which would otherwise reset it
-                backgroundClip: "content-box",
-              }}
-            />
-          ))}
-        </div>
-      </section>
-
       {faq}
 
       {/* ════════════════════════════════════════════════════════════════════
           §6  FINAL CTA — dusk poster: the walker heads off over the ridge
           ════════════════════════════════════════════════════════════════════ */}
       <section style={{ background: "var(--text-primary)", overflow: "hidden" }}>
-        <div style={{ textAlign: "center", padding: "96px 28px 8px" }}>
+        <div className="home-container home-finale" style={{ textAlign: "center" }}>
           <motion.h2
-            initial={{ opacity: 0, y: 22 }}
+            initial={false}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             style={{
@@ -876,7 +568,7 @@ export default function HomeClient({
           </motion.h2>
 
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={false}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}

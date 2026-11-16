@@ -242,184 +242,314 @@ h1, h2, h3 {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
 
-/* ================================================================
-   HOME PAGE — full-width override + fixed nav + poster hero
-   ================================================================ */
-
-/* 1. Unlock the 448px shell for the landing page */
-body.is-home main.app-shell {
+/* Wide pages opt in through server-rendered markup. The plan can reuse these
+   widths with data-page="plan" data-layout="wide" in its separate change. */
+main.app-shell:has(> :is([data-page="home"], [data-layout="wide"])) {
   max-width: none;
   padding: 0;
 }
 
-/* 2. Fixed nav over the sand poster hero */
-body.is-home main.app-shell > nav {
+:is([data-page="home"], [data-layout="wide"]) {
+  --page-gutter: 20px;
+  --page-width: 720px;
+}
+
+.home-container {
+  width: min(var(--page-width), calc(100% - 2 * var(--page-gutter)));
+  margin-inline: auto;
+  min-width: 0;
+}
+
+[data-page="home"] > nav {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  inset: 0 0 auto;
   z-index: 200;
-  background: rgba(245, 239, 224, 0.9) !important;
+  min-height: 68px;
+  background: rgba(245, 239, 224, 0.95);
   backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border) !important;
+  padding-inline: max(var(--page-gutter), calc((100% - var(--page-width)) / 2));
+}
+
+[data-page="home"] > nav a:not([href="/blog"]) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+[data-page="home"] > nav a[href="/blog"] { display: none; }
+
+[data-page="home"] > nav a:not([href="/login"]) {
+  color: var(--text-secondary);
+}
+
+[data-page="home"] > :is(section, footer) {
+  width: min(var(--page-width), calc(100% - 2 * var(--page-gutter)));
   max-width: none;
+  margin-inline: auto;
+  padding-inline: 0;
 }
 
-body.is-home main.app-shell > nav a:not([href="/login"]) {
-  color: var(--text-secondary) !important;
-}
-
-/* 3. Keep FAQ + footer centered at comfortable reading width */
-body.is-home main.app-shell > section,
-body.is-home main.app-shell > footer {
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
-  box-sizing: border-box;
-}
-
-/* Strona główna jest na całą szerokość, więc przycisk menu wraca do rogu ekranu */
-body.is-home .global-fab {
+body:has([data-page="home"]) .global-fab {
   right: 1.25rem !important;
 }
 
-/* 4. Anchor scroll offset for fixed nav */
-body.is-home section[id] {
-  scroll-margin-top: 72px;
+[data-page="home"] section[id] { scroll-margin-top: 84px; }
+[data-page="home"] :is(a, button, select, summary) { min-height: 44px; }
+[data-page="home"] a { align-content: center; }
+
+.home-hero { padding: 80px 0 40px; }
+.home-hero-grid { display: grid; gap: 32px; }
+.home-title { font-size: 36px; }
+.home-hero-actions { display: flex; flex-direction: column; align-items: flex-start; }
+.home-secondary-links { display: flex; flex-wrap: wrap; align-items: center; gap: 0 20px; }
+.home-secondary-links a { display: inline-flex; align-items: center; }
+
+@media (max-width: 374px) and (max-height: 667px) {
+  .home-title { font-size: 32px; }
+  .home-hero-copy .home-subtitle { font-size: 14px !important; line-height: 1.35 !important; }
 }
 
-/* 5. Poster hero: art below the copy on phones, behind it from tablet up */
-.home-hero {
-  position: relative;
-  background: var(--bg-primary);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
+/* D: static final frame first; all motion lives in this stylesheet, never a body <style>. */
+:where(.home-chat-animation) p { margin: 0; }
+.home-chat-animation { width: 100%; max-width: 720px; min-width: 0; margin-inline: auto; }
+.home-chat-frame { position: relative; isolation: isolate; padding: 36px 12px 16px; border: 1px solid #18324F; border-radius: 16px; background: #EDE8D8; color: #18324F; }
+.home-chat-symbols { position: absolute; width: 0; height: 0; overflow: hidden; }
+.home-chat-map { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .16; border-radius: inherit; }
+.home-chat-map-labels { position: absolute; inset: 10px 14px auto; display: flex; justify-content: space-between; font-size: 14px; line-height: 1; font-weight: 700; }
+.home-chat-scene { position: relative; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.home-chat-panel { min-width: 0; }
+.home-chat-panel-title { font-size: 14px; line-height: 1.3; font-weight: 700; margin-bottom: 10px; }
+.home-chat-phone { border: 1px solid #18324F; border-radius: 20px; background: #EDE8D8; box-shadow: 3px 4px 0 rgba(24,50,79,.12); }
+.home-chat-phone-header { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid #CFC0A4; border-radius: 19px 19px 0 0; background: #18324F; color: #F5EFE0; }
+.home-chat-phone-header p { font-size: 14px; line-height: 1.25; font-weight: 700; }
+.home-chat-miniatures { display: flex; flex-wrap: wrap; width: 40px; flex-shrink: 0; }
+.home-chat-avatar { display: block; width: 32px; height: 32px; flex-shrink: 0; border-radius: 50%; }
+.home-chat-miniatures .home-chat-avatar { width: 20px; height: 20px; border: 1px solid #F5EFE0; }
+.home-chat-online { display: flex; align-items: center; gap: 5px; margin-top: 3px; font-size: 14px; line-height: 1; }
+.home-chat-online::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #F5EFE0; }
+.home-chat-group { display: grid; gap: 8px; padding: 10px 8px; }
+.home-chat-row { position: relative; display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 6px; align-items: start; }
+.home-chat-author { margin-top: 16px; }
+.home-chat-message { position: relative; min-width: 0; padding-top: 20px; font-size: 14px; line-height: 1.3; }
+.home-chat-name { position: absolute; top: 0; left: 0; color: #18324F; font-size: 14px; line-height: 1.2; font-weight: 700; margin-bottom: 3px; }
+.home-chat-bubble { padding: 6px 8px; border: 1px solid #CFC0A4; border-radius: 2px 10px 10px 10px; background: #F5EFE0; color: #1C1008; }
+.home-chat-time { position: absolute; top: 0; right: 0; display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 0 5px; font-size: 14px; line-height: 1.2; color: #3D2B1F; margin-top: 0; font-variant-numeric: tabular-nums; }
+.home-chat-delivered { color: #2D5A27; }
+.home-chat-typing { position: absolute; top: 20px; left: 38px; display: flex; gap: 4px; align-items: center; padding: 10px 12px; border: 1px solid #CFC0A4; border-radius: 2px 10px 10px 10px; background: #F5EFE0; opacity: 0; }
+.home-chat-typing span { width: 4px; height: 4px; border-radius: 50%; background: #18324F; }
+.home-chat-reaction { display: flex; align-items: center; gap: 8px; color: #18324F; font-weight: 700; }
+.home-chat-reaction .home-chat-delivered { font-weight: 400; }
+.home-chat-reaction time { font-size: 14px; font-weight: 400; color: #3D2B1F; }
+.home-chat-row-reaction .home-chat-author { margin-top: 0; }
+.home-chat-product-brand { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px; padding: 12px; border: 1px solid #18324F; border-bottom: 0; border-radius: 12px 12px 0 0; background: #18324F; color: #F5EFE0; font-size: 14px; line-height: 1.3; }
+.home-chat-product-brand span:first-child { font-weight: 700; }
+.home-chat-response { position: relative; }
+.home-chat-product { background: #F5EFE0; color: #1C1008; border: 1px solid #CFC0A4; border-radius: 14px; padding: 14px; }
+.home-chat-right .home-chat-product { border-color: #18324F; border-radius: 0 0 12px 12px; padding: 12px; }
+.home-chat-answer { font-size: 14px; line-height: 1.3; }
+.home-chat-answer + .home-chat-answer { margin-top: 12px; }
+:is(.home-chat-answer-destination, .home-chat-summary-destination) { font-family: var(--font-heading), Georgia, serif; font-size: 28px; font-weight: 700; color: #18324F; }
+:is(.home-chat-answer-cost, .home-chat-summary-cost) { border-block: 1px solid #CFC0A4; padding-block: 10px; font-weight: 700; color: #A04B20; }
+.home-chat-total { color: #3D2B1F; font-size: 14px; font-weight: 400; margin-top: 4px; }
+:is(.home-chat-answer-plan, .home-chat-summary-plan) { color: #2D5A27; font-weight: 700; }
+.home-chat-connectors { position: absolute; top: 0; left: -24px; width: 24px; height: 100%; color: #18324F; }
+.home-chat-connector { position: absolute; width: 24px; height: 16px; opacity: 0; }
+.home-chat-connector-destination { top: 20px; }
+.home-chat-connector-cost { top: 90px; }
+.home-chat-connector-plan { top: 170px; opacity: 1; }
+.home-chat-caption { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; font-size: 14px; color: #3D2B1F; }
+.home-chat-caption button { min-width: 92px; min-height: 44px; padding: 8px 12px; border: 1px solid #A04B20; border-radius: 8px; color: #A04B20; font-size: 14px; font-weight: 700; cursor: pointer; }
+.home-chat-caption button:disabled { cursor: default; }
+.home-chat-animation[data-paused="true"] .home-chat-scene,
+.home-chat-animation[data-paused="true"] .home-chat-scene *,
+.home-chat-animation[data-paused="true"] .home-chat-map { animation-play-state: paused !important; }
+@media (max-width: 767px) {
+  .home-chat-frame { padding: 36px 14px 18px; }
+  .home-chat-scene { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .home-chat-phone { max-width: 360px; margin-inline: auto; }
+  .home-chat-group { padding: 12px; gap: 12px; }
+  .home-chat-bubble { padding: 8px 10px; }
+  .home-chat-miniatures { width: auto; flex-wrap: nowrap; }
+  .home-chat-miniatures .home-chat-avatar { width: 26px; height: 26px; }
+  .home-chat-connectors { top: -24px; left: auto; right: 20px; width: 16px; height: 24px; }
+  .home-chat-connector { transform: rotate(90deg); transform-origin: 8px 8px; top: 0; }
+  .home-chat-right .home-chat-product { padding: 16px; }
 }
-
-.home-hero-copy {
-  position: relative;
-  z-index: 2;
-  padding: 104px 24px 8px;
-  max-width: 640px;
+@media (prefers-reduced-motion: no-preference) {
+  .home-chat-scene { animation: home-chat-fade 16s linear 2; }
+  .home-chat-group { animation: home-chat-dim 16s linear 3 forwards; }
+  .home-chat-map { animation: home-chat-map 16s linear 3 forwards; }
+  .home-chat-typing span { animation: home-chat-dot .6s ease-in-out 80; }
+  .home-chat-typing span:nth-child(2) { animation-delay: .1s; }
+  .home-chat-typing span:nth-child(3) { animation-delay: .2s; }
+  @keyframes home-chat-dot { 0%,100% { transform: none; } 50% { transform: translateY(-3px); } }
+  @keyframes home-chat-fade { 0%,93.75% { opacity: 1; } 100% { opacity: 0; } }
+  @keyframes home-chat-dim { 0%,62.5% { opacity: 1; } 66.25%,100% { opacity: .96; } }
+  @keyframes home-chat-map { 0%,62.5% { opacity: .16; } 66.25%,100% { opacity: .1; } }
+  .home-chat-question-destination { animation: home-chat-q-destination 16s linear 3 both; }
+  .home-chat-row-destination .home-chat-author { animation: home-chat-avatar-destination 16s linear 3 both; }
+  .home-chat-row-destination .home-chat-typing { animation: home-chat-typing-destination 16s linear 3 both; }
+  @keyframes home-chat-q-destination { 0%,6.25% { opacity: 0; transform: translateY(6px); animation-timing-function: cubic-bezier(.16,1,.3,1); } 7.8125%,100% { opacity: 1; transform: none; } }
+  @keyframes home-chat-avatar-destination { 0%,2.4375% { opacity: 0; } 2.5%,100% { opacity: 1; } }
+  @keyframes home-chat-typing-destination { 0%,2.4375% { opacity: 0; } 2.5%,6.1875% { opacity: 1; } 6.25%,100% { opacity: 0; } }
+  .home-chat-answer-destination { animation: home-chat-a-destination 16s linear 3 both; }
+  .home-chat-connector-destination { animation: home-chat-link-destination 16s linear 3 both; }
+  @keyframes home-chat-a-destination { 0%,9.0625% { opacity: 0; transform: translateY(6px); animation-timing-function: cubic-bezier(.16,1,.3,1); } 10.625%,100% { opacity: 1; transform: none; } }
+  @keyframes home-chat-link-destination { 0%,7.8125% { opacity: 0; } 9.0625%,13.75% { opacity: 1; } 15.625%,100% { opacity: 0; } }
+  .home-chat-question-date { animation: home-chat-q-date 16s linear 3 both; }
+  .home-chat-row-date .home-chat-author { animation: home-chat-avatar-date 16s linear 3 both; }
+  .home-chat-row-date .home-chat-typing { animation: home-chat-typing-date 16s linear 3 both; }
+  @keyframes home-chat-q-date { 0%,12.5% { opacity: 0; transform: translateY(6px); animation-timing-function: cubic-bezier(.16,1,.3,1); } 14.0625%,100% { opacity: 1; transform: none; } }
+  @keyframes home-chat-avatar-date { 0%,8.6875% { opacity: 0; } 8.75%,100% { opacity: 1; } }
+  @keyframes home-chat-typing-date { 0%,8.6875% { opacity: 0; } 8.75%,12.4375% { opacity: 1; } 12.5%,100% { opacity: 0; } }
+  .home-chat-answer-date { animation: home-chat-a-date 16s linear 3 both; }
+  .home-chat-connector-date { animation: home-chat-link-date 16s linear 3 both; }
+  @keyframes home-chat-a-date { 0%,15.3125% { opacity: 0; transform: translateY(6px); animation-timing-function: cubic-bezier(.16,1,.3,1); } 16.875%,100% { opacity: 1; transform: none; } }
+  @keyframes home-chat-link-date { 0%,14.0625% { opacity: 0; } 15.3125%,20% { opacity: 1; } 21.875%,100% { opacity: 0; } }
+  .home-chat-question-flight { animation: home-chat-q-flight 16s linear 3 both; }
+  .home-chat-row-flight .home-chat-author { animation: home-chat-avatar-flight 16s linear 3 both; }
+  .home-chat-row-flight .home-chat-typing { animation: home-chat-typing-flight 16s linear 3 both; }
+  @keyframes home-chat-q-flight { 0%,18.75% { opacity: 0; transform: translateY(6px); animation-timing-function: cubic-bezier(.16,1,.3,1); } 20.3125%,100% { opacity: 1; transform: none; } }
+  @keyframes home-chat-avatar-flight { 0%,14.9375% { opacity: 0; } 15%,100% { opacity: 1; } }
+  @keyframes home-chat-typing-flight { 0%,14.9375% { opacity: 0; } 15%,18.6875% { opacity: 1; } 18.75%,100% { opacity: 0; } }
+  .home-chat-answer-flight { animation: home-chat-a-flight 16s linear 3 both; }
+  .home-chat-connector-flight { animation: home-chat-link-flight 16s linear 3 both; }
+  @keyframes home-chat-a-flight { 0%,21.5625% { opacity: 0; transform: translateY(6px); animation-timing-function: cubic-bezier(.16,1,.3,1); } 23.125%,100% { opacity: 1; transform: none; } }
+  @keyframes home-chat-link-flight { 0%,20.3125% { opacity: 0; } 21.5625%,26.25% { opacity: 1; } 28.125%,100% { opacity: 0; } }
+  .home-chat-question-cost { animation: home-chat-q-cost 16s linear 3 both; }
+  .home-chat-row-cost .home-chat-author { animation: home-chat-avatar-cost 16s linear 3 both; }
+  .home-chat-row-cost .home-chat-typing { animation: home-chat-typing-cost 16s linear 3 both; }
+  @keyframes home-chat-q-cost { 0%,25% { opacity: 0; transform: translateY(6px); animation-timing-function: cubic-bezier(.16,1,.3,1); } 26.5625%,100% { opacity: 1; transform: none; } }
+  @keyframes home-chat-avatar-cost { 0%,21.1875% { opacity: 0; } 21.25%,100% { opacity: 1; } }
+  @keyframes home-chat-typing-cost { 0%,21.1875% { opacity: 0; } 21.25%,24.9375% { opacity: 1; } 25%,100% { opacity: 0; } }
+  .home-chat-answer-cost { animation: home-chat-a-cost 16s linear 3 both; }
+  .home-chat-connector-cost { animation: home-chat-link-cost 16s linear 3 both; }
+  @keyframes home-chat-a-cost { 0%,27.8125% { opacity: 0; transform: translateY(6px); animation-timing-function: cubic-bezier(.16,1,.3,1); } 29.375%,100% { opacity: 1; transform: none; } }
+  @keyframes home-chat-link-cost { 0%,26.5625% { opacity: 0; } 27.8125%,32.5% { opacity: 1; } 34.375%,100% { opacity: 0; } }
+  .home-chat-question-plan { animation: home-chat-q-plan 16s linear 3 both; }
+  .home-chat-row-plan .home-chat-author { animation: home-chat-avatar-plan 16s linear 3 both; }
+  .home-chat-row-plan .home-chat-typing { animation: home-chat-typing-plan 16s linear 3 both; }
+  @keyframes home-chat-q-plan { 0%,43.75% { opacity: 0; transform: translateY(6px); animation-timing-function: cubic-bezier(.16,1,.3,1); } 45.3125%,100% { opacity: 1; transform: none; } }
+  @keyframes home-chat-avatar-plan { 0%,39.9375% { opacity: 0; } 40%,100% { opacity: 1; } }
+  @keyframes home-chat-typing-plan { 0%,39.9375% { opacity: 0; } 40%,43.6875% { opacity: 1; } 43.75%,100% { opacity: 0; } }
+  .home-chat-answer-plan { animation: home-chat-a-plan 16s linear 3 both; }
+  .home-chat-connector-plan { animation: home-chat-link-plan 16s linear 3 both; }
+  @keyframes home-chat-a-plan { 0%,46.5625% { opacity: 0; transform: translateY(6px); animation-timing-function: cubic-bezier(.16,1,.3,1); } 48.125%,100% { opacity: 1; transform: none; } }
+  @keyframes home-chat-link-plan { 0%,45.3125% { opacity: 0; } 46.5625%,51.25% { opacity: 1; } 53.125%,100% { opacity: 1; } }
+  .home-chat-question-settlement { animation: home-chat-q-settlement 16s linear 3 both; }
+  .home-chat-row-settlement .home-chat-author { animation: home-chat-avatar-settlement 16s linear 3 both; }
+  .home-chat-row-settlement .home-chat-typing { animation: home-chat-typing-settlement 16s linear 3 both; }
+  @keyframes home-chat-q-settlement { 0%,51.25% { opacity: 0; transform: translateY(6px); animation-timing-function: cubic-bezier(.16,1,.3,1); } 52.8125%,100% { opacity: 1; transform: none; } }
+  @keyframes home-chat-avatar-settlement { 0%,47.4375% { opacity: 0; } 47.5%,100% { opacity: 1; } }
+  @keyframes home-chat-typing-settlement { 0%,47.4375% { opacity: 0; } 47.5%,51.1875% { opacity: 1; } 51.25%,100% { opacity: 0; } }
+  .home-chat-answer-settlement { animation: home-chat-a-settlement 16s linear 3 both; }
+  .home-chat-connector-settlement { animation: home-chat-link-settlement 16s linear 3 both; }
+  @keyframes home-chat-a-settlement { 0%,54.0625% { opacity: 0; transform: translateY(6px); animation-timing-function: cubic-bezier(.16,1,.3,1); } 55.625%,100% { opacity: 1; transform: none; } }
+  @keyframes home-chat-link-settlement { 0%,52.8125% { opacity: 0; } 54.0625%,58.75% { opacity: 1; } 60.625%,100% { opacity: 0; } }
+  .home-chat-question-reaction { animation: home-chat-q-reaction 16s linear 3 both; }
+  .home-chat-row-reaction .home-chat-author { animation: home-chat-avatar-reaction 16s linear 3 both; }
+  .home-chat-row-reaction .home-chat-typing { animation: home-chat-typing-reaction 16s linear 3 both; }
+  @keyframes home-chat-q-reaction { 0%,57.5% { opacity: 0; transform: translateY(6px); animation-timing-function: cubic-bezier(.16,1,.3,1); } 59.0625%,100% { opacity: 1; transform: none; } }
+  @keyframes home-chat-avatar-reaction { 0%,53.6875% { opacity: 0; } 53.75%,100% { opacity: 1; } }
+  @keyframes home-chat-typing-reaction { 0%,53.6875% { opacity: 0; } 53.75%,57.4375% { opacity: 1; } 57.5%,100% { opacity: 0; } }
 }
-
-.home-hero-art {
-  display: block;
-  order: 2;
-  width: 100%;
-  margin-top: 24px;
-}
-
-.home-hero-art--phone {
-  aspect-ratio: 720 / 360;
-  height: auto;
-}
-
-.home-hero-art--wide {
-  display: none;
-}
-
-/* Hero walker: hops left over four stones, turns, hops back. 10s loop.
-   Horizontal and vertical motion run on separate groups so each hop is an arc.
-   Stone offsets match STONES in HomeClient.tsx (150px apart; landing heights
-   0, +3, -3, +1.5 from the first stone). */
-.hero-hop-x,
-.hero-hop-y,
-.hero-hop-face,
-.hero-hop-squash {
-  animation-duration: 10s;
-  animation-iteration-count: infinite;
-}
-
-.hero-hop-x {
-  animation-name: hero-hop-x;
-  animation-timing-function: linear;
-}
-
-.hero-hop-y { animation-name: hero-hop-y; }
-.hero-hop-face { animation-name: hero-hop-face; }
-.hero-hop-squash { animation-name: hero-hop-squash; }
-
-@keyframes hero-hop-x {
-  0%, 12%   { transform: translateX(0); }
-  17%, 21%  { transform: translateX(-150px); }
-  26%, 30%  { transform: translateX(-300px); }
-  35%, 50%  { transform: translateX(-450px); }
-  55%, 59%  { transform: translateX(-300px); }
-  64%, 68%  { transform: translateX(-150px); }
-  73%, 100% { transform: translateX(0); }
-}
-
-/* Ground keyframes ease out into the rise, apex keyframes ease in to the fall */
-@keyframes hero-hop-y {
-  0%, 12%   { transform: translateY(0);       animation-timing-function: cubic-bezier(0.3, 0.6, 0.5, 1); }
-  14.5%     { transform: translateY(-60px);   animation-timing-function: cubic-bezier(0.5, 0, 0.7, 0.4); }
-  17%, 21%  { transform: translateY(3px);     animation-timing-function: cubic-bezier(0.3, 0.6, 0.5, 1); }
-  23.5%     { transform: translateY(-58px);   animation-timing-function: cubic-bezier(0.5, 0, 0.7, 0.4); }
-  26%, 30%  { transform: translateY(-3px);    animation-timing-function: cubic-bezier(0.3, 0.6, 0.5, 1); }
-  32.5%     { transform: translateY(-60px);   animation-timing-function: cubic-bezier(0.5, 0, 0.7, 0.4); }
-  35%, 50%  { transform: translateY(1.5px);   animation-timing-function: cubic-bezier(0.3, 0.6, 0.5, 1); }
-  52.5%     { transform: translateY(-60px);   animation-timing-function: cubic-bezier(0.5, 0, 0.7, 0.4); }
-  55%, 59%  { transform: translateY(-3px);    animation-timing-function: cubic-bezier(0.3, 0.6, 0.5, 1); }
-  61.5%     { transform: translateY(-58px);   animation-timing-function: cubic-bezier(0.5, 0, 0.7, 0.4); }
-  64%, 68%  { transform: translateY(3px);     animation-timing-function: cubic-bezier(0.3, 0.6, 0.5, 1); }
-  70.5%     { transform: translateY(-58px);   animation-timing-function: cubic-bezier(0.5, 0, 0.7, 0.4); }
-  73%, 100% { transform: translateY(0); }
-}
-
-/* Faces left on the way out, turns at the far stone, turns back at home */
-@keyframes hero-hop-face {
-  0%, 42%     { transform: scaleX(1); }
-  42.6%, 86%  { transform: scaleX(-1); }
-  86.6%, 100% { transform: scaleX(1); }
-}
-
-/* Crouch before each take-off, stretch leaving the stone, squash on landing */
-@keyframes hero-hop-squash {
-  0%, 100%,
-  10.5%, 14%, 17%, 19%,
-  19.5%, 23%, 26%, 28%,
-  28.5%, 32%, 35%, 37%,
-  48.5%, 52%, 55%, 57%,
-  57.5%, 61%, 64%, 66%,
-  66.5%, 70%, 73%, 75%                     { transform: scale(1, 1); }
-  11.5%, 20.5%, 29.5%, 49.5%, 58.5%, 67.5% { transform: scale(1.06, 0.92); }
-  12.8%, 21.8%, 30.8%, 50.8%, 59.8%, 68.8% { transform: scale(0.95, 1.06); }
-  17.6%, 26.6%, 35.6%, 55.6%, 64.6%, 73.6% { transform: scale(1.08, 0.9); }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .hero-hop-x,
-  .hero-hop-y,
-  .hero-hop-face,
-  .hero-hop-squash {
-    animation: none;
-  }
+  .home-chat-animation *, .home-chat-animation { animation: none !important; }
 }
+
+/* A complete printed scene is the default. JS only starts a short, finite story. */
+.home-poster-art { display: block; width: 100%; height: auto; background: #18324F; }
+.home-dream-card .home-poster-art { height: auto; aspect-ratio: 440 / 330; }
+.home-poster-label { color: #A04B20; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; }
+
+.home-destinations { padding-block: 16px 40px; }
+.home-dreams-intro { display: grid; gap: 16px; }
+.home-destinations h2 { font-size: clamp(32px, 4vw, 46px); line-height: 1.08; margin-top: 8px; }
+.home-dreams-intro > p { color: var(--text-secondary); font-size: 15px; line-height: 1.65; max-width: 60ch; }
+.home-dreams-controls { display: grid; gap: 16px; margin-top: 24px; }
+.home-dreams-controls > div { min-width: 0; padding: 20px; border: 1px solid var(--border); background: var(--bg-surface); }
+.home-dreams-controls label { display: block; font-size: 14px; font-weight: 700; }
+.home-dreams-budget output { display: block; font-size: 24px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.home-dreams-budget input { display: block; width: 100%; min-height: 44px; accent-color: var(--accent); cursor: pointer; }
+.home-dreams-range { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary); }
+.home-dreams-people select { width: 100%; min-height: 44px; padding: 10px 12px; margin-top: 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-primary); color: var(--text-primary); font: inherit; }
+.home-dreams-summary { font-size: 14px; line-height: 1.6; padding-block: 20px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+.home-dreams-cards { display: grid; gap: 24px; align-items: start; }
+.home-dream-card { min-width: 0; border: 1px solid #18324F; padding: 8px; background: #F5EFE0; color: #1C1008; }
+.home-dream-card-copy { padding: 18px 10px 10px; }
+.home-dream-card h3 { font-size: 32px; line-height: 1.1; margin-block: 6px 10px; }
+.home-dream-card-copy > p:not(.home-poster-label) { font-size: 14px; line-height: 1.6; }
+.home-dream-card-price { margin-top: 16px; font-variant-numeric: tabular-nums; }
+.home-dream-card-price strong { font-size: 22px; }
+.home-dream-card-copy > .home-dreams-note { font-size: 12px; margin-top: 6px; }
+.home-dreams-note { font-size: 13px; line-height: 1.6; margin-top: 12px; }
+.home-dream-card button { width: 100%; min-height: 44px; margin-top: 18px; padding: 10px; border: 1px solid #18324F; background: transparent; color: #18324F; font-size: 14px; font-weight: 700; cursor: pointer; }
+.home-dream-card button[aria-pressed="true"] { background: #18324F; color: #F5EFE0; }
+.home-dream-card:has(button[aria-pressed="true"]) { box-shadow: 4px 4px 0 #18324F; }
+.home-dreams-empty { padding: 28px 20px; border: 1px dashed var(--border); }
+.home-dreams-empty h3 { font-size: 28px; line-height: 1.1; margin-bottom: 12px; }
+.home-dreams-empty p { font-size: 14px; line-height: 1.6; }
+.home-destinations [hidden] { display: none !important; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .home-poster-art.is-visible .home-poster-route { stroke-dasharray: 1; animation: home-route-draw 1.8s ease-out both; }
+  .home-poster-art.is-visible .home-poster-sun { animation: home-sun-rise 1s ease-out both; }
+  .home-poster-art.is-visible .home-poster-town { animation: home-town-arrive 0.7s 0.15s ease-out both; }
+  .home-dream-card { transition: transform 0.2s; }
+  @media (hover: hover) { .home-dream-card:hover { transform: translateY(-4px); } }
+}
+@keyframes home-route-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes home-sun-rise { from { transform: translateY(25px); opacity: 0.5; } to { transform: none; opacity: 1; } }
+@keyframes home-town-arrive { from { transform: translateY(12px); opacity: 0.4; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .home-poster-art * { animation: none !important; }
+  .home-dream-card { transition: none; }
+}
+
+.home-discovery { display: grid; gap: 24px; padding-block: 16px 48px; }
+.home-discovery > .deals-strip { padding: 24px 0; }
+.home-discovery > .deals-strip > div { max-width: none; }
+.home-signup { border-radius: 22px; padding: 28px 20px; min-width: 0; }
+.home-signup > div { max-width: 600px; margin-inline: auto; }
+.home-section { padding-block: 56px 64px; }
+.home-steps { display: grid; gap: 32px; }
+.home-preview { display: grid; gap: 24px; align-items: start; }
+.home-faq { display: grid; gap: 24px; padding-block: 48px 64px; }
+.home-finale { padding-block: 64px 8px; }
 
 @media (min-width: 768px) {
-  .home-hero {
-    min-height: 100dvh;
-    justify-content: center;
-  }
+  [data-page="home"] > nav a[href="/blog"] { display: inline-flex; align-items: center; }
+  .home-hero { padding-block: 88px 40px; }
+  .home-title { font-size: 44px; }
+  .home-hero-actions { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 0 16px; }
+  .home-destinations { padding-block: 16px 56px; }
+  .home-dreams-controls { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+  .home-dreams-cards { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 20px; }
+  .home-section { padding-block: 72px 80px; }
+}
 
-  .home-hero-copy {
-    /* Bottom room keeps the copy above the hills, which fill the lowest ~14% of the art */
-    padding: 104px 48px max(80px, 18vh);
+@media (min-width: 1024px) {
+  :is([data-page="home"], [data-layout="wide"]) {
+    --page-gutter: 32px;
+    --page-width: 960px;
   }
+  .home-hero-grid { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 40px; align-items: start; }
+  .home-hero { padding-top: 88px; }
+  .home-chat-animation { max-height: calc(100vh - 160px); max-height: calc(100svh - 160px); }
+  .home-title { font-size: clamp(36px, 4vw, 56px); }
+  .home-dreams-intro { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 40px; align-items: end; }
+  .home-discovery:has(> .deals-strip) { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); align-items: start; }
+  .home-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
+  .home-steps > div { flex-direction: column; }
+  .home-preview { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 40px; }
+  .home-faq { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 40px; align-items: start; }
+  .home-faq h2 { position: sticky; top: 100px; }
+}
 
-  .home-hero-art--phone {
-    display: none;
-  }
-
-  .home-hero-art--wide {
-    display: block;
-    position: absolute;
-    inset: 0;
-    height: 100%;
-    margin-top: 0;
+@media (min-width: 1280px) {
+  :is([data-page="home"], [data-layout="wide"]) {
+    --page-gutter: 48px;
+    --page-width: 1120px;
   }
 }
 
@@ -556,3 +686,10 @@ body:has(.quick-root) .global-fab {
 
 /* Dopóki baner cookies czeka na decyzję, przycisk menu jest schowany: inaczej zasłania tekst baneru albo treść strony */
 body.has-cookie-banner .global-fab { display: none; }
+
+/* Keep all existing nav actions within a 320px viewport. */
+@media (max-width: 374px) {
+  [data-page="home"] { --page-gutter: 16px; }
+  [data-page="home"] > nav > div { gap: 8px; }
+  [data-page="home"] > nav img { height: 22px !important; }
+}
