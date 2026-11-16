@@ -223,8 +223,10 @@ export default function PricingPage() {
       >
         <p className="text-sm font-bold" style={{ color: "var(--success)" }}>Zwroty</p>
         <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-          Pro możesz zwrócić w ciągu 14 dni, dopóki nie wygenerujesz na nim planu. Wygenerowany plan
-          jest już Twój, więc Packa po użyciu nie zwracamy. Szczegóły w{" "}
+          Packa i Pro możesz zwrócić w ciągu 14 dni, dopóki nie wygenerujesz z nich planu. Wygenerowany
+          plan jest już Twój, więc od tej chwili prawo do odstąpienia od umowy wygasa. Darmowe plany nie
+          liczą się do tego. Pro odnawia się automatycznie (co miesiąc albo co rok) i anulujesz je w
+          profilu. Szczegóły w{" "}
           <a href="/regulamin" style={{ color: "var(--success)", textDecoration: "underline", display: "inline-block", padding: "12px 0" }}>regulaminie</a>.
         </p>
       </div>
