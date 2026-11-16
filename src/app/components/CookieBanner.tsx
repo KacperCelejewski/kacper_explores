@@ -1,10 +1,24 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore, type CSSProperties } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { setAnalyticsConsent } from "@/lib/analytics";
 import { saveConsent, subscribeConsent } from "@/lib/cookieConsent";
 import { useCookieConsent } from "./AffiliateProvider";
+
+const choiceStyle: CSSProperties = {
+  flex: "1 1 0",
+  minWidth: 0,
+  minHeight: 44,
+  padding: "12px 4px",
+  borderRadius: 12,
+  border: "1.5px solid var(--text-secondary)",
+  background: "var(--bg-primary)",
+  color: "var(--text-primary)",
+  fontWeight: 700,
+  fontSize: 13,
+  cursor: "pointer",
+};
 
 export default function CookieBanner() {
   const consent = useCookieConsent();
@@ -67,34 +81,16 @@ export default function CookieBanner() {
           </div>
           <div style={{ display: "flex", gap: 8, flex: "0 1 320px", minWidth: 260 }}>
             <button
+              type="button"
               onClick={handleAccept}
-              style={{
-                flex: 1,
-                padding: "12px 0",
-                borderRadius: 12,
-                border: "none",
-                background: "var(--accent)",
-                color: "#fff",
-                fontWeight: 700,
-                fontSize: 13,
-                cursor: "pointer",
-              }}
+              style={choiceStyle}
             >
               Akceptuj wszystkie
             </button>
             <button
+              type="button"
               onClick={handleReject}
-              style={{
-                flex: 1,
-                padding: "12px 0",
-                borderRadius: 12,
-                border: "1.5px solid var(--border)",
-                background: "transparent",
-                color: "var(--text-secondary)",
-                fontWeight: 600,
-                fontSize: 13,
-                cursor: "pointer",
-              }}
+              style={choiceStyle}
             >
               Tylko niezbędne
             </button>

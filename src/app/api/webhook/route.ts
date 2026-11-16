@@ -17,6 +17,32 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
+  if (event.type === "charge.refunded") {
+    const charge = event.data.object;
+    // Bez rejestru zdarzeń i atomowego RPC nie odejmujemy kredytów.
+    // Dotyczy także Pro: wyłącznie ręczna decyzja właściciela (docs/refund-handling.md).
+    // Log zawiera identyfikatory do uzgodnienia w Stripe, bez danych karty/e-maila.
+    console.warn("Webhook: refund requires manual review", JSON.stringify({
+      status: "manual_review_required",
+      event_id: event.id,
+      event_created: event.created,
+      livemode: event.livemode,
+      charge_id: charge.id,
+      payment_intent_id: typeof charge.payment_intent === "string"
+        ? charge.payment_intent : charge.payment_intent?.id ?? null,
+      customer_id: typeof charge.customer === "string"
+        ? charge.customer : charge.customer?.id ?? null,
+      amount_cents: charge.amount,
+      amount_refunded_cents: charge.amount_refunded,
+      currency: charge.currency,
+      refund_scope: charge.refunded ? "full" : "partial",
+      automatic_entitlement_change: false,
+    }));
+    // 200 potwierdza odbiór do ręcznej obsługi, nie automatyczne rozliczenie zwrotu.
+    // Ponowienie może zapisać kolejny log; nie zmienia salda ani subskrypcji.
+    return NextResponse.json({ ok: true });
+  }
+
   const supabase = createServiceClient();
 
   if (
