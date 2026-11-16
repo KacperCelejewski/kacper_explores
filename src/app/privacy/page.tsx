@@ -52,7 +52,7 @@ const Ul = ({ children }: { children: React.ReactNode }) => (
 );
 
 export default function PrivacyPage() {
-  const updatedAt = "15 listopada 2026";
+  const updatedAt = "16 listopada 2026";
   const adminEmail = "hej@wloczykij.me";
 
   const schema = {
@@ -138,18 +138,38 @@ export default function PrivacyPage() {
               </Li>
               <Li>
                 <strong>Dane podróży:</strong> Twoje preferencje (budżet, styl
-                podróży, miesiąc wyjazdu, czas trwania) oraz wygenerowane plany
-                podróży — zbierane podczas korzystania z kreatora.
+                podróży, miesiąc wyjazdu, czas trwania, skład grupy), wygenerowane
+                plany podróży oraz pytania, które zadajesz asystentowi czatu
+                w planie — zbierane podczas korzystania z kreatora i planu.
+                Plan możesz udostępnić linkiem do podglądu; każdy, kto ma ten link, go zobaczy.
+              </Li>
+              <Li>
+                <strong>E-mail do wiadomości:</strong> jeśli zapiszesz się na newsletter albo
+                na Czwartkowy zrzut, zapisujemy adres e-mail oraz wybrane lotniska i próg
+                ceny. Jeśli masz konto i zaplanowany wyjazd, wyślemy Ci też jedną
+                wiadomość z przypomnieniem na 3 dni przed wylotem.
+              </Li>
+              <Li>
+                <strong>Opinie:</strong> ocena i tekst, które wpiszesz w formularzu opinii
+                po planie (razem z miastem i, jeśli jesteś zalogowany, identyfikatorem
+                konta po naszej stronie).
+              </Li>
+              <Li>
+                <strong>Statystyki użycia kreatora:</strong> losowy identyfikator sesji i
+                nazwa zdarzenia (np. etap quizu, kliknięcie linku partnerskiego), zapisywane
+                w naszej bazie bez cookies i bez adresu e-mail.
               </Li>
               <Li>
                 <strong>Dane płatności:</strong> informacje o transakcjach
-                (kwota, data, status). Numery kart i pełne dane płatnicze są
+                (kwota, data, rodzaj planu, identyfikator sesji Stripe). Numery kart i pełne dane płatnicze są
                 przetwarzane wyłącznie przez Stripe — my ich nie przechowujemy.
               </Li>
               <Li>
                 <strong>Dane techniczne:</strong> adres IP, typ przeglądarki,
                 system operacyjny, czas wizyty — zbierane automatycznie przez
-                infrastrukturę serwerową (Vercel).
+                infrastrukturę serwerową (Vercel). Dla wywołań, które kosztują nas
+                pieniądze, prowadzimy też liczniki użycia (liczba zapytań do AI na
+                konto i dzień, bez treści zapytań).
               </Li>
               <Li>
                 <strong>Pliki cookie:</strong> szczegóły w{" "}
@@ -175,16 +195,20 @@ export default function PrivacyPage() {
             <Ul>
               <Li>
                 <strong>Świadczenie usługi</strong> (art. 6 ust. 1 lit. b RODO)
-                — rejestracja konta, planowanie podróży, obsługa płatności.
+                — rejestracja konta, planowanie podróży, obsługa płatności,
+                przypomnienie przed wylotem.
               </Li>
               <Li>
                 <strong>Prawnie uzasadniony interes</strong> (art. 6 ust. 1 lit.
-                f RODO) — bezpieczeństwo serwisu, wykrywanie nadużyć, analityka
-                techniczna.
+                f RODO) — bezpieczeństwo serwisu, limity nadużyć, liczniki kosztów,
+                anonimowe statystyki kreatora i opinii, powiadomienie nas o nowym koncie
+                i płatności.
               </Li>
               <Li>
                 <strong>Zgoda</strong> (art. 6 ust. 1 lit. a RODO) — pliki
-                cookie analityczne i marketingowe, jeśli wyraziłeś na nie zgodę.
+                cookie analityczne (Google Analytics) i linki partnerskie na stronie,
+                jeśli wyraziłeś na nie zgodę w bannerze; newsletter i Czwartkowy
+                zrzut (zapis z potwierdzeniem e-mailem, wypisanie jednym kliknięciem).
               </Li>
               <Li>
                 <strong>Obowiązek prawny</strong> (art. 6 ust. 1 lit. c RODO)
@@ -227,8 +251,10 @@ export default function PrivacyPage() {
               </Li>
               <Li>
                 <strong>Google (Gemini API)</strong> — AI generujące plany
-                podróży. Do Google przekazywane są Twoje preferencje podróży (bez
-                danych osobowych).{" "}
+                podróży i odpowiadające w czacie. Do Google trafiają preferencje
+                podróży, plan oraz treść pytań z czatu. Nie wysyłamy tam adresu
+                e-mail ani identyfikatora konta, ale w pytaniu do czatu możesz sam
+                wpisać dowolne dane, więc nie wpisuj tam nic wrażliwego.{" "}
                 <a
                   href="https://policies.google.com/privacy"
                   target="_blank"
@@ -254,9 +280,50 @@ export default function PrivacyPage() {
                 <strong>Google OAuth</strong> — logowanie przez konto Google.
                 Zakres: adres e-mail i imię publiczne.
               </Li>
+              <Li>
+                <strong>Resend</strong> (Resend, Inc., USA) — wysyłka e-maili:
+                potwierdzenie zapisu, Czwartkowy zrzut, przypomnienie przed wylotem.
+                Resend dostaje adres odbiorcy i treść wiadomości.{" "}
+                <a
+                  href="https://resend.com/legal/privacy-policy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: "var(--accent)" }}
+                >
+                  Polityka prywatności Resend ↗
+                </a>
+              </Li>
+              <Li>
+                <strong>Google Analytics 4</strong> (Google Ireland Ltd.) —
+                statystyki odwiedzin, tylko po Twojej zgodzie w bannerze (szczegóły w{" "}
+                <Link href="/cookies" style={{ color: "var(--accent)" }}>
+                  Polityce Cookies
+                </Link>
+                ).
+              </Li>
+              <Li>
+                <strong>Slack</strong> i <strong>Notion</strong> — nasze wewnętrzne
+                narzędzia. Do Slacka wysyłamy powiadomienie o nowym koncie (z adresem
+                e-mail) i o płatności (kwota, rodzaj planu, skrót identyfikatora konta).
+                Do Notiona trafia treść opinii, którą wpiszesz po planie, bez adresu e-mail.
+              </Li>
+              <Li>
+                <strong>Dostawcy cen lotów i zdjęć</strong> — zapytania o ceny lotów
+                (trasa, daty, liczba pasażerów) idą z naszego serwera do Travelpayouts
+                i RapidAPI, a nazwa miasta do Unsplash po zdjęcie. Nie wysyłamy tam
+                Twojego e-maila ani identyfikatora konta.
+              </Li>
+              <Li>
+                <strong>Partnerzy afiliacyjni</strong> (Travelpayouts, Aviasales, Tiqets,
+                Radical Storage) — dostają dane dopiero wtedy, gdy klikniesz ich link
+                (patrz punkt „Jakie dane zbieramy” o linkach partnerskich). To odrębni
+                administratorzy danych.
+              </Li>
             </Ul>
             <P>
-              Przekazywanie danych do USA odbywa się na podstawie Standardowych
+              Część tych firm ma siedzibę w USA. Przekazanie danych tam odbywa się na
+              podstawie decyzji Komisji Europejskiej o adekwatności (EU-US Data Privacy
+              Framework), jeśli dostawca jest na jej liście, albo Standardowych
               Klauzul Umownych (SCC) zatwierdzonych przez Komisję Europejską.
             </P>
           </Section>
@@ -264,16 +331,23 @@ export default function PrivacyPage() {
           <Section title="5. Jak długo przechowujemy dane">
             <Ul>
               <Li>
-                <strong>Dane konta:</strong> do momentu usunięcia konta lub
-                cofnięcia zgody, nie dłużej niż 3 lata od ostatniego logowania.
+                <strong>Dane konta i plany podróży:</strong> do usunięcia konta.
+                Konto usuniesz sam w profilu albo na prośbę mailową; razem z nim znikają
+                plany, preferencje i zapis płatności w naszej bazie.
               </Li>
               <Li>
-                <strong>Plany podróży:</strong> do 12 miesięcy od wygenerowania,
-                chyba że konto zostanie wcześniej usunięte.
+                <strong>Dane transakcji:</strong> zapis płatności w naszej bazie znika
+                z kontem. Dokumentację księgową i dane transakcji u Stripe przechowujemy
+                tak długo, jak wymaga tego prawo (do 5 lat od końca roku podatkowego).
               </Li>
               <Li>
-                <strong>Dane płatności (faktury):</strong> 5 lat od końca roku
-                podatkowego — wymóg prawa podatkowego.
+                <strong>Newsletter i Czwartkowy zrzut:</strong> do wypisania się
+                (link w każdej wiadomości) albo do Twojej prośby o usunięcie.
+              </Li>
+              <Li>
+                <strong>Opinie i statystyki kreatora:</strong> bez limitu czasu. Opinie
+                w Notion usuwamy na Twoją prośbę. Statystyki nie zawierają e-maila,
+                tylko losowy identyfikator sesji.
               </Li>
               <Li>
                 <strong>Logi techniczne:</strong> maksymalnie 30 dni.
@@ -343,12 +417,12 @@ export default function PrivacyPage() {
               Stosujemy techniczne i organizacyjne środki ochrony danych, w tym:
             </P>
             <Ul>
-              <Li>Szyfrowanie transmisji (HTTPS / TLS 1.3)</Li>
+              <Li>Szyfrowanie transmisji (HTTPS / TLS)</Li>
               <Li>
                 Row Level Security (RLS) w bazie danych — każdy użytkownik
                 widzi tylko swoje dane
               </Li>
-              <Li>Rate limiting na wszystkich endpointach API</Li>
+              <Li>Limity zapytań na kosztownych endpointach API i dzienny limit zapytań do AI na konto</Li>
               <Li>
                 Walidacja i sanityzacja danych wejściowych po stronie serwera
               </Li>
