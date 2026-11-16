@@ -42,8 +42,8 @@ export default function HomePoster({ city }: { city: PosterCity }) {
   }, []);
 
   return (
-    <svg ref={ref} className="home-poster-art" viewBox="0 0 440 430"
-      width="440" height="430" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+    <svg ref={ref} className="home-poster-art" viewBox="0 30 440 360"
+      width="440" height="360" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
       <rect width="440" height="430" fill="#18324F" />
       <circle className="home-poster-sun" cx="325" cy="105" r="64" fill="#EB531E" />
       <path d="m0 245 100-100 95 80 100-50 145 80v175H0" fill="#8299AB" />

@@ -259,8 +259,7 @@ export default function HomeClient({
         <figure className="home-hero-poster">
           <HomePoster city="Lizbona" />
           <figcaption>
-            <p className="home-poster-label">Obudź w sobie Włóczykija.</p>
-            <p className="home-poster-caption">W czwartek pomysł.<br /><em>W piątek w drogę.</em></p>
+            <p className="home-poster-caption">W czwartek pomysł. <em>W piątek w drogę.</em></p>
             <p className="home-poster-place">Lizbona · ilustracja</p>
           </figcaption>
         </figure>

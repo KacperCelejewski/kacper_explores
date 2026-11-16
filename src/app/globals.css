@@ -287,10 +287,12 @@ body:has([data-page="home"]) .global-fab {
 
 /* A complete printed scene is the default. JS only starts a short, finite story. */
 .home-poster-art { display: block; width: 100%; height: auto; background: #18324F; }
-.home-hero-poster { padding: 10px; border: 1px solid #18324F; background: #F5EFE0; color: #1C1008; box-shadow: 7px 7px 0 #18324F; max-width: 520px; width: 100%; margin: 0 auto; }
-.home-hero-poster figcaption { padding: 18px 10px 8px; }
+/* Hero: obraz poziomy, który wycina niebo i dół równo, a nie wypycha podpisu poza ekran. */
+.home-hero-poster .home-poster-art { aspect-ratio: 440 / 360; max-height: calc(100svh - 300px); min-height: 200px; }
 .home-poster-label { color: #A04B20; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; }
-.home-poster-caption { font-family: var(--font-heading); font-size: clamp(30px, 4vw, 42px); line-height: 1.02; font-weight: 700; margin-block: 8px 12px; }
+.home-hero-poster { padding: 10px; border: 1px solid #18324F; background: #F5EFE0; color: #1C1008; box-shadow: 7px 7px 0 #18324F; max-width: 520px; width: 100%; margin: 0 auto; }
+.home-hero-poster figcaption { padding: 12px 8px 4px; }
+.home-poster-caption { font-family: var(--font-heading); font-size: clamp(22px, 2.6vw, 28px); line-height: 1.1; font-weight: 700; text-wrap: balance; margin-block: 0 4px; }
 .home-poster-place { font-size: 12px; color: #18324F; }
 
 .home-destinations { padding-block: 16px 40px; }
