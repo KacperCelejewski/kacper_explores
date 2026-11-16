@@ -1,0 +1,2 @@
+/* No-JS final frame, including normal motion preferences. */
+.home-chat-animation, .home-chat-animation * { animation: none !important; }
