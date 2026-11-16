@@ -285,18 +285,58 @@ body:has([data-page="home"]) .global-fab {
 .home-secondary-links { display: flex; flex-wrap: wrap; align-items: center; gap: 0 8px; }
 .home-secondary-links a { display: inline-flex; align-items: center; }
 
-.home-destinations {
-  padding: 24px;
-  border: 1px solid var(--border);
-  border-radius: 22px;
-  background: var(--bg-surface);
+/* A complete printed scene is the default. JS only starts a short, finite story. */
+.home-poster-art { display: block; width: 100%; height: auto; background: #18324F; }
+.home-hero-poster { padding: 10px; border: 1px solid #18324F; background: #F5EFE0; color: #1C1008; box-shadow: 7px 7px 0 #18324F; max-width: 520px; width: 100%; margin: 0 auto; }
+.home-hero-poster figcaption { padding: 18px 10px 8px; }
+.home-poster-label { color: #A04B20; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; }
+.home-poster-caption { font-family: var(--font-heading); font-size: clamp(30px, 4vw, 42px); line-height: 1.02; font-weight: 700; margin-block: 8px 12px; }
+.home-poster-place { font-size: 12px; color: #18324F; }
+
+.home-destinations { padding-block: 16px 40px; }
+.home-dreams-intro { display: grid; gap: 16px; }
+.home-destinations h2 { font-size: clamp(32px, 4vw, 46px); line-height: 1.08; margin-top: 8px; }
+.home-dreams-intro > p { color: var(--text-secondary); font-size: 15px; line-height: 1.65; max-width: 60ch; }
+.home-dreams-controls { display: grid; gap: 16px; margin-top: 24px; }
+.home-dreams-controls > div { min-width: 0; padding: 20px; border: 1px solid var(--border); background: var(--bg-surface); }
+.home-dreams-controls label { display: block; font-size: 14px; font-weight: 700; }
+.home-dreams-budget output { display: block; font-size: 24px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.home-dreams-budget input { display: block; width: 100%; min-height: 44px; accent-color: var(--accent); cursor: pointer; }
+.home-dreams-range { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary); }
+.home-dreams-people select { width: 100%; min-height: 44px; padding: 10px 12px; margin-top: 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-primary); color: var(--text-primary); font: inherit; }
+.home-dreams-summary { font-size: 14px; line-height: 1.6; padding-block: 20px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+.home-dreams-cards { display: grid; gap: 24px; align-items: start; }
+.home-dream-card { min-width: 0; border: 1px solid #18324F; padding: 8px; background: #F5EFE0; color: #1C1008; }
+.home-dream-card .home-poster-art { height: 200px; }
+.home-dream-card-copy { padding: 18px 10px 10px; }
+.home-dream-card h3 { font-size: 32px; line-height: 1.1; margin-block: 6px 10px; }
+.home-dream-card-copy > p:not(.home-poster-label) { font-size: 14px; line-height: 1.6; }
+.home-dream-card-price { margin-top: 16px; font-variant-numeric: tabular-nums; }
+.home-dream-card-price strong { font-size: 22px; }
+.home-dream-card-copy > .home-dreams-note { font-size: 12px; margin-top: 6px; }
+.home-dreams-note { font-size: 13px; line-height: 1.6; margin-top: 12px; }
+.home-dream-card button { width: 100%; min-height: 44px; margin-top: 18px; padding: 10px; border: 1px solid #18324F; background: transparent; color: #18324F; font-size: 14px; font-weight: 700; cursor: pointer; }
+.home-dream-card button[aria-pressed="true"] { background: #18324F; color: #F5EFE0; }
+.home-dream-card:has(button[aria-pressed="true"]) { box-shadow: 4px 4px 0 #18324F; }
+.home-dreams-empty { padding: 28px 20px; border: 1px dashed var(--border); }
+.home-dreams-empty h3 { font-size: 28px; line-height: 1.1; margin-bottom: 12px; }
+.home-dreams-empty p { font-size: 14px; line-height: 1.6; }
+.home-destinations [hidden] { display: none !important; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .home-poster-art.is-visible .home-poster-route { stroke-dasharray: 1; animation: home-route-draw 1.8s ease-out both; }
+  .home-poster-art.is-visible .home-poster-sun { animation: home-sun-rise 1s ease-out both; }
+  .home-poster-art.is-visible .home-poster-town { animation: home-town-arrive 0.7s 0.15s ease-out both; }
+  .home-dream-card { transition: transform 0.2s; }
+  @media (hover: hover) { .home-dream-card:hover { transform: translateY(-4px); } }
 }
-.home-destinations h2 { font-size: 32px; line-height: 1.1; }
-.home-destinations ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 20px 0 12px; }
-.home-destinations li { display: flex; flex-direction: column; gap: 2px; padding: 12px 0; border-bottom: 1px solid var(--border); }
-.home-destinations strong { font-family: var(--font-heading); font-size: 24px; }
-.home-destinations span { color: var(--text-secondary); font-size: 14px; }
-.home-destinations a { display: inline-flex; align-items: center; font-size: 14px; font-weight: 700; color: var(--accent); }
+@keyframes home-route-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes home-sun-rise { from { transform: translateY(25px); opacity: 0.5; } to { transform: none; opacity: 1; } }
+@keyframes home-town-arrive { from { transform: translateY(12px); opacity: 0.4; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .home-poster-art * { animation: none !important; }
+  .home-dream-card { transition: none; }
+}
 
 .home-discovery { display: grid; gap: 24px; padding-block: 16px 48px; }
 .home-discovery > .deals-strip { padding: 24px 0; }
@@ -314,7 +354,10 @@ body:has([data-page="home"]) .global-fab {
   .home-hero { padding-block: 112px 56px; }
   .home-title { font-size: 48px; }
   .home-hero-actions { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 0 16px; }
-  .home-destinations { padding: 32px; }
+  .home-destinations { padding-block: 16px 56px; }
+  .home-dreams-controls { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+  .home-dreams-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+  .home-dream-card .home-poster-art { height: 180px; }
   .home-section { padding-block: 72px 80px; }
 }
 
@@ -326,6 +369,8 @@ body:has([data-page="home"]) .global-fab {
   .home-hero-grid { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 40px; align-items: start; }
   .home-hero { padding-top: 88px; }
   .home-title { font-size: clamp(36px, 4vw, 56px); }
+  .home-dreams-intro { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 40px; align-items: end; }
+  .home-dream-card .home-poster-art { height: 240px; }
   .home-discovery:has(> .deals-strip) { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); align-items: start; }
   .home-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
   .home-steps > div { flex-direction: column; }

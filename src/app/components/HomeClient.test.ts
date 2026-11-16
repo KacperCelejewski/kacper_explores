@@ -42,6 +42,10 @@ describe("homepage server-rendered content", () => {
       expect(html).toContain(HOME.h1);
       expect(html).toContain(HOME.micro);
       expect(html).toContain("home-destinations");
+      const hero = html.match(/<section class="home-hero">([\s\S]*?)<\/section>/)?.[1];
+      expect(hero).toContain("home-poster-art");
+      expect(hero).toContain("W czwartek pomysł.");
+      expect(hero).not.toMatch(/zł|EUR|Przykład/);
       expect(html).not.toContain("hero-hop");
       expect(html).not.toContain("scroll-snap");
       expect(html).not.toContain("images.unsplash.com");

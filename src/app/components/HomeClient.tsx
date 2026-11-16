@@ -8,7 +8,8 @@ import DealsStrip, { type StripDeal } from "@/app/components/DealsStrip";
 import { ORIGIN_GENITIVE } from "@/lib/drop/email";
 import { resolveOrigin } from "@/lib/drop/defaults";
 import { HOME, homeSubtitle } from "@/lib/homeCopy";
-import { FEATURED_DESTINATIONS } from "@/lib/cityPhotos";
+import HomePoster from "./HomePoster";
+import HomeDreams from "./HomeDreams";
 
 import { IconCompass, IconClock, IconBook, IconCoin } from "./Icons";
 
@@ -148,7 +149,7 @@ export default function HomeClient({
     <div className="home-content">
 
       {/* ════════════════════════════════════════════════════════════════════
-          §1  HERO — two paths and static destination inspiration
+          §1  HERO — two paths and a railway poster
           ════════════════════════════════════════════════════════════════════ */}
       <section className="home-hero">
         <div className="home-container home-hero-grid">
@@ -255,18 +256,18 @@ export default function HomeClient({
             </a>
           </motion.p>
         </div>
-        <aside className="home-destinations" aria-labelledby="home-destinations-heading">
-          <p style={OVERLINE}>Destynacje</p>
-          <h2 id="home-destinations-heading">Gdzie chcesz lecieć?</h2>
-          <ul>
-            {FEATURED_DESTINATIONS.map(({ city, country }) => (
-              <li key={city}><strong>{city}</strong><span>{country}</span></li>
-            ))}
-          </ul>
-          <Link href="/okazje/wro">Okazje na weekend →</Link>
-        </aside>
+        <figure className="home-hero-poster">
+          <HomePoster city="Lizbona" />
+          <figcaption>
+            <p className="home-poster-label">Obudź w sobie Włóczykija.</p>
+            <p className="home-poster-caption">W czwartek pomysł.<br /><em>W piątek w drogę.</em></p>
+            <p className="home-poster-place">Lizbona · ilustracja</p>
+          </figcaption>
+        </figure>
         </div>
       </section>
+
+      <HomeDreams />
 
       <div className="home-discovery home-container">
       <DealsStrip initialDeals={initialDeals} initialOrigin={initialDealsOrigin} onOriginChange={setDropOrigin} />
