@@ -51,7 +51,7 @@ export default function ReguaminPage() {
         <div className="mb-8 pb-6 border-b" style={{ borderColor: "var(--border)" }}>
           <h1 className="text-3xl font-bold leading-tight mb-2">Regulamin serwisu</h1>
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-            Ostatnia aktualizacja: 17 maja 2026
+            Ostatnia aktualizacja: 16 listopada 2026
           </p>
         </div>
 
@@ -64,8 +64,9 @@ export default function ReguaminPage() {
             <a href="mailto:hej@wloczykij.me" style={{ color: "var(--accent)" }}>hej@wloczykij.me</a>.
           </P>
           <P>
-            Serwis oferuje narzędzie do planowania budżetowych podróży solo przy wykorzystaniu sztucznej
-            inteligencji (zwane dalej „Usługą”). Korzystanie z Serwisu oznacza akceptację niniejszego Regulaminu.
+            Serwis oferuje narzędzie do planowania budżetowych wyjazdów (solo, we dwoje i ekipą) przy
+            wykorzystaniu sztucznej inteligencji (zwane dalej „Usługą”). Korzystanie z Serwisu oznacza
+            akceptację niniejszego Regulaminu.
           </P>
           <P>
             Regulamin dostępny jest w każdym czasie pod adresem{" "}
@@ -89,6 +90,12 @@ export default function ReguaminPage() {
             <Li>
               <strong>Subskrypcja Pro</strong> — miesięczna subskrypcja za <strong>{PRICES.proMonthly.label}/miesiąc</strong>{" "}
               lub roczna za <strong>{PRICES.proYearly.label}/rok</strong>, dająca dostęp do nielimitowanych planów podróży AI oraz dodatkowych funkcji.
+              Zapytania do AI w już gotowym planie (zamiana aktywności, nowy dzień, czat i podobne) mają
+              dzienny limit na konto: obecnie 30 na koncie darmowym i 200 w Pro.
+            </Li>
+            <Li>
+              <strong>Plan za opinię</strong> — po wygenerowaniu planu możesz go ocenić. Za pełną opinię
+              dostajesz jeden dodatkowy plan (raz na wyjazd) albo PDF planu.
             </Li>
           </ul>
           <P>
@@ -101,12 +108,14 @@ export default function ReguaminPage() {
         {/* §3 */}
         <Section title="§3. Warunki zawarcia umowy i rejestracja">
           <P>
-            Korzystanie z płatnych funkcji Serwisu wymaga założenia konta. Rejestracja odbywa się przez
-            Google OAuth lub magic link wysyłany na adres e-mail podany przez Użytkownika.
+            Generowanie planów i płatności wymagają założenia konta. Rejestracja odbywa się przez
+            Google OAuth lub magic link wysyłany na adres e-mail podany przez Użytkownika. Quiz,
+            przeglądanie kierunków, okazje na weekend i blog działają bez konta.
           </P>
           <P>
             Umowa o świadczenie usług drogą elektroniczną zostaje zawarta z chwilą skutecznego
             zarejestrowania się w Serwisie (konto darmowe) lub z chwilą dokonania płatności (Pack, Pro).
+            Konto możesz usunąć w dowolnej chwili w profilu; usunięcie kasuje też zapisane plany.
           </P>
           <P>
             Użytkownik zobowiązany jest do podania prawdziwych danych i korzystania z Serwisu zgodnie
@@ -122,39 +131,41 @@ export default function ReguaminPage() {
             z jego regulaminem i standardem PCI DSS.
           </P>
           <P>
-            Ceny podane w Serwisie są cenami brutto wyrażonymi w złotych polskich (PLN) i zawierają
-            wszystkie należne podatki.
+            Cena, którą widzisz przed płatnością, jest ceną końcową w złotych polskich (PLN). Nie
+            doliczamy do niej innych opłat. Kod rabatowy (np. z newslettera) obniża cenę w oknie
+            płatności Stripe.
           </P>
           <P>
-            Subskrypcja Pro odnawiana jest automatycznie co 30 dni. Użytkownik może anulować subskrypcję
-            w dowolnym momencie z poziomu swojego profilu — dostęp do funkcji Pro trwa do końca
-            opłaconego okresu.
+            Pack jest płatnością jednorazową. Plany trafiają na konto po potwierdzeniu płatności przez
+            Stripe, zwykle w kilka sekund; gdy płatność jeszcze się księguje, strona po zakupie to
+            pokazuje. Pro włącza się tak samo.
           </P>
           <P>
-            Operator zastrzega sobie prawo do zmiany cen Usług. O zmianach Użytkownicy z aktywną
-            subskrypcją zostaną powiadomieni z co najmniej 14-dniowym wyprzedzeniem drogą e-mail.
+            Subskrypcja Pro odnawia się automatycznie: co miesiąc przy planie miesięcznym i co rok
+            przy planie rocznym. Możesz ją anulować w dowolnym momencie w profilu (portal płatności
+            Stripe); dostęp do Pro trwa do końca opłaconego okresu.
+          </P>
+          <P>
+            Operator zastrzega sobie prawo do zmiany cen Usług. Zmiana nie dotyczy już opłaconego
+            okresu. O zmianach Użytkownicy z aktywną subskrypcją zostaną powiadomieni z co najmniej
+            14-dniowym wyprzedzeniem drogą e-mail.
           </P>
         </Section>
 
         {/* §5 */}
         <Section title="§5. Prawo do odstąpienia od umowy">
           <P>
-            Zgodnie z art. 38 pkt 13 Ustawy z dnia 30 maja 2014 r. o prawach konsumenta (Dz.U. 2014
-            poz. 827 ze zm.) prawo do odstąpienia od umowy <strong>nie przysługuje</strong> w odniesieniu
-            do umów o dostarczanie treści cyfrowych, które nie są zapisane na nośniku materialnym, jeżeli
-            spełnianie świadczenia rozpoczęło się za wyraźną zgodą konsumenta przed upływem terminu do
-            odstąpienia od umowy i po poinformowaniu go przez przedsiębiorcę o utracie prawa do
-            odstąpienia od umowy.
-          </P>
-          <P>
-            Generując plan podróży, Użytkownik wyraża wyraźną zgodę na natychmiastowe wykonanie usługi
-            i przyjmuje do wiadomości, że traci prawo do odstąpienia od umowy w chwili wygenerowania planu.
-          </P>
-          <P>
-            W przypadku <strong>subskrypcji Pro</strong> Użytkownik ma prawo do odstąpienia od umowy
-            w ciągu 14 dni od jej zawarcia, o ile nie skorzystał jeszcze z płatnych funkcji Serwisu.
-            Aby skorzystać z prawa do odstąpienia, należy przesłać oświadczenie na adres{" "}
+            Konsument może odstąpić od umowy zakupu <strong>Packa</strong> albo <strong>Pro</strong> w ciągu
+            14 dni od jej zawarcia, bez podawania przyczyny. Wystarczy oświadczenie wysłane na adres{" "}
             <a href="mailto:hej@wloczykij.me" style={{ color: "var(--accent)" }}>hej@wloczykij.me</a>.
+            Zwracamy płatność tą samą metodą, w której została dokonana, w ciągu 14 dni od odstąpienia.
+          </P>
+          <P>
+            Plan podróży to treść cyfrowa generowana na Twoje żądanie. Gdy wygenerujesz plan z
+            kupionego Packa albo na Pro, zaczynamy wykonywać umowę i od tej chwili prawo do odstąpienia
+            od niej wygasa (art. 38 pkt 13 ustawy z dnia 30 maja 2014 r. o prawach konsumenta). Przed
+            zakupem informujemy o tym na stronie cennika i w oknie płatności. Plany darmowe (2 w
+            miesiącu) nie wpływają na prawo do odstąpienia.
           </P>
         </Section>
 
@@ -170,17 +181,18 @@ export default function ReguaminPage() {
             zgłoszenia i informuje Użytkownika o wyniku drogą e-mail.
           </P>
           <P>
-            Konsumenci mogą skorzystać z platformy ODR (Online Dispute Resolution) dostępnej pod
-            adresem{" "}
+            Konsument może też skorzystać z pozasądowych sposobów rozpatrywania reklamacji i dochodzenia
+            roszczeń, np. z pomocy powiatowego (miejskiego) rzecznika konsumentów albo wojewódzkiego
+            inspektoratu Inspekcji Handlowej. Informacje znajdziesz na{" "}
             <a
-              href="https://ec.europa.eu/consumers/odr"
+              href="https://uokik.gov.pl"
               target="_blank"
               rel="noopener noreferrer"
               style={{ color: "var(--accent)" }}
             >
-              ec.europa.eu/consumers/odr
-            </a>{" "}
-            w celu pozasądowego rozwiązywania sporów.
+              uokik.gov.pl
+            </a>
+            . Unijna platforma ODR została zamknięta w lipcu 2025 r., więc już do niej nie odsyłamy.
           </P>
         </Section>
 
@@ -189,16 +201,21 @@ export default function ReguaminPage() {
           <P>
             Serwis korzysta z linków partnerskich sieci Travelpayouts do Aviasales (loty), Tiqets
             (bilety na atrakcje) i Radical Storage (przechowalnie bagażu). Po wyrażeniu zgody
-            w bannerze cookies kliknięcie takiego linku i zakup u partnera może przynieść
-            Operatorowi prowizję. Bez zgody lub konfiguracji partnera link prowadzi bezpośrednio
-            do usługodawcy, bez identyfikatora partnera. Linki do Booking.com i Hostelworld
-            nie są linkami z prowizją. Ceny i dostępność sprawdzisz na stronie usługodawcy.
+            w bannerze cookies kliknięcie takiego linku na stronie i zakup u partnera może przynieść
+            Operatorowi prowizję. Bez zgody lub konfiguracji partnera link na stronie prowadzi
+            bezpośrednio do usługodawcy, bez identyfikatora partnera. Linki do Booking.com i
+            Hostelworld nie są linkami z prowizją. Ceny i dostępność sprawdzisz na stronie usługodawcy.
           </P>
           <P>
-            Linki partnerskie są oznaczone w Serwisie dopiskiem „link partnerski”, a w kodzie strony atrybutem{" "}
-            <code>{'rel="sponsored noopener noreferrer"'}</code>. Prowizja nie oznacza gwarancji
-            najniższej ceny ani dostępności. Pliki cookie partnerów po przejściu na ich strony
-            podlegają ich politykom i mechanizmom zgody.
+            Wyjątek: linki do lotów w e-mailach z Czwartkowego zrzutu zawierają identyfikator partnera
+            zawsze. Zapis na zrzut to osobna, dobrowolna zgoda na ten e-mail, więc nie pytamy tam o
+            baner. Każdy taki e-mail ma dopisek o linkach partnerskich.
+          </P>
+          <P>
+            Linki partnerskie na stronie są oznaczone dopiskiem „link partnerski”, a w kodzie strony
+            atrybutem <code>{'rel="sponsored noopener noreferrer"'}</code>. Prowizję płaci partner,
+            cena dla Ciebie nie rośnie. Prowizja nie oznacza gwarancji najniższej ceny ani dostępności.
+            Pliki cookie partnerów po przejściu na ich strony podlegają ich politykom i mechanizmom zgody.
           </P>
         </Section>
 
@@ -211,8 +228,8 @@ export default function ReguaminPage() {
           </P>
           <P>
             Wygenerowane plany podróży tworzone są przez model AI na zlecenie Użytkownika — Użytkownik
-            może je wykorzystywać na własny użytek. Komercyjne rozpowszechnianie planów bez zgody
-            Operatora jest zabronione.
+            może je wykorzystywać na własny użytek i pokazywać znajomym (np. linkiem do podglądu).
+            Komercyjne rozpowszechnianie planów bez zgody Operatora jest zabronione.
           </P>
         </Section>
 
@@ -228,8 +245,9 @@ export default function ReguaminPage() {
             <Li>przerwy w działaniu Serwisu wynikające z czynników niezależnych od Operatora.</Li>
           </ul>
           <P>
-            Użytkownik korzysta z Serwisu na własną odpowiedzialność i zobowiązany jest do weryfikacji
-            informacji dotyczących lotów, noclegów i cen przed dokonaniem rezerwacji.
+            Użytkownik zobowiązany jest do weryfikacji informacji dotyczących lotów, noclegów i cen
+            przed dokonaniem rezerwacji. Powyższe wyłączenia obowiązują w zakresie dozwolonym przez
+            prawo i nie ograniczają uprawnień konsumenta, których nie można wyłączyć umową.
           </P>
         </Section>
 
@@ -250,14 +268,15 @@ export default function ReguaminPage() {
             Operator zastrzega sobie prawo do zmiany Regulaminu. O istotnych zmianach Użytkownicy
             posiadający konto w Serwisie zostaną powiadomieni drogą e-mail z co najmniej
             <strong> 14-dniowym</strong> wyprzedzeniem. Dalsze korzystanie z Serwisu po wejściu
-            w życie zmian oznacza ich akceptację.
+            w życie zmian oznacza ich akceptację. Zmiany nie naruszają praw nabytych przed ich
+            wejściem w życie ani praw przysługujących konsumentom z mocy prawa.
           </P>
         </Section>
 
         {/* §12 */}
         <Section title="§12. Postanowienia końcowe">
           <P>
-            Regulamin wchodzi w życie z dniem 17 maja 2026 r.
+            Regulamin obowiązuje od 17 maja 2026 r. w brzmieniu zmienionym 16 listopada 2026 r.
           </P>
           <P>
             W sprawach nieuregulowanych niniejszym Regulaminem zastosowanie mają przepisy prawa polskiego,
