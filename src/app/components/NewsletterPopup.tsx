@@ -161,8 +161,8 @@ function NewsletterPopupInner() {
             <span style={{ color: "var(--accent)" }}>10% zniżki na Pro Roczny</span>
           </h2>
           <p className="text-sm mt-2 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-            Nowe kierunki, triki budżetowe i tanie loty prosto na skrzynkę.
-            Na start dostajesz kod na 10% taniej na roczne Pro.
+            Zostaw e-mail, potwierdź go w wiadomości i odbierz kod na 10% taniej na roczne Pro.
+            Okazje na loty co czwartek ustawisz osobno, w Czwartkowym zrzucie.
           </p>
 
           <AnimatePresence mode="wait">
@@ -323,6 +323,10 @@ function NewsletterPopupInner() {
                     ) : "Zapisz się"}
                   </button>
                 </div>
+                <p className="text-xs mt-2 leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                  Użyjemy adresu do kodu i potwierdzenia zapisu. Więcej w{" "}
+                  <Link href="/privacy" className="underline">polityce prywatności</Link>.
+                </p>
                 {state === "error" && (
                   <p id="newsletter-popup-error" role="alert" className="text-xs mt-2" style={{ color: "var(--error)" }}>
                     {errorMsg}
