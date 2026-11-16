@@ -235,7 +235,7 @@ export default function CookiesPage() {
               klikasz i jak głęboko przewijasz. Mierzymy odsłony, kliknięcia
               (jaki przycisk lub link i na której stronie), głębokość przewijania oraz
               zakup (kwota i rodzaj planu, bez e-maila). Bez imienia i e-maila. Bez zgody
-              skrypt Google nadal się ładuje, ale wysyła tylko sygnały bez plików cookie
+              nie ładujemy skryptu Google Analytics ani nie wysyłamy do niego zdarzeń
               (cookies <code>_ga*</code> nie powstają). Zgodę wycofasz w każdej chwili
               przyciskiem „Zmień zgodę na cookies” poniżej. Nie używamy Meta
               Pixel. Linki partnerskie Travelpayouts do Aviasales, Tiqets i Radical Storage

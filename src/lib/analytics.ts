@@ -1,8 +1,8 @@
+import { loadConsent } from "./cookieConsent";
 import type { QuizAnswers } from "@/types";
 import { groupFromCompanion, groupSize } from "./group";
 
-// Google Analytics 4 — Consent Mode v2. Zdarzenia lecą tylko do GA, a pełne
-// ciasteczka dopiero po zgodzie z bannera (inaczej GA dostaje anonimowe pingi).
+// Google Analytics 4 — skrypt i zdarzenia dopiero po wyraźnej zgodzie z banera.
 export const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
 type Params = Record<string, string | number | boolean | Array<Record<string, string | number>> | undefined>;
@@ -15,7 +15,7 @@ declare global {
 }
 
 export function trackEvent(name: string, params: Params = {}) {
-  if (typeof window === "undefined" || !GA_ID || !window.gtag) return;
+  if (typeof window === "undefined" || !GA_ID || loadConsent() !== "accepted" || !window.gtag) return;
   window.gtag("event", name, params);
 }
 
@@ -27,8 +27,12 @@ export function quizGaEventName(event: string): string {
 }
 
 export function setAnalyticsConsent(granted: boolean) {
-  if (typeof window === "undefined" || !GA_ID || !window.gtag) return;
-  window.gtag("consent", "update", { analytics_storage: granted ? "granted" : "denied" });
+  if (typeof window === "undefined" || !GA_ID) return;
+  // Zablokowany zapis zgody nie może ponownie włączyć skryptu obecnego w pamięci.
+  const enabled = granted && loadConsent() === "accepted";
+  Object.assign(window, { [`ga-disable-${GA_ID}`]: !enabled });
+  if (!window.gtag) return;
+  window.gtag("consent", "update", { analytics_storage: enabled ? "granted" : "denied" });
 }
 
 export type KeyValueStorage = Pick<Storage, "getItem" | "setItem">;

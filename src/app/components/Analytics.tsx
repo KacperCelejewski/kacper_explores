@@ -3,8 +3,10 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Script from "next/script";
-import { GA_ID, trackEvent } from "@/lib/analytics";
+import { GA_ID, trackEvent, setAnalyticsConsent } from "@/lib/analytics";
 import { affiliateClickParams, affiliateServerEvent } from "@/lib/affiliate";
+
+import { useCookieConsent } from "./AffiliateProvider";
 
 const SCROLL_STEPS = [25, 50, 75, 90];
 
@@ -14,6 +16,11 @@ function clean(text: string | null | undefined, max = 80) {
 
 export default function Analytics() {
   const pathname = usePathname();
+  const consent = useCookieConsent();
+
+  useEffect(() => {
+    setAnalyticsConsent(consent === "accepted");
+  }, [consent]);
 
   // Strony w App Routerze zmieniają się bez przeładowania, więc page_view wysyłamy ręcznie.
   useEffect(() => {
@@ -81,17 +88,29 @@ export default function Analytics() {
     return () => window.removeEventListener("scroll", onScroll);
   }, [pathname]);
 
-  if (!GA_ID) return null;
+  if (!GA_ID || consent !== "accepted") return null;
 
   return (
     <>
-      <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="afterInteractive" />
       <Script id="ga-init" strategy="afterInteractive">
         {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}window.gtag=gtag;
 var c=null;try{c=localStorage.getItem('cookie_consent')}catch(e){}
-gtag('consent','default',{analytics_storage:c==='accepted'?'granted':'denied',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied'});
-gtag('js',new Date());gtag('config','${GA_ID}',{send_page_view:false});`}
+window['ga-disable-${GA_ID}']=c!=='accepted';
+gtag('consent','default',{analytics_storage:'denied',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied'});
+if(c==='accepted'){gtag('consent','update',{analytics_storage:'granted'});
+gtag('js',new Date());gtag('config','${GA_ID}',{send_page_view:false});}`}
       </Script>
+      <Script
+        src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+        strategy="afterInteractive"
+        onReady={() => {
+          trackEvent("page_view", {
+            page_path: window.location.pathname,
+            page_location: window.location.href,
+            page_title: document.title,
+          });
+        }}
+      />
     </>
   );
 }
