@@ -185,7 +185,7 @@ export default function PrivacyPage() {
                 oraz publiczny identyfikator partnera i projektu. Nie umieszczamy w nich
                 e-maila ani identyfikatora konta. Po kliknięciu usługodawca otrzymuje
                 dane techniczne połączenia zgodnie ze swoją polityką prywatności.
-                Bez zgody link nie zawiera identyfikatorów afiliacyjnych. Zgodę zmienisz
+                Bez zgody link na stronie nie zawiera identyfikatorów afiliacyjnych. Linki do lotów w e-mailach z Czwartkowego zrzutu mają identyfikator partnera zawsze (zapis na zrzut to osobna zgoda). Zgodę zmienisz
                 przyciskiem na stronie Polityki Cookies.
               </Li>
             </Ul>
