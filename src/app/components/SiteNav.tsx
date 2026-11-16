@@ -45,13 +45,13 @@ export default function SiteNav() {
       style={{ borderColor: "var(--border)" }}
       aria-label="Nawigacja główna"
     >
-      <Link href="/" style={{ textDecoration: "none", lineHeight: 0 }} aria-label="Włóczykij – strona główna">
-        <img src="/logo.svg" alt="Włóczykij" height={28} style={{ height: 28, width: "auto" }} />
+      <Link href="/" className="tap-area" style={{ textDecoration: "none", lineHeight: 0 }} aria-label="Włóczykij – strona główna">
+        <img src="/logo.svg" alt="" aria-hidden="true" height={28} style={{ height: 28, width: "auto" }} />
       </Link>
       <div className="flex items-center gap-3">
         <Link
           href={`/okazje/${dealsOrigin.toLowerCase()}`}
-          className="text-xs font-semibold py-2"
+          className="tap-area text-xs font-semibold py-2"
           style={{ color: "var(--text-muted)", textDecoration: "none" }}
         >
           Okazje
@@ -59,14 +59,14 @@ export default function SiteNav() {
         {/* Na wąskich ekranach Blog jest w menu pod przyciskiem, tu się nie mieści */}
         <Link
           href="/blog"
-          className="hidden sm:inline text-xs font-semibold py-2"
+          className="tap-area hidden sm:inline text-xs font-semibold py-2"
           style={{ color: "var(--text-muted)", textDecoration: "none" }}
         >
           Blog
         </Link>
         <Link
           href="/pricing"
-          className="text-xs font-semibold py-2"
+          className="tap-area text-xs font-semibold py-2"
           style={{ color: "var(--text-muted)", textDecoration: "none" }}
         >
           Cennik
@@ -76,7 +76,7 @@ export default function SiteNav() {
             {isPro ? (
               <Link
                 href="/profile"
-                className="text-xs font-bold px-3 py-1.5 rounded-full"
+                className="tap-area text-xs font-bold px-3 py-1.5 rounded-full"
                 style={{ background: "var(--accent)", color: "white", textDecoration: "none" }}
               >
                 Pro
@@ -84,7 +84,7 @@ export default function SiteNav() {
             ) : (
               <Link
                 href="/profile"
-                className="text-xs font-bold px-3 py-1.5 rounded-full"
+                className="tap-area text-xs font-bold px-3 py-1.5 rounded-full"
                 style={{
                   background: noCredits ? "var(--error-bg)" : "var(--accent-light)",
                   color: noCredits ? "var(--error)" : "var(--accent)",
@@ -99,7 +99,7 @@ export default function SiteNav() {
         ) : (
           <Link
             href="/login"
-            className="text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap"
+            className="tap-area text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap"
             style={{ background: "var(--accent)", color: "white", textDecoration: "none" }}
           >
             Zaloguj się

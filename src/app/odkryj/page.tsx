@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import Image from "next/image";
+import CityPhoto from "@/app/components/CityPhoto";
+import { SkeletonBlock } from "@/app/components/Skeleton";
 import SiteNav from "@/app/components/SiteNav";
 import { CONTINENTS, getContinent, type Continent } from "@/lib/continents";
-import { getCityPhotoUrl } from "@/lib/cityPhotos";
 import { IconSearch } from "@/app/components/Icons";
 
 interface GalleryTrip {
@@ -161,11 +161,9 @@ export default function OdkryjPage() {
         </AnimatePresence>
 
         {loading ? (
-          <div className="flex justify-center py-16">
-            <div
-              className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin"
-              style={{ borderColor: "var(--accent)", borderTopColor: "transparent" }}
-            />
+          <div role="status" aria-busy="true" className="flex flex-col gap-3 py-4">
+            <span className="sr-only">Ładujemy galerię planów…</span>
+            {[0, 1, 2].map((i) => <SkeletonBlock key={i} height={140} radius={20} />)}
           </div>
         ) : filtered.length === 0 && trips.length > 0 ? (
           <motion.div
@@ -203,17 +201,11 @@ export default function OdkryjPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.04 }}
               >
-                <Link href={`/share/${trip.id}`} style={{ textDecoration: "none" }}>
-                  <div className="glass-card p-4 flex items-center gap-4 transition-opacity hover:opacity-80">
-                    <div className="relative flex-shrink-0 rounded-xl overflow-hidden" style={{ width: 56, height: 56 }}>
-                      <Image
-                        src={getCityPhotoUrl(trip.city, 300)}
-                        alt={trip.city}
-                        fill
-                        sizes="56px"
-                        className="object-cover"
-                      />
-                    </div>
+                <div className="glass-card p-4 flex items-center gap-4">
+                  <div className="flex-shrink-0 rounded-xl overflow-hidden" style={{ width: 110, height: 120 }}>
+                    <CityPhoto city={trip.city} width={300} sizes="110px" />
+                  </div>
+                  <Link href={`/share/${trip.id}`} className="flex-1 min-w-0" style={{ textDecoration: "none" }}>
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-base leading-tight">
                         {trip.city} {trip.destination_data?.countryFlag ?? ""}
@@ -228,8 +220,8 @@ export default function OdkryjPage() {
                     <span className="text-xs font-semibold flex-shrink-0" style={{ color: "var(--accent)" }}>
                       Zobacz →
                     </span>
-                  </div>
-                </Link>
+                  </Link>
+                </div>
               </motion.div>
             ))}
           </div>

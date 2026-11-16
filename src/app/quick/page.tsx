@@ -1,11 +1,12 @@
 "use client";
 
+import { EDGE_COPY, ServerMessage, friendlyError } from "@/lib/edgeCopy";
 import { planGeneratedParams, trackEvent } from "@/lib/analytics";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/lib/store";
-import { getCityPhotoUrl } from "@/lib/cityPhotos";
+import CityPhoto from "@/app/components/CityPhoto";
 import type { Companion, GroupComposition, TravelVibe, TravelStyle, DestinationRecommendation, FlightDetails, QuizAnswers } from "@/types";
 import { IconPin, IconPlane, IconCheck } from "@/app/components/Icons";
 import GroupSizePicker from "@/app/components/GroupSizePicker";
@@ -340,9 +341,9 @@ export default function QuickPage() {
       });
 
       if (!res.ok || !res.body) {
-        let msg = `HTTP ${res.status}`;
-        try { const j = await res.json(); msg = j.error ?? msg; } catch { /* ignore */ }
-        throw new Error(msg);
+        let msg = "";
+        try { const j = await res.json(); if (typeof j.error === "string") msg = j.error; } catch { /* ignore */ }
+        throw new ServerMessage(msg);
       }
 
       const reader = res.body.getReader();
@@ -359,7 +360,7 @@ export default function QuickPage() {
           if (!line.trim()) continue;
           let msg: Record<string, unknown>;
           try { msg = JSON.parse(line); } catch { continue; }
-          if (msg.error) throw new Error(`${msg.error as string}`);
+          if (msg.error) throw new ServerMessage(`${msg.error as string}`);
           if (msg.status === "generating" && typeof msg.total === "number") {
             setGenProgress({ current: 0, total: msg.total as number });
           }
@@ -386,9 +387,9 @@ export default function QuickPage() {
         }
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Nieznany błąd";
+      console.error("[quick] generate", err);
       setIsGeneratingPlan(false);
-      setGenError(`Nie udało się wygenerować planu: ${msg}`);
+      setGenError(friendlyError(err, EDGE_COPY.generateFailed));
     }
   };
 
@@ -492,7 +493,7 @@ export default function QuickPage() {
 
       {/* Error */}
       {genError && (
-        <div className="mb-3 px-4 py-3 rounded-2xl text-sm" style={{ background: "var(--error-bg)", color: "var(--error)", border: "1px solid var(--error-bg)" }}>
+        <div role="alert" className="mb-3 px-4 py-3 rounded-2xl text-sm" style={{ background: "var(--error-bg)", color: "var(--error)", border: "1px solid var(--error-bg)" }}>
           {genError}
         </div>
       )}
@@ -569,11 +570,9 @@ function StepDestination({
           className="mt-5 p-4 rounded-2xl flex items-center gap-3"
           style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
         >
-          <img
-            src={getCityPhotoUrl(city, 400)}
-            alt={city}
-            className="w-14 h-14 rounded-xl object-cover flex-shrink-0"
-          />
+          <div className="rounded-xl overflow-hidden flex-shrink-0" style={{ width: 110, height: 120 }}>
+            <CityPhoto city={city} width={300} sizes="110px" />
+          </div>
           <div>
             <p className="font-bold text-base">{city}, {country}</p>
             <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>Ułożymy plan dla tej destynacji</p>

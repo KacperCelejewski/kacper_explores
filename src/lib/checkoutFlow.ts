@@ -32,3 +32,11 @@ export function checkoutTrackingEvent(
   if (status >= 200 && status < 300 && typeof body?.url === "string" && body.url) return "begin_checkout";
   return null;
 }
+
+/**
+ * Informacja przy przycisku płatności w oknie Stripe (custom_text.submit.message, limit 1200 znaków).
+ * Odpowiada regulaminowi §4-§5; zmieniając jedno, zmień drugie. To informacja, nie zgoda: osobne pole
+ * zgody wymaga adresu regulaminu w ustawieniach Stripe (zadanie właściciela).
+ */
+export const PURCHASE_NOTICE =
+  "Plany pojawią się na koncie zaraz po płatności. Masz 14 dni na odstąpienie od umowy, ale gdy wygenerujesz plan z Packa albo na Pro, zaczynamy ją wykonywać i prawo odstąpienia wygasa. Pro odnawia się automatycznie, anulujesz je w profilu. Szczegóły: wloczykij.me/regulamin";

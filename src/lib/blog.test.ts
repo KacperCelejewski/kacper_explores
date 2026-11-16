@@ -86,8 +86,8 @@ describe("artykuły o mieście (frontmatter city)", () => {
   const cityPosts = files
     .map((f) => ({ f, data: matter(fs.readFileSync(path.join(DIR, f), "utf-8")).data }))
     .filter((x) => x.data.city);
-  it("są cztery plany 48 godzin z polem city", () => {
-    expect(cityPosts.map((x) => x.data.city).sort()).toEqual(["Budapeszt", "Praga", "Rzym", "Wilno"]);
+  it("są plany 48 godzin z polem city (Barcelona, Budapeszt, Praga, Rzym, Wilno)", () => {
+    expect(cityPosts.map((x) => x.data.city).sort()).toEqual(["Barcelona", "Budapeszt", "Praga", "Rzym", "Wilno"]);
   });
   it.each(cityPosts)("$f wskazuje miasto ze strony /weekend i linkuje do niej", ({ f, data }) => {
     const city = weekendCities().find((c) => c.city === data.city);
@@ -97,7 +97,8 @@ describe("artykuły o mieście (frontmatter city)", () => {
   });
   it("postForCity zwraca artykuł dla miasta i null dla pozostałych", () => {
     expect(postForCity("praga")?.slug).toBe("weekend-w-pradze-plan-na-48-godzin");
-    expect(postForCity("barcelona")).toBeNull();
+    expect(postForCity("barcelona")?.slug).toBe("weekend-w-barcelonie-plan-na-48-godzin");
+    expect(postForCity("lizbona")).toBeNull();
   });
 });
 

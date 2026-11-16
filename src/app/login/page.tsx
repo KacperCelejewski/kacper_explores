@@ -11,6 +11,7 @@ import { trackEvent } from "@/lib/analytics";
 import { safeNextPath } from "@/lib/safeRedirect";
 import DropSignup from "@/app/components/DropSignup";
 import { IconMail, IconArrowLeft } from "@/app/components/Icons";
+import { EDGE_COPY } from "@/lib/edgeCopy";
 
 function LoginContent() {
   const searchParams = useSearchParams();
@@ -27,8 +28,8 @@ function LoginContent() {
 
   const supabase = createSupabaseClient();
 
-  const handleMagicLink = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleMagicLink = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     setLoading(true);
     setError("");
     const { error } = await supabase.auth.signInWithOtp({
@@ -44,10 +45,15 @@ function LoginContent() {
   };
 
   const handleOAuth = async (provider: "google" | "github") => {
-    await supabase.auth.signInWithOAuth({
+    setError("");
+    const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
     });
+    if (error) {
+      console.error("[login-oauth]", error.message);
+      setError(EDGE_COPY.loginGoogleFailed);
+    }
   };
 
   const fromQuiz = next.includes("/destinations") || next.includes("/quiz");
@@ -122,6 +128,7 @@ function LoginContent() {
 
         {sent ? (
           <div
+            role="status"
             className="p-6 rounded-2xl text-center"
             style={{ background: "var(--accent-light)", border: "1px solid var(--accent)" }}
           >
@@ -131,6 +138,17 @@ function LoginContent() {
               Wysłaliśmy link na <strong style={{ color: "var(--text-primary)" }}>{email}</strong>.
               Kliknij go, żeby się zalogować.
             </p>
+            <p className="text-xs mt-3" style={{ color: "var(--text-muted)" }}>{EDGE_COPY.loginSentHint}</p>
+            <button
+              type="button"
+              onClick={() => void handleMagicLink()}
+              disabled={loading}
+              className="text-sm font-semibold mt-1 px-4"
+              style={{ color: "var(--accent)", minHeight: 44 }}
+            >
+              {loading ? "Wysyłanie…" : EDGE_COPY.loginResend}
+            </button>
+            {error && <p role="alert" className="text-xs mt-1" style={{ color: "var(--error)" }}>{error}</p>}
           </div>
         ) : (
           <div className="flex flex-col gap-3">
@@ -180,7 +198,6 @@ function LoginContent() {
                   background: "#FFFFFF",
                   border: `1.5px solid ${error ? "var(--error)" : "var(--border)"}`,
                   color: "var(--text-primary)",
-                  outline: "none",
                 }}
                 onFocus={(e) => { if (!error) e.target.style.borderColor = "var(--accent)"; }}
                 onBlur={(e) => { if (!error) e.target.style.borderColor = "var(--border)"; }}

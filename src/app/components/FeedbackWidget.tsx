@@ -155,7 +155,6 @@ export default function FeedbackWidget({ tripId, city, onPdfUnlocked }: Props) {
                 background: "var(--bg-surface)",
                 border: "1px solid var(--border)",
                 color: "var(--text-primary)",
-                outline: "none",
               }}
             />
 
@@ -230,7 +229,6 @@ export default function FeedbackWidget({ tripId, city, onPdfUnlocked }: Props) {
                     background: "var(--bg-surface)",
                     border: "1px solid var(--border)",
                     color: "var(--text-primary)",
-                    outline: "none",
                   }}
                 />
               </div>
@@ -249,7 +247,6 @@ export default function FeedbackWidget({ tripId, city, onPdfUnlocked }: Props) {
                     background: "var(--bg-surface)",
                     border: "1px solid var(--border)",
                     color: "var(--text-primary)",
-                    outline: "none",
                   }}
                 />
               </div>

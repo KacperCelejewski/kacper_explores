@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { renderDropEmail, ORIGIN_GENITIVE } from "./email";
+import { renderDropEmail, formatCheckedAt, ORIGIN_GENITIVE } from "./email";
+import { FORBIDDEN_COPY } from "@/lib/homeCopy";
 import { POLISH_AIRPORTS } from "@/lib/airports";
 import type { CityTeaser, DropDeal } from "./types";
 
@@ -72,7 +73,7 @@ describe("renderDropEmail", () => {
     });
     expect(html).toContain("Mediolan");
     expect(html).toContain("201 zł");
-    expect(html).toContain("cena ze środy 22:00, może się zmienić");
+    expect(html).toContain("lot w obie strony, cena sprawdzona śr 11.11, 22:00, może się zmienić");
     expect(html).toContain("pt 13.11, 19:05");
     expect(html).toContain("nd 15.11, 21:40");
     expect(html).toContain("Ryanair");
@@ -83,7 +84,7 @@ describe("renderDropEmail", () => {
     expect(html).toContain("https://wloczykij.me/quiz?city=Mediolan&amp;from=KRK");
     expect(html).toContain("https://wloczykij.me/api/drop/unsubscribe?token=tok123");
     expect(html).toContain("https://wloczykij.me/zrzut/ustawienia?token=tok123");
-    expect(html).toContain("To będzie w Pro.");
+    expect(html).not.toContain("To będzie w Pro");
   });
 
   it("bez zajawki nie ma undefined", () => {
@@ -131,5 +132,67 @@ describe("renderDropEmail: czas na miejscu i bagaż", () => {
     const lo = renderDropEmail({ ...base, deals: [deal("MIL", "Mediolan", 201, { airline: "LO" })], teasers: new Map() }).html;
     expect(fr).toContain("Bagaż:");
     expect(lo).not.toContain("Bagaż:");
+  });
+});
+
+describe("renderDropEmail: wersja tekstowa, preheader, dostępność", () => {
+  const d = deal("MIL", "Mediolan", 201, { duration_to: 110 });
+  const out = () => renderDropEmail({ ...base, deals: [d], teasers: new Map([["MIL", teaser("MIL")]]) });
+
+  it("ma wersję tekstową z cenami, datą sprawdzenia i linkami", () => {
+    const { text } = out();
+    expect(text).toContain("Mediolan: 201 zł");
+    expect(text).toContain("cena sprawdzona śr 11.11, 22:00");
+    expect(text).toContain("Sprawdź cenę: https://www.aviasales.com/search/KRK1311MIL15111?t=abc&marker=12345");
+    expect(text).toContain("Wypisz się ze zrzutu: https://wloczykij.me/api/drop/unsubscribe?token=tok123");
+    expect(text).not.toContain("<");
+    expect(text).not.toContain("&amp;");
+  });
+
+  it("ma preheader w HTML-u i jako pole", () => {
+    const { html, preheader } = out();
+    expect(preheader).toContain("pt 13.11, 19:05");
+    expect(html).toContain(preheader);
+  });
+
+  it("deklaruje język, tryb ciemny i tytuł", () => {
+    const { html } = out();
+    expect(html).toContain('lang="pl"');
+    expect(html).toContain('name="color-scheme" content="light dark"');
+    expect(html).toContain("prefers-color-scheme:dark");
+    expect(html).toContain("<title>Mediolan za 201 zł w ten weekend</title>");
+  });
+
+  it("ujawnia linki partnerskie tylko przy markerze", () => {
+    expect(out().html).toContain("Linki „Sprawdź cenę” są partnerskie");
+    const none = renderDropEmail({ ...base, marker: "", deals: [d], teasers: new Map() });
+    expect(none.html).not.toContain("partnerskie");
+    expect(none.text).not.toContain("partnerskie");
+  });
+
+  it("ma dane nadawcy w stopce i nie łamie zasad głosu marki", () => {
+    const { html, text } = out();
+    expect(html).toContain("hej@wloczykij.me");
+    expect(text).toContain("hej@wloczykij.me");
+    for (const re of FORBIDDEN_COPY) {
+      expect(text, String(re)).not.toMatch(re);
+    }
+  });
+
+  it("nie robi z linków obietnic funkcji, których nie ma", () => {
+    const { html } = out();
+    expect(html.toLowerCase()).not.toContain("zaproś");
+    expect(html.toLowerCase()).not.toContain("głosowan");
+  });
+});
+
+describe("formatCheckedAt", () => {
+  it("podaje czas polski", () => {
+    expect(formatCheckedAt("2026-11-11T21:00:00Z")).toBe("śr 11.11, 22:00");
+    expect(formatCheckedAt("2026-07-01T20:00:00Z")).toBe("śr 01.07, 22:00");
+  });
+  it("bez daty albo z błędną zwraca null", () => {
+    expect(formatCheckedAt(undefined)).toBeNull();
+    expect(formatCheckedAt("nie-data")).toBeNull();
   });
 });
