@@ -1,6 +1,9 @@
 "use client";
 
+import { EDGE_COPY } from "@/lib/edgeCopy";
+import { ProfileSkeleton } from "@/app/components/Skeleton";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useAppStore } from "@/lib/store";
@@ -67,6 +70,7 @@ export default function ProfilePage() {
   const [portalLoading, setPortalLoading] = useState(false);
   const [deleteStep, setDeleteStep] = useState<"idle" | "confirm">("idle");
   const [deleting, setDeleting] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/profile")
@@ -93,12 +97,15 @@ export default function ProfilePage() {
 
   const handleBillingPortal = async () => {
     setPortalLoading(true);
+    setActionError(null);
     try {
       const res = await fetch("/api/billing-portal", { method: "POST" });
       const data = await res.json();
-      if (data.url) window.location.href = data.url;
-    } catch {
-      // silently fail — user stays on profile
+      if (!data.url) throw new Error("no portal url");
+      window.location.href = data.url;
+    } catch (err) {
+      console.error("[billing-portal]", err);
+      setActionError(EDGE_COPY.portalFailed);
     } finally {
       setPortalLoading(false);
     }
@@ -106,6 +113,7 @@ export default function ProfilePage() {
 
   const handleDeleteAccount = async () => {
     setDeleting(true);
+    setActionError(null);
     try {
       const res = await fetch("/api/profile", { method: "DELETE" });
       if (!res.ok) {
@@ -118,7 +126,7 @@ export default function ProfilePage() {
       router.replace("/");
     } catch (err) {
       console.error("[delete-account]", err);
-      alert("Konto się nie usunęło. Spróbuj jeszcze raz, a jeśli dalej nie działa, napisz na hej@wloczykij.me.");
+      setActionError(EDGE_COPY.accountDeleteFailed);
       setDeleting(false);
       setDeleteStep("idle");
     }
@@ -138,11 +146,7 @@ export default function ProfilePage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex flex-col flex-1 items-center justify-center">
-        <div className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "var(--accent)", borderTopColor: "transparent" }} />
-      </div>
-    );
+    return <ProfileSkeleton />;
   }
 
   if (!data?.authenticated) return null;
@@ -236,7 +240,7 @@ export default function ProfilePage() {
             <button
               onClick={() => router.push("/quiz")}
               className="text-xs font-semibold transition-opacity hover:opacity-70"
-              style={{ color: "var(--accent)", padding: "12px 0" }}
+              style={{ color: "var(--accent)", padding: "12px 0", minHeight: 44 }}
             >
               Edytuj →
             </button>
@@ -270,7 +274,7 @@ export default function ProfilePage() {
             className="p-5 rounded-2xl text-center"
             style={{ background: "var(--bg-surface)", border: "1.5px dashed var(--border)" }}
           >
-            <p className="text-sm font-medium">Brak zapisanych preferencji</p>
+            <p className="text-sm font-medium">Jeszcze nie znamy Twojego stylu</p>
             <p className="text-xs mt-1 mb-4" style={{ color: "var(--text-muted)" }}>
               Zrób quiz raz — Twoje ustawienia zostaną zapamiętane.
             </p>
@@ -338,7 +342,10 @@ export default function ProfilePage() {
           </div>
         ) : (
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-            Nie masz jeszcze żadnych wygenerowanych planów.
+            Tu zbiera się historia Twoich wyjazdów. Pierwszy plan jest o jeden quiz stąd.{" "}
+            <Link href="/quiz" className="font-semibold inline-flex items-center" style={{ color: "var(--accent)", minHeight: 44 }}>
+              Zacznij od quizu →
+            </Link>
           </p>
         )}
       </motion.div>
@@ -347,6 +354,11 @@ export default function ProfilePage() {
 
       {/* Actions */}
       <div className="mt-6 flex flex-col gap-3">
+        {actionError && (
+          <p role="alert" className="text-sm font-medium px-4 py-3 rounded-2xl" style={{ background: "var(--error-bg)", color: "var(--error)" }}>
+            {actionError}
+          </p>
+        )}
         {data.is_pro ? (
           <button
             onClick={handleBillingPortal}
@@ -366,8 +378,9 @@ export default function ProfilePage() {
         <button
           onClick={handleSaveAgain}
           disabled={saving}
+          aria-live="polite"
           className="text-sm font-semibold py-3 rounded-2xl transition-opacity hover:opacity-70"
-          style={{ background: "var(--bg-surface)", color: "var(--text-secondary)" }}
+          style={{ background: "var(--bg-surface)", color: "var(--text-secondary)", minHeight: 44 }}
         >
           {saved ? "Zapisano" : saving ? "Zapisuję…" : "Zapisz obecne ustawienia quizu"}
         </button>
@@ -401,7 +414,7 @@ export default function ProfilePage() {
                 onClick={handleDeleteAccount}
                 disabled={deleting}
                 className="flex-1 text-sm font-bold py-2.5 rounded-xl transition-opacity hover:opacity-80 disabled:opacity-40"
-                style={{ background: "var(--error)", color: "white" }}
+                style={{ background: "var(--error)", color: "white", minHeight: 44 }}
               >
                 {deleting ? "Usuwam…" : "Tak, usuń konto"}
               </button>
@@ -409,7 +422,7 @@ export default function ProfilePage() {
                 onClick={() => setDeleteStep("idle")}
                 disabled={deleting}
                 className="flex-1 text-sm font-semibold py-2.5 rounded-xl transition-opacity hover:opacity-80"
-                style={{ background: "var(--bg-surface)", color: "var(--text-secondary)" }}
+                style={{ background: "var(--bg-surface)", color: "var(--text-secondary)", minHeight: 44 }}
               >
                 Anuluj
               </button>

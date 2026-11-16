@@ -1,4 +1,5 @@
 {
+  "id": "/",
   "name": "Włóczykij",
   "short_name": "Włóczykij",
   "description": "Wyjazd ze znajomymi: kierunki w budżecie, plan godzina po godzinie i okazje na weekend z Polski",
@@ -6,7 +7,6 @@
   "display": "standalone",
   "background_color": "#F5EFE0",
   "theme_color": "#F5EFE0",
-  "orientation": "portrait",
   "icons": [
     {
       "src": "/icon-192.png",
@@ -44,5 +44,11 @@
       "url": "/profile",
       "description": "Moje podróże"
     }
+  ],
+  "lang": "pl",
+  "dir": "ltr",
+  "categories": [
+    "travel",
+    "lifestyle"
   ]
 }

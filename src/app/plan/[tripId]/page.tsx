@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import { PlanSkeleton } from "@/app/components/Skeleton";
 import { useAppStore } from "@/lib/store";
 import { downloadICS } from "@/app/utils/ics-download";
 import { adjustPlanBudget } from "@/lib/budgetAdjust";
@@ -359,21 +360,7 @@ export default function PlanPage() {
       .finally(() => setLoading(false));
   }, [params?.tripId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (loading || !currentTrip?.plan) {
-    return (
-      <div className="flex flex-col flex-1 items-center justify-center gap-4" aria-busy="true" aria-label="Ładowanie planu podróży">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-          className="text-3xl"
-          aria-hidden="true"
-        >
-          <IconPlane size={32} />
-        </motion.div>
-        <p className="text-sm" style={{ color: "var(--text-muted)" }}>Ładowanie planu…</p>
-      </div>
-    );
-  }
+  if (loading || !currentTrip?.plan) return <PlanSkeleton />;
 
   const { plan, destination } = currentTrip;
   const dest = destination as DestinationRecommendation | null;

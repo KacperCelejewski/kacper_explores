@@ -1,58 +1,41 @@
 import type { Metadata } from "next";
-import { createServiceClient } from "@/lib/supabase/service";
+import { notFound } from "next/navigation";
+import { lookupPublicTrip } from "@/lib/shareTrip";
+import { shareMetaText } from "@/lib/shareOg";
 import ShareClient from "./ShareClient";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ tripId: string }> }
 ): Promise<Metadata> {
   const { tripId } = await params;
+  const found = await lookupPublicTrip(tripId);
 
-  try {
-    const supabase = createServiceClient();
-    const { data } = await supabase
-      .from("trips")
-      .select("city, country, ai_plan_json")
-      .eq("id", tripId)
-      .eq("is_public", true)
-      .maybeSingle();
-
-    if (data?.city) {
-      const plan = data.ai_plan_json as { duration?: number; totalBudgetEstimate?: string } | null;
-      const duration = plan?.duration;
-      const budget = plan?.totalBudgetEstimate;
-      const title = duration && budget
-        ? `${duration} dni w ${data.city} za ${budget}`
-        : `Plan podróży do ${data.city}`;
-      const description = `Plan podróży do ${data.city}, ${data.country} wygenerowany przez Włóczykij — budżetowe weekendy w Europie.`;
-
-      return {
-        title,
-        description,
-        alternates: { canonical: `https://wloczykij.me/share/${tripId}` },
-        openGraph: {
-          title: `${title} | Włóczykij`,
-          description,
-          url: `https://wloczykij.me/share/${tripId}`,
-        },
-        twitter: {
-          card: "summary_large_image",
-          title: `${title} | Włóczykij`,
-          description,
-        },
-      };
-    }
-  } catch {
-    // fallback to default metadata
+  if (found.status === "found") {
+    const { title, description } = shareMetaText(found.model);
+    const url = `https://wloczykij.me/share/${tripId}`;
+    // Obrazek podglądu dokłada plik opengraph-image.tsx obok tej strony
+    return {
+      title,
+      description,
+      alternates: { canonical: url },
+      openGraph: { type: "article", title: `${title} | Włóczykij`, description, url, siteName: "Włóczykij", locale: "pl_PL" },
+      twitter: { card: "summary_large_image", title: `${title} | Włóczykij`, description },
+    };
   }
 
   return {
     title: "Plan podróży",
-    description: "Plan podróży wygenerowany przez Włóczykij — budżetowe weekendy w Europie.",
+    description: "Plan podróży wygenerowany przez Włóczykij.",
     // Nieistniejący lub prywatny plan nie ma czego robić w indeksie
     robots: { index: false, follow: false },
   };
 }
 
-export default function SharePage() {
+export default async function SharePage({ params }: { params: Promise<{ tripId: string }> }) {
+  const { tripId } = await params;
+  // Prawdziwy 404 dla planu, którego nie ma albo który nie jest publiczny (wcześniej: 200 z komunikatem w kliencie).
+  // Przy awarii bazy renderujemy klienta jak dawniej, żeby chwilowy błąd nie ogłaszał 404 poprawnego linku.
+  const found = await lookupPublicTrip(tripId);
+  if (found.status === "missing") notFound();
   return <ShareClient />;
 }
