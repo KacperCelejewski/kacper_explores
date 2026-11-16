@@ -5,7 +5,7 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { getClientIp } from "@/lib/validate";
-import { safeReturnPath, successUrl } from "@/lib/checkoutFlow";
+import { PURCHASE_NOTICE, safeReturnPath, successUrl } from "@/lib/checkoutFlow";
 
 export async function POST(req: NextRequest) {
   // Rate limit: max 10 checkout attempts per hour per IP
@@ -74,6 +74,7 @@ export async function POST(req: NextRequest) {
       success_url: successUrl(appUrl, returnPath),
       cancel_url: `${appUrl}${cancelPath}`,
       allow_promotion_codes: true,
+      custom_text: { submit: { message: PURCHASE_NOTICE } },
       metadata: {
         supabase_user_id: user.id,
         plan_key: planKey,

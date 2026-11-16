@@ -42,7 +42,7 @@ describe("checkoutErrorMessage", () => {
   });
 });
 
-import { checkoutTrackingEvent } from "./checkoutFlow";
+import { checkoutTrackingEvent, PURCHASE_NOTICE } from "./checkoutFlow";
 
 describe("checkoutTrackingEvent", () => {
   it("begin_checkout tylko gdy Stripe zwrócił adres sesji", () => {
@@ -58,5 +58,14 @@ describe("checkoutTrackingEvent", () => {
     expect(checkoutTrackingEvent(429, { error: "x" })).toBeNull();
     expect(checkoutTrackingEvent(200, {})).toBeNull();
     expect(checkoutTrackingEvent(200, null)).toBeNull();
+  });
+});
+
+describe("PURCHASE_NOTICE", () => {
+  it("mieści się w limicie Stripe i mówi o odstąpieniu oraz odnawianiu", () => {
+    expect(PURCHASE_NOTICE.length).toBeLessThanOrEqual(1200);
+    expect(PURCHASE_NOTICE).toContain("14 dni");
+    expect(PURCHASE_NOTICE).toContain("odnawia się automatycznie");
+    expect(PURCHASE_NOTICE).toContain("/regulamin");
   });
 });

@@ -77,6 +77,16 @@ export default async function PaymentSuccessPage({ searchParams }: Props) {
           Przejdź do profilu
         </p>
       </Link>
+
+      {valid && (
+        <p className="text-xs mt-6 max-w-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
+          {isPro
+            ? "Pro odnawia się automatycznie, anulujesz je w profilu. "
+            : ""}
+          Zakup możesz odwołać w ciągu 14 dni, dopóki nie wygenerujesz z niego planu.{" "}
+          <Link href="/regulamin" style={{ textDecoration: "underline" }}>Regulamin</Link>
+        </p>
+      )}
     </div>
   );
 }

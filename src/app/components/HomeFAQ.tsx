@@ -7,11 +7,11 @@ export const FAQS = [
   },
   {
     q: "Kto płaci?",
-    a: `Za sam plan nikt: dwa plany w miesiącu są za darmo. Gdy ich zabraknie, jedna osoba może dokupić Pack (5 planów za ${PRICES.pack.label}) albo wziąć Pro bez limitu za ${PRICES.proMonthly.label}/mies. Lotów i noclegów nie kupujemy za Was, linki prowadzą do wyszukiwarek.`,
+    a: `Za sam plan nikt: dwa plany w miesiącu są za darmo. Gdy ich zabraknie, jedna osoba może dokupić Pack (5 planów za ${PRICES.pack.label}) albo wziąć Pro bez limitu za ${PRICES.proMonthly.label}/mies. Lotów i noclegów nie kupujemy za Was, linki prowadzą do wyszukiwarek; część to linki partnerskie, za które możemy dostać prowizję, a Wy płacicie tyle samo.`,
   },
   {
     q: "Czy Włóczykij jest darmowy?",
-    a: `Dwa plany w miesiącu tak. Odnawiają się co miesiąc i nie wymagają karty. Gdy ich zabraknie, możesz dokupić Pack (5 planów za ${PRICES.pack.label}) albo wziąć Pro bez limitu za ${PRICES.proMonthly.label}/mies. lub ${PRICES.proYearly.label}/rok. Okazje na weekend i Czwartkowy zrzut są darmowe bez konta. Po wygenerowaniu planu możesz go ocenić: za opinię dostajesz PDF albo jeden plan więcej.`,
+    a: `Dwa plany w miesiącu tak. Odnawiają się co miesiąc i nie wymagają karty. Gdy ich zabraknie, możesz dokupić Pack (5 planów za ${PRICES.pack.label}) albo wziąć Pro bez limitu za ${PRICES.proMonthly.label}/mies. lub ${PRICES.proYearly.label}/rok. Okazje na weekend i Czwartkowy zrzut są darmowe bez konta. Kupiony Pack lub Pro możesz zwrócić w 14 dni, dopóki nie wygenerujesz z nich planu. Po wygenerowaniu planu możesz go ocenić: za opinię dostajesz PDF albo jeden plan więcej.`,
   },
   {
     q: "Jak działa planowanie podróży z AI?",
