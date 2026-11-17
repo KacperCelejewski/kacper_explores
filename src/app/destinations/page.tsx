@@ -649,7 +649,6 @@ export default function DestinationsPage() {
     setCurrentTrip,
     setIsGeneratingPlan,
     isGeneratingPlan,
-    setCurrentQuizStep,
     cachedDestinations,
     setCachedDestinations,
     _hasHydrated,
@@ -851,7 +850,7 @@ export default function DestinationsPage() {
       <div className="pt-6 pb-4">
         <div className="flex items-center justify-between mb-1">
           <button
-            onClick={() => { setCurrentQuizStep(4); router.push("/quiz"); }}
+            onClick={() => router.push("/quiz?step=when")}
             className="text-sm font-medium transition-opacity hover:opacity-60"
             style={{ color: "var(--text-muted)" }}
           >
@@ -906,7 +905,7 @@ export default function DestinationsPage() {
               {CREW_COPY.destinationsPerPerson}
             </p>
             <button
-              onClick={() => { setCurrentQuizStep(0); router.push("/quiz"); }}
+              onClick={() => router.push("/quiz?step=companion")}
               className="text-xs font-semibold underline mt-1 -mb-2"
               style={{ color: "var(--accent)", minHeight: 44 }}
             >
