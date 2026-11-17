@@ -2,6 +2,15 @@ import { describe, expect, it } from "vitest";
 import { redirectsToCanonical } from "./canonicalHost";
 
 describe("redirectsToCanonical", () => {
+  it("keeps preview pages on the build being reviewed", () => {
+    expect(redirectsToCanonical("kacper-explores-git-feat-quiz-human.vercel.app", "/quiz", "preview")).toBe(false);
+    expect(redirectsToCanonical("kacper-explores-git-feat-quiz-human.vercel.app", "/api/profile", "preview")).toBe(false);
+  });
+
+  it("retains canonical redirects and cron handling in production", () => {
+    expect(redirectsToCanonical("kacper-explores.vercel.app", "/quiz", "production")).toBe(true);
+    expect(redirectsToCanonical("kacper-explores.vercel.app", "/api/cron/drop-prepare", "production")).toBe(false);
+  });
   it("sends visitors of the vercel.app address to the real domain", () => {
     expect(redirectsToCanonical("kacper-explores-abc123.vercel.app", "/pricing")).toBe(true);
     expect(redirectsToCanonical("kacper-explores.vercel.app", "/")).toBe(true);

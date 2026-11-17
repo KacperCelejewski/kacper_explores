@@ -17,14 +17,13 @@ export default function QuizProgress({ total, current, maxVisited, onJump }: Pro
 
   return (
     <div
-      role="progressbar"
-      aria-valuenow={current + 1}
-      aria-valuemin={1}
-      aria-valuemax={total}
-      aria-label={`Postęp quizu: pytanie ${current + 1} z ${total}`}
+      role="group"
+      aria-label="Przejdź do odwiedzonego pytania"
       className="relative"
       style={{ height: 44 }}
     >
+      <span className="sr-only" role="progressbar" aria-valuenow={current + 1}
+        aria-valuemin={1} aria-valuemax={total} aria-label={`Postęp quizu: pytanie ${current + 1} z ${total}`} />
       {/* Stream: the water line, brick where you have already crossed */}
       <div
         aria-hidden="true"

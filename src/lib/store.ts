@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { adjustPlanBudget } from "@/lib/budgetAdjust";
+import { migrateQuizStep } from "@/lib/quizSteps";
 import type { QuizAnswers, DestinationRecommendation, FlightDetails, Trip, DayPlan, DayActivity } from "@/types";
 
 
@@ -168,7 +169,7 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: "kacper-explores-store",
-      version: 4,
+      version: 5,
       onRehydrateStorage: () => (state) => {
         if (state) state.setHasHydrated(true);
       },
@@ -187,7 +188,8 @@ export const useAppStore = create<AppState>()(
           s.quizAnswers = qa;
         }
         // v4: dodano opcjonalne `group`; jego brak oznacza stary zapis (solo/para), więc nic nie zmieniamy.
-        if (version < 4) return s;
+        // v5: budżet jest na końcu. Zachowujemy znaczenie starego kroku i wszystkie odpowiedzi.
+        if (version < 5) s.currentQuizStep = migrateQuizStep(s.currentQuizStep);
         return s;
       },
       partialize: (state) => ({
