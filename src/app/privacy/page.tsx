@@ -150,6 +150,15 @@ export default function PrivacyPage() {
                 wiadomość z przypomnieniem na 3 dni przed wylotem.
               </Li>
               <Li>
+                <strong>Zdarzenia wiadomości z Czwartkowego zrzutu:</strong> zapisujemy,
+                że wiadomość została wysłana, dostarczona, odbita, oznaczona jako spam
+                albo że kliknięto w link, a także że z maila przeszedłeś do quizu lub
+                planu. Zapisujemy rodzaj zdarzenia, tydzień i identyfikator subskrypcji,
+                bez adresu e-mail i bez pełnych linków. Kliknięcia mierzy dla nas Resend.
+                Zdarzenia służą do sprawdzenia, czy zrzut dociera i jest przydatny;
+                kasujemy je razem z Twoim zapisem.
+              </Li>
+              <Li>
                 <strong>Opinie:</strong> ocena i tekst, które wpiszesz w formularzu opinii
                 po planie (razem z miastem i, jeśli jesteś zalogowany, identyfikatorem
                 konta po naszej stronie).
