@@ -23,6 +23,14 @@ describe("quizLoginNext", () => {
   });
 });
 
+describe("quizLoginNext z wejściem", () => {
+  it("niesie kanał i materiał przez logowanie, a direct pomija", () => {
+    const next = quizLoginNext("Porto", { channel: "blog", material: "blog:lot-w-grupie" });
+    expect(next).toBe("/quiz?afterLogin=1&city=Porto&entry_channel=blog&entry_material=blog%3Alot-w-grupie");
+    expect(quizLoginNext("Porto", { channel: "direct", material: "direct" })).toBe("/quiz?afterLogin=1&city=Porto");
+  });
+});
+
 describe("cityAfterLogin", () => {
   it("prefers the city from the URL", () => {
     expect(cityAfterLogin("Porto", "Rzym")).toBe("Porto");

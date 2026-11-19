@@ -1,6 +1,7 @@
 "use client";
 
 import { planGeneratedParams, trackEvent } from "@/lib/analytics";
+import { DIRECT_ENTRY, clearEntry, currentEntry, entryStorage } from "@/lib/entryAttribution";
 import { flightLink, flightSearchLink, partnerLinkProps, type PartnerLink } from "@/lib/affiliate";
 import { useAffiliateConfig } from "@/app/components/AffiliateProvider";
 import { groupFromCompanion, toFlightPassengers } from "@/lib/group";
@@ -798,7 +799,8 @@ export default function DestinationsPage() {
             }
           }
           if (msg.done) {
-            trackEvent("plan_generated", planGeneratedParams(dest.city, (msg.plan as import("@/types").TripPlan).days?.length ?? 0, quizAnswers));
+            trackEvent("plan_generated", planGeneratedParams(dest.city, (msg.plan as import("@/types").TripPlan).days?.length ?? 0, quizAnswers, currentEntry(entryStorage()) ?? DIRECT_ENTRY));
+            clearEntry(entryStorage()); // jedno wejście = jeden plan
             setCurrentTrip({
               id: msg.tripId as string,
               destination: dest,

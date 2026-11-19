@@ -71,6 +71,14 @@ describe("planGeneratedParams", () => {
     expect(planGeneratedParams("Rzym", 3, quiz).group_size).toBe(5);
   });
 
+  it("dopisuje wejście, a bez niego nie dodaje parametrów", () => {
+    const entry = { channel: "ig", material: "ig:bio:ekipa" };
+    expect(planGeneratedParams("Rzym", 4, { companion: "solo" }, entry)).toEqual({
+      city: "Rzym", days: 4, group_size: 1, entry_channel: "ig", entry_material: "ig:bio:ekipa",
+    });
+    expect(Object.keys(planGeneratedParams("Rzym", 4, { companion: "solo" }, null))).toEqual(["city", "days", "group_size"]);
+  });
+
   it("does not count an infant as a seat", () => {
     const quiz = { companion: "family" as const, group: { adults: 2, childrenAges: [1, 7] } };
     expect(planGeneratedParams("Rzym", 3, quiz).group_size).toBe(3);
