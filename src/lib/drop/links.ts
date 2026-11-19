@@ -14,8 +14,14 @@ function utm(deal: DropDeal, week: WeekKey, medium: string): string {
 
 export function buildAffiliateUrl(deal: DropDeal, marker: string, week: WeekKey, medium = "email"): string {
   const base = deal.link.startsWith("http") ? deal.link : `${AVIASALES}${deal.link}`;
-  const sep = base.includes("?") ? "&" : "?";
-  return `${base}${sep}marker=${encodeURIComponent(marker)}&${utm(deal, week, medium)}`;
+  const url = new URL(base);
+  // Obcy marker/trs z linku API nie może dublować naszego; pusty marker nie dopisuje pustego parametru.
+  url.searchParams.delete("marker");
+  url.searchParams.delete("trs");
+  const clean = marker.trim();
+  if (clean) url.searchParams.append("marker", clean);
+  for (const [key, value] of new URLSearchParams(utm(deal, week, medium))) url.searchParams.append(key, value);
+  return url.toString();
 }
 
 export function buildPlanUrl(deal: DropDeal, appUrl: string, week: WeekKey, medium = "email"): string {
