@@ -1,7 +1,7 @@
-import { CATALOG } from "@/lib/destinations/catalog";
 import type { DestinationRecommendation, QuizAnswers } from "@/types";
 import type { FlightCachePair } from "./card-price";
 import { candidateDates } from "./rapidapi";
+import { catalogCityFor, destinationCodeFor } from "./card-deals";
 
 /**
  * Exact cache pairs a destination card may be priced from: catalog city x selected origins x the
@@ -16,10 +16,9 @@ export function cardSearchPairs(
 ): FlightCachePair[][] {
   const dates = candidateDates(quiz.month!, quiz.duration!, now).slice(0, 3);
   return destinations.map((dest) => {
-    const city = CATALOG.find((entry) => entry.city.toLocaleLowerCase("pl") === dest.city.toLocaleLowerCase("pl")
-      && entry.country.toLocaleLowerCase("pl") === dest.country.toLocaleLowerCase("pl"));
+    const city = catalogCityFor(dest);
     return city ? [...new Set(quiz.airports)].flatMap((origin) => dates.map((date) => ({
-      origin, destination: origin === "BER" ? city.iataBer ?? city.iataWro : city.iataWro, ...date,
+      origin, destination: destinationCodeFor(city, origin), ...date,
     }))) : [];
   });
 }

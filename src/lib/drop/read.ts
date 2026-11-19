@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { POLISH_AIRPORTS } from "@/lib/airports";
 import { createServiceClient } from "@/lib/supabase/service";
-import { citiesWithDeals } from "@/lib/seo/cities";
+import { citiesWithDeals, dealCityName } from "@/lib/seo/cities";
 import type { CatalogEntry } from "@/lib/destinations/catalog";
 import type { CityTeaser, DropDeal } from "./types";
 
@@ -113,3 +113,38 @@ export const getCitiesWithDeals = cache(async (): Promise<CatalogEntry[]> => {
     return [];
   }
 });
+
+const IATA = /^[A-Z]{3}$/;
+
+// Cena na karcie kierunku z quizu: wiersze drop_deals dla miast z katalogu i wybranych lotnisk, tylko z NAJNOWSZEGO
+// tygodnia każdego lotniska (starszego nie podstawiamy, gdy najnowszy nie ma tego miasta). Przy błędzie bazy pusto.
+export async function getDealsForCards(cities: CatalogEntry[], origins: string[]): Promise<DropDeal[]> {
+  const airports = [...new Set(origins)].filter((o) => IATA.test(o)).slice(0, 8);
+  if (!cities.length || !airports.length) return [];
+  try {
+    const db = createServiceClient();
+    const latest = new Map<string, string>();
+    await Promise.all(airports.map(async (origin) => {
+      const { data, error } = await db.from("drop_deals").select("week").eq("origin", origin)
+        .order("week", { ascending: false }).limit(1);
+      if (error) throw new Error(error.message);
+      if (data?.[0]?.week) latest.set(origin, data[0].week as string);
+    }));
+    if (!latest.size) return [];
+    const weeks = [...new Set(latest.values())];
+    const codes = [...new Set(cities.flatMap((c) => [c.iataWro, c.iataBer].filter((x): x is string => !!x)))];
+    const names = [...new Set(cities.map(dealCityName))];
+    const base = () => db.from("drop_deals").select("*").in("origin", [...latest.keys()]).in("week", weeks);
+    const [byCode, byName] = await Promise.all([base().in("city_code", codes).limit(500), base().in("city_name", names).limit(500)]);
+    if (byCode.error || byName.error) throw new Error((byCode.error ?? byName.error)!.message);
+    const rows = new Map<string, DropDeal>();
+    for (const row of [...(byCode.data ?? []), ...(byName.data ?? [])] as DropDeal[]) {
+      if (latest.get(row.origin) !== row.week) continue;
+      rows.set(`${row.origin}|${row.city_code}|${row.week}`, row);
+    }
+    return [...rows.values()];
+  } catch (err) {
+    console.error("[drop/read] cards", err instanceof Error ? err.message : err);
+    return [];
+  }
+}

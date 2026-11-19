@@ -84,3 +84,44 @@ empty until an existing authorized flight-search flow populates it.
 6. Verify only `hit: true` rows from these reads in `api_usage_log`; missing
    cache/table/configuration must not prevent use of the cards. Keep real
    production quotes out of fixtures, and do not warm the cache with bulk calls.
+
+## Fallback: weekly deals (2026-11-19)
+
+**Why.** The cache is fed only by `/api/real-flights`, which no screen calls any more; production
+`flight_cache` had 41 rows and none fresh (newest expired 2026-05-19). Under the cache-only rule above
+the cards therefore never showed an amount.
+
+**Rule.** The cache keeps priority. Only for a card with no cache quote does
+`POST /api/destination-flight-prices` read `drop_deals` (Travelpayouts, weekly cron; no new paid
+request, cron, migration or flag) through `getDealsForCards` and `selectCardDeal`
+(`src/lib/flights/card-deals.ts`):
+
+- city from `CATALOG` (city + country); a deal row matches by `city_code` (catalog IATA, BER code for
+  BER) **or** by the Travelpayouts name (`dealCityName`, as on `/weekend`);
+- airport from `quiz.airports`;
+- per airport only the **newest `week`** the cron wrote; an older week is never promoted when the newest
+  has no row for that city;
+- row must be fresh (`priceTrust.isFreshDeal`, 8 days from `fetched_at`) and not yet departed
+  (departure compared as an exact instant); cheapest wins, tie goes to the earlier flight;
+- the quote expires at the earlier of `fetched_at + 8 days` and the departure, and the client timer
+  removes it then (same mechanism as cache quotes).
+
+**Card copy.** “od X zł”, “sprawdzone DD.MM” (= `fetched_at`, Warsaw), round trip, `ORIGIN → city`,
+exact dates of that flight, “Za 1 dorosłego”. If the deal's departure month is not the quiz month the
+card says so (“najbliższy weekend z tygodniowych okazji, nie wybrany w quizie miesiąc”). For a group
+(more than one traveller) the amount is **not multiplied** and the card says to check the group price in
+the search. The cache-quote group total (`flightTotalNote`) stays cache-only, because there the price was
+fetched for that exact passenger composition.
+
+**Link.** `buildFlightLink` on the very deal row (same flight and dates as the amount), partner marker and
+`link partnerski` label only with consent and configured marker/project, otherwise a plain link, exactly as
+on `/okazje`; `utm_medium=cards`. The deal link carries one adult, not the group.
+
+**Limits.** Only the nearest weekend and only destinations that the cron found a deal for (the cron
+stores the cheapest offers per airport, not every catalog city); other cards still say
+“Sprawdź w wyszukiwarce” with no amount. The quiz duration is not matched. Needs `drop_deals` and
+`SUPABASE_SERVICE_ROLE_KEY` in production (already used by `/okazje`); without them the cards behave as before.
+
+**Tests.** `card-deals.test.ts` (matching, freshness, 8-day boundary, departed, stale/older week, BER,
+Praga without BER code, month mismatch, expiry, group, link) and `card-deals-route.test.ts` (fallback,
+cache priority, no match, older week, BER, DB error, card order).
