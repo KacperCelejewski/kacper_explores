@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { POLISH_AIRPORTS } from "@/lib/airports";
 import { resolveOrigin } from "@/lib/drop/defaults";
 import { ORIGIN_GENITIVE, formatLocal } from "@/lib/drop/email";
+import { dealsPriceNote } from "@/lib/priceTrust";
 
 export interface StripDeal {
   city_code: string;
@@ -101,7 +102,7 @@ export default function DealsStrip({
           </select>
         </div>
         <p style={{ fontSize: 14, color: "var(--text-muted)", margin: "10px 0 0", lineHeight: 1.5 }}>
-          Lot w obie strony, ceny z wyszukiwań{ready && deals[0]?.fetched_at ? ` z ${new Date(deals[0].fetched_at).toLocaleDateString("pl-PL", { timeZone: "Europe/Warsaw", day: "numeric", month: "long" })}` : " z ostatnich dni"}. Przed zakupem sprawdź aktualną cenę.
+          Lot w obie strony. {(ready && dealsPriceNote(deals)) || "Ceny orientacyjne, z wyszukiwań, nie z rezerwacji na żywo. Przed zakupem sprawdź aktualną."}
         </p>
         {(!ready || deals.length === 0) && (
           <p style={{ fontSize: 15, color: "var(--text-muted)", margin: "16px 0 0" }}>

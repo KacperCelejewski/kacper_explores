@@ -19,6 +19,7 @@ import { FlightCard, HotelLinks, LuggageTile, TicketsLink } from "@/app/componen
 import { IconPlane, IconBed, IconFork, IconTicket, IconLock, IconDownload, IconCalendar, IconGlobe, IconCheck, IconClose, IconRefresh, IconPin, IconSuitcase } from "@/app/components/Icons";
 import type { DayPlan, DayActivity, TripPlan, DestinationRecommendation, QuizAnswers } from "@/types";
 import { PRICES } from "@/lib/prices";
+import { PLAN_TOTAL_LABEL, PLAN_TOTAL_NOTE } from "@/lib/priceTrust";
 import { isFreeCost } from "@/lib/affiliate";
 import { groupFromCompanion, groupSize, scaleBudgetText, showGroupBudget } from "@/lib/group";
 import { CREW_COPY, crewSummary, sendPlanTitle } from "@/lib/groupFlow";
@@ -427,7 +428,7 @@ export default function PlanPage() {
               {crew.title}: {crew.detail}
               {groupBudget && (
                 <span className="block text-xs font-normal mt-0.5" style={{ color: "var(--text-muted)" }}>
-                  Loty, nocleg, jedzenie i atrakcje poniżej są {CREW_COPY.perPerson}; koszt całkowity podajemy też {CREW_COPY.total}.
+                  Nocleg, jedzenie i atrakcje poniżej są {CREW_COPY.perPerson}; szacunek na miejscu podajemy też {CREW_COPY.total}. Lot liczymy osobno.
                 </span>
               )}
             </p>
@@ -443,7 +444,7 @@ export default function PlanPage() {
 
           <div className="mt-3 pt-3 border-t flex items-center justify-between" style={{ borderColor: "var(--border)" }}>
             <span className="text-sm" style={{ color: "var(--text-muted)" }}>
-              Szacowany całkowity koszt
+              {PLAN_TOTAL_LABEL}
             </span>
             {groupBudget && plan.totalBudgetEstimate ? (
               <div className="text-right">
@@ -464,6 +465,7 @@ export default function PlanPage() {
               </span>
             )}
           </div>
+        <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>{PLAN_TOTAL_NOTE}</p>
         </motion.div>
       </div>
 

@@ -35,7 +35,7 @@ describe("renderDropEmail", () => {
     const { subject } = renderDropEmail({
       ...base, deals: [deal("MIL", "Mediolan", 201)], teasers: new Map(),
     });
-    expect(subject).toBe("Mediolan za 201 zł w ten weekend");
+    expect(subject).toBe("Mediolan: lot za 201 zł na ten weekend");
   });
 
   it("temat dla wielu okazji", () => {
@@ -160,7 +160,7 @@ describe("renderDropEmail: wersja tekstowa, preheader, dostępność", () => {
     expect(html).toContain('lang="pl"');
     expect(html).toContain('name="color-scheme" content="light dark"');
     expect(html).toContain("prefers-color-scheme:dark");
-    expect(html).toContain("<title>Mediolan za 201 zł w ten weekend</title>");
+    expect(html).toContain("<title>Mediolan: lot za 201 zł na ten weekend</title>");
   });
 
   it("ujawnia linki partnerskie tylko przy markerze", () => {
