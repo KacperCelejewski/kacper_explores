@@ -1,6 +1,6 @@
 # Atrybucja linków partnerskich: kontrola (R6, 2026-11-19)
 
-Test: `src/lib/affiliate-attribution.test.ts` (41 testów). Marker 728414; projekt z `TRAVELPAYOUTS_PROJECT_ID` (docelowo 601310, env na produkcji zmienia właściciel). Status: recenzent obalający NIE został uruchomiony (limit użycia), więc kontrola jest niezależnie niezweryfikowana.
+Test: `src/lib/affiliate-attribution.test.ts` (42 testy). Marker 728414; projekt z `TRAVELPAYOUTS_PROJECT_ID` (docelowo 601310, env na produkcji zmienia właściciel). Recenzja obalająca: 1 runda (sonnet, tylko odczyt); ustalenia 1 i 2 naprawione.
 
 ## Miejsca generowania linków
 
@@ -18,6 +18,7 @@ Booking i Hostelworld pozostają bez prowizji. `travelpayoutsLink` odrzuca booki
 
 ## Znalezione i naprawione
 
+- Recenzent: `buildAffiliateUrl` z `new URL` mógłby rzucić na zepsutym `deal.link` i zmieniać kodowanie zapytania; teraz operuje na tekście, bez wyjątków i bez przekodowania (test).
 - E-mail: `buildAffiliateUrl` dopisywał marker bez przycięcia (marker z końcowym `\n` dawał `marker=728414%0A`), przy pustym markerze dopisywał `marker=`, a obcy `marker` z linku API dublował nasz. Poprawka w `src/lib/drop/links.ts`; testy w pliku testowym.
 
 ## Luki (bez zmian w kodzie)
@@ -27,7 +28,8 @@ Booking i Hostelworld pozostają bez prowizji. `travelpayoutsLink` odrzuca booki
 3. Linki w e-mailu nie mają `rel` ani zgody na cookies (nie dotyczy poczty); ujawnienie jest w treści.
 4. Nic w kodzie nie waliduje, że env ma marker 728414 i projekt 601310: przy braku którejkolwiek wartości linki cicho stają się bezpośrednie (web). `drop-send` ostrzega tylko o braku markera.
 5. `affiliate_click` ma `paid=true` także gdy link prowadzi do tp.media, ale to tylko kliknięcie: prowizję potwierdza wyłącznie panel Travelpayouts (Reports → Performance, do 24 h).
-6. Nie sprawdzono w praktyce: klikania w dev serwerze, panelu Travelpayouts, produkcji.
+6. Linki zewnętrzne w blogu dostają `noopener noreferrer` bez `sponsored`; dziś nie ma tam linków do partnerów, ale dodanie takiego linku nie da oznaczenia.
+7. Nie sprawdzono w praktyce: klikania w dev serwerze, panelu Travelpayouts, produkcji.
 
 ## Wymagania produkcji
 

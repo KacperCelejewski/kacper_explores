@@ -369,4 +369,11 @@ describe("e-mail zrzutu (buildAffiliateUrl / renderDropEmail)", () => {
     expect(url.searchParams.getAll("marker")).toEqual([MARKER]);
     expect(url.searchParams.get("t")).toBe("abc");
   });
+  it("zepsuty link z API nie rzuca wyjątkiem, a kodowanie istniejącego zapytania zostaje bez zmian", () => {
+    expect(() => buildAffiliateUrl({ ...deal, link: "http://x y" }, MARKER, deal.week)).not.toThrow();
+    const u = buildAffiliateUrl({ ...deal, link: "/search/WRO0412BCN06121?t=a%20b,c~!()&marker=OLD&TRS=1#f" }, MARKER, deal.week);
+    expect(u).toContain("?t=a%20b,c~!()&marker=728414&utm_source=drop");
+    expect(u).not.toMatch(/OLD|TRS=1/);
+    expect(u.endsWith("#f")).toBe(true);
+  });
 });
