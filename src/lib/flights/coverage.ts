@@ -1,5 +1,5 @@
 import { POLISH_AIRPORTS } from "@/lib/airports";
-import { upcomingDeals } from "@/lib/drop/read";
+import { pickLatestWeek, upcomingDeals } from "@/lib/drop/read";
 import { isFreshDeal } from "@/lib/priceTrust";
 import { cityFromDealName, weekendCities } from "@/lib/seo/cities";
 import type { DropDeal } from "@/lib/drop/types";
@@ -61,7 +61,8 @@ export interface DealsCoverage {
 
 /** Deal cards (okazje, city pages): coverage and freshness from the supplied drop_deals rows. */
 export function dealsCoverage(deals: DropDeal[], now: number): DealsCoverage {
-  const upcoming = upcomingDeals(deals, new Date(now));
+  // jak na produkcji: najnowszy tydzień, potem tylko nieodlecione
+  const upcoming = upcomingDeals(pickLatestWeek(deals), new Date(now));
   const fresh = upcoming.filter((d) => isFreshDeal(d, now));
   const freshOrigins = new Set(fresh.map((d) => d.origin));
   const freshCities = new Set(fresh.map((d) => cityFromDealName(d.city_name)?.city).filter(Boolean));

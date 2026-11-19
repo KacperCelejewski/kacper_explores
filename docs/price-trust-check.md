@@ -41,6 +41,10 @@ Testy: `src/lib/priceTrust.test.ts` (świeżość, nota, kopia budżetu, porówn
 - Pełnego budżetu z ceną noclegu nie ma i nie obiecujemy (osobny zakres).
 - Nie sprawdzono renderu w przeglądarce (patrz sekcja recenzji).
 
+- Data przy cenach okazji to data **pobrania przez nas** (`fetched_at` crona), nie data oferty u dostawcy (Travelpayouts oddaje dane z własnego cache). Copy mówi "pobrane przez nas"; wiek samej oferty jest nieznany.
+- Stare plany (sprzed 2026-11-12) mogą w kafelku "Loty" mieć liczbę, a pod sumą etykietę "bez lotów": ekran sam sobie przeczy. Brak pola z wersją promptu, nie da się odróżnić.
+- Notka pod sumą planu w widoku udostępnionym nie odwołuje się do quizu (odbiorca linku go nie robił).
+
 ## 4. Recenzja obalająca (niezależny proces `claude -p --model sonnet --permission-mode plan`)
 
 **Runda 1** (testy 1078 zielone; renderu stron recenzent nie sprawdzał). Ustalenia i decyzje:
@@ -59,3 +63,14 @@ Testy: `src/lib/priceTrust.test.ts` (świeżość, nota, kopia budżetu, porówn
 | 10 | drobna | raport niedokończony | uzupełniony |
 
 **Nie dało się zweryfikować:** render stron i komponentów w przeglądarce (brak testów komponentów, dev server nie uruchamiany w recenzji); pokrycie na danych produkcyjnych; zachowanie planów sprzed 2026-11-12.
+
+**Runda 2** (testy 1079 zielone, tsc czysty, merge z `origin/main` bez konfliktów). Naprawy z rundy 1 potwierdzone. Nowe ustalenia:
+
+| # | Waga | Ustalenie | Decyzja |
+|---|---|---|---|
+| 1 | średnia | "z wyszukiwań z <data>" sugeruje datę oferty, a to `fetched_at` crona | naprawione: "pobrane przez nas <data>"; luka w sekcji 3 |
+| 2 | średnia | `dealsCoverage` bez `pickLatestWeek` (starsze tygodnie zawyżały liczniki), niezgodnie z produkcją | naprawione + test z dwoma tygodniami |
+| 3 | drobna | notka planu odwołuje się do quizu także w widoku udostępnionym | naprawione: `PLAN_TOTAL_NOTE_SHARED` |
+| 4 | drobna | stare plany: kafelek "Loty" z liczbą pod etykietą "bez lotów" | luka w sekcji 3 (nie do odróżnienia bez wersji promptu) |
+| 5 | drobna | hub `/okazje`: nota z najtańszych okazji, nie ze wszystkich | zostaje (mały wpływ) |
+| 6 | drobna | wcięcie `<p>` | zostaje (kosmetyka) |

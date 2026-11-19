@@ -34,14 +34,15 @@ export function dealsPriceNote(deals: FetchedDeal[], now: number = Date.now()): 
   const oldest = Math.min(...(times as number[]));
   const date = dateFmt.format(oldest);
   if (now - oldest > FRESH_DEAL_MAX_AGE_DAYS * DAY_MS) {
-    return `Ceny z wyszukiwań z ${date}, czyli sprzed ponad tygodnia, więc traktuj je jako orientacyjne. Przed zakupem sprawdź aktualną.`;
+    return `Ceny pobraliśmy ${date}, czyli ponad tydzień temu, więc traktuj je jako orientacyjne. Przed zakupem sprawdź aktualną.`;
   }
-  return `Ceny orientacyjne, z wyszukiwań z ${date}, nie z rezerwacji na żywo. Przed zakupem sprawdź aktualną.`;
+  return `Ceny orientacyjne, pobrane przez nas ${date} z wyszukiwań, nie z rezerwacji na żywo. Przed zakupem sprawdź aktualną.`;
 }
 
 // ── Budżet planu: szacunek bez lotów ──────────────────────────────────────────
 
 export const PLAN_TOTAL_LABEL = "Szacunek na miejscu, bez lotów";
+export const PLAN_TOTAL_NOTE_SHARED = "Lotu tu nie wliczamy: jego cenę trzeba sprawdzić w wyszukiwarce i doliczyć do kosztów wyjazdu.";
 export const PLAN_TOTAL_NOTE = "Lotu tu nie wliczamy: jego cenę trzeba sprawdzić w wyszukiwarce i doliczyć do budżetu z quizu.";
 
 /** Upper end of a budget text ("1 200–1 500 PLN" -> 1500); 0 when there is no number. */

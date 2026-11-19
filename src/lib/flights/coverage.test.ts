@@ -70,6 +70,14 @@ describe("dealsCoverage (fixtures, no network)", () => {
     expect(c.cities.ratio).toBeGreaterThan(0);
     expect(c.cities.ratio!).toBeLessThan(0.2);
   });
+  it("counts only the latest week, as the pages do (older weeks do not inflate the counts)", () => {
+    const c = dealsCoverage([
+      deal({ week: "2026-W47" }),
+      deal({ week: "2026-W46", origin: "KRK", city_name: "Rzym", city_code: "ROM" }),
+    ], dealNow);
+    expect(c.rows).toMatchObject({ eligible: 1, priced: 1 });
+    expect(c.originsWithoutDeals).toContain("KRK");
+  });
   it("no rows means 0 fresh and null row ratio", () => {
     const c = dealsCoverage([], dealNow);
     expect(c.rows.ratio).toBeNull();

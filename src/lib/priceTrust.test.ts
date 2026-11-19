@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import {
-  FRESH_DEAL_MAX_AGE_DAYS, PLAN_TOTAL_LABEL, PLAN_TOTAL_NOTE, budgetComparison, dealsPriceNote, isFreshDeal, plannedUpperBound,
+  FRESH_DEAL_MAX_AGE_DAYS, PLAN_TOTAL_LABEL, PLAN_TOTAL_NOTE, PLAN_TOTAL_NOTE_SHARED, budgetComparison, dealsPriceNote, isFreshDeal, plannedUpperBound,
 } from "./priceTrust";
 import { FORBIDDEN_COPY } from "./homeCopy";
 
@@ -29,6 +29,7 @@ describe("dealsPriceNote", () => {
   it("dates the prices and marks them as orientation", () => {
     const note = dealsPriceNote([{ price: 300, fetched_at: daysAgo(2) }], now)!;
     expect(note).toContain("17 listopada");
+    expect(note).toMatch(/pobrane przez nas/); // data pobrania, nie data oferty
     expect(note).toMatch(/orientacyjne/);
     expect(note).toMatch(/nie z rezerwacji na żywo/);
   });
@@ -37,7 +38,7 @@ describe("dealsPriceNote", () => {
     expect(note).toContain("14 listopada");
   });
   it("warns when older than a week", () => {
-    expect(dealsPriceNote([{ price: 1, fetched_at: daysAgo(12) }], now)).toMatch(/sprzed ponad tygodnia/);
+    expect(dealsPriceNote([{ price: 1, fetched_at: daysAgo(12) }], now)).toMatch(/ponad tydzień temu/);
   });
   it("does not claim a date when one is missing, broken or in the future", () => {
     for (const f of [undefined, "zepsute", daysAgo(-3)]) {
@@ -59,13 +60,14 @@ describe("plan budget copy", () => {
   it("labels the estimate as excluding flights and says flights must be added", () => {
     expect(PLAN_TOTAL_LABEL).toMatch(/bez lotów/);
     expect(PLAN_TOTAL_NOTE).toMatch(/Lotu tu nie wliczamy/);
-    expect(PLAN_TOTAL_LABEL + PLAN_TOTAL_NOTE).not.toContain("!");
+    expect(PLAN_TOTAL_LABEL + PLAN_TOTAL_NOTE + PLAN_TOTAL_NOTE_SHARED).not.toContain("!");
+    expect(PLAN_TOTAL_NOTE_SHARED).not.toMatch(/quiz/); // odbiorca linku nie robił quizu
   });
   it("plan and shared plan show the new label, not the old 'całkowity koszt'", () => {
     for (const file of ["src/app/plan/[tripId]/page.tsx", "src/app/share/[tripId]/ShareClient.tsx"]) {
       const src = readFileSync(file, "utf8");
       expect(src).toContain("PLAN_TOTAL_LABEL");
-      expect(src).toContain("PLAN_TOTAL_NOTE");
+      expect(src).toContain(file.includes("share") ? "PLAN_TOTAL_NOTE_SHARED" : "PLAN_TOTAL_NOTE");
       expect(src).not.toContain("Szacowany całkowity koszt");
       expect(src).not.toContain("koszt całkowity");
     }
