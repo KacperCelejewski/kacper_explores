@@ -3,6 +3,7 @@ import { stripe, PLANS, type PlanKey } from "@/lib/stripe";
 import { createServiceClient } from "@/lib/supabase/service";
 import type Stripe from "stripe";
 import { sendSlack } from "@/lib/slack";
+import { handleStripeRefund, isMissingPaymentColumns, stripeId } from "@/lib/stripe-refunds";
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
@@ -18,29 +19,9 @@ export async function POST(req: NextRequest) {
   }
 
   if (event.type === "charge.refunded") {
-    const charge = event.data.object;
-    // Bez rejestru zdarzeń i atomowego RPC nie odejmujemy kredytów.
-    // Dotyczy także Pro: wyłącznie ręczna decyzja właściciela (docs/refund-handling.md).
-    // Log zawiera identyfikatory do uzgodnienia w Stripe, bez danych karty/e-maila.
-    console.warn("Webhook: refund requires manual review", JSON.stringify({
-      status: "manual_review_required",
-      event_id: event.id,
-      event_created: event.created,
-      livemode: event.livemode,
-      charge_id: charge.id,
-      payment_intent_id: typeof charge.payment_intent === "string"
-        ? charge.payment_intent : charge.payment_intent?.id ?? null,
-      customer_id: typeof charge.customer === "string"
-        ? charge.customer : charge.customer?.id ?? null,
-      amount_cents: charge.amount,
-      amount_refunded_cents: charge.amount_refunded,
-      currency: charge.currency,
-      refund_scope: charge.refunded ? "full" : "partial",
-      automatic_entitlement_change: false,
-    }));
-    // 200 potwierdza odbiór do ręcznej obsługi, nie automatyczne rozliczenie zwrotu.
-    // Ponowienie może zapisać kolejny log; nie zmienia salda ani subskrypcji.
-    return NextResponse.json({ ok: true });
+    const ok = await handleStripeRefund(event);
+    return ok ? NextResponse.json({ ok: true })
+      : NextResponse.json({ error: "Refund processing failed" }, { status: 500 });
   }
 
   const supabase = createServiceClient();
@@ -67,9 +48,9 @@ export async function POST(req: NextRequest) {
 
     const plan = PLANS[planKey];
 
-    // Idempotencja: stripe_session_id jest UNIQUE, więc drugi insert tej samej sesji
-    // (ponowienie webhooka, completed + async_payment_succeeded) kończy się konfliktem.
-    const { error: insertError } = await supabase.from("payments").insert({
+    // UNIQUE sesji chroni insert; RPC idempotentnie kończy także pending grant
+    // po przerwaniu procesu między insertem a przyznaniem kredytów.
+    const payment = {
       user_id: userId,
       stripe_session_id: session.id,
       stripe_price_id: plan.priceId,
@@ -77,20 +58,38 @@ export async function POST(req: NextRequest) {
       currency: session.currency,
       credits_added: plan.credits,
       plan_type: planKey,
+    };
+    const paymentIntentId = stripeId(session.payment_intent);
+    let legacySchema = false;
+    let { error: insertError } = await supabase.from("payments").insert({
+      ...payment,
+      stripe_payment_intent_id: paymentIntentId,
+      grant_status: planKey === "pack_5" ? "pending" : null,
     });
+    if (insertError && isMissingPaymentColumns(insertError)) {
+      legacySchema = true;
+      console.warn("Webhook: refund migration missing; legacy checkout", session.id);
+      ({ error: insertError } = await supabase.from("payments").insert(payment));
+    }
+    const duplicate = insertError?.code === "23505";
     if (insertError) {
-      if (insertError.code === "23505") return NextResponse.json({ ok: true });
-      console.error("Webhook: payment insert failed", session.id, insertError.message);
-      return NextResponse.json({ error: "Payment log failed" }, { status: 500 });
+      if (duplicate && (legacySchema || planKey !== "pack_5")) return NextResponse.json({ ok: true });
+      if (!duplicate) {
+        console.error("Webhook: payment insert failed", session.id, insertError.message);
+        return NextResponse.json({ error: "Payment log failed" }, { status: 500 });
+      }
     }
 
     let grantError: { message: string } | null = null;
     if (planKey === "pack_5") {
-      const { error } = await supabase.rpc("add_credits", {
-        p_user_id: userId,
-        p_credits: plan.credits,
-      });
-      grantError = error;
+      const { data, error } = legacySchema
+        ? await supabase.rpc("add_credits", { p_user_id: userId, p_credits: plan.credits })
+        : await supabase.rpc("grant_credit_pack", {
+          p_session_id: session.id, p_payment_intent_id: paymentIntentId,
+        });
+      grantError = error ?? (!legacySchema && data !== "applied" && data !== "ignored"
+        ? { message: "Invalid pack grant result" } : null);
+      if (!error && !legacySchema && data === "ignored") return NextResponse.json({ ok: true });
     } else if (planKey === "pro_monthly" || planKey === "pro_yearly") {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + (planKey === "pro_monthly" ? 35 : 370));
@@ -108,7 +107,11 @@ export async function POST(req: NextRequest) {
     if (grantError) {
       // Cofamy wpis płatności, żeby ponowienie ze strony Stripe mogło przyznać dostęp.
       console.error("Webhook: grant failed", session.id, grantError.message);
-      await supabase.from("payments").delete().eq("stripe_session_id", session.id);
+      if (!duplicate) {
+        const rollback = supabase.from("payments").delete().eq("stripe_session_id", session.id);
+        // Nie usuwaj grantu zatwierdzonego przez RPC, jeżeli zaginęła odpowiedź HTTP.
+        await (planKey === "pack_5" && !legacySchema ? rollback.eq("grant_status", "pending") : rollback);
+      }
       return NextResponse.json({ error: "Grant failed" }, { status: 500 });
     }
 

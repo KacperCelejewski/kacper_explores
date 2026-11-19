@@ -1,104 +1,140 @@
 # Obsługa zwrotów Stripe
 
-Stan: 2026-11-16, brief `fix-compliance`. Implementacja w `src/app/api/webhook/route.ts`
-(publiczny adres `/api/webhook`), nie w ścieżce `/api/webhooks/stripe` podanej w briefie.
+Stan implementacji: 2026-11-16, brief `refund-automation`, gałąź `feat/refund-automation`.
+Kod gotowy do przeglądu; **migracja nie została zastosowana na żadnej bazie**.
+Publiczny endpoint pozostaje `/api/webhook`.
 
-## Zakres wdrożonego kodu bez migracji
+## Zachowanie webhooka i rejestru
 
-Po weryfikacji podpisu na surowym body webhook rozpoznaje `charge.refunded` i zapisuje
-ustrukturyzowany log `Webhook: refund requires manual review`, ze statusem
-`manual_review_required`. Zawiera ID zdarzenia, datę zdarzenia (Unix), tryb live/test,
-ID Charge, PaymentIntent i Customer, walutę, kwotę płatności, **łączną** kwotę zwrotów
-oraz oznaczenie pełnego/częściowego zwrotu. Nie logujemy całego payloadu, danych karty,
-e-maila ani metadanych użytkownika. Rozwinięte obiekty Stripe redukujemy do ID.
+Podpis Stripe jest sprawdzany na surowym body przed dostępem do Stripe API lub bazy.
+Brak/błędny podpis daje 400. `charge.refunded` trafia do RPC `process_credit_refund`.
 
-**Pack: automatyczne odbieranie kredytów jest odłożone do zatwierdzenia migracji.**
-**Pro: wyłącznie oznaczenie w logu do ręcznej decyzji; nie odbieramy Pro.**
-Każdy zwrot, także odnowienie Pro, częściowy i nierozpoznana płatność, trafia do tej
-samej ręcznej obsługi. Nie próbujemy wywnioskować planu z aktualnego tieru klienta
-ani z metadanych Charge (Checkout nie kopiuje tam naszych metadanych sesji).
+- **Pełny zwrot Packa z potwierdzonym grantem:** atomowe odjęcie historycznego
+  `payments.credits_added`, nigdy poniżej zera. Nie używamy aktualnej wielkości pakietu.
+- **Częściowy zwrot:** trwały `manual_review`, bez proporcji i bez zmiany salda.
+  Kolejny pełny zwrot przetwarza pełną liczbę uprawnień tylko raz.
+- **Pro miesięczne/roczne i odnowienia:** trwały `manual_review`, bez odebrania Pro
+  ani zmiany daty jego wygaśnięcia. Inne płatności fakturowe też pozostają ręczne.
+- **Nieznana płatność:** trwały `pending_payment`, wynik RPC `missing_payment`,
+  bez zgadywania użytkownika na podstawie Customer. Dostawa Checkout później
+  uruchamia uzgodnienie pending w transakcji grantu nowego Packa. Ponowna dostawa
+  tego samego pending eventu również pozwala na uzgodnienie.
+- **Historyczny/niepotwierdzony grant, niezgodna kwota/waluta/PI/sesja lub nieznany
+  produkt:** `manual_review`, bez potrącenia. Brak backfillu historycznych grantów.
+- **Powtórzony zamknięty event:** wynik `skipped` z dotychczasowym statusem i zerem
+  nowych potrąceń. Inny event tego samego Charge jest ograniczony licznikami płatności.
+- **Błąd RPC:** 500 do ponowienia przez Stripe. Transakcja cofa rejestr, saldo i
+  liczniki; nie ma osobnego REST-owego UPDATE salda. Błąd odczytu Stripe również daje 500.
 
-Odpowiedź `200 { ok: true }` potwierdza odbiór do ręcznej obsługi, **nie rozliczenie
-kredytów**. Handler nie dotyka bazy ani Stripe API i nie wysyła dodatkowych wiadomości.
-Powtórzony event może dać kolejny identyczny log; saldo i Pro pozostają bez zmian.
-Nie ma trwałej deduplikacji po `event.id`, kolejki zadań ani potwierdzenia obsługi przez
-operatora. Logi nie zastępują takiego rejestru. Nie należy ponawiać ręcznych potrąceń
-na podstawie samej liczby logów. Nie zmieniono dotychczasowej kolejności insert/grant/
-rollback dla Checkout, odnowień i anulowania subskrypcji.
+Powiązanie: PaymentIntent → Checkout Session → `payments.stripe_session_id` albo
+bezpośrednio nowe `payments.stripe_payment_intent_id`. Stripe Checkout listujemy
+z filtrem `payment_intent`, nie po Customer. Jeżeli nie ma sesji, sprawdzamy
+`invoicePayments` po tym samym PaymentIntent (odnowienia nie mają własnego wpisu
+w `payments`). Subskrypcyjny Checkout i płatności fakturowe trafiają do ręcznej obsługi.
+Metadane Charge i aktualny tier profilu nie służą do rozpoznawania produktu.
+Są to wyłącznie odczyty Stripe, bez tworzenia zwrotów i zmian ustawień.
 
-## Dlaczego nie wolno bezpiecznie odjąć kredytów w obecnym schemacie
+`payment_refund_events` zapisuje ID eventu jako PK, typ, Charge/PaymentIntent/Checkout,
+opcjonalne powiązanie płatności, Customer, live/test, czas Stripe i odbioru, walutę,
+kwotę Charge i skumulowaną kwotę zwrotu, status/przyczynę, faktycznie odjęte kredyty
+oraz pola `reviewed_at` i `review_reference` dla operatora. Nie przechowuje payloadu,
+danych karty, e-maila ani metadanych użytkownika. RLS bez polityk użytkownika i jawne
+REVOKE od anon/authenticated/PUBLIC; dostęp tabeli i EXECUTE obu RPC tylko service_role.
+Funkcje SECURITY DEFINER mają pusty `search_path` i kwalifikowane nazwy tabel.
 
-Źródła: `supabase/migrations/20260513195842_initial_schema.sql`,
-`20261111180000_close_rls_gaps.sql`, `20261112000000_monthly_free_plans.sql`
-i `src/app/api/webhook/route.ts`.
+`amount_refunded` jest **snapshotem łącznej kwoty**, nie deltą. Przechowujemy maksimum,
+a nie sumę. Opóźniony mniejszy snapshot nie cofa stanu. Pełny zwrot ustawia docelowe
+`refund_credits_processed = credits_added`; `refund_credits_debited` zapisuje tylko
+faktyczne potrącenie. Także przy saldzie 0 przetwarzamy całą deltę, aby następny zakup
+nie spłacał starego zwrotu. Miesięczne darmowe plany i pola Pro pozostają nienaruszone.
 
-- `payments` zapisuje `stripe_session_id UNIQUE`, `credits_added`, `plan_type`, kwotę
-  i użytkownika, ale nie ID zdarzenia zwrotu, Charge/PaymentIntent ani stanu zwrotów.
-- `add_credits` dodaje dowolną liczbę do salda bez ograniczenia do zera i bez rejestru
-  zdarzeń. Wywołanie go z `-5` nie zapewnia wymagań briefu.
-- `SELECT salda` → `UPDATE max(0, saldo - 5)` ściga się z generowaniem i zakupami.
-  Oddzielny zapis „obsłużone” przed/po potrąceniu pozostawia okno utraty lub powtórzenia
-  potrącenia. Stan w pamięci procesu nie chroni przed restartem ani wieloma instancjami.
-- Płatności odnowień Pro nie mają osobnych rekordów w `payments`; nie należy dopasowywać
-  starego zakupu po samym Customer. Nieznana płatność może też oznaczać opóźniony Checkout.
-- Istniejący Checkout najpierw wstawia `payments`, potem przyznaje dostęp. Awaria procesu
-  między tymi operacjami może pozostawić wpis bez grantu; samo istnienie wpisu nie jest
-  dowodem przyznania kredytów. Refundu nie wolno potrącić przed późniejszym grantem.
+RPC zwraca JSON: `outcome` (`applied`/`skipped`/`missing_payment`), `status`, `reason`,
+`credits_debited` (potrącone przez to wywołanie). Duplikat nie nadpisuje poprzedniego
+wyniku w rejestrze. Pending jest stanem przejściowym, a nie trwałym pominięciem.
 
-## Proponowany schemat — wymaga zgody właściciela, nie dodano plików migracji
+## Potwierdzenie grantu i współbieżność
 
-Minimalny bezpieczny wariant to trwały rejestr zdarzeń i jedna transakcja PostgreSQL,
-nie sekwencja zapytań REST. Nazwy poniżej są projektem, a nie istniejącymi tabelami/RPC.
+Nowa migracja: `supabase/migrations/20261116120000_refund_automation.sql`.
+Zawiera rozszerzenie `payments`, rejestr, dwa RPC i uprawnienia, w jednej transakcji.
+Nie zmienia starych migracji ani istniejących sald/grantów/powiązań Stripe.
+Nowe liczniki mają domyślne zero; historyczny `grant_status` i PaymentIntent zostają NULL.
 
-1. Rozszerzenie `payments`: `stripe_payment_intent_id TEXT UNIQUE` (nullable dla starych
-   danych i sesji bez płatności), `grant_status` (`pending`/`applied`),
-   `refunded_amount_cents INT NOT NULL DEFAULT 0`,
-   `refund_credits_processed INT NOT NULL DEFAULT 0`,
-   `refund_credits_debited INT NOT NULL DEFAULT 0`. Ograniczenia nieujemności i
-   `refund_credits_debited <= refund_credits_processed <= credits_added`.
-   Historycznych wpisów nie oznaczać jako `applied` bez uzgodnienia.
-2. Tabela `payment_refund_events`: `stripe_event_id TEXT PRIMARY KEY`, `stripe_charge_id`,
-   `stripe_payment_intent_id`, opcjonalny `payment_id`, `stripe_customer_id`, `livemode`,
-   `event_created`, `received_at`, `currency`, kwota Charge i łączna kwota zwrotów,
-   `status` (`pending_payment`/`manual_review`/`applied`/`ignored`), przyczyna, liczba
-   faktycznie odjętych kredytów, `reviewed_at` i identyfikator operatora/decyzji.
-   RLS; brak dostępu anon/authenticated; zapis/RPC tylko service_role. Brak payloadu
-   z danymi karty. Politykę retencji i zachowanie po usunięciu konta zatwierdza właściciel.
-3. RPC obsługi zwrotu: w **jednej transakcji** wstawienie event ID z deduplikacją,
-   blokada właściwej płatności i profilu `FOR UPDATE`, weryfikacja powiązania, waluty,
-   kwot i `grant_status`, aktualizacja salda i znaczników, zapis wyniku. Błąd cofa całość;
-   webhook odpowiada 5xx. Duplikat event ID zwraca zapisany wynik bez potrącenia.
-4. Samo event ID nie wystarcza: kilka eventów może dotyczyć jednego Charge, a dostawa
-   może być w odwrotnej kolejności. Przechowujemy największą potwierdzoną łączną kwotę
-   zwrotów; nigdy nie sumujemy snapshotów `amount_refunded`. Pełny zwrot Packa ustawia
-   docelową liczbę odebranych uprawnień na **historyczne `credits_added`**, nie bieżące
-   `PLANS.pack_5.credits`. Delta = cel minus `refund_credits_processed`.
-   Saldo = `greatest(0, saldo - delta)`; faktycznie odjęte = `least(saldo, delta)`.
-   Przetworzoną deltę zapisujemy również przy saldzie 0, żeby później nie zabrać
-   kredytów z nowego zakupu. Darmowy miesięczny limit i Pro pozostają nienaruszone.
-5. **Propozycja dla częściowych zwrotów: ręczna decyzja, bez automatycznej proporcji.**
-   Kredyt jest niepodzielny, a brief nie ustala zaokrągleń ani zasad po zużyciu planów.
-   Właściciel zatwierdza tę zasadę albo dokładny wzór kumulatywny przed automatyzacją.
-   Pełny zwrot po częściowym nie może odebrać więcej niż pierwotnie przyznano.
-6. Nieznany PaymentIntent zapisujemy jako `pending_payment`, bez modyfikacji profilu.
-   Powiązanie: PaymentIntent → sesja Checkout w Stripe → `payments.stripe_session_id`,
-   nie sam klient. Odnowienia Pro pozostają `manual_review`. Potrzebne ponowne
-   uzgadnianie pending po przyjściu płatności; duplikat eventu nie może utrwalić stanu
-   „nieznana” na zawsze. Nie zwracamy 200 przed trwałym zapisem.
-7. Przed włączeniem potrąceń trzeba atomowo przyznawać Pack i oznaczać grant jako
-   `applied`, z idempotencją sesji i obsługą oczekujących refundów pod tymi samymi
-   blokadami. Migracja wymaga uzgodnienia historycznych grantów oraz powiązań Stripe.
-   W tym zadaniu nie przebudowano krytycznej ścieżki Checkout.
+Zachowano kolejność Checkout **insert płatności → grant → rollback przy błędzie**.
+Nowy insert zapisuje PI i `grant_status = pending` dla Packa. Krok `add_credits`
+zastępuje `grant_credit_pack`: blokuje płatność i profil, dodaje historyczne kredyty,
+oznacza grant jako `applied` i rozlicza oczekujące refundy w tej samej transakcji.
+Grant i refund biorą tę samą transakcyjną blokadę doradczą po PI przed blokadami wierszy.
+UPDATE profilu współpracuje z istniejącym atomowym `consume_plan_credit`/`add_credits`.
 
-Nie wykorzystujemy `payments.stripe_session_id` do przechowywania `evt_*` ani sztucznych
-ujemnych płatności: zniekształciłoby to historię i statystyki przychodu.
+Duplikat insertu Packa wywołuje idempotentny grant, aby dokończyć przerwany proces
+między insertem a grantem; `applied`/historyczny NULL nie przyznaje ponownie kredytów.
+Rollback usuwa tylko nowo wstawiony Pack nadal w stanie `pending`, więc utrata odpowiedzi
+po zatwierdzonym grancie nie usuwa jego klucza idempotencji. Nie kasuje rekordu
+napotkanego jako duplikat. Pro, odnowienia i anulowanie zachowują dotychczasową kolejność.
+Znana luka przerwania procesu między insertem Pro a jego aktualizacją nie jest tutaj
+przebudowana. Brak PI (np. rabat 100%) nie przeszkadza w atomowym grancie Packa;
+bez wiarygodnego powiązania PI zwrot nie uruchomi automatycznego potrącenia.
 
-## Weryfikacja i wymagania produkcji
+Stary kod działający między migracją a wdrożeniem nadal zapisuje NULL `grant_status`.
+Nie wolno go zbiorczo oznaczyć jako `applied`: istnienie `payments` nie dowodzi grantu.
+Nie dodano migracji danych historycznych ani automatycznego backfillu Stripe.
 
-Testy `src/app/api/webhook/route.test.ts` obejmują dotychczasowy Checkout oraz pełny,
-częściowy, powtórzony, nieznany zwrot, odwróconą kolejność snapshotów, oba Pro,
-rozszerzone ID, brak wycieku e-maila i odrzucenie brakującego/błędnego podpisu.
-Potwierdzają **wariant ręczny**, nie nieistniejące automatyczne potrącenia.
+## Kolejność wdrożenia (lead)
+
+1. Przejrzeć nową migrację i zasady: częściowe zwroty i Pro są ręczne. Właściciel
+   udzielił zgody na **napisanie** migracji 2026-11-16; jej wykonanie jest osobnym krokiem leada.
+2. Zastosować migrację najpierw na odizolowanej bazie testowej, dopiero po przeglądzie.
+   Uruchomić `supabase/tests/refund_automation.sql` z `ON_ERROR_STOP=1` jako właściciel
+   testowej bazy; fixture'y są objęte rollbackiem. Nie uruchamiać fixture'ów na produkcji.
+   Sprawdzić też równoległy grant/refund/zużycie kredytu w dwóch sesjach PostgreSQL.
+3. Zastosować zatwierdzoną migrację na bazie produkcyjnej **przed kodem** i odczekać
+   odświeżenie cache schematu PostgREST (migracja wysyła `NOTIFY pgrst, 'reload schema'`).
+   Zweryfikować widoczność obu RPC dla service role i brak dostępu anon/authenticated.
+4. Wdrożyć kod. Zachować istniejące env; nie dodano zależności aplikacji ani nowych env.
+   Jeżeli klucz Stripe jest ograniczony, musi pozwalać na odczyt Checkout Sessions
+   i Invoice Payments. Nie zmieniano kluczy ani konfiguracji kont.
+5. Sprawdzić dostarczanie snapshot eventu `charge.refunded` do istniejącego
+   `/api/webhook` oraz zgodność wersji API z `src/lib/stripe.ts`. W Stripe test mode
+   wykonać nowy zakup Packa, pełny/częściowy refund i ponowienie eventu, oba Pro i
+   odnowienie. Porównać rejestr, saldo, pola Pro i darmowy miesięczny limit.
+6. Wyznaczyć operatora do `manual_review`/`pending_payment`, zapewnić retencję i
+   monitorowanie logów oraz rejestru. Właściciel ustala retencję i postępowanie po
+   usunięciu konta: FK płatności ma `ON DELETE SET NULL`; identyfikatory Stripe
+   w rejestrze pozostają. Nie dodano automatycznego czyszczenia.
+
+### Gdy kod wyjdzie przed migracją
+
+- Refund: brak **właśnie `process_credit_refund`** (`PGRST202`/`42883`) jest tolerowany:
+  200 + dotychczasowy log `Webhook: refund requires manual review`, `status: manual_review`,
+  `reason: refund_migration_missing`, bez zmiany uprawnień. **Brak trwałego rejestru
+  tego eventu**, dopóki nie powstanie funkcja. Operator musi uzgodnić te logi i po
+  migracji ponowić eventy ze Stripe; samo wdrożenie bazy ich nie odtwarza.
+- Checkout: brak nowych kolumn (`PGRST204`/`42703` tylko dla PI/grant_status) przełącza
+  insert na dawny schemat i grant przez dotychczasowe `add_credits`. Te zakupy zostają
+  historyczne/niepotwierdzone i wymagają ręcznego rozliczenia zwrotu po migracji.
+- Inne błędy (uprawnienia, timeout, brak tabeli, brak wewnętrznej funkcji SQL) nie
+  udają sukcesu: 500. Brak `grant_credit_pack` przy istniejących nowych kolumnach
+  także daje 500 i rollback pending, bez ryzykownego podwójnego grantu.
+- Samo cofnięcie kodu nie wymaga cofania addytywnej migracji; stary kod może działać
+  z nowym schematem, a nowe starego typu wpisy pozostają niepotwierdzone.
+
+## Ręczna obsługa i granice automatu
+
+Log zawiera wyłącznie identyfikatory i kwoty potrzebne do uzgodnienia Stripe.
+`manual_review` i `pending_payment` nadal logują `Webhook: refund requires manual review`.
+Operator sprawdza PI → Checkout/Invoice → produkt → faktyczny grant i zapisuje decyzję
+przez `reviewed_at`/`review_reference`. To nie jest panel obsługi ani potwierdzenie
+wykonania korekty finansowej. Nie dodano UI, kolejki, crona ani automatycznego
+ponawiania historycznych/niepotwierdzonych grantów. Nowe pending Packi uzgadnia grant;
+pozostałe pending wymagają obserwacji i ponowienia eventu po rozpoznaniu płatności.
+
+Nie wolno odejmować przez `add_credits(-N)` ani wykonywać osobnego SELECT/UPDATE salda.
+Ewentualna ręczna korekta częściowego zwrotu musi mieć własną zatwierdzoną transakcję
+z blokadą płatności/profilu oraz spójną aktualizacją liczników: sam wpis o przeglądzie
+nie zapobiega ponownemu potrąceniu przy późniejszym pełnym zwrocie. Takiego narzędzia
+nie zaimplementowano. Automatyzacja nie zmienia subskrypcji Stripe ani nie wysyła wiadomości.
+
+## Weryfikacja lokalna
 
 ```bash
 npm ci
@@ -108,28 +144,43 @@ npm run typecheck
 NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co NEXT_PUBLIC_SUPABASE_ANON_KEY=test-anon SUPABASE_SERVICE_ROLE_KEY=test-service STRIPE_SECRET_KEY=sk_test_placeholder STRIPE_WEBHOOK_SECRET=whsec_placeholder GEMINI_API_KEY=test-gemini npm run build
 ```
 
-Właściciel/lead przed wdrożeniem:
+`src/app/api/webhook/route.test.ts` sprawdza pełny/częściowy/duplikat/nieznany refund,
+Pro miesięczne/roczne i odnowienie, skumulowane kwoty w odwrotnej kolejności,
+rozszerzone ID, ochronę danych w logach, brak/błędny podpis, błędy i brak RPC,
+legacy Checkout oraz kolejność insert/grant/rollback i retry przerwanego grantu.
+To testy granicy HTTP/RPC z mockami; nie dowodzą wykonania potrącenia przez PostgreSQL.
 
-- Sprawdzić/dodać dostarczanie `charge.refunded` do **istniejącego** endpointu
-  `/api/webhook` w Stripe (snapshot, z kompatybilną wersją API). Nie zmieniano panelu.
-- Potwierdzić dostępność i retencję logów środowiska wdrożenia oraz wyznaczyć osobę,
-  która sprawdza `refund requires manual review`. Jeżeli logi nie są monitorowane,
-  sama ta zmiana nie zapewnia procesu obsługi zwrotów.
-- W Stripe test mode wykonać zwrot pełny i częściowy Packa oraz Pro i ponowić ten sam
-  event; porównać ID w logach. Oczekiwane: 200 i brak automatycznej zmiany salda/Pro.
-- Dla każdego logu uzgodnić w Stripe Charge → PaymentIntent → Checkout/Invoice → produkt
-  i użytkownika. Zarejestrować własną decyzję i event ID; przy kilku częściowych zwrotach
-  porównywać skumulowaną kwotę, nie sumować logów. Dla Packa dopiero po potwierdzeniu
-  faktycznego grantu ustalić korektę; dla Pro zdecydować osobno o dostępie/subskrypcji.
-  Nie odejmować kredytów przez obecne `add_credits(-N)`; korekta musi respektować saldo
-  0 i równoległe operacje. Bez zgody na bezpieczną transakcję/migrację nie ma automatu.
-- Zatwierdzić powyższy schemat, zasady częściowych zwrotów i osobne wdrożenie atomowego
-  grantu/refundu, jeśli wymagane jest automatyczne odbieranie kredytów.
+`supabase/tests/refund_automation.sql` sprawdza rzeczywiste salda, historyczną wielkość
+Packa, minimum 0, idempotencję eventu i płatności, częściowe snapshoty, refund przed
+Checkout/grantem, brak ponownego grantu historycznego, Pro, mismatch i uprawnienia,
+rollback po wymuszonym błędzie zapisu rejestru oraz rollback grantu z pending refundem.
+**Nie uruchomiono tych testów ani migracji na bazie**, zgodnie z briefem.
+Parser PostgreSQL (pglast, wyłącznie tymczasowo poza repo) sprawdził składnię SQL
+oraz PL/pgSQL obu plików, bez wykonywania SQL i bez zależności w package.json.
+Nie wykonano prawdziwych zwrotów ani zmian na produkcji/Stripe.
 
-Bez nowych env, migracji Supabase i zmian `features.ts`. Nie przeprowadzono rzeczywistych
-zwrotów, operacji na produkcji ani zmian ustawień kont.
+Wyniki z 2026-11-16: `npm ci` OK (lockfile bez zmian), `npm test` **1066/1066**
+w 96 plikach (38 testów webhooka), lint **0 błędów / 27 istniejących ostrzeżeń**,
+typecheck OK, build z atrapami env OK (119 stron). Build loguje oczekiwane błędy
+odczytu `drop_deals` z fikcyjnego Supabase i ostrzeżenie o istniejącym Edge Runtime.
+`npm ci` zgłasza 8 moderate vulnerabilities; zależności nie były częścią tego briefu.
 
-## Baner cookies — drugi krok briefu
+## Przekazanie zmian leadowi
+
+Commit/push nie zostały wykonane: sandbox odmówił utworzenia
+`/Users/kacpercelejewski/Documents/Code/travel apka/wloczykij-app/.git/worktrees/wloczykij-app-refunds/index.lock`
+(`Operation not permitted`). Zgodnie z briefem pozostawiono niezacommitowane zmiany
+na `feat/refund-automation`. Bez PR, merge, force push i operacji na bazie.
+Planowany commit: `feat(stripe): automate full pack refunds with an atomic ledger`.
+Do commitu należą wyłącznie `docs/refund-handling.md`, `src/app/api/webhook/route.ts`,
+`src/app/api/webhook/route.test.ts`, `src/lib/stripe-refunds.ts`,
+`supabase/migrations/20261116120000_refund_automation.sql` oraz
+`supabase/tests/refund_automation.sql`. Po commicie lead może wykonać
+`git push -u origin feat/refund-automation` bez force; migrację wdraża osobno,
+w kolejności opisanej powyżej.
+
+## Baner cookies — poprzedni brief (bez zmian w tym zadaniu)
+
 
 Obie opcje mają ten sam obiekt stylu (szerokość, grubość i kolor obramowania, tło,
 kolor tekstu, wagę i rozmiar pisma, min. 44 px wysokości), kolejność DOM jest zgodna
@@ -145,30 +196,3 @@ oraz po „Tylko niezbędne” w Network brak GA i brak markerów w linkach part
 Po akceptacji GA i markery są aktywne; „Zmień zgodę na cookies” wycofuje akceptację.
 Powtórzyć z dwiema kartami. W testach sieci używać istniejącego `NEXT_PUBLIC_GA_ID`.
 Cookies zapisanych przed cofnięciem zgody ta zmiana nie usuwa.
-
-## Dokumentacja dostawcy
-
-Sprawdzone 2026-11-16: [typy zdarzeń Stripe](https://docs.stripe.com/api/events/types)
-(`charge.refunded` obejmuje też częściowe zwroty),
-[obiekt Charge](https://docs.stripe.com/api/charges/object) (`amount_refunded`),
-[webhooki Stripe](https://docs.stripe.com/webhooks) (podpis, ponowienia, deduplikacja,
-brak gwarancji kolejności).
-
-## Wynik lokalnej weryfikacji (2026-11-16)
-
-- `npm ci`: zakończone powodzeniem, bez zmiany lockfile.
-- Pełne `npm test`: 998 testów w 96 plikach; `npm run typecheck`: powodzenie;
-  `npm run lint`: 0 błędów, 27 ostrzeżeń; build z atrapami env: powodzenie.
-- Na lokalnym serwerze produkcyjnym sprawdzono HTTP `/api/webhook` z podpisami HMAC
-  akceptowanymi przez prawdziwe `stripe.webhooks.constructEvent`: zwrot pełny,
-  częściowy, powtórzony i nieznany → 200 + log do obsługi ręcznej; błędny i brakujący
-  podpis → 400. Bez połączeń do Stripe/Supabase i bez rzeczywistych zwrotów.
-- Testu wizualnego/klawiaturowego nie wykonano: host przeglądarki był niedostępny,
-  a narzędzie Computer Use nie miało zgody na dostęp do Chrome. Pozostaje checklista
-  podglądu powyżej. Równość stylów i zachowanie zgód sprawdzono testami komponentów.
-- Commit/push zablokowane przez sandbox: `git add` nie może utworzyć
-  `.git/worktrees/wloczykij-app-compliance/index.lock` (`Operation not permitted`).
-  Zgodnie z briefem pozostawiono niezacommitowane zmiany na
-  `fix/compliance-refunds-cookies`; bez PR i merge. Planowane dwa commity:
-  `fix(cookies): give consent choices equal prominence and gate GA4` oraz
-  `fix(stripe): flag refunds for manual review pending an atomic ledger`.
