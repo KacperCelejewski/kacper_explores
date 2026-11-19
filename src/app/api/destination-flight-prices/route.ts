@@ -6,6 +6,8 @@ import { getClientIp, validateDestination, validateQuizAnswers } from "@/lib/val
 import { readCachedFlightPairs } from "@/lib/flights/rapidapi";
 import { cachedForPairs, cardSearchPairs } from "@/lib/flights/card-pairs";
 import { selectCardFlightPrice } from "@/lib/flights/card-price";
+import { catalogCityFor, selectCardDeal, type CardPrice } from "@/lib/flights/card-deals";
+import { getDealsForCards } from "@/lib/drop/read";
 import type { Companion, DestinationRecommendation, QuizAnswers } from "@/types";
 
 const headers = { "Cache-Control": "no-store" };
@@ -37,6 +39,14 @@ export async function POST(req: NextRequest) {
   const passengers = toFlightPassengers(groupFromCompanion(quiz.companion ?? null, quiz.group));
   const searches = cardSearchPairs(destinations, quiz);
   const cached = await readCachedFlightPairs(searches.flat(), passengers);
-  const prices = searches.map((pairs) => selectCardFlightPrice(cachedForPairs(cached, pairs), passengers));
+  const cachePrices = searches.map((pairs) => selectCardFlightPrice(cachedForPairs(cached, pairs), passengers));
+  // Fallback only where the cache has nothing: the weekly Travelpayouts deal (nearest weekend, 1 adult).
+  const missing = destinations.flatMap((dest, i) => {
+    const city = cachePrices[i] ? null : catalogCityFor(dest);
+    return city ? [city] : [];
+  });
+  const deals = missing.length ? await getDealsForCards(missing, quiz.airports ?? []) : [];
+  const prices: (CardPrice | null)[] = cachePrices.map((price, i) =>
+    price ?? selectCardDeal(destinations[i], { airports: quiz.airports, month: quiz.month, duration: quiz.duration }, deals));
   return NextResponse.json({ prices }, { headers });
 }
