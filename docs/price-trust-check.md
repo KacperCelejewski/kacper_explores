@@ -41,6 +41,21 @@ Testy: `src/lib/priceTrust.test.ts` (świeżość, nota, kopia budżetu, porówn
 - Pełnego budżetu z ceną noclegu nie ma i nie obiecujemy (osobny zakres).
 - Nie sprawdzono renderu w przeglądarce (patrz sekcja recenzji).
 
-## 4. Recenzja obalająca
+## 4. Recenzja obalająca (niezależny proces `claude -p --model sonnet --permission-mode plan`)
 
-(uzupełnić po przeglądzie)
+**Runda 1** (testy 1078 zielone; renderu stron recenzent nie sprawdzał). Ustalenia i decyzje:
+
+| # | Waga | Ustalenie | Decyzja |
+|---|---|---|---|
+| 1 | średnia | Plan i widok udostępniony: "koszt całkowity podajemy też razem" i "Loty…" tuż nad etykietą "bez lotów" | naprawione: "szacunek na miejscu podajemy też razem. Lot liczymy osobno"; test pilnuje braku "koszt całkowity" |
+| 2 | średnia | `DropSignup`: "W tym tygodniu z X loty od Y zł" bez daty i bez sprawdzenia świeżości | naprawione: "W ostatnich wyszukiwaniach z X loty od Y zł" |
+| 3 | średnia | `dealsPriceNote` uznawała datę z przyszłości za świeżą (niezgodnie z `isFreshDeal`) | naprawione: data z przyszłości = "bez podanej daty"; test |
+| 4 | średnia | testy kopii częściowo jako grep po źródłach, brak testów renderu | **nie naprawione**: repo uruchamia vitest tylko w `node` na `*.test.ts`, bez testów komponentów; logika jest w czystych helperach z testami zachowania, wpięcie sprawdzają kontrole źródeł |
+| 5 | drobna | `budgetComparison` przy nieodczytanym szacunku dawało "powyżej budżetu" | naprawione + test |
+| 6 | drobna | suma z górnym końcem zakresu, kategorie z dolnym | naprawione: kategorie też z górnym końcem |
+| 7 | drobna | pojedyncze karty okazji bez daty (data zbiorcza przy liście) | **zostaje**: oznaczenie orientacyjne i data są na poziomie listy, tuż nad kartami |
+| 8 | drobna | 2. os. l. poj. ("sprawdzisz", "potwierdź") | naprawione w nowych tekstach (`PLAN_TOTAL_NOTE`, `FlightCard`); istniejące "sprawdź aktualną cenę" w całym serwisie bez zmian |
+| 9 | drobna | ISR 1 h opóźnia ostrzeżenie o starych cenach | zostaje, pomijalne |
+| 10 | drobna | raport niedokończony | uzupełniony |
+
+**Nie dało się zweryfikować:** render stron i komponentów w przeglądarce (brak testów komponentów, dev server nie uruchamiany w recenzji); pokrycie na danych produkcyjnych; zachowanie planów sprzed 2026-11-12.

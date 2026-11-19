@@ -428,7 +428,7 @@ export default function PlanPage() {
               {crew.title}: {crew.detail}
               {groupBudget && (
                 <span className="block text-xs font-normal mt-0.5" style={{ color: "var(--text-muted)" }}>
-                  Loty, nocleg, jedzenie i atrakcje poniżej są {CREW_COPY.perPerson}; koszt całkowity podajemy też {CREW_COPY.total}.
+                  Nocleg, jedzenie i atrakcje poniżej są {CREW_COPY.perPerson}; szacunek na miejscu podajemy też {CREW_COPY.total}. Lot liczymy osobno.
                 </span>
               )}
             </p>

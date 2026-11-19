@@ -27,7 +27,8 @@ const dateFmt = new Intl.DateTimeFormat("pl-PL", { timeZone: "Europe/Warsaw", da
 export function dealsPriceNote(deals: FetchedDeal[], now: number = Date.now()): string | null {
   if (deals.length === 0) return null;
   const times = deals.map(fetchedTime);
-  if (times.some((t) => t === null)) {
+  // brak daty, błędna data albo data z przyszłości (zepsuty zegar, zły wiersz): nie udajemy świeżości
+  if (times.some((t) => t === null || t > now)) {
     return "Ceny orientacyjne, z wyszukiwań bez podanej daty, nie z rezerwacji na żywo. Przed zakupem sprawdź aktualną.";
   }
   const oldest = Math.min(...(times as number[]));
@@ -41,7 +42,7 @@ export function dealsPriceNote(deals: FetchedDeal[], now: number = Date.now()): 
 // ── Budżet planu: szacunek bez lotów ──────────────────────────────────────────
 
 export const PLAN_TOTAL_LABEL = "Szacunek na miejscu, bez lotów";
-export const PLAN_TOTAL_NOTE = "Lotu tu nie wliczamy: cenę sprawdzisz w wyszukiwarce i trzeba ją doliczyć do budżetu z quizu.";
+export const PLAN_TOTAL_NOTE = "Lotu tu nie wliczamy: jego cenę trzeba sprawdzić w wyszukiwarce i doliczyć do budżetu z quizu.";
 
 /** Upper end of a budget text ("1 200–1 500 PLN" -> 1500); 0 when there is no number. */
 export function plannedUpperBound(text: string): number {
@@ -57,5 +58,6 @@ export function budgetComparison(expenses: Record<string, number>, plannedTotalT
   const totalSpent = Object.values(expenses).reduce((a, b) => a + b, 0);
   const comparable = totalSpent - (expenses.flights ?? 0);
   const planned = plannedUpperBound(plannedTotalText);
-  return { totalSpent, comparable, planned, diff: comparable - planned, overBudget: comparable > planned };
+  // Bez odczytanego szacunku (planned = 0) nie ma z czym porównywać, więc nie ma też "powyżej budżetu"
+  return { totalSpent, comparable, planned, diff: comparable - planned, overBudget: planned > 0 && comparable > planned };
 }

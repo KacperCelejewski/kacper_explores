@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { budgetComparison } from "@/lib/priceTrust";
+import { budgetComparison, plannedUpperBound } from "@/lib/priceTrust";
 import { IconPlane, IconBed, IconFork, IconBus, IconTicket, IconTag, IconCoin, IconAlert, IconCheck } from "./Icons";
 
 interface Props {
@@ -26,12 +26,6 @@ const CATEGORIES = [
 ] as const;
 
 type CategoryKey = typeof CATEGORIES[number]["key"];
-
-function parsePln(str: string): number {
-  const match = str.match(/[\d\s]+/);
-  if (!match) return 0;
-  return parseInt(match[0].replace(/\s/g, ""), 10) || 0;
-}
 
 export default function BudgetTracker({ tripId, plannedBreakdown, plannedTotal }: Props) {
   const [open, setOpen] = useState(false);
@@ -113,10 +107,10 @@ export default function BudgetTracker({ tripId, plannedBreakdown, plannedTotal }
               {/* Categories */}
               <div className="flex flex-col gap-3">
                 {CATEGORIES.map(({ key, label, Icon }) => {
-                  const planned = key === "flights" ? parsePln(plannedBreakdown.flights)
-                    : key === "accommodation" ? parsePln(plannedBreakdown.accommodation)
-                    : key === "food" ? parsePln(plannedBreakdown.food)
-                    : key === "attractions" ? parsePln(plannedBreakdown.attractions)
+                  const planned = key === "flights" ? plannedUpperBound(plannedBreakdown.flights)
+                    : key === "accommodation" ? plannedUpperBound(plannedBreakdown.accommodation)
+                    : key === "food" ? plannedUpperBound(plannedBreakdown.food)
+                    : key === "attractions" ? plannedUpperBound(plannedBreakdown.attractions)
                     : null;
 
                   return (

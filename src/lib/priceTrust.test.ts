@@ -39,8 +39,8 @@ describe("dealsPriceNote", () => {
   it("warns when older than a week", () => {
     expect(dealsPriceNote([{ price: 1, fetched_at: daysAgo(12) }], now)).toMatch(/sprzed ponad tygodnia/);
   });
-  it("does not claim a date when one is missing or broken", () => {
-    for (const f of [undefined, "zepsute"]) {
+  it("does not claim a date when one is missing, broken or in the future", () => {
+    for (const f of [undefined, "zepsute", daysAgo(-3)]) {
       const note = dealsPriceNote([{ price: 1, fetched_at: f }], now)!;
       expect(note).toMatch(/bez podanej daty/);
       expect(note).not.toMatch(/listopada/);
@@ -67,6 +67,7 @@ describe("plan budget copy", () => {
       expect(src).toContain("PLAN_TOTAL_LABEL");
       expect(src).toContain("PLAN_TOTAL_NOTE");
       expect(src).not.toContain("Szacowany całkowity koszt");
+      expect(src).not.toContain("koszt całkowity");
     }
   });
   it("FlightCard no longer claims 'z ostatnich wyszukiwań' without a date", () => {
@@ -95,6 +96,11 @@ describe("plannedUpperBound / budgetComparison", () => {
     expect(r.comparable).toBe(400);
     expect(r.overBudget).toBe(false);
     expect(r.diff).toBe(400 - 1500);
+  });
+  it("no readable estimate means nothing to compare, not 'over budget'", () => {
+    const r = budgetComparison({ food: 100 }, "brak");
+    expect(r.planned).toBe(0);
+    expect(r.overBudget).toBe(false);
   });
   it("still flags real overspend on the ground", () => {
     expect(budgetComparison({ food: 1600 }, "1200–1500 PLN").overBudget).toBe(true);

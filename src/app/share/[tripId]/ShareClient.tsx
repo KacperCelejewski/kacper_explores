@@ -149,7 +149,7 @@ export default function ShareClient() {
             <p className="mt-3 text-sm font-bold" style={{ color: "var(--accent)" }}>
               {CREW_COPY.shareCrewTitle}: {crew.detail}
               <span className="block text-xs font-normal mt-0.5" style={{ color: "var(--text-muted)" }}>
-                Kwoty poniżej są {CREW_COPY.perPerson}; koszt całkowity jest też podany {CREW_COPY.total}.
+                Kwoty poniżej są {CREW_COPY.perPerson}; szacunek na miejscu jest też podany {CREW_COPY.total}. Lot liczymy osobno.
               </span>
             </p>
           )}
