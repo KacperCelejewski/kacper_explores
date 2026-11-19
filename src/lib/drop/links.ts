@@ -13,9 +13,20 @@ function utm(deal: DropDeal, week: WeekKey, medium: string): string {
 }
 
 export function buildAffiliateUrl(deal: DropDeal, marker: string, week: WeekKey, medium = "email"): string {
-  const base = deal.link.startsWith("http") ? deal.link : `${AVIASALES}${deal.link}`;
-  const sep = base.includes("?") ? "&" : "?";
-  return `${base}${sep}marker=${encodeURIComponent(marker)}&${utm(deal, week, medium)}`;
+  const full = deal.link.startsWith("http") ? deal.link : `${AVIASALES}${deal.link}`;
+  // Operacje na tekście (bez new URL): zepsuty link z API nie wywala całej partii maili, a kodowanie zapytania zostaje bez zmian.
+  const hashAt = full.indexOf("#");
+  const hash = hashAt >= 0 ? full.slice(hashAt) : "";
+  const noHash = hashAt >= 0 ? full.slice(0, hashAt) : full;
+  const queryAt = noHash.indexOf("?");
+  const path = queryAt >= 0 ? noHash.slice(0, queryAt) : noHash;
+  const existing = queryAt >= 0 ? noHash.slice(queryAt + 1).split("&") : [];
+  // Obcy marker/trs z linku API nie może dublować naszego; pusty marker nie dopisuje pustego parametru.
+  const kept = existing.filter((pair) => pair !== "" && !/^(marker|trs)(=|$)/i.test(pair));
+  const clean = marker.trim();
+  if (clean) kept.push(`marker=${encodeURIComponent(clean)}`);
+  kept.push(utm(deal, week, medium));
+  return `${path}?${kept.join("&")}${hash}`;
 }
 
 export function buildPlanUrl(deal: DropDeal, appUrl: string, week: WeekKey, medium = "email"): string {
