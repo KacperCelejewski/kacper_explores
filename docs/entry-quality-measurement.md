@@ -9,7 +9,7 @@ Cel: policzyć, ile osób z konkretnego materiału (artykuł, strona okazji lub 
 
 ## Skąd bierze się wejście (kolejność)
 1. Parametry `entry_*` w adresie (powrót z logowania linkiem z e-maila, także w innej przeglądarce).
-2. Strona treści, z której kliknięto link do `/quiz` (zapamiętana przy kliknięciu na 30 min; działa dla linków w artykułach, bez zmiany treści) albo ta sama witryna jako `document.referrer`, ale tylko gdy karta została załadowana od razu na `/quiz` (po nawigacji w aplikacji referrer jest nieaktualny i jest pomijany).
+2. Strona treści, z której kliknięto link do `/quiz` (zapamiętana przy kliknięciu w tej samej karcie na 2 min, kasowana przy kliknięciu w quiz z innej strony; działa dla linków w artykułach, bez zmiany treści) albo ta sama witryna jako `document.referrer`, ale tylko gdy karta została załadowana od razu na `/quiz` (po nawigacji w aplikacji referrer jest nieaktualny i jest pomijany).
 3. `utm_*` w adresie (linki IG: `instagram` → `ig`), potem `src` (`home-*`, `ig-*`, `blog-ekipa`, `drop`).
 4. Wejście zapamiętane w sesji (1 h; także gdy ktoś wraca do quizu z `/destinations`), np. powrót do quizu z `/destinations`.
 5. `direct`.
@@ -35,6 +35,9 @@ Eksploracja GA4 → Lejek: `entry_click` (lub `page_view` ze `page_path` materia
 - Wejście rozpoznane przed zgodą na baner jest trzymane tylko w pamięci karty (nic w urządzeniu) i dopisane do zdarzeń po akceptacji; samo `quiz_entry` sprzed zgody nie wysyła się, więc dla osób akceptujących baner dopiero w quizie mianownik `quiz_entry` bywa niższy niż `quiz_complete`. Odrzucenie zgody kasuje ślady.
 - `quiz_entry` nie liczy powrotu z logowania (`afterLogin=1`); `entry_*` w adresie logowania dopisujemy tylko po zgodzie.
 - Strony treści ze slugiem spoza `a-z0-9._-` (np. stare linki z polskimi znakami) i listy (`/blog`) dają materiał równy kanałowi.
+- Zdarzenia wysłane, zanim załaduje się skrypt GA (lądowanie od razu na `/quiz`), czekają w pamięci i wychodzą po jego załadowaniu; jeśli skrypt zostanie zablokowany (np. blokada reklam), nie wyjdą.
+- Przyciski wywołujące `router.push("/quiz")` nie zapisują śladu strony treści; wtedy decyduje `utm_*`/`src` albo wejście zapamiętane w sesji.
+- W trybie deweloperskim (React StrictMode) efekt wejścia odpala się dwa razy, więc zdarzenia wejścia podwajają się; w produkcji nie.
 - Tylko zdarzenia ze zgodą. Licznik serwerowy `quiz_events` (bez zgody) jest bez zmian i nie ma materiału (bez migracji).
 - Bez wdrożenia tego kodu nie ma historii; `quiz_complete` sprzed 2026-11-15 ma stare nazwy (patrz `quizGaEventName`).
 - Wejście z IG i z maila przez przeglądarkę wbudowaną w aplikację lub inną kartę po logowaniu linkiem: przeżywa tylko przez `entry_*` w adresie powrotu, nie przez sessionStorage.

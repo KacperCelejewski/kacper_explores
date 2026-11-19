@@ -15,9 +15,23 @@ declare global {
   }
 }
 
+// Zdarzenia z chwili, gdy skrypt GA jeszcze się nie załadował (np. lądowanie od razu na /quiz po wcześniejszej zgodzie),
+// czekają w pamięci do gotowości gtag. Zgodę sprawdzamy ponownie przy wysyłce.
+const pending: Array<[string, Params]> = [];
+const MAX_PENDING = 30;
+
 export function trackEvent(name: string, params: Params = {}) {
-  if (typeof window === "undefined" || !GA_ID || loadConsent() !== "accepted" || !window.gtag) return;
+  if (typeof window === "undefined" || !GA_ID || loadConsent() !== "accepted") return;
+  if (!window.gtag) {
+    if (pending.length < MAX_PENDING) pending.push([name, params]);
+    return;
+  }
   window.gtag("event", name, params);
+}
+
+export function flushPendingEvents() {
+  const queued = pending.splice(0);
+  for (const [name, params] of queued) trackEvent(name, params);
 }
 
 // Nazwa zdarzenia quizu w GA4. Kroki dostają prefiks quiz_, ale quiz_complete i from_* zostają bez zmian.

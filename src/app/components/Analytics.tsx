@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Script from "next/script";
-import { GA_ID, trackEvent, setAnalyticsConsent } from "@/lib/analytics";
+import { GA_ID, trackEvent, flushPendingEvents, setAnalyticsConsent } from "@/lib/analytics";
 import { contentRefFromPath, entryEventParams, entryStorage, rememberContentRef, clearEntryTraces } from "@/lib/entryAttribution";
 import { affiliateClickParams, affiliateServerEvent } from "@/lib/affiliate";
 
@@ -59,7 +59,9 @@ export default function Analytics() {
       const toQuiz = e.target instanceof Element ? e.target.closest<HTMLAnchorElement>("a[href]") : null;
       if (toQuiz && toQuiz.origin === window.location.origin && toQuiz.pathname === "/quiz") {
         const ref = contentRefFromPath(window.location.pathname);
-        rememberContentRef(entryStorage(), ref);
+        // Nowa karta albo klawisz modyfikujący: ta karta zostaje na artykule, więc nie zostawiamy w niej śladu.
+        const sameTab = toQuiz.target !== "_blank" && e.button === 0 && !(e.ctrlKey || e.metaKey || e.shiftKey || e.altKey);
+        rememberContentRef(entryStorage(), sameTab ? ref : null);
         if (ref) trackEvent("entry_click", { ...entryEventParams(ref), target: "quiz" });
       }
       const aff = link ? affiliateClickParams(link.dataset) : null;
@@ -113,6 +115,7 @@ gtag('js',new Date());gtag('config','${GA_ID}',{send_page_view:false});}`}
         src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
         strategy="afterInteractive"
         onReady={() => {
+          flushPendingEvents();
           trackEvent("page_view", {
             page_path: window.location.pathname,
             page_location: window.location.href,

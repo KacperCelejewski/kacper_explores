@@ -116,7 +116,7 @@ export type EntryStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 const ENTRY_KEY = "wl_entry";
 const REF_KEY = "wl_entry_ref";
 const ENTRY_TTL_MS = 60 * 60 * 1000;
-const REF_TTL_MS = 30 * 60 * 1000;
+const REF_TTL_MS = 2 * 60 * 1000;
 
 function read(storage: EntryStorage | null, key: string, ttl: number, now: number): EntryAttribution | null {
   try {

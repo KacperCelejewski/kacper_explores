@@ -48,3 +48,31 @@ describe("analytics consent", () => {
     expect(gtag).not.toHaveBeenCalled();
   });
 });
+
+describe("zdarzenia przed załadowaniem gtag", () => {
+  it("czekają w kolejce i wychodzą po gotowości, a po cofnięciu zgody nie", async () => {
+    const { trackEvent, flushPendingEvents } = await analytics("accepted");
+    const gtag = vi.fn();
+    vi.stubGlobal("window", {});
+    trackEvent("quiz_entry", { entry_channel: "ig" });
+    expect(gtag).not.toHaveBeenCalled();
+    vi.stubGlobal("window", { gtag });
+    flushPendingEvents();
+    expect(gtag).toHaveBeenCalledExactlyOnceWith("event", "quiz_entry", { entry_channel: "ig" });
+    vi.stubGlobal("window", {});
+    trackEvent("quiz_complete");
+    vi.stubGlobal("localStorage", { getItem: () => "rejected" });
+    vi.stubGlobal("window", { gtag });
+    flushPendingEvents();
+    expect(gtag).toHaveBeenCalledTimes(1);
+  });
+  it("bez zgody nic nie trafia do kolejki", async () => {
+    const { trackEvent, flushPendingEvents } = await analytics("rejected");
+    vi.stubGlobal("window", {});
+    trackEvent("quiz_entry");
+    const gtag = vi.fn();
+    vi.stubGlobal("window", { gtag });
+    flushPendingEvents();
+    expect(gtag).not.toHaveBeenCalled();
+  });
+});
