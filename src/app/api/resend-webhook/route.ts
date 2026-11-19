@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createServiceClient } from "@/lib/supabase/service";
 import { disableReasonFor } from "@/lib/drop/signup";
+import { logDropEvents, mapResendEvent } from "@/lib/drop/events";
 
 export const maxDuration = 60;
 
@@ -31,6 +32,28 @@ export async function POST(req: NextRequest) {
     });
   } catch {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+  }
+
+  // Dziennik zrzutu: tylko maile z drop_sends (potwierdzenia zapisu itp. pomijamy); błąd nie blokuje reszty.
+  const mapped = mapResendEvent(event, id);
+  if (mapped) {
+    try {
+      const db = createServiceClient();
+      const { data: send } = await db
+        .from("drop_sends")
+        .select("week, subscriber_id")
+        .eq("resend_id", mapped.resend_id)
+        .maybeSingle();
+      // Brak wiersza: webhook mógł wyprzedzić zapis resend_id albo to mail spoza zrzutu. Zapisujemy
+      // samo zdarzenie z resend_id (bez danych osobowych), dopasowanie robi się później po resend_id.
+      await logDropEvents(db, [
+        send
+          ? { ...mapped, week: send.week as string, subscriber_id: send.subscriber_id as string }
+          : { ...mapped, detail: { ...mapped.detail, unmatched: true } },
+      ]);
+    } catch (err) {
+      console.error("[resend-webhook] dziennik zdarzeń", err);
+    }
   }
 
   const reason = disableReasonFor(event);

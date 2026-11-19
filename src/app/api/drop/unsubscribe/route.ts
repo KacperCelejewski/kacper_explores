@@ -4,6 +4,7 @@ import { checkRateLimit } from "@/lib/rateLimit";
 import { getClientIp } from "@/lib/validate";
 import { buildSettingsUrl } from "@/lib/drop/links";
 import { countsTowardUnsubscribeLimit, isHardDisabled } from "@/lib/drop/signup";
+import { logDropEvents } from "@/lib/drop/events";
 
 export const maxDuration = 60;
 
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest) {
     const db = createServiceClient();
     const { data: row, error: findError } = await db
       .from("newsletter_subscribers")
-      .select("drop_disabled_reason")
+      .select("id, drop_enabled, drop_disabled_reason")
       .eq("unsubscribe_token", token)
       .maybeSingle();
     if (findError) {
@@ -67,6 +68,10 @@ export async function POST(req: NextRequest) {
       if (error) {
         console.error("[drop] unsubscribe failed:", error);
         return page("Wypis ze zrzutu", "<p>Coś poszło nie tak. Spróbuj jeszcze raz.</p>", 500);
+      }
+      // tylko realna zmiana stanu: powtórny POST (ponowienie one-click) nie liczy się drugi raz
+      if (row.drop_enabled === true) {
+        await logDropEvents(db, [{ event: "unsubscribed", subscriber_id: row.id as string }]);
       }
     }
   }

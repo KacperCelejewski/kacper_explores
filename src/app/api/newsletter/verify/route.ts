@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isHardDisabled } from "@/lib/drop/signup";
+import { logDropEvents } from "@/lib/drop/events";
 
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get("token");
@@ -39,7 +40,7 @@ export async function GET(req: NextRequest) {
   const dropReady = (data.airports?.length ?? 0) > 0 && data.max_price != null && !!data.unsubscribe_token
     && !isHardDisabled(data.drop_disabled_reason);
 
-  await supabase
+  const { error: updateError } = await supabase
     .from("newsletter_subscribers")
     .update({
       verified: true,
@@ -47,6 +48,9 @@ export async function GET(req: NextRequest) {
       ...(dropReady ? { drop_enabled: true } : {}),
     })
     .eq("id", data.id);
+  if (dropReady && !updateError) {
+    await logDropEvents(supabase, [{ event: "consent_given", subscriber_id: data.id as string, detail: { source: "verify_link" } }]);
+  }
 
   return NextResponse.redirect(`${appUrl}/?newsletter=verified&code=${data.discount_code}`);
 }

@@ -8,6 +8,7 @@ import { renderDropEmail, ORIGIN_GENITIVE } from "@/lib/drop/email";
 import { buildUnsubscribeUrl } from "@/lib/drop/links";
 import { chunk, classifyBatchError, mapBatchResult, selectRecipients } from "@/lib/drop/send";
 import { DROP_MAX_PRICES } from "@/lib/drop/signup";
+import { logDropEvents, type DropEvent } from "@/lib/drop/events";
 import type { CityTeaser, DropDeal, DropSubscriber } from "@/lib/drop/types";
 
 export const maxDuration = 60;
@@ -138,6 +139,10 @@ export async function GET(req: NextRequest) {
     if (insertError) {
       errors += batch.length;
       firstError ??= `zapis drop_sends: ${insertError.message}`;
+      await logDropEvents(db, batch.map((r) => ({
+        event: "send_failed" as const, week, subscriber_id: r.sub.id,
+        detail: { stage: "reserve", message: insertError.message },
+      })));
       continue;
     }
     const claimed = new Set((inserted ?? []).map((r: { subscriber_id: string }) => r.subscriber_id));
@@ -200,9 +205,17 @@ export async function GET(req: NextRequest) {
         // Resend mógł przyjąć partię: rezerwacje zostają, żeby rerun nie wysłał drugi raz
         errors += mine.length;
         uncertain += mine.length;
+        await logDropEvents(db, mine.map((r) => ({
+          event: "send_uncertain" as const, week, subscriber_id: r.sub.id,
+          source_id: `send_uncertain:${week}:${r.sub.id}`, detail: { message: label },
+        })));
         continue;
       }
       await releaseRows(db, week, ids);
+      await logDropEvents(db, mine.map((r) => ({
+        event: "send_failed" as const, week, subscriber_id: r.sub.id,
+        detail: { kind, message: label },
+      })));
       if (kind === "quota") {
         quotaHit = true;
         leftover = rest();
@@ -217,6 +230,10 @@ export async function GET(req: NextRequest) {
     if (failed.length > 0) {
       await releaseRows(db, week, failed.map((i) => mine[i].sub.id));
       errors += failed.length;
+      await logDropEvents(db, failed.map((i) => ({
+        event: "send_rejected" as const, week, subscriber_id: mine[i].sub.id,
+        detail: { message: result.data?.errors?.find((e) => e.index === i)?.message ?? null },
+      })));
       const rejected = result.data.errors?.[0]?.message;
       firstError ??= `odrzucony adres w partii${rejected ? `: ${rejected}` : ""}`;
     }
@@ -232,20 +249,45 @@ export async function GET(req: NextRequest) {
       }),
     );
     updateFailures += updates.filter((ok) => !ok).length;
+    const unrecorded: DropEvent[] = accepted
+      .filter((_, i) => !updates[i])
+      .map(({ index, id }) => ({
+        event: "send_unrecorded" as const, week, subscriber_id: mine[index].sub.id, resend_id: id,
+        source_id: `send_unrecorded:${week}:${mine[index].sub.id}`,
+      }));
+    await logDropEvents(db, unrecorded);
     sent += accepted.length;
   }
+
+  // rezerwacje bez potwierdzenia wysyłki (stare błędy "nie wiadomo", ubite uruchomienia): nikt ich nie ponowi
+  let pendingReservations: number | null = null;
+  const pendingRes = await db
+    .from("drop_sends")
+    .select("id", { count: "exact", head: true })
+    .eq("week", week)
+    .is("sent_at", null);
+  if (!pendingRes.error) pendingReservations = pendingRes.count ?? 0;
+
+  await logDropEvents(db, [{
+    event: "run_summary", week, source_id: `run_summary:${week}:${started}`,
+    detail: {
+      subscribers: subs.length, recipients: recipients.length, sent, unmatched, errors, leftover,
+      quotaHit, timedOut, uncertain, updateFailures, pendingReservations,
+    },
+  }]);
 
   const parts = [`Zrzut ${week}: wysłane ${sent}, bez dopasowania ${unmatched}, błędy ${errors}`];
   if (quotaHit) parts.push(`limit Resend, niewysłane: ${leftover}, bez ponawiania`);
   if (timedOut) parts.push(`limit czasu, zostało do wysłania: ${leftover}`);
   if (uncertain) parts.push(`nie wiadomo, czy wysłane: ${uncertain}`);
   if (updateFailures) parts.push(`nie zapisano resend_id dla ${updateFailures}`);
+  if (pendingReservations) parts.push(`rezerwacje bez sent_at: ${pendingReservations}`);
   if (firstError) parts.push(`pierwszy błąd: ${firstError}`);
   if (!marker) parts.push("brak TRAVELPAYOUTS_MARKER, linki bez partnera");
   await sendSlack(parts.join("; "));
 
   return NextResponse.json(
-    { week, sent, unmatched, errors, leftover, quotaHit, timedOut },
+    { week, sent, unmatched, errors, leftover, quotaHit, timedOut, pendingReservations },
     { status: errors || quotaHit || timedOut ? 500 : 200 },
   );
 }

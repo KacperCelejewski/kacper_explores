@@ -11,6 +11,7 @@ import {
   buildSubscriberUpsert, budgetToMaxPrice, decideSubscribeAction, newUnsubscribeToken, normalizeSignup, DROP_MAX_AIRPORTS,
 } from "@/lib/drop/signup";
 import { buildSettingsUrl } from "@/lib/drop/links";
+import { logDropEvents } from "@/lib/drop/events";
 import { POLISH_AIRPORTS } from "@/lib/airports";
 
 const GENERIC_ERROR = "Coś poszło nie tak. Spróbuj jeszcze raz — zwykle działa za drugim.";
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest) {
   const supabase = createServiceClient();
   const { data: existing } = await supabase
     .from("newsletter_subscribers")
-    .select("verified, drop_disabled_reason, unsubscribe_token")
+    .select("id, verified, drop_enabled, drop_disabled_reason, unsubscribe_token")
     .eq("email", signup.email)
     .maybeSingle();
 
@@ -92,6 +93,9 @@ export async function POST(req: NextRequest) {
       .update({ ...fields, verified: true, ...(existing.verified ? {} : { verified_at: now }) })
       .eq("email", signup.email);
     if (error) return NextResponse.json({ error: GENERIC_ERROR }, { status: 500 });
+    if (existing.drop_enabled !== true) {
+      await logDropEvents(supabase, [{ event: "consent_given", subscriber_id: existing.id as string, detail: { source: "profile" } }]);
+    }
     return NextResponse.json({ enabled: true });
   }
 
@@ -123,15 +127,20 @@ export async function POST(req: NextRequest) {
     ? { ...buildSubscriberUpsert({ verified: true, drop_disabled_reason: null, unsubscribe_token: null }, signup), verified: true, verified_at: now }
     : { ...buildSubscriberUpsert(null, signup), verified: false, verification_token: token, token_sent_at: now };
 
-  const { error } = await supabase.from("newsletter_subscribers").insert({
+  const { data: created, error } = await supabase.from("newsletter_subscribers").insert({
     email: signup.email,
     discount_code: promo.code,
     stripe_promo_code_id: promo.stripePromoId,
     ...row,
-  });
+  }).select("id").maybeSingle();
   if (error) return NextResponse.json({ error: GENERIC_ERROR }, { status: 500 });
 
-  if (fromProfile) return NextResponse.json({ enabled: true });
+  if (fromProfile) {
+    if (created?.id) {
+      await logDropEvents(supabase, [{ event: "consent_given", subscriber_id: created.id as string, detail: { source: "profile" } }]);
+    }
+    return NextResponse.json({ enabled: true });
+  }
 
   try {
     await sendDropConfirmation(signup.email, newsletterVerifyUrl(token), mailOpts);

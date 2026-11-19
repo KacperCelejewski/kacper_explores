@@ -1,5 +1,6 @@
 "use client";
 
+import { dropAttributionFromParams, dropEventName, rememberDropAttribution, reportDropEvent } from "@/lib/drop/attribution";
 import { createContext, useContext, useState, useEffect, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
@@ -222,6 +223,11 @@ function QuizPageInner() {
       setQuizAnswer("duration", dropPrefill.duration);
       setCurrentQuizStep(quizStepIndex("companion"));
       trackEvent("drop_plan_started", { city: dropPrefill.preferredCity, ...entryEventParams(entryRef.current) });
+      const attribution = dropAttributionFromParams(searchParams, sessionId.current);
+      if (attribution) {
+        rememberDropAttribution(typeof window === "undefined" ? null : window.sessionStorage, attribution);
+        reportDropEvent(dropEventName("start", attribution), sessionId.current);
+      }
     } else if (searchParams.get("afterLogin") === "1") {
       setQuizAnswer("preferredCity", cityAfterLogin(searchParams.get("city"), quizAnswers.preferredCity));
     } else if (!parseQuizStep(searchParams.get("step"))) {
