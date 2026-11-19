@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { budgetComparison, plannedUpperBound } from "@/lib/priceTrust";
 import { IconPlane, IconBed, IconFork, IconBus, IconTicket, IconTag, IconCoin, IconAlert, IconCheck } from "./Icons";
 
 interface Props {
@@ -26,12 +27,6 @@ const CATEGORIES = [
 
 type CategoryKey = typeof CATEGORIES[number]["key"];
 
-function parsePln(str: string): number {
-  const match = str.match(/[\d\s]+/);
-  if (!match) return 0;
-  return parseInt(match[0].replace(/\s/g, ""), 10) || 0;
-}
-
 export default function BudgetTracker({ tripId, plannedBreakdown, plannedTotal }: Props) {
   const [open, setOpen] = useState(false);
   const [expenses, setExpenses] = useState<Record<CategoryKey, number>>({
@@ -53,10 +48,8 @@ export default function BudgetTracker({ tripId, plannedBreakdown, plannedTotal }
     try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch { /* ignore */ }
   };
 
-  const totalSpent = Object.values(expenses).reduce((a, b) => a + b, 0);
-  const totalPlanned = parsePln(plannedTotal);
-  const diff = totalSpent - totalPlanned;
-  const overBudget = diff > 0;
+  // Szacunek planu jest bez lotów, więc wydatki na loty nie liczą się do porównania z planem
+  const { comparable, diff, overBudget } = budgetComparison(expenses, plannedTotal);
 
   return (
     <div>
@@ -80,9 +73,9 @@ export default function BudgetTracker({ tripId, plannedBreakdown, plannedTotal }
               {/* Total */}
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>WYDANO</p>
+                  <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>WYDANO (BEZ LOTÓW)</p>
                   <p className="text-2xl font-bold" style={{ color: overBudget ? "var(--error)" : "var(--text-primary)" }}>
-                    {totalSpent.toLocaleString("pl-PL")} zł
+                    {comparable.toLocaleString("pl-PL")} zł
                   </p>
                 </div>
                 <div className="text-right">
@@ -105,7 +98,7 @@ export default function BudgetTracker({ tripId, plannedBreakdown, plannedTotal }
                 <span>
                   {overBudget
                     ? `${diff.toLocaleString("pl-PL")} zł powyżej budżetu`
-                    : totalSpent === 0
+                    : comparable === 0
                     ? "Zacznij wpisywać wydatki"
                     : `${Math.abs(diff).toLocaleString("pl-PL")} zł poniżej budżetu`}
                 </span>
@@ -114,10 +107,10 @@ export default function BudgetTracker({ tripId, plannedBreakdown, plannedTotal }
               {/* Categories */}
               <div className="flex flex-col gap-3">
                 {CATEGORIES.map(({ key, label, Icon }) => {
-                  const planned = key === "flights" ? parsePln(plannedBreakdown.flights)
-                    : key === "accommodation" ? parsePln(plannedBreakdown.accommodation)
-                    : key === "food" ? parsePln(plannedBreakdown.food)
-                    : key === "attractions" ? parsePln(plannedBreakdown.attractions)
+                  const planned = key === "flights" ? plannedUpperBound(plannedBreakdown.flights)
+                    : key === "accommodation" ? plannedUpperBound(plannedBreakdown.accommodation)
+                    : key === "food" ? plannedUpperBound(plannedBreakdown.food)
+                    : key === "attractions" ? plannedUpperBound(plannedBreakdown.attractions)
                     : null;
 
                   return (
@@ -126,7 +119,9 @@ export default function BudgetTracker({ tripId, plannedBreakdown, plannedTotal }
                         <span className="text-xs font-semibold inline-flex items-center gap-1.5">
                           <Icon size={14} /> {label}
                         </span>
-                        {planned !== null && (
+                        {key === "flights" ? (
+                          <span className="text-xs" style={{ color: "var(--text-muted)" }}>poza szacunkiem planu</span>
+                        ) : planned !== null && planned > 0 && (
                           <span className="text-xs" style={{ color: "var(--text-muted)" }}>
                             plan: ~{planned} zł
                           </span>

@@ -1,3 +1,4 @@
+import { tripIdCandidates } from "@/lib/tripId";
 import { readJsonBody, serverError } from "@/lib/http";
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
@@ -20,7 +21,7 @@ export async function GET(
   const { data, error } = await supabase
     .from("trips")
     .select("id, city, country, ai_plan_json, destination_data, flight_data, quiz_answers, is_public")
-    .eq("id", tripId)
+    .in("id", tripIdCandidates(tripId))
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -71,7 +72,7 @@ export async function PATCH(
   const { data, error } = await createServiceClient()
     .from("trips")
     .update(updates)
-    .eq("id", tripId)
+    .in("id", tripIdCandidates(tripId))
     .eq("user_id", user.id)
     .select("id")
     .maybeSingle();

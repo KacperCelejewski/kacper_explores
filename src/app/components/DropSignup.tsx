@@ -159,7 +159,7 @@ export default function DropSignup({ defaultAirports, cheapestHint = null, title
           maxPrice={maxPrice}
           onToggleAirport={toggleAirport}
           onMaxPrice={(p) => { touched.current = true; setMaxPrice(p); }}
-          priceHint={cheapestHint ? `W tym tygodniu z ${cheapestHint.from} loty od ${cheapestHint.price} zł.` : undefined}
+          priceHint={cheapestHint ? `W ostatnich wyszukiwaniach z ${cheapestHint.from} loty od ${cheapestHint.price} zł.` : undefined}
         />
 
         {error && (

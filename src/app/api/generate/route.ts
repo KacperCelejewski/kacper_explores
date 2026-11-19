@@ -1,3 +1,4 @@
+import { makeTripId } from "@/lib/tripId";
 import { GENERIC_SERVER_ERROR, readJsonBody } from "@/lib/http";
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -170,7 +171,7 @@ export async function POST(req: NextRequest) {
           throw lastErr;
         }
 
-        const tripId = `${(destination as DestinationRecommendation).city.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`;
+        const tripId = makeTripId((destination as DestinationRecommendation).city, Date.now());
 
         // Wyjazd zapisuje tylko klucz serwisowy. profile.id pochodzi z getUser() w kroku 1,
         // więc sesji nie sprawdzamy drugi raz.

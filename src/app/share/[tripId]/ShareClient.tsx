@@ -1,5 +1,6 @@
 "use client";
 
+import { PLAN_TOTAL_LABEL, PLAN_TOTAL_NOTE_SHARED } from "@/lib/priceTrust";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -148,7 +149,7 @@ export default function ShareClient() {
             <p className="mt-3 text-sm font-bold" style={{ color: "var(--accent)" }}>
               {CREW_COPY.shareCrewTitle}: {crew.detail}
               <span className="block text-xs font-normal mt-0.5" style={{ color: "var(--text-muted)" }}>
-                Kwoty poniżej są {CREW_COPY.perPerson}; koszt całkowity jest też podany {CREW_COPY.total}.
+                Kwoty poniżej są {CREW_COPY.perPerson}; szacunek na miejscu jest też podany {CREW_COPY.total}. Lot liczymy osobno.
               </span>
             </p>
           )}
@@ -171,7 +172,7 @@ export default function ShareClient() {
           </div>
 
           <div className="mt-3 pt-3 border-t flex items-center justify-between" style={{ borderColor: "var(--border)" }}>
-            <span className="text-sm" style={{ color: "var(--text-muted)" }}>Szacowany całkowity koszt</span>
+            <span className="text-sm" style={{ color: "var(--text-muted)" }}>{PLAN_TOTAL_LABEL}</span>
             {crewTotal ? (
               <div className="text-right">
                 <div className="text-base font-bold" style={{ color: "var(--accent)" }}>
@@ -187,6 +188,7 @@ export default function ShareClient() {
               <span className="text-base font-bold" style={{ color: "var(--accent)" }}>{plan.totalBudgetEstimate}</span>
             )}
           </div>
+        <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>{PLAN_TOTAL_NOTE_SHARED}</p>
         </motion.div>
       </div>
 

@@ -107,7 +107,7 @@ export function flightTotalNote(
   if (!Number.isFinite(pricePerPerson) || pricePerPerson < 1) return null;
   if (!showGroupBudget(companion ?? null, group ?? undefined) || !group) return null;
   const seats = groupSize(group);
-  return `${CREW_COPY.total} ok. ${formatFlightPLN(pricePerPerson * seats)} (${groupLabel(group)})`;
+  return `Lot dla wszystkich ok. ${formatFlightPLN(pricePerPerson * seats)} (${groupLabel(group)})`;
 }
 
 export function sendPlanTitle(companion: Companion | null | undefined, group?: GroupComposition | null): string {

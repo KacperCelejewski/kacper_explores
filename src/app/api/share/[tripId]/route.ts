@@ -1,3 +1,4 @@
+import { tripIdCandidates } from "@/lib/tripId";
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { sharedCrewFromQuiz } from "@/lib/groupFlow";
@@ -17,7 +18,7 @@ export async function GET(
   const { data, error } = await supabase
     .from("trips")
     .select("id, city, country, ai_plan_json, destination_data, quiz_answers")
-    .eq("id", tripId)
+    .in("id", tripIdCandidates(tripId))
     .eq("is_public", true)
     .maybeSingle();
 

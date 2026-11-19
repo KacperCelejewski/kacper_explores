@@ -3,11 +3,15 @@
 import { createContext, useContext, useState, useEffect, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import Image from "next/image";
+import styles from "./quiz.module.css";
+import { QUIZ_STEPS, DROP_QUIZ_STEPS, quizStepIndex, parseQuizStep, resolveQuizStep, canCompleteQuizStep, firstIncompleteQuizStep, quizAnalyticsStep, type QuizStepId } from "@/lib/quizSteps";
 import { useAppStore } from "@/lib/store";
-import type { TravelStyle, TripDuration, TravelVibe, PlaceType, QuizAnswers } from "@/types";
+import type { TravelStyle, TripDuration, TravelVibe, QuizAnswers } from "@/types";
 import { MONTH_NAMES } from "@/lib/constants";
 import { trackEvent, quizGaEventName } from "@/lib/analytics";
+import { captureEntry, entryEventParams, entryStorage, landingReferrer, type EntryAttribution } from "@/lib/entryAttribution";
 import { cityAfterLogin, quizLoginNext } from "@/lib/quizLogin";
 import { parseDropParams } from "@/lib/drop/quizParams";
 import QuizProgress from "@/components/quiz/QuizProgress";
@@ -24,9 +28,6 @@ import {
   IconLeaf,
   IconWave,
   IconMoon,
-  IconCity,
-  IconHouseSmall,
-  IconSunWave,
   IconPin,
   IconCar,
   IconGlobe,
@@ -38,21 +39,14 @@ import {
 import type { Companion, GroupComposition } from "@/types";
 import GroupSizePicker from "@/app/components/GroupSizePicker";
 import { groupFromCompanion } from "@/lib/group";
-import { CREW_COPY, companionTrailLabel, crewBudgetTogether, quizCompanionHint } from "@/lib/groupFlow";
+import { CREW_COPY, companionTrailLabel, crewBudgetTogether } from "@/lib/groupFlow";
 import { parseHomeParams, homeFriendsAnswers, srcEventName, keepUtmQuery } from "@/lib/homeParams";
 
 type IconFC = React.FC<{ size?: number }>;
 
-const TOTAL_STEPS = 6;
-// Link ze zrzutu zna już miesiąc, długość i lotnisko, więc pomija kroki 4 i 5
-const DROP_TOTAL_STEPS = 4;
-// Single-choice steps move on by themselves right after the tap
-const AUTO_ADVANCE_STEPS = [0, 1, 2];
-const AUTO_ADVANCE_MS = 340;
-
 // ── Region definitions ────────────────────────────────────────────────────────
 
-type RegionId = "wroclaw" | "slaskie" | "krakow" | "warszawa" | "poznan" | "trojmiasto" | "inne";
+type RegionId = "wroclaw" | "slaskie" | "krakow" | "warszawa" | "poznan" | "trojmiasto";
 type Willingness = "local" | "poland" | "europe";
 
 const REGIONS: { id: RegionId; label: string; subLabel: string; code: string; local: string[] }[] = [
@@ -62,7 +56,6 @@ const REGIONS: { id: RegionId; label: string; subLabel: string; code: string; lo
   { id: "warszawa",  label: "Warszawa",    subLabel: "Mazowsze",           code: "WAW", local: ["WAW", "WMI"] },
   { id: "poznan",    label: "Poznań",      subLabel: "Wielkopolska",       code: "POZ", local: ["POZ"] },
   { id: "trojmiasto",label: "Trójmiasto",  subLabel: "Gdańsk / Gdynia",    code: "GDN", local: ["GDN"] },
-  { id: "inne",      label: "Inne miasto", subLabel: "Najbliższe lotnisko", code: "—", local: ["WRO"] },
 ];
 
 // Nearby Polish airports added when willingness = "poland"
@@ -73,7 +66,6 @@ const NEARBY: Record<RegionId, string[]> = {
   warszawa:   ["WAW", "WMI"],
   poznan:     ["POZ", "WRO"],
   trojmiasto: ["GDN"],
-  inne:       ["WRO", "KTW", "KRK", "WAW"],
 };
 
 const HUB_CODES = ["BER", "BUD", "VIE", "AMS", "LGW", "IST"];
@@ -85,42 +77,32 @@ function airportsFor(region: RegionId, willingness: Willingness): string[] {
 }
 
 function inferRegion(airports: string[]): RegionId {
-  if (airports.includes("GDN")) return "trojmiasto";
-  if (airports.includes("POZ") && !airports.includes("WRO")) return "poznan";
-  if ((airports.includes("WAW") || airports.includes("WMI")) && !airports.includes("KTW")) return "warszawa";
-  if (airports.includes("KRK") && !airports.includes("KTW")) return "krakow";
-  if (airports.includes("KTW") && !airports.includes("WRO")) return "slaskie";
-  return "wroclaw";
+  return REGIONS.find((region) => region.local.includes(airports[0]))?.id ?? "wroclaw";
 }
 
 function inferWillingness(airports: string[]): Willingness {
   if (airports.some(a => HUB_CODES.includes(a))) return "europe";
-  if (airports.length > 2) return "poland";
+  const local = REGIONS.find((region) => region.id === inferRegion(airports))!.local;
+  if (airports.some((airport) => !local.includes(airport))) return "poland";
   return "local";
 }
 
 // ── Shared ────────────────────────────────────────────────────────────────────
 
 const STYLE_OPTIONS: { value: TravelStyle; label: string; Icon: IconFC; desc: string }[] = [
-  { value: "history",      label: "Historia",     Icon: IconArch,     desc: "Muzea, zamki, starówki" },
+  { value: "history",      label: "Muzea i zabytki",     Icon: IconArch,     desc: "Muzea, zamki, starówki" },
   { value: "architecture", label: "Architektura", Icon: IconBuilding, desc: "Katedry, mosty, design" },
-  { value: "food",         label: "Jedzenie",     Icon: IconFork,     desc: "Street food, lokalne bary" },
-  { value: "nature",       label: "Natura",       Icon: IconLeaf,     desc: "Parki, góry, jeziora" },
+  { value: "food",         label: "Lokalne jedzenie",     Icon: IconFork,     desc: "Street food, lokalne bary" },
+  { value: "nature",       label: "Przyroda i spacery",       Icon: IconLeaf,     desc: "Parki, góry, jeziora" },
   { value: "beach",        label: "Plaża",        Icon: IconWave,     desc: "Morze, słońce, relaks" },
-  { value: "nightlife",    label: "Nightlife",    Icon: IconMoon,     desc: "Bary, kluby, koncerty" },
+  { value: "nightlife",    label: "Wieczorne wyjścia",    Icon: IconMoon,     desc: "Bary, kluby, koncerty" },
 ];
 
 const VIBE_OPTIONS: { value: TravelVibe; Icon: IconFC; label: string; desc: string }[] = [
-  { value: "chill",   Icon: IconSun,       label: "Reset",        desc: "Własne tempo, kawiarnie, luz" },
-  { value: "intense", Icon: IconLightning, label: "Pełny program", desc: "Jak najwięcej, każda chwila gra" },
-  { value: "social",  Icon: IconPeople,    label: "Towarzyski",   desc: "Poznawanie ludzi, bary, imprezy" },
-  { value: "active",  Icon: IconMountain,  label: "Aktywny",      desc: "Piesze trasy, sport, przyroda" },
-];
-
-const PLACE_OPTIONS: { value: PlaceType; Icon: IconFC; label: string; desc: string }[] = [
-  { value: "big_city",   Icon: IconCity,       label: "Duże miasto",   desc: "Metro, muzea, energia tłumu" },
-  { value: "charming",   Icon: IconHouseSmall, label: "Kameralne",     desc: "Małe uliczki, autentyczność, spokój" },
-  { value: "beach_sun",  Icon: IconSunWave,    label: "Słońce i woda", desc: "Plaże, morze, ciepło przede wszystkim" },
+  { value: "chill",   Icon: IconSun,       label: "Odpocząć",        desc: "Własne tempo, kawiarnie, luz" },
+  { value: "intense", Icon: IconLightning, label: "Dużo zobaczyć", desc: "Zabytki, muzea i pełniejsze dni" },
+  { value: "social",  Icon: IconPeople,    label: "Poznać ludzi",   desc: "Poznawanie ludzi, bary, imprezy" },
+  { value: "active",  Icon: IconMountain,  label: "Spędzić czas aktywnie",      desc: "Piesze trasy, sport, przyroda" },
 ];
 
 const DURATION_PRESETS: { value: number; label: string; sub?: string }[] = [
@@ -135,7 +117,7 @@ const DURATION_PRESETS: { value: number; label: string; sub?: string }[] = [
 const COMPANION_LABELS: Record<Companion, string> = {
   solo: "Sam/a", couple: "Para", family: "Rodzina", friends: "Znajomi",
 };
-const BUDGET_LABELS = { low: "Backpacker", medium: "Komfortowy" } as const;
+const BUDGET_LABELS = { low: "Do 1500 zł / os.", medium: "1500–3000 zł / os." } as const;
 const VIBE_LABELS: Record<TravelVibe, string> = {
   chill: "Reset", intense: "Pełny program", social: "Towarzyski", active: "Aktywny",
 };
@@ -153,20 +135,17 @@ const slideVariants = {
 const slideTransition = { duration: 0.3, ease: [0.22, 1, 0.36, 1] as const };
 
 // What the visitor has told us so far, in the order they told it
-function answeredLabels(a: QuizAnswers, upTo: number): string[] {
-  const out: string[] = [];
-  if (upTo > 0 && a.companion) out.push(companionTrailLabel(a.companion, a.group, COMPANION_LABELS[a.companion]));
-  if (upTo > 1 && a.budget)    out.push(BUDGET_LABELS[a.budget]);
-  if (upTo > 2 && a.vibe)      out.push(VIBE_LABELS[a.vibe]);
-  if (upTo > 3 && a.styles.length > 0) {
-    out.push(
-      a.styles.length <= 2
-        ? a.styles.map((s) => STYLE_OPTIONS.find((o) => o.value === s)?.label ?? s).join(" + ")
-        : `${a.styles.length} zainteresowań`,
-    );
-  }
-  if (upTo > 4 && a.month) out.push(`${MONTH_SHORT[a.month - 1]} · ${a.duration ?? 5} dni`);
-  return out;
+function answeredLabels(a: QuizAnswers, previous: readonly QuizStepId[]): string[] {
+  return previous.flatMap((id): string[] => {
+    switch (id) {
+      case "companion": return a.companion ? [companionTrailLabel(a.companion, a.group, COMPANION_LABELS[a.companion])] : [];
+      case "vibe": return a.vibe ? [VIBE_LABELS[a.vibe]] : [];
+      case "styles": return a.styles.length ? [`${a.styles.length} zainteresowań`] : [];
+      case "when": return a.month ? [`${MONTH_SHORT[a.month - 1]} · ${a.duration ?? 5} dni`] : [];
+      case "departure": return a.airports.length ? [a.airports.join(", ")] : [];
+      case "budget": return a.budget ? [BUDGET_LABELS[a.budget]] : [];
+    }
+  });
 }
 
 function OptionCard({
@@ -197,377 +176,183 @@ function OptionCard({
 function QuizPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { quizAnswers, currentQuizStep: storeStep, setQuizAnswer, toggleStyle, setCurrentQuizStep, resetQuiz } = useAppStore();
+  const dropPrefill = useMemo(() => parseDropParams(searchParams), [searchParams]);
+  const homeParams = useMemo(() => parseHomeParams(searchParams), [searchParams]);
+  const steps = dropPrefill ? DROP_QUIZ_STEPS : QUIZ_STEPS;
+  const stepId = resolveQuizStep(storeStep, quizAnswers, steps);
+  const position = steps.indexOf(stepId);
+  const [entryReady, setEntryReady] = useState(false);
+  const ready = entryReady;
+  const [maxVisitedStep, setMaxVisitedStep] = useState(0);
   const [dir, setDir] = useState(1);
+  const [hasMoved, setHasMoved] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
   const [savedPrefs, setSavedPrefs] = useState<QuizAnswers | null>(null);
   const [authed, setAuthed] = useState<boolean | null>(null);
   const autoStarted = useRef(false);
-  const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [hasMoved, setHasMoved] = useState(false);
-  const { quizAnswers, currentQuizStep: storeStep, setQuizAnswer, toggleStyle, nextQuizStep, prevQuizStep, setCurrentQuizStep, resetQuiz } =
-    useAppStore();
-  const dropPrefill = useMemo(() => parseDropParams(searchParams), [searchParams]);
-  // Do czasu zresetowania kroku z poprzedniej wizyty link ze zrzutu zaczyna od pytania 0
-  const [dropStepReset, setDropStepReset] = useState(false);
-  // Link ze strony głównej („Jedziemy ekipą”) zaczyna od pytania 0 z zaznaczonymi Znajomymi
-  const homeParams = useMemo(() => parseHomeParams(searchParams), [searchParams]);
-  const homeFriends = homeParams.companion === "friends" && !dropPrefill;
-  const [homeStepReset, setHomeStepReset] = useState(false);
-  const currentQuizStep = dropPrefill && !dropStepReset ? 0 : homeFriends && !homeStepReset ? 0 : storeStep;
-  const totalSteps = dropPrefill ? DROP_TOTAL_STEPS : TOTAL_STEPS;
-  const [maxVisitedStep, setMaxVisitedStep] = useState(dropPrefill || homeFriends ? 0 : currentQuizStep);
-
-  // Stable session ID for this quiz attempt (not persisted — resets on page refresh)
   const sessionId = useRef(crypto.randomUUID());
+  const reducedMotion = useReducedMotion();
 
-  const track = (event: string, step?: number) => {
-    trackEvent(quizGaEventName(event), { step });
+  const entryRef = useRef<EntryAttribution | null>(null);
+
+  const track = (event: string, id?: QuizStepId) => {
+    const step = id ? quizAnalyticsStep(id) : undefined;
+    trackEvent(quizGaEventName(event), {
+      step, step_id: id, step_position: id ? steps.indexOf(id) + 1 : undefined,
+      flow_version: "human_v1",
+      ...entryEventParams(entryRef.current),
+    });
     void fetch("/api/track", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ session_id: sessionId.current, event, step }),
     }).catch(() => {});
   };
 
-  const cancelAdvance = () => {
-    if (advanceTimer.current) clearTimeout(advanceTimer.current);
-    advanceTimer.current = null;
-  };
-
   useEffect(() => {
+    // Skąd wejście (kanał i materiał), zanim URL zostanie oczyszczony; dopisywane do zdarzeń aż do planu.
+    entryRef.current = captureEntry(searchParams, entryStorage(), landingReferrer(), window.location.origin);
+    // Powrót z logowania (afterLogin) to ciąg dalszy tego samego wejścia, nie nowe wejście.
+    if (searchParams.get("afterLogin") !== "1") trackEvent("quiz_entry", { ...entryEventParams(entryRef.current), has_src: Boolean(homeParams.src || dropPrefill), flow_version: "human_v1" });
     if (dropPrefill) {
       setQuizAnswer("preferredCity", dropPrefill.preferredCity);
       setQuizAnswer("airports", dropPrefill.airports);
       setQuizAnswer("month", dropPrefill.month);
       setQuizAnswer("duration", dropPrefill.duration);
-      // store trzyma krok z poprzedniej wizyty, a tu są tylko kroki 0-3
-      setCurrentQuizStep(0);
-      setDropStepReset(true);
-      trackEvent("drop_plan_started", { city: dropPrefill.preferredCity });
-    } else if (searchParams.get("afterLogin") !== "1") {
-      setQuizAnswer("preferredCity", searchParams.get("city") ?? undefined);
-    } else {
-      // po powrocie z logowania miasto jest w URL; store bywa pusty (link z maila w innej przeglądarce)
+      setCurrentQuizStep(quizStepIndex("companion"));
+      trackEvent("drop_plan_started", { city: dropPrefill.preferredCity, ...entryEventParams(entryRef.current) });
+    } else if (searchParams.get("afterLogin") === "1") {
       setQuizAnswer("preferredCity", cityAfterLogin(searchParams.get("city"), quizAnswers.preferredCity));
+    } else if (!parseQuizStep(searchParams.get("step"))) {
+      setQuizAnswer("preferredCity", searchParams.get("city") ?? undefined);
     }
-    if (homeFriends) {
-      // store trzyma krok i odpowiedzi z poprzedniej wizyty; bez auto-advance, żeby dało się ustawić liczbę osób
-      setCurrentQuizStep(0);
-      setHomeStepReset(true);
+    if (homeParams.companion === "friends" && !dropPrefill) {
       const next = homeFriendsAnswers({ companion: quizAnswers.companion, group: quizAnswers.group });
       setQuizAnswer("companion", next.companion);
       setQuizAnswer("group", next.group);
+      setCurrentQuizStep(quizStepIndex("companion"));
     }
+    const requested = parseQuizStep(searchParams.get("step"));
+    if (requested && !dropPrefill) setCurrentQuizStep(quizStepIndex(requested));
     if (homeParams.src) track(srcEventName(homeParams.src));
-    // parametry zadziałały raz; bez nich odświeżenie strony nie cofa kroku ani liczby osób i nie liczy kliknięcia drugi raz
-    if (homeFriends || homeParams.src) router.replace(`/quiz${keepUtmQuery(searchParams)}`, { scroll: false });
-    track("step_view", 0);
-
-    fetch("/api/profile")
-      .then((r) => r.json())
-      .then((d) => {
-        setAuthed(Boolean(d.authenticated));
-        if (d.authenticated && d.quiz_preferences) setSavedPrefs(d.quiz_preferences);
-        if (d.authenticated && searchParams.get("afterLogin") === "1" && !autoStarted.current) {
-          autoStarted.current = true;
-          router.replace("/destinations");
-        }
-      })
-      .catch(() => {});
-
-    return cancelAdvance;
+    if (homeParams.companion || homeParams.src || requested) {
+      router.replace(`/quiz${keepUtmQuery(searchParams)}`, { scroll: false });
+    }
+    setEntryReady(true);
+    fetch("/api/profile").then((r) => r.json()).then((d) => {
+      setAuthed(Boolean(d.authenticated));
+      if (d.authenticated && d.quiz_preferences) setSavedPrefs(d.quiz_preferences);
+      if (d.authenticated && searchParams.get("afterLogin") === "1" && !autoStarted.current) {
+        autoStarted.current = true;
+        router.replace("/destinations");
+      }
+    }).catch(() => setAuthed(false));
+  // Entry parameters are applied once; subsequent query cleanup must not reset answers.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    if (currentQuizStep > maxVisitedStep) {
-      setMaxVisitedStep(currentQuizStep);
-      track("step_view", currentQuizStep);
-    }
-  }, [currentQuizStep]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!ready) return;
+    // Commit a migration fallback before answering it, so filling it does not
+    // silently jump to the old saved position without pressing Dalej.
+    if (storeStep !== quizStepIndex(stepId)) setCurrentQuizStep(quizStepIndex(stepId));
+    setMaxVisitedStep((previous) => Math.max(previous, position));
+    track("step_view", stepId);
+    if (hasMoved) window.scrollTo({ top: 0, behavior: "instant" });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, stepId]);
 
-  const jumpToStep = (step: number) => {
-    if (step === currentQuizStep || step > maxVisitedStep) return;
-    cancelAdvance();
+  const goTo = (id: QuizStepId) => {
+    setDir(steps.indexOf(id) > position ? 1 : -1);
     setHasMoved(true);
-    setDir(step > currentQuizStep ? 1 : -1);
-    setCurrentQuizStep(step);
+    setCurrentQuizStep(quizStepIndex(id));
   };
-
+  const jumpToStep = (next: number) => {
+    if (next <= maxVisitedStep && next !== position) goTo(steps[next]);
+  };
+  const handleBack = () => {
+    if (position === 0) router.push("/");
+    else goTo(steps[position - 1]);
+  };
   const handleUseSaved = () => {
     if (!savedPrefs) return;
-    const keepCity = quizAnswers.preferredCity;
+    const answers: QuizAnswers = {
+      ...quizAnswers, ...savedPrefs,
+      preferredCity: quizAnswers.preferredCity,
+      companion: savedPrefs.companion ?? quizAnswers.companion,
+      group: savedPrefs.group,
+      styles: savedPrefs.styles ?? [],
+      airports: savedPrefs.airports?.length ? savedPrefs.airports : ["WRO"],
+    };
     resetQuiz();
-    if (keepCity) setQuizAnswer("preferredCity", keepCity);
-    if (savedPrefs.budget)   setQuizAnswer("budget",    savedPrefs.budget);
-    if (savedPrefs.vibe)     setQuizAnswer("vibe",      savedPrefs.vibe);
-    if (savedPrefs.placeType) setQuizAnswer("placeType", savedPrefs.placeType);
-    if (savedPrefs.month)    setQuizAnswer("month",     savedPrefs.month);
-    if (savedPrefs.duration) setQuizAnswer("duration",  savedPrefs.duration);
-    if (savedPrefs.airports?.length) setQuizAnswer("airports", savedPrefs.airports);
-    savedPrefs.styles.forEach((s) => toggleStyle(s));
-    router.push("/destinations");
+    (Object.keys(answers) as (keyof QuizAnswers)[]).forEach((key) => setQuizAnswer(key, answers[key]));
+    const missing = firstIncompleteQuizStep(answers, QUIZ_STEPS);
+    if (missing) goTo(missing);
+    else router.push("/destinations");
   };
-
-  const isLast = currentQuizStep === totalSteps - 1;
-  const autoStep = AUTO_ADVANCE_STEPS.includes(currentQuizStep);
-
-  const canProceed = () => {
-    if (currentQuizStep === 0) return quizAnswers.companion !== null;
-    if (currentQuizStep === 1) return quizAnswers.budget !== null;
-    if (currentQuizStep === 2) return quizAnswers.vibe !== null;
-    if (currentQuizStep === 3) return true; // styles are optional
-    if (currentQuizStep === 4) return quizAnswers.month !== null; // duration has default
-    if (currentQuizStep === 5) return quizAnswers.airports.length > 0;
-    return false;
+  const pickCompanion = (value: Companion) => {
+    if (quizAnswers.companion === value) return;
+    setQuizAnswer("companion", value);
+    setQuizAnswer("group", value === "friends" || value === "family" ? groupFromCompanion(value) : undefined);
   };
-
+  const isLast = position === steps.length - 1;
   const handleNext = async () => {
-    cancelAdvance();
-    setHasMoved(true);
-    setDir(1);
-    track("step_complete", currentQuizStep);
-    if (currentQuizStep < totalSteps - 1) {
-      nextQuizStep();
-    } else {
-      track("quiz_complete");
-      const profile = await fetch("/api/profile").then((r) => r.json()).catch(() => ({}));
-      if (!profile.authenticated) {
-        router.push(`/login?next=${encodeURIComponent(quizLoginNext(quizAnswers.preferredCity))}`);
-      } else {
-        router.push("/destinations");
-      }
-    }
+    if (submittingRef.current || !canCompleteQuizStep(stepId, quizAnswers)) return;
+    track("step_complete", stepId);
+    if (!isLast) { goTo(steps[position + 1]); return; }
+    const missing = firstIncompleteQuizStep(quizAnswers, QUIZ_STEPS);
+    if (missing) { goTo(missing); return; }
+    submittingRef.current = true;
+    setSubmitting(true);
+    track("quiz_complete");
+    const profile = await fetch("/api/profile").then((r) => r.json()).catch(() => ({}));
+    router.push(profile.authenticated ? "/destinations" : `/login?next=${encodeURIComponent(quizLoginNext(quizAnswers.preferredCity, entryStorage() ? entryRef.current : null))}`);
+    submittingRef.current = false;
+    setSubmitting(false);
   };
+  const trail = answeredLabels(quizAnswers, steps.slice(0, position));
+  const ctaLabel = submitting ? "Przechodzimy dalej…" : isLast
+    ? quizAnswers.preferredCity ? `Zaplanuj wyjazd: ${quizAnswers.preferredCity}` : "Dobierz kierunki"
+    : stepId === "styles" && quizAnswers.styles.length === 0 ? "Pomiń to pytanie" : "Dalej";
 
-  const handleNextRef = useRef(handleNext);
-  const stepRef = useRef(currentQuizStep);
-  useEffect(() => {
-    handleNextRef.current = handleNext;
-    stepRef.current = currentQuizStep;
-  });
-
-  // Tap an answer, see it land, move on. Tapping another one inside the window restarts it.
-  // forStep guards against a tap on a card that is still sliding out of the previous question
-  const pick = (forStep: number, apply: () => void) => {
-    if (forStep !== stepRef.current) return;
-    apply();
-    cancelAdvance();
-    advanceTimer.current = setTimeout(() => { void handleNextRef.current(); }, AUTO_ADVANCE_MS);
-  };
-
-  // Solo i para jadą dalej same. Znajomi i rodzina czekają na ustawienie liczby osób.
-  const pickCompanion = (v: Companion) => {
-    if (v === "friends" || v === "family") {
-      if (stepRef.current !== 0) return;
-      cancelAdvance();
-      if (quizAnswers.companion !== v) {
-        setQuizAnswer("companion", v);
-        setQuizAnswer("group", groupFromCompanion(v));
-      }
-      return;
-    }
-    pick(0, () => {
-      setQuizAnswer("companion", v);
-      setQuizAnswer("group", undefined);
-    });
-  };
-
-  const handleBack = () => {
-    cancelAdvance();
-    setHasMoved(true);
-    setDir(-1);
-    if (currentQuizStep === 0) router.push("/");
-    else prevQuizStep();
-  };
-
-  const trail = answeredLabels(quizAnswers, currentQuizStep);
-
-  const ctaLabel = isLast
-    ? quizAnswers.preferredCity
-      ? `Zaplanuj wyjazd do ${quizAnswers.preferredCity}`
-      : "Dobierz kierunki"
-    : currentQuizStep === 3 && quizAnswers.styles.length === 0
-    ? "Pomiń to pytanie"
-    : "Dalej";
+  if (!ready) return <div className={styles.loading} role="status">Przygotowujemy quiz…</div>;
 
   return (
-    <div className="quiz-root flex flex-col flex-1 px-5" suppressHydrationWarning>
-      {/* Top bar */}
-      <div className="pt-3">
-        <div className="flex items-center justify-between">
-          <button
-            type="button"
-            onClick={handleBack}
-            className="flex items-center gap-1.5 -ml-2 px-2 text-sm font-medium transition-opacity hover:opacity-60"
-            style={{ color: "var(--text-muted)", minHeight: 44 }}
-          >
-            <IconArrowLeft size={16} />
-            Wstecz
-          </button>
-          <p
-            className="text-sm font-semibold"
-            style={{ color: isLast ? "var(--accent)" : "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}
-          >
-            {isLast ? "Ostatnie pytanie" : `Pytanie ${currentQuizStep + 1} z ${totalSteps}`}
-          </p>
-        </div>
-        <QuizProgress
-          total={totalSteps}
-          current={currentQuizStep}
-          maxVisited={maxVisitedStep}
-          onJump={jumpToStep}
-        />
-
-        {/* What you've told us so far, or what you get at the end */}
-        <div className="mt-2 flex flex-wrap items-center gap-1.5" style={{ minHeight: 28 }} aria-live="polite">
-          {trail.length === 0 ? (
-            <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-              {quizAnswers.companion === "friends" || quizAnswers.companion === "family"
-                ? "Na końcu: kierunki w Waszym budżecie i plan godzina po godzinie."
-                : "Na końcu: kierunki w Twoim budżecie i plan godzina po godzinie."}
-            </p>
-          ) : (
-            <AnimatePresence initial={false}>
-              {trail.map((item) => (
-                <motion.span
-                  key={item}
-                  initial={{ opacity: 0, scale: 0.85 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                  className="text-xs font-semibold px-2.5 py-1 rounded-full"
-                  style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}
-                >
-                  {item}
-                </motion.span>
-              ))}
-            </AnimatePresence>
-          )}
-        </div>
+    <div className={`quiz-root ${styles.root}`}>
+      <div className={styles.brand}>Włóczykij<span>.</span><span className={styles.tagline}>Twój kolejny wyjazd</span></div>
+      <div className={styles.topbar}>
+        <button type="button" onClick={handleBack} className={styles.back} disabled={submitting}>
+          <IconArrowLeft size={16} /> Wstecz
+        </button>
+        <span className={styles.counter}>Pytanie {position + 1} z {steps.length}</span>
       </div>
-
-      {/* Preferred city banner */}
-      {quizAnswers.preferredCity && (
-        <div
-          className="flex items-center gap-2 px-4 py-2.5 rounded-2xl mt-3"
-          style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
-        >
-          <span style={{ color: "var(--accent)" }}><IconPlane size={16} /></span>
-          <p className="text-sm font-semibold" style={{ color: "var(--accent)" }}>
-            Kierunek: {quizAnswers.preferredCity}
-          </p>
-        </div>
-      )}
-
-      {/* Saved prefs shortcut */}
-      <AnimatePresence>
-        {savedPrefs && !dropPrefill && currentQuizStep === 0 && (
-          <motion.button
-            key="saved-prefs"
-            type="button"
-            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.25 }}
-            onClick={handleUseSaved}
-            className="w-full mt-3 p-4 rounded-2xl text-left transition-opacity hover:opacity-90"
-            style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>Użyj poprzednich ustawień</p>
-                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                  Pomiń quiz — załaduj zapisane preferencje i przejdź do lotów
-                </p>
-              </div>
-              <span style={{ color: "var(--accent)" }}><IconArrowRight size={18} /></span>
-            </div>
-          </motion.button>
-        )}
-      </AnimatePresence>
-
-      {/* Steps */}
-      <div className="flex-1 relative overflow-hidden pt-4 -mx-1 px-1">
+      <QuizProgress total={steps.length} current={position} maxVisited={maxVisitedStep} onJump={jumpToStep} />
+      {trail.length > 0 && <div className={styles.trail} aria-label="Twoje odpowiedzi">{trail.map((label) => <span key={label}>{label}</span>)}</div>}
+      {quizAnswers.preferredCity && <p className={styles.city}><IconPlane size={16} /> Kierunek: {quizAnswers.preferredCity}</p>}
+      {savedPrefs && !dropPrefill && stepId === "companion" && <button type="button" onClick={handleUseSaved} className={styles.saved}>Użyj poprzednich ustawień <IconArrowRight size={16} /></button>}
+      <div className={styles.questions}>
         <TitleFocusContext.Provider value={hasMoved}>
-        <AnimatePresence mode="wait" custom={dir}>
-          {currentQuizStep === 0 && (
-            <motion.div key="step-companion" custom={dir} variants={slideVariants}
-              initial="enter" animate="center" exit="exit" transition={slideTransition}>
-              <StepCompanion
-                companion={quizAnswers.companion}
-                group={quizAnswers.group}
-                onPick={pickCompanion}
-                onGroupChange={(g) => setQuizAnswer("group", g)}
-              />
+          <AnimatePresence mode="wait" custom={dir}>
+            <motion.div key={stepId} custom={dir} variants={reducedMotion ? undefined : slideVariants}
+              initial={reducedMotion ? false : "enter"} animate="center" exit="exit" transition={slideTransition}>
+              {stepId === "companion" && <StepCompanion companion={quizAnswers.companion} group={quizAnswers.group} onPick={pickCompanion} onGroupChange={(group) => setQuizAnswer("group", group)} />}
+              {stepId === "vibe" && <StepVibe vibe={quizAnswers.vibe} plural={quizAnswers.companion !== "solo"} onPick={(v) => setQuizAnswer("vibe", v)} />}
+              {stepId === "styles" && <StepStyle styles={quizAnswers.styles} toggleStyle={toggleStyle} />}
+              {stepId === "when" && <StepWhen month={quizAnswers.month} setMonth={(m) => setQuizAnswer("month", m)} duration={quizAnswers.duration} setDuration={(d) => setQuizAnswer("duration", d)} />}
+              {stepId === "departure" && <StepDeparture airports={quizAnswers.airports} setAirports={(v) => setQuizAnswer("airports", v)} />}
+              {stepId === "budget" && <StepBudget budget={quizAnswers.budget} together={(level) => crewBudgetTogether(level, quizAnswers.companion, quizAnswers.group)} onPick={(v) => setQuizAnswer("budget", v)} />}
             </motion.div>
-          )}
-          {currentQuizStep === 1 && (
-            <motion.div key="step-budget" custom={dir} variants={slideVariants}
-              initial="enter" animate="center" exit="exit" transition={slideTransition}>
-              <StepBudget
-                budget={quizAnswers.budget}
-                together={(level) => crewBudgetTogether(level, quizAnswers.companion, quizAnswers.group)}
-                onPick={(v) => pick(1, () => setQuizAnswer("budget", v))}
-              />
-            </motion.div>
-          )}
-          {currentQuizStep === 2 && (
-            <motion.div key="step-vibe" custom={dir} variants={slideVariants}
-              initial="enter" animate="center" exit="exit" transition={slideTransition}>
-              <StepVibe
-                vibe={quizAnswers.vibe}
-                onPick={(v) => pick(2, () => setQuizAnswer("vibe", v))}
-              />
-            </motion.div>
-          )}
-          {currentQuizStep === 3 && (
-            <motion.div key="step-style" custom={dir} variants={slideVariants}
-              initial="enter" animate="center" exit="exit" transition={slideTransition}>
-              <StepStyle styles={quizAnswers.styles} toggleStyle={toggleStyle} />
-            </motion.div>
-          )}
-          {currentQuizStep === 4 && (
-            <motion.div key="step-when" custom={dir} variants={slideVariants}
-              initial="enter" animate="center" exit="exit" transition={slideTransition}>
-              <StepWhen
-                month={quizAnswers.month}
-                setMonth={(m) => setQuizAnswer("month", m)}
-                duration={quizAnswers.duration}
-                setDuration={(d) => setQuizAnswer("duration", d)}
-              />
-            </motion.div>
-          )}
-          {currentQuizStep === 5 && (
-            <motion.div key="step-departure" custom={dir} variants={slideVariants}
-              initial="enter" animate="center" exit="exit" transition={slideTransition}>
-              <StepDeparture
-                airports={quizAnswers.airports}
-                setAirports={(v) => setQuizAnswer("airports", v)}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+          </AnimatePresence>
         </TitleFocusContext.Provider>
       </div>
-
       <div className="quiz-actions">
-        {autoStep && !canProceed() ? (
-          <p className="text-center text-sm" style={{ color: "var(--text-muted)", minHeight: 52, lineHeight: "52px" }}>
-            Dotknij odpowiedzi — resztą zajmiemy się sami.
-          </p>
-        ) : (
-          <button type="button" className="btn-primary" disabled={!canProceed()} onClick={handleNext}>
-            {ctaLabel}
-            <IconArrowRight size={18} />
-          </button>
-        )}
-        {isLast && authed === false && (
-          <p className="text-center text-xs mt-3" style={{ color: "var(--text-muted)" }}>
-            Zaraz poprosimy o założenie konta — 2 plany w miesiącu dostajesz za darmo.
-          </p>
-        )}
-        {currentQuizStep === 0 && (
-          <p className="text-center text-xs mt-3" style={{ color: "var(--text-muted)" }}>
-            6 pytań, ok. 2 minuty. Na końcu założysz darmowe konto, bez karty.
-          </p>
-        )}
+        {isLast && <p className={styles.priceNote}>To budżet do dopasowania propozycji, nie wycena wyjazdu. Cenę lotu potwierdzisz u sprzedawcy — może się zmienić.</p>}
+        <button type="button" className="btn-primary" disabled={submitting || !canCompleteQuizStep(stepId, quizAnswers)} onClick={handleNext}>
+          {ctaLabel} <IconArrowRight size={18} />
+        </button>
+        {isLast && authed === false && <p className={styles.footnote}>Dalej założysz darmowe konto lub się zalogujesz. Bez karty.</p>}
+        {stepId === "companion" && <p className={styles.footnote}>{steps.length} pytań · około 2 minuty{authed === false ? " · na końcu darmowe konto" : ""}</p>}
       </div>
     </div>
   );
@@ -583,7 +368,7 @@ export default function QuizPage() {
 
 // ── Step components ───────────────────────────────────────────────────────────
 
-function StepHeader({ title, hint }: { title: string; hint: string }) {
+function StepHeader({ title, hint }: { title: string; hint?: string }) {
   const focusOnMount = useContext(TitleFocusContext);
   const titleRef = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
@@ -593,7 +378,7 @@ function StepHeader({ title, hint }: { title: string; hint: string }) {
   return (
     <>
       <h2 ref={titleRef} className="quiz-title" tabIndex={-1}>{title}</h2>
-      <p className="text-[15px] mt-2 mb-5 leading-snug" style={{ color: "var(--text-muted)" }}>{hint}</p>
+      {hint && <p className={styles.hint}>{hint}</p>}
     </>
   );
 }
@@ -624,11 +409,11 @@ const IconGroupFriends: CompanionIconFC = ({ size = 24 }) => (
   </svg>
 );
 
-const COMPANION_OPTIONS: { value: Companion; label: string; Icon: CompanionIconFC; desc: string }[] = [
-  { value: "solo",    label: "Sam/a",    Icon: IconSolo,         desc: "Porady bezpieczeństwa, miejsca do poznania ludzi" },
-  { value: "couple",  label: "Para",     Icon: IconCouple,       desc: "Romantyczne kolacje, wspólne aktywności" },
-  { value: "family",  label: "Rodzina",  Icon: IconFamily,       desc: "Spokojne tempo, atrakcje dla dzieci, bezpieczeństwo" },
-  { value: "friends", label: "Znajomi",  Icon: IconGroupFriends, desc: CREW_COPY.companionFriendsDesc },
+const COMPANION_OPTIONS: { value: Companion; label: string; Icon: CompanionIconFC }[] = [
+  { value: "friends", label: "Ze znajomymi", Icon: IconGroupFriends },
+  { value: "couple", label: "We dwoje", Icon: IconCouple },
+  { value: "solo", label: "Solo", Icon: IconSolo },
+  { value: "family", label: "Z rodziną", Icon: IconFamily },
 ];
 
 function StepCompanion({
@@ -652,15 +437,18 @@ function StepCompanion({
   }, [needsSize, companion]);
   return (
     <div>
-      <StepHeader title="Kto jedzie?" hint={quizCompanionHint(companion)} />
-      <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Wybierz kto podróżuje">
+      <figure className={styles.introPhoto}>
+        <Image src="/quiz/together.jpg" alt="Znajomi spędzający wieczór nad oceanem" fill sizes="(max-width: 448px) calc(100vw - 40px), 408px" loading="eager" style={{ objectFit: "cover", objectPosition: "50% 61%" }} />
+        <figcaption>Dobrze czasem<br />gdzieś pojechać.</figcaption>
+      </figure>
+      <StepHeader title="Z kim jedziesz?" hint="Dobierzemy kierunek i plan wyjazdu." />
+      <div className={`grid grid-cols-2 gap-3 ${styles.companions}`} role="group" aria-label="Wybierz kto podróżuje">
         {COMPANION_OPTIONS.map((opt) => (
           <OptionCard key={opt.value} selected={companion === opt.value} onClick={() => onPick(opt.value)}>
             <span style={{ color: companion === opt.value ? "var(--accent)" : "var(--text-muted)" }}>
               <opt.Icon size={26} />
             </span>
             <p className="font-semibold text-[15px] mt-2">{opt.label}</p>
-            <p className="text-xs mt-0.5 leading-snug" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
           </OptionCard>
         ))}
       </div>
@@ -683,14 +471,14 @@ function StepBudget({
   onPick: (v: "low" | "medium") => void;
 }) {
   const opts: { value: "low" | "medium"; Icon: IconFC; label: string; desc: string }[] = [
-    { value: "low",    Icon: IconBackpack,  label: "Backpacker",  desc: "Do 1500 zł · hostele, street food, darmowe atrakcje" },
-    { value: "medium", Icon: IconSuitcase,  label: "Komfortowy",  desc: "1500–3000 zł · Airbnb lub 3★ hotel, restauracje" },
+    { value: "low",    Icon: IconBackpack,  label: "Do 1500 zł",  desc: "Hostele, lokalne jedzenie, darmowe atrakcje" },
+    { value: "medium", Icon: IconSuitcase,  label: "1500–3000 zł",  desc: "Apartament lub hotel, restauracje" },
   ];
 
   return (
     <div>
-      <StepHeader title="Jaki masz budżet?" hint="Na osobę, za cały wyjazd: loty, noclegi, jedzenie." />
-      <div className="flex flex-col gap-3" role="radiogroup" aria-label="Wybierz budżet">
+      <StepHeader title="Jaki budżet na osobę?" hint="Za cały wyjazd: loty, noclegi i wydatki na miejscu." />
+      <div className="flex flex-col gap-3" role="group" aria-label="Wybierz budżet">
         {opts.map((opt) => (
           <OptionCard key={opt.value} className="quiz-option--roomy" selected={budget === opt.value} onClick={() => onPick(opt.value)}>
             <div className="flex items-center gap-3">
@@ -716,15 +504,17 @@ function StepBudget({
 
 function StepVibe({
   vibe,
+  plural,
   onPick,
 }: {
   vibe: TravelVibe | null;
+  plural: boolean;
   onPick: (v: TravelVibe) => void;
 }) {
   return (
     <div>
-      <StepHeader title="Jaka energia wyjazdu?" hint="Jak wyobrażasz sobie typowy dzień na miejscu." />
-      <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Wybierz energię wyjazdu">
+      <StepHeader title={plural ? "Na co macie ochotę?" : "Na co masz ochotę?"} />
+      <div className="grid grid-cols-2 gap-3" role="group" aria-label="Wybierz energię wyjazdu">
         {VIBE_OPTIONS.map((opt) => (
           <OptionCard key={opt.value} selected={vibe === opt.value} onClick={() => onPick(opt.value)}>
             <span style={{ color: vibe === opt.value ? "var(--accent)" : "var(--text-muted)" }}>
@@ -743,8 +533,8 @@ function StepStyle({ styles, toggleStyle }: { styles: TravelStyle[]; toggleStyle
   return (
     <div>
       <StepHeader
-        title="Czym się interesujesz?"
-        hint="Wybierz ile chcesz albo pomiń — kierunki dobierzemy trafniej, gdy coś zaznaczysz."
+        title="Co lubisz robić na wyjeździe?"
+        hint="Możesz wybrać kilka odpowiedzi albo pominąć."
       />
       <div className="grid grid-cols-2 gap-3" role="group" aria-label="Wybierz zainteresowania">
         {STYLE_OPTIONS.map((opt) => (
@@ -753,48 +543,11 @@ function StepStyle({ styles, toggleStyle }: { styles: TravelStyle[]; toggleStyle
               <opt.Icon size={26} />
             </span>
             <p className="font-semibold text-[15px] mt-2">{opt.label}</p>
-            <p className="text-xs mt-0.5 leading-snug" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
           </OptionCard>
         ))}
       </div>
     </div>
   );
-}
-
-function StepPlaceType() {
-  const { quizAnswers, setQuizAnswer } = useAppStore();
-  return (
-    <div>
-      <StepHeader title="Jaki typ miejsca?" hint="Gdzie czujesz się najlepiej." />
-      <div className="flex flex-col gap-3" role="radiogroup" aria-label="Wybierz typ miejsca">
-        {PLACE_OPTIONS.map((opt) => (
-          <OptionCard
-            key={opt.value}
-            className="quiz-option--roomy"
-            selected={quizAnswers.placeType === opt.value}
-            onClick={() => setQuizAnswer("placeType", opt.value)}
-          >
-            <div className="flex items-center gap-3">
-              <span style={{ color: quizAnswers.placeType === opt.value ? "var(--accent)" : "var(--text-muted)" }}>
-                <opt.Icon size={26} />
-              </span>
-              <div>
-                <p className="font-semibold text-[15px]">{opt.label}</p>
-                <p className="text-xs mt-0.5 leading-snug" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
-              </div>
-            </div>
-          </OptionCard>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function durationNote(d: number): string {
-  const full = d - 2;
-  if (full <= 0) return "Lot tam i z powrotem — w sam raz na weekend";
-  if (full === 1) return "1 pełny dzień na miejscu + przylot i powrót";
-  return `${full} pełne dni na miejscu + przylot i powrót`;
 }
 
 function StepWhen({
@@ -821,17 +574,17 @@ function StepWhen({
   return (
     <div>
       <StepHeader
-        title="Kiedy i jak długo?"
+        title="Kiedy i na ile dni?"
         hint={
           monthPrefilled
             ? "Zaznaczono bieżący miesiąc — zmień go, jeśli jedziesz później."
-            : "Pogoda, sezon, ceny — wszystko pod uwagę."
+            : undefined
         }
       />
 
       {/* Month grid */}
       <p className="text-sm font-semibold mb-2" style={{ color: "var(--text-secondary)" }}>Miesiąc wyjazdu</p>
-      <div className="grid grid-cols-4 gap-2 mb-6" role="radiogroup" aria-label="Wybierz miesiąc">
+      <div className="grid grid-cols-4 gap-2 mb-6" role="group" aria-label="Wybierz miesiąc">
         {MONTH_NAMES.map((name, i) => (
           <button
             key={name}
@@ -896,7 +649,7 @@ function StepWhen({
 
       <p className="text-sm" style={{ color: "var(--text-secondary)" }} aria-live="polite">
         <span className="font-bold" style={{ color: "var(--accent)", fontVariantNumeric: "tabular-nums" }}>{value} dni</span>
-        {" · "}{durationNote(value)}
+
       </p>
     </div>
   );
@@ -934,16 +687,16 @@ function StepDeparture({
       value: "europe",
       Icon: IconGlobe,
       label: "Też za granicę",
-      desc: "Berlin, Budapeszt, Wiedeń, Amsterdam, Londyn, Stambuł — taniej do Azji i USA",
+      desc: "Berlin, Budapeszt, Wiedeń, Amsterdam, Londyn i Stambuł",
     },
   ];
 
   return (
     <div>
-      <StepHeader title="Skąd startujesz?" hint="Dobiorę lotniska i porównam wszystkie opcje." />
+      <StepHeader title="Skąd ruszasz?" />
 
       {/* Region grid */}
-      <div className="grid grid-cols-3 gap-2 mb-6" role="radiogroup" aria-label="Wybierz miasto">
+      <div className="grid grid-cols-3 gap-2 mb-6" role="group" aria-label="Wybierz miasto">
         {REGIONS.map((r) => (
           <button
             key={r.id}
@@ -969,7 +722,7 @@ function StepDeparture({
 
       {/* Willingness */}
       <p className="text-sm font-semibold mb-3" style={{ color: "var(--text-secondary)" }}>Jak daleko dojedziesz do lotniska?</p>
-      <div className="flex flex-col gap-2" role="radiogroup" aria-label="Gotowość do dojazdu">
+      <div className="flex flex-col gap-2" role="group" aria-label="Gotowość do dojazdu">
         {WILLINGNESS_OPTIONS.map((opt) => (
           <OptionCard
             key={opt.value}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { CardFlightPrice } from "@/lib/flights/card-price";
+import type { CardPrice } from "@/lib/flights/card-deals";
 import type { DestinationRecommendation, QuizAnswers } from "@/types";
 
 /** Independent from the persistent destination store: cached places must not freeze fares. */
@@ -13,7 +13,7 @@ export function useFlightPrices(destinations: DestinationRecommendation[], quiz:
       companion: quiz.companion, group: quiz.group,
     },
   }) : null;
-  const [result, setResult] = useState<{ request: string; prices: (CardFlightPrice | null)[] } | null>(null);
+  const [result, setResult] = useState<{ request: string; prices: (CardPrice | null)[] } | null>(null);
 
   useEffect(() => {
     if (!request) return;
@@ -27,7 +27,7 @@ export function useFlightPrices(destinations: DestinationRecommendation[], quiz:
         const data = await response.json();
         if (!controller.signal.aborted && Array.isArray(data.prices)) setResult({
           request,
-          prices: data.prices.map((quote: CardFlightPrice | null) => quote && quote.expiresAt > Date.now() ? quote : null),
+          prices: data.prices.map((quote: CardPrice | null) => quote && quote.expiresAt > Date.now() ? quote : null),
         });
       })
       .catch(() => { /* Cards and Aviasales remain usable without a cache quote. */ });

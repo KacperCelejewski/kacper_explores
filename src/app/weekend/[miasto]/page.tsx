@@ -7,6 +7,7 @@ import SiteFooter from "@/app/components/SiteFooter";
 import DropSignup from "@/app/components/DropSignup";
 import { ORIGIN_GENITIVE, formatLocal } from "@/lib/drop/email";
 import { getDealsForCity } from "@/lib/drop/read";
+import { dealsPriceNote } from "@/lib/priceTrust";
 import { postForCity } from "@/lib/blog";
 import { cityAudience, cityFromSlug, citySlug, dealCityName, similarCities, weekendCities } from "@/lib/seo/cities";
 import { breadcrumbLd, faqLd, jsonLdScript } from "@/lib/seo/jsonld";
@@ -121,7 +122,7 @@ export default async function WeekendCityPage({ params }: { params: Params }) {
                 ))}
               </ul>
               <p className="text-xs mt-3 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                Ceny lotu w obie strony, z wyszukiwań z ostatnich dni, bez noclegu i bagażu. Zawsze sprawdź aktualną cenę przed zakupem.
+                Ceny lotu w obie strony, bez noclegu i bagażu. {dealsPriceNote(deals)}
               </p>
             </>
           ) : (

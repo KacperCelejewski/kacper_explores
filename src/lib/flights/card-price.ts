@@ -58,7 +58,7 @@ const checkedDate = new Intl.DateTimeFormat("pl-PL", {
 });
 
 /** The selector and the client expiry timer remove stale quotes before presentation. */
-export function cardFlightPriceCopy(quote: CardFlightPrice | null) {
+export function cardFlightPriceCopy(quote: Pick<CardFlightPrice, "price" | "checkedAt"> | null) {
   if (!quote) {
     return { amount: "Sprawdź w wyszukiwarce", note: "Bez aktualnej ceny" };
   }

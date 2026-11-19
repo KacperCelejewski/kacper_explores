@@ -1,0 +1,69 @@
+.root {
+  --accent: #b64225;
+  --accent-light: #f9e8dd;
+  --text-primary: #18324f;
+  --text-secondary: #344c60;
+  --text-muted: #5f6b70;
+  --bg-surface: #fffcf7;
+  --border: #d9d7ce;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 22px 20px 0;
+  color: var(--text-primary);
+}
+.brand {
+  display: flex;
+  align-items: baseline;
+  font-family: var(--font-heading), Georgia, serif;
+  font-size: 27px;
+  font-weight: 700;
+  letter-spacing: -1px;
+}
+.brand > span:first-child { color: var(--accent); }
+.brand .tagline {
+  margin-left: auto;
+  font-family: var(--font-body), sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--text-muted);
+}
+.topbar { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+.back { display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 8px; margin-left: -8px; font-size: 13px; color: var(--text-secondary); }
+.counter { font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.questions { flex: 1; padding: 16px 0 24px; }
+.root :global(.quiz-title) { font-size: clamp(30px, 8vw, 36px); margin-bottom: 20px; letter-spacing: -.7px; }
+.hint { margin: -9px 0 20px; font-size: 14px; line-height: 1.5; color: var(--text-muted); }
+.root :global(.quiz-option) { border-radius: 14px; }
+.root :global(.quiz-option.selected) { border-color: var(--text-primary); box-shadow: 0 0 0 1px var(--text-primary); }
+.root :global(.quiz-option):focus-visible,
+.root :global(.quiz-chip):focus-visible,
+.root button:focus-visible,
+.root input:focus-visible { outline: 3px solid var(--text-primary); outline-offset: 4px; }
+.root :global(.btn-primary) { border-radius: 14px; background: var(--accent); color: #fff; }
+.root :global(.quiz-actions) { background: var(--bg-primary); padding-top: 14px; border-top: 1px solid var(--border); }
+.root :global(.btn-primary):disabled { opacity: .45; cursor: default; }
+.introPhoto { position: relative; height: 186px; overflow: hidden; margin: 0 0 24px; border-radius: 18px 18px 48px 18px; background: #344c60; }
+.introPhoto::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(10,23,35,.84), transparent 85%); }
+.introPhoto figcaption { position: absolute; z-index: 1; bottom: 19px; left: 22px; color: #fff; font-family: var(--font-heading), Georgia, serif; font-size: 31px; font-weight: 600; line-height: 1.04; }
+.companions :global(.quiz-option) { flex-direction: row; align-items: center; gap: 10px; min-height: 74px; padding: 12px; }
+.companions :global(.quiz-option) p { margin-top: 0; font-size: 14px; }
+.companions :global(.quiz-check) { width: 15px; height: 15px; top: 5px; right: 5px; }
+.trail { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+.trail span { padding: 4px 8px; border: 1px solid var(--border); border-radius: 20px; font-size: 10px; line-height: 1.3; color: var(--text-secondary); }
+.city { display: flex; align-items: center; gap: 7px; margin-top: 12px; font-size: 13px; font-weight: 600; color: var(--accent); }
+.saved { display: flex; align-items: center; justify-content: space-between; padding: 14px; margin-top: 12px; background: var(--accent-light); border: 1px solid var(--border); border-radius: 12px; font-size: 13px; font-weight: 600; text-align: left; }
+.footnote { margin-top: 12px; font-size: 11px; line-height: 1.5; color: var(--text-muted); text-align: center; }
+.priceNote { margin: 0 0 12px; font-size: 12px; line-height: 1.5; color: var(--text-secondary); }
+.loading { padding: 40px 20px; color: var(--text-muted); }
+@media (max-width: 350px) {
+  .root { padding-left: 16px; padding-right: 16px; }
+  .root :global(.quiz-actions) { margin-left: -16px; margin-right: -16px; padding-left: 16px; padding-right: 16px; }
+  .companions :global(.quiz-option) { gap: 7px; padding: 10px; }
+  .companions :global(.quiz-option) p { font-size: 12px; }
+  .introPhoto { height: 160px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .root *, .root *::before, .root *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}

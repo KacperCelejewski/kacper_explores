@@ -11,6 +11,7 @@ describe("quiz promise", () => {
   });
 
   it("still tells what the quiz ends with", () => {
-    expect(source).toContain("Na końcu: kierunki w Twoim budżecie");
+    expect(source).toContain("Dobierzemy kierunek i plan wyjazdu.");
+    expect(source).toContain("Cenę lotu potwierdzisz u sprzedawcy");
   });
 });

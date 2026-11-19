@@ -1,3 +1,4 @@
+import { tripIdCandidates } from "@/lib/tripId";
 import { cache } from "react";
 import { createServiceClient } from "@/lib/supabase/service";
 import { buildShareOgModel, type ShareOgModel } from "@/lib/shareOg";
@@ -18,7 +19,7 @@ export const lookupPublicTrip = cache(async (tripId: string): Promise<ShareLooku
     const { data, error } = await supabase
       .from("trips")
       .select("city, country, ai_plan_json, quiz_answers")
-      .eq("id", tripId)
+      .in("id", tripIdCandidates(tripId))
       .eq("is_public", true)
       .maybeSingle();
     if (error) return { status: "unknown" };

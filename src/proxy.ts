@@ -4,7 +4,7 @@ import { redirectsToCanonical } from "@/lib/canonicalHost";
 
 export async function proxy(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
-  if (redirectsToCanonical(host, request.nextUrl.pathname)) {
+  if (redirectsToCanonical(host, request.nextUrl.pathname, process.env.VERCEL_ENV)) {
     const url = request.nextUrl.clone();
     url.protocol = "https:";
     url.host = "wloczykij.me";

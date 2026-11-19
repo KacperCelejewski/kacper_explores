@@ -59,7 +59,7 @@ export function formatCheckedAt(iso: string | undefined | null): string | null {
 }
 
 function subjectFor(deals: DropDeal[], originCity: string | null): string {
-  if (deals.length === 1) return `${deals[0].city_name} za ${deals[0].price} zł w ten weekend`;
+  if (deals.length === 1) return `${deals[0].city_name}: lot za ${deals[0].price} zł na ten weekend`;
   return originCity
     ? `${deals.length} wyjazdy z ${originCity} na ten weekend`
     : `${deals.length} wyjazdy na ten weekend`;
@@ -155,7 +155,7 @@ export function renderDropEmail(input: {
   const preheader =
     input.deals.length === 1
       ? `${formatLocal(input.deals[0].departure_at)} → ${formatLocal(input.deals[0].return_at)}, ${transfersLabel(input.deals[0].transfers)}.`
-      : `Od ${cheapest} zł: ${input.deals.map((d) => d.city_name).join(", ")}.`;
+      : `Loty od ${cheapest} zł: ${input.deals.map((d) => d.city_name).join(", ")}.`;
   const settingsUrl = buildSettingsUrl(input.appUrl, input.unsubscribeToken);
   const unsubscribeUrl = buildUnsubscribeUrl(input.appUrl, input.unsubscribeToken);
   const affiliate = input.marker.trim().length > 0;
