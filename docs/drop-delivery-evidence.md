@@ -1,6 +1,6 @@
-# Dowód dostarczenia zrzutu (R5): stan na 2026-11-19, praca NIEDOKOŃCZONA
+# Dowód dostarczenia zrzutu (R5)
 
-Zakres wykonany: audyt kodu (bez wywołań crona, bez wysyłek). Kod aplikacji NIE został zmieniony. Brak recenzenta obalającego. Testy bazowe: `vitest run src/lib/drop src/app/api` = 192 zielone (przed zmianami).
+Audyt kodu i uzupełnienie logowania (2026-11-19). Nic nie wysłano, cron nie był wywoływany; testy używają mocków Resend i bazy. Tabela poniżej opisuje stan PRZED zmianami; co dodano, jest niżej.
 
 ## Ustalenia z audytu
 
@@ -14,25 +14,48 @@ Zakres wykonany: audyt kodu (bez wywołań crona, bez wysyłek). Kod aplikacji N
 | Dostarczenie / klik | Webhook `/api/resend-webhook` obsługuje wyłącznie `email.bounced` (Permanent) i `email.complained`; `delivered`, `clicked`, `delivery_delayed`, `failed` są ignorowane. Dokumentacja prosi o subskrypcję tylko dwóch zdarzeń. Czy w Resend włączone jest śledzenie kliknięć: NIEZWERYFIKOWANE. | `api/resend-webhook/route.ts`, `docs/email-deliverability-audit.md:43` |
 | Klik -> plan | "Sprawdź cenę" idzie prosto do Aviasales (brak własnego zapisu kliku). "Ułóż mi plan" otwiera `/quiz?src=drop&utm_*`; jedyny ślad to GA4 `drop_plan_started` (tylko po zgodzie na cookies). `plan_generated` to wyłącznie GA4 bez atrybucji źródła; `quiz_events` nie ma tygodnia ani źródła. | `quiz/page.tsx:216`, `destinations/page.tsx:801` |
 
+## Co dodano (commit 5311fa9)
+
+| Zdarzenie | Gdzie powstaje | Zapis |
+|---|---|---|
+| `consent_given` (źródło: verify_link / profile / settings) | `newsletter/verify`, `drop/subscribe` (profil), `drop/settings` | `drop_events` + log |
+| `settings_disabled`, `unsubscribed` (+ `was_enabled`) | `drop/settings`, `drop/unsubscribe` (tylko gdy zmiana stanu, nie przy skardze/odbiciu) | j.w. |
+| `delivered`, `bounced`, `complained`, `delayed`, `failed`, `clicked` (rodzaj linku: plan/price/settings/unsubscribe) | `/api/resend-webhook`, tylko maile z `drop_sends` (po `resend_id`), dedupe po `svix-id`; otwarcia pomijane | j.w. |
+| `send_rejected`, `send_failed`, `send_uncertain`, `send_unrecorded`, `run_summary` | `cron/drop-send` | j.w. |
+| `drop_start:<medium>:<tydzień>`, `drop_plan:<medium>:<tydzień>` | quiz (wejście z `src=drop`) i `/destinations` (plan na miasto z maila, raz) | `quiz_events` przez `/api/track`, bez migracji |
+
+Dodatkowo: Slack i odpowiedź crona zawierają `pendingReservations` (rezerwacje bez `sent_at`), czyli odbiorców, których nikt nie ponowi. Wszystkie zapisy są odporne na brak tabeli `drop_events`: wtedy zostają linie `[drop-event] {json}` w logach Vercel (krótka retencja, nie dowód długoterminowy). Bez adresów e-mail i pełnych linków.
+
 ## Odpowiedź: czy z logów da się policzyć zapis -> dostarczony -> klik -> plan?
 
-Dziś: **nie w całości.** Zapis (`newsletter_subscribers.created_at/verified_at`) i wysłane (`drop_sends.sent_at`, `resend_id`) tak. Dostarczone, kliknięcia i plany z zrzutu: nie (brak zapisu lub tylko GA4 za zgodą). Wypisania: bez czasu, nie do policzenia per tydzień.
+Po wdrożeniu migracji i konfiguracji Resend: **tak, w agregacie na tydzień**; bez nich: tylko zapis, wysłane i atrybucja planu (`quiz_events`). Zapytania (tydzień `2026-W47` jako przykład):
 
-## Gotowe i zaproponowane (niezastosowane)
+```sql
+-- zapis (ostatnie 7 dni), zgoda
+select count(*) from drop_events where event='consent_given' and created_at > now() - interval '7 days';
+-- wysłane
+select count(*) from drop_sends where week='2026-W47' and sent_at is not null;
+-- dostarczone / odbicia / skargi / kliknięcia wg rodzaju linku
+select event, detail->>'link_kind' as link, count(*) from drop_events
+ where week='2026-W47' and event in ('delivered','bounced','complained','delayed','failed','clicked') group by 1,2;
+-- wypisania w dniach po wysyłce
+select count(*) from drop_events where event='unsubscribed' and created_at between '2026-11-19' and '2026-11-26';
+-- wejścia w quiz z maila i plany
+select event, count(*) from quiz_events where event in ('drop_start:email:2026-W47','drop_plan:email:2026-W47') group by 1;
+```
 
-- `supabase/migrations/20261119000000_drop_events.sql`: tabela `drop_events` (event, week, subscriber_id, resend_id, source_id UNIQUE do deduplikacji, detail JSONB, bez e-maili i pełnych linków). **Nie stosować na produkcji bez zgody i przeglądu SQL.**
+Koszt wysyłki i wypisania liczy się osobno (koszt = liczba wysłanych x cena Resend z faktury; wypisy z zapytania wyżej). Otwarcia nie są dowodem i nie są zapisywane.
 
-## Do zrobienia (nie wykonano)
+## Ograniczenia (nie do zweryfikowania bez produkcji)
 
-1. `src/lib/drop/events.ts`: `logDropEvents(db, rows)` (linia `[drop-event] {json}` do logów + insert, odporny na brak tabeli przez `isMissingTableError`) i mapowanie zdarzeń Resend (`delivered/bounced/complained/delivery_delayed/failed/clicked`) wraz z rodzajem linku (plan / cena / ustawienia).
-2. Webhook: zapis zdarzeń po mapowaniu `email_id` -> `drop_sends.resend_id`, dedupe po `svix-id`; dotychczasowe wyłączanie po bounce/complaint bez zmian.
-3. `drop-send`: zdarzenia `send_rejected/send_failed/send_uncertain/send_unrecorded` i `run_summary`; w Slacku liczba rezerwacji bez `sent_at`.
-4. Wypis i ustawienia: zdarzenie `unsubscribed`; weryfikacja/profil: `consent_given` ze źródłem.
-5. Atrybucja planu: w quizie dla `src=drop` zdarzenie `drop_start:<medium>:<tydzień>` do `/api/track`, tydzień+miasto w `sessionStorage`, na `/destinations` po wygenerowaniu planu `drop_plan:<tydzień>`.
-6. Testy z mockiem Resend (route `drop-send`, webhook, wypis), `npm test`, `lint`, `typecheck`, `build` z dummy env, recenzent obalający (do 3 rund).
+- Webhook Resend musi subskrybować `email.delivered`, `email.clicked`, `email.delivery_delayed`, `email.failed` (dotąd zalecane tylko bounced i complained) i śledzenie kliknięć musi być włączone w Resend: NIEZWERYFIKOWANE.
+- Klik "Sprawdź cenę" jest widoczny tylko z webhooka Resend; sprzedaż po stronie Travelpayouts to zakres R6.
+- `drop_start`/`drop_plan` to agregat: `/api/track` przyjmuje zdarzenia od każdego (podatne na zawyżenie), brak powiązania z konkretnym odbiorcą (świadomie, prywatność). Plan liczy się tylko dla miasta z maila, raz na wejście; zmiana przeglądarki lub karty gubi atrybucję (sessionStorage).
+- Luka z `sent_at = NULL` nie jest naprawiana automatycznie (Resend mógł przyjąć partię); jest teraz widoczna. Procedura: sprawdzić w panelu Resend po `resend_id`/czasie i dopiero wtedy decydować.
+- Wysyłka wcześniejszych tygodni nie ma wstecznego dziennika zdarzeń.
 
-## Wymagania produkcji (po wdrożeniu punktów 1-5)
+## Wymagania produkcji
 
-- Zgoda Kacpra na migrację `drop_events` (najpierw migracja, potem kod).
-- W Resend: webhook ze zdarzeniami `email.delivered`, `email.clicked`, `email.delivery_delayed`, `email.failed` (obok bounced/complained) i włączone śledzenie kliknięć dla domeny wysyłkowej.
-- Licznik ludzi z tej statystyki to agregaty; `/api/track` przyjmuje zdarzenia od każdego, więc to wskaźnik, nie dowód.
+1. Zgoda Kacpra i przegląd SQL migracji `supabase/migrations/20261119000000_drop_events.sql` (najpierw migracja, potem kod; kod działa też bez niej).
+2. Konfiguracja Resend jak wyżej.
+3. Polityka prywatności: dopisać, że zapisujemy zdarzenia dostarczenia/kliknięcia maila zrzutu (obecnie wspomina tylko wysyłkę przez Resend) - do decyzji Kacpra.
