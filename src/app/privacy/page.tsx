@@ -52,7 +52,7 @@ const Ul = ({ children }: { children: React.ReactNode }) => (
 );
 
 export default function PrivacyPage() {
-  const updatedAt = "16 listopada 2026";
+  const updatedAt = "19 listopada 2026";
   const adminEmail = "hej@wloczykij.me";
 
   const schema = {
