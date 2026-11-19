@@ -1,6 +1,7 @@
 import { loadConsent } from "./cookieConsent";
 import type { QuizAnswers } from "@/types";
 import { groupFromCompanion, groupSize } from "./group";
+import { entryEventParams, type EntryAttribution } from "./entryAttribution";
 
 // Google Analytics 4 — skrypt i zdarzenia dopiero po wyraźnej zgodzie z banera.
 export const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
@@ -78,6 +79,7 @@ export function planGeneratedParams(
   city: string,
   days: number,
   quiz: Pick<QuizAnswers, "companion" | "group">,
+  entry?: EntryAttribution | null,
 ) {
-  return { city, days, group_size: groupSize(groupFromCompanion(quiz.companion, quiz.group)) };
+  return { city, days, group_size: groupSize(groupFromCompanion(quiz.companion, quiz.group)), ...entryEventParams(entry) };
 }

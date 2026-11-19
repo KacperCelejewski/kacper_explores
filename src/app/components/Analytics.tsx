@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Script from "next/script";
 import { GA_ID, trackEvent, setAnalyticsConsent } from "@/lib/analytics";
+import { contentRefFromPath, entryEventParams, entryStorage, saveContentRef } from "@/lib/entryAttribution";
 import { affiliateClickParams, affiliateServerEvent } from "@/lib/affiliate";
 
 import { useCookieConsent } from "./AffiliateProvider";
@@ -53,6 +54,13 @@ export default function Analytics() {
           ?? el.closest("section[id]")?.id ?? el.closest("nav, footer, header")?.tagName.toLowerCase(), 40) || undefined,
         page_path: window.location.pathname,
       });
+      // Link do quizu: zapamiętujemy stronę treści (artykuł, okazje, miasto), z której idzie wejście; z innych stron kasujemy stary ślad.
+      const toQuiz = e.target instanceof Element ? e.target.closest<HTMLAnchorElement>("a[href]") : null;
+      if (toQuiz && toQuiz.origin === window.location.origin && toQuiz.pathname === "/quiz") {
+        const ref = contentRefFromPath(window.location.pathname);
+        saveContentRef(entryStorage(), ref);
+        if (ref) trackEvent("entry_click", { ...entryEventParams(ref), target: "quiz" });
+      }
       const aff = link ? affiliateClickParams(link.dataset) : null;
       if (aff) {
         trackEvent("affiliate_click", { ...aff, page_path: window.location.pathname });

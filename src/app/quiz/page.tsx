@@ -11,6 +11,7 @@ import { useAppStore } from "@/lib/store";
 import type { TravelStyle, TripDuration, TravelVibe, QuizAnswers } from "@/types";
 import { MONTH_NAMES } from "@/lib/constants";
 import { trackEvent, quizGaEventName } from "@/lib/analytics";
+import { captureEntry, entryEventParams, entryStorage, type EntryAttribution } from "@/lib/entryAttribution";
 import { cityAfterLogin, quizLoginNext } from "@/lib/quizLogin";
 import { parseDropParams } from "@/lib/drop/quizParams";
 import QuizProgress from "@/components/quiz/QuizProgress";
@@ -194,11 +195,14 @@ function QuizPageInner() {
   const sessionId = useRef(crypto.randomUUID());
   const reducedMotion = useReducedMotion();
 
+  const entryRef = useRef<EntryAttribution | null>(null);
+
   const track = (event: string, id?: QuizStepId) => {
     const step = id ? quizAnalyticsStep(id) : undefined;
     trackEvent(quizGaEventName(event), {
       step, step_id: id, step_position: id ? steps.indexOf(id) + 1 : undefined,
       flow_version: "human_v1",
+      ...entryEventParams(entryRef.current),
     });
     void fetch("/api/track", {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -207,13 +211,16 @@ function QuizPageInner() {
   };
 
   useEffect(() => {
+    // Skąd wejście (kanał i materiał), zanim URL zostanie oczyszczony; dopisywane do zdarzeń aż do planu.
+    entryRef.current = captureEntry(searchParams, entryStorage(), document.referrer, window.location.origin);
+    trackEvent("quiz_entry", { ...entryEventParams(entryRef.current), has_src: Boolean(homeParams.src || dropPrefill), flow_version: "human_v1" });
     if (dropPrefill) {
       setQuizAnswer("preferredCity", dropPrefill.preferredCity);
       setQuizAnswer("airports", dropPrefill.airports);
       setQuizAnswer("month", dropPrefill.month);
       setQuizAnswer("duration", dropPrefill.duration);
       setCurrentQuizStep(quizStepIndex("companion"));
-      trackEvent("drop_plan_started", { city: dropPrefill.preferredCity });
+      trackEvent("drop_plan_started", { city: dropPrefill.preferredCity, ...entryEventParams(entryRef.current) });
     } else if (searchParams.get("afterLogin") === "1") {
       setQuizAnswer("preferredCity", cityAfterLogin(searchParams.get("city"), quizAnswers.preferredCity));
     } else if (!parseQuizStep(searchParams.get("step"))) {
@@ -299,7 +306,7 @@ function QuizPageInner() {
     setSubmitting(true);
     track("quiz_complete");
     const profile = await fetch("/api/profile").then((r) => r.json()).catch(() => ({}));
-    router.push(profile.authenticated ? "/destinations" : `/login?next=${encodeURIComponent(quizLoginNext(quizAnswers.preferredCity))}`);
+    router.push(profile.authenticated ? "/destinations" : `/login?next=${encodeURIComponent(quizLoginNext(quizAnswers.preferredCity, entryRef.current))}`);
     submittingRef.current = false;
     setSubmitting(false);
   };

@@ -8,6 +8,7 @@ import { createSupabaseClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
 import { quizSummary } from "@/lib/quizSummary";
 import { trackEvent } from "@/lib/analytics";
+import { DIRECT_ENTRY, entryEventParams, entryStorage, loadEntry } from "@/lib/entryAttribution";
 import { safeNextPath } from "@/lib/safeRedirect";
 import DropSignup from "@/app/components/DropSignup";
 import { IconMail, IconArrowLeft } from "@/app/components/Icons";
@@ -62,7 +63,7 @@ function LoginContent() {
 
   // Mierzymy bramkę po quizie: ile osób dochodzi do tego ekranu
   useEffect(() => {
-    if (fromQuiz) trackEvent("login_gate_view");
+    if (fromQuiz) trackEvent("login_gate_view", entryEventParams(loadEntry(entryStorage()) ?? DIRECT_ENTRY));
   }, [fromQuiz]);
 
   return (
