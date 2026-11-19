@@ -36,6 +36,17 @@ describe("entryFromUrl", () => {
   });
 });
 
+describe("filtr wartości", () => {
+  it("odrzuca ciągi cyfr podobne do numeru telefonu i długie slugi nie giną", () => {
+    expect(entryFromUrl(q("utm_source=instagram&utm_campaign=bio&utm_content=48555123456"))?.material).toBe("ig:bio");
+    const slug = "a".repeat(80);
+    expect(contentRefFromPath(`/blog/${slug}`)?.material).toBe(`blog:${slug}`);
+  });
+  it("src=drop bez utm daje sam kanał", () => {
+    expect(entryFromUrl(q("src=drop"))?.material).toBe("drop:drop");
+  });
+});
+
 describe("resolveEntry", () => {
   it("strona treści wygrywa z src, a direct nie nadpisuje zapamiętanego", () => {
     const ref = { channel: "blog", material: "blog:a" };

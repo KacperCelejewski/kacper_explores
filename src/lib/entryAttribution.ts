@@ -4,7 +4,8 @@ import { SRC_VALUES, type HomeSrc } from "./homeParams";
 // Skąd osoba weszła do quizu: kanał (ig, blog, okazje, ...) i konkretny materiał (np. blog:ktorym-lotniskiem-z-polski-lecisz-na-weekend).
 // Te dwie wartości dopisujemy do zdarzeń GA4 od wejścia do planu, żeby dało się policzyć
 // wejście z materiału -> ukończony quiz -> plan. Tylko znane, bezpieczne wartości: małe litery, cyfry i _ . - :
-// bez adresów, e-maili i niczego, co wpisuje użytkownik. Opis: docs/entry-quality-measurement.md.
+// bez adresów, e-maili i długich ciągów cyfr. Wartości utm_* i entry_* w adresie pochodzą z linków, więc
+// to filtr znaków, nie biała lista: własne linki mają mieć neutralne nazwy kampanii. Opis: docs/entry-quality-measurement.md.
 export interface EntryAttribution {
   channel: string;
   material: string;
@@ -12,12 +13,14 @@ export interface EntryAttribution {
 
 export const DIRECT_ENTRY: EntryAttribution = { channel: "direct", material: "direct" };
 
-const TOKEN = /^[a-z0-9][a-z0-9_.-]{0,59}$/;
+const TOKEN = /^[a-z0-9][a-z0-9_.-]{0,89}$/;
+// Ciąg 7+ cyfr wygląda na numer telefonu albo identyfikator: nie trafia do GA4.
+const DIGITS = /\d{7,}/;
 const MAX_MATERIAL = 100;
 
 function token(value: string | null | undefined): string | null {
   const v = value?.trim().toLowerCase();
-  return v && TOKEN.test(v) ? v : null;
+  return v && TOKEN.test(v) && !DIGITS.test(v) ? v : null;
 }
 
 const SOURCE_ALIAS: Record<string, string> = { instagram: "ig" };
@@ -58,7 +61,7 @@ export function parseEntryParams(params: ParamGetter): EntryAttribution | null {
   const channel = token(params.get("entry_channel"));
   const material = params.get("entry_material")?.trim().toLowerCase();
   if (!channel || !material || material.length > MAX_MATERIAL) return null;
-  if (!material.split(":").every((s) => s === "-" || TOKEN.test(s))) return null;
+  if (!material.split(":").every((s) => s === "-" || token(s) === s)) return null;
   if (material.split(":")[0] !== channel) return null;
   return { channel, material };
 }
@@ -112,7 +115,7 @@ export type EntryStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
 const ENTRY_KEY = "wl_entry";
 const REF_KEY = "wl_entry_ref";
-const ENTRY_TTL_MS = 3 * 60 * 60 * 1000;
+const ENTRY_TTL_MS = 60 * 60 * 1000;
 const REF_TTL_MS = 30 * 60 * 1000;
 
 function read(storage: EntryStorage | null, key: string, ttl: number, now: number): EntryAttribution | null {
