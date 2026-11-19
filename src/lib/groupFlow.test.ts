@@ -87,8 +87,8 @@ describe("crewBudgetTogether", () => {
 describe("flightTotalNote", () => {
   it("podaje sumę lotów dla całej ekipy", () => {
     const note = flightTotalNote(450, "friends", FOUR);
-    expect(note).toContain("razem ok.");
-    expect(note?.replace(/ /g, " ")).toBe("razem ok. 1800 zł (4 osoby)");
+    expect(note).toContain("Lot dla wszystkich ok.");
+    expect(note?.replace(/ /g, " ")).toBe("Lot dla wszystkich ok. 1800 zł (4 osoby)");
   });
 
   it("zwraca null dla jednej osoby i niepoprawnej ceny", () => {

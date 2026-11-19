@@ -1,5 +1,6 @@
 "use client";
 
+import { PLAN_TOTAL_LABEL, PLAN_TOTAL_NOTE } from "@/lib/priceTrust";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -171,7 +172,7 @@ export default function ShareClient() {
           </div>
 
           <div className="mt-3 pt-3 border-t flex items-center justify-between" style={{ borderColor: "var(--border)" }}>
-            <span className="text-sm" style={{ color: "var(--text-muted)" }}>Szacowany całkowity koszt</span>
+            <span className="text-sm" style={{ color: "var(--text-muted)" }}>{PLAN_TOTAL_LABEL}</span>
             {crewTotal ? (
               <div className="text-right">
                 <div className="text-base font-bold" style={{ color: "var(--accent)" }}>
@@ -187,6 +188,7 @@ export default function ShareClient() {
               <span className="text-base font-bold" style={{ color: "var(--accent)" }}>{plan.totalBudgetEstimate}</span>
             )}
           </div>
+        <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>{PLAN_TOTAL_NOTE}</p>
         </motion.div>
       </div>
 

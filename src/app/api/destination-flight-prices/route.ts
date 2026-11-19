@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { CATALOG } from "@/lib/destinations/catalog";
 import { groupFromCompanion, toFlightPassengers } from "@/lib/group";
 import { readJsonBody } from "@/lib/http";
 import { checkRateLimit, LIMITS } from "@/lib/rateLimit";
 import { getClientIp, validateDestination, validateQuizAnswers } from "@/lib/validate";
-import { candidateDates, readCachedFlightPairs } from "@/lib/flights/rapidapi";
+import { readCachedFlightPairs } from "@/lib/flights/rapidapi";
+import { cachedForPairs, cardSearchPairs } from "@/lib/flights/card-pairs";
 import { selectCardFlightPrice } from "@/lib/flights/card-price";
 import type { Companion, DestinationRecommendation, QuizAnswers } from "@/types";
 
@@ -35,19 +35,8 @@ export async function POST(req: NextRequest) {
 
   const { destinations, quizAnswers: quiz } = parsed.body;
   const passengers = toFlightPassengers(groupFromCompanion(quiz.companion ?? null, quiz.group));
-  // The same bounded search window as searchFlightOptions; no unrelated dates/years.
-  const dates = candidateDates(quiz.month!, quiz.duration!).slice(0, 3);
-  const searches = destinations.map((dest) => {
-    const city = CATALOG.find((entry) => entry.city.toLocaleLowerCase("pl") === dest.city.toLocaleLowerCase("pl")
-      && entry.country.toLocaleLowerCase("pl") === dest.country.toLocaleLowerCase("pl"));
-    return city ? [...new Set(quiz.airports)].flatMap((origin) => dates.map((date) => ({
-      origin, destination: origin === "BER" ? city.iataBer ?? city.iataWro : city.iataWro, ...date,
-    }))) : [];
-  });
+  const searches = cardSearchPairs(destinations, quiz);
   const cached = await readCachedFlightPairs(searches.flat(), passengers);
-  const prices = searches.map((pairs) => selectCardFlightPrice(cached.filter((entry) => pairs.some((pair) =>
-    pair.origin === entry.origin && pair.destination === entry.destination
-      && pair.departDate === entry.departDate && pair.returnDate === entry.returnDate,
-  )), passengers));
+  const prices = searches.map((pairs) => selectCardFlightPrice(cachedForPairs(cached, pairs), passengers));
   return NextResponse.json({ prices }, { headers });
 }
