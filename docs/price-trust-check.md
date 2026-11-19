@@ -28,13 +28,13 @@ Wyniki na fixtures (nie dane produkcyjne): 3 kwalifikujące się karty z 4, z ce
 | Licznik wydatków (`BudgetTracker`) | wydatki na loty wchodziły do porównania z planem bez lotów (fałszywe "powyżej budżetu"); kategoria Loty pokazywała "plan: ~0 zł"; plan brany z dolnego końca zakresu | porównanie bez lotów, z górnym końcem zakresu; Loty: "poza szacunkiem planu" |
 | `FlightCard` (stare zapisane plany) | "cena z ostatnich wyszukiwań", choć bez daty | "cena orientacyjna, ze starszego wyszukiwania, bez daty sprawdzenia; potwierdź ją przed zakupem". Żaden obecny kod nie ustawia `bestOffer`, więc dotyczy tylko starych planów |
 | Mail zrzutu | temat "Mediolan za 201 zł w ten weekend" brzmiał jak koszt weekendu; preheader "Od X zł" bez "lot" | "Mediolan: lot za 201 zł na ten weekend"; "Loty od X zł: …". Treść maila już miała datę i "może się zmienić" |
-| `/okazje`, `/okazje/[lotnisko]`, `/weekend/[miasto]`, pasek na stronie głównej | statyczne "z ostatnich dni" (niesprawdzane), data tylko w stopce, "od X zł" bez słowa "lot" | wspólny helper `dealsPriceNote`: data z **najstarszego** `fetched_at`, ostrzeżenie "sprzed ponad tygodnia" powyżej 8 dni, "bez podanej daty" gdy brak; nota przy nagłówku, "lot od X zł" |
+| `/okazje`, `/okazje/[lotnisko]`, `/weekend/[miasto]`, pasek na stronie głównej | statyczne "z ostatnich dni" (niesprawdzane), data tylko w stopce, "od X zł" bez słowa "lot" | wspólny helper `dealsPriceNote`: data pobrania z **najstarszego** `fetched_at` ("pobrane przez nas"), ostrzeżenie "ponad tydzień temu" powyżej 8 dni, "bez podanej daty" gdy brak; nota przy nagłówku, "lot od X zł" |
 
 Testy: `src/lib/priceTrust.test.ts` (świeżość, nota, kopia budżetu, porównanie wydatków, kontrole źródeł), `coverage.test.ts`, zaktualizowane `email.test.ts`, `groupFlow.test.ts`, `shareOg.test.ts`.
 
 ## 3. Luki pozostałe
 
-- Plany sprzed 2026-11-12 mogły wliczać lot w sumę; etykieta "bez lotów" jest dla nich niepewna (brak pola z wersją promptu).
+- Plany sprzed 2026-11-12 mogły wliczać lot w sumę, a kafelek "Loty" mieć liczbę; etykieta "bez lotów" jest dla nich niepewna, ekran może sam sobie przeczyć (brak pola z wersją promptu).
 - `DealsStrip` bez okazji na starcie dalej ukrywa sekcję bez komunikatu (świadoma decyzja w kodzie); po zmianie lotniska komunikat jest.
 - Stare wiersze `drop_deals` są pokazywane z ostrzeżeniem, nie ukrywane. Jeśli cron zawiedzie, ostrzeżenie pojawia się po 8 dniach.
 - Zrozumienie ceny przez ludzi (H1) nie było badane; to test z użytkownikami, nie kod.
@@ -42,7 +42,6 @@ Testy: `src/lib/priceTrust.test.ts` (świeżość, nota, kopia budżetu, porówn
 - Nie sprawdzono renderu w przeglądarce (patrz sekcja recenzji).
 
 - Data przy cenach okazji to data **pobrania przez nas** (`fetched_at` crona), nie data oferty u dostawcy (Travelpayouts oddaje dane z własnego cache). Copy mówi "pobrane przez nas"; wiek samej oferty jest nieznany.
-- Stare plany (sprzed 2026-11-12) mogą w kafelku "Loty" mieć liczbę, a pod sumą etykietę "bez lotów": ekran sam sobie przeczy. Brak pola z wersją promptu, nie da się odróżnić.
 - Notka pod sumą planu w widoku udostępnionym nie odwołuje się do quizu (odbiorca linku go nie robił).
 
 ## 4. Recenzja obalająca (niezależny proces `claude -p --model sonnet --permission-mode plan`)
@@ -64,7 +63,7 @@ Testy: `src/lib/priceTrust.test.ts` (świeżość, nota, kopia budżetu, porówn
 
 **Nie dało się zweryfikować:** render stron i komponentów w przeglądarce (brak testów komponentów, dev server nie uruchamiany w recenzji); pokrycie na danych produkcyjnych; zachowanie planów sprzed 2026-11-12.
 
-**Runda 2** (testy 1079 zielone, tsc czysty, merge z `origin/main` bez konfliktów). Naprawy z rundy 1 potwierdzone. Nowe ustalenia:
+**Runda 2** (testy 1079 zielone w chwili recenzji, tsc czysty, merge z `origin/main` bez konfliktów). Naprawy z rundy 1 potwierdzone. Nowe ustalenia:
 
 | # | Waga | Ustalenie | Decyzja |
 |---|---|---|---|
@@ -74,3 +73,7 @@ Testy: `src/lib/priceTrust.test.ts` (świeżość, nota, kopia budżetu, porówn
 | 4 | drobna | stare plany: kafelek "Loty" z liczbą pod etykietą "bez lotów" | luka w sekcji 3 (nie do odróżnienia bez wersji promptu) |
 | 5 | drobna | hub `/okazje`: nota z najtańszych okazji, nie ze wszystkich | zostaje (mały wpływ) |
 | 6 | drobna | wcięcie `<p>` | zostaje (kosmetyka) |
+
+**Runda 3** (commit ec7220e, testy 1080 zielone): brak blokerów i regresji. Ustalenia drobne, wszystkie naprawione: nota o starych cenach straciła zdanie "nie z rezerwacji na żywo" (przywrócone + test), dokument miał stare brzmienie not i zdublowany punkt o starych planach (scalone). Zostaje: nota na hubie `/okazje` z najtańszych okazji (mały wpływ); brak testów renderu.
+
+Stan końcowy: `npm test` 1080/1080, `npm run lint` 0 błędów (26 ostrzeżeń istniejących), `npm run typecheck` czysty, `npm run build` z dummy env przeszedł.

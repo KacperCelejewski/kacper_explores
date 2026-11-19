@@ -34,7 +34,7 @@ export function dealsPriceNote(deals: FetchedDeal[], now: number = Date.now()): 
   const oldest = Math.min(...(times as number[]));
   const date = dateFmt.format(oldest);
   if (now - oldest > FRESH_DEAL_MAX_AGE_DAYS * DAY_MS) {
-    return `Ceny pobraliśmy ${date}, czyli ponad tydzień temu, więc traktuj je jako orientacyjne. Przed zakupem sprawdź aktualną.`;
+    return `Ceny pobraliśmy ${date}, czyli ponad tydzień temu, nie z rezerwacji na żywo, więc traktuj je jako orientacyjne. Przed zakupem sprawdź aktualną.`;
   }
   return `Ceny orientacyjne, pobrane przez nas ${date} z wyszukiwań, nie z rezerwacji na żywo. Przed zakupem sprawdź aktualną.`;
 }

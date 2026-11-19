@@ -38,7 +38,9 @@ describe("dealsPriceNote", () => {
     expect(note).toContain("14 listopada");
   });
   it("warns when older than a week", () => {
-    expect(dealsPriceNote([{ price: 1, fetched_at: daysAgo(12) }], now)).toMatch(/ponad tydzień temu/);
+    const note = dealsPriceNote([{ price: 1, fetched_at: daysAgo(12) }], now)!;
+    expect(note).toMatch(/ponad tydzień temu/);
+    expect(note).toMatch(/nie z rezerwacji na żywo/);
   });
   it("does not claim a date when one is missing, broken or in the future", () => {
     for (const f of [undefined, "zepsute", daysAgo(-3)]) {
