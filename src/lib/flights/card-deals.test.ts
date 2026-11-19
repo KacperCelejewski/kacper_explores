@@ -85,6 +85,15 @@ describe("selectCardDeal", () => {
     expect(dealPriceNotes(selectCardDeal(bcn, quiz, [deal()], now)!, 1).join(" ")).not.toContain("nie wybrany");
   });
 
+  it("says when the flight's trip length is far from the quiz duration, and stays quiet when it is close", () => {
+    const long = selectCardDeal(bcn, { ...quiz, duration: 7 }, [deal()], now)!;
+    expect(long.tripDays).toBe(3);
+    expect(dealPriceNotes(long, 1).join(" ")).toContain("wyjazd na 3 dni, w quizie wybrano 7");
+    const close = selectCardDeal(bcn, { ...quiz, duration: 4 }, [deal()], now)!;
+    expect(dealPriceNotes(close, 1).join(" ")).not.toContain("w quizie wybrano");
+    expect(dealPriceNotes(selectCardDeal(bcn, quiz, [deal()], now)!, 1).join(" ")).not.toContain("w quizie wybrano");
+  });
+
   it("expires at departure at the latest and never beyond 8 days from the fetch", () => {
     const q = selectCardDeal(bcn, quiz, [deal({ fetched_at: "2026-11-19T10:00:00Z" })], now)!;
     expect(q.expiresAt).toBe(Date.parse("2026-11-20T06:15:00+01:00"));

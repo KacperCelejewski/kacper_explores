@@ -27,6 +27,9 @@ export interface CardDealPrice {
   expiresAt: number;
   /** The deal's departure month differs from the month chosen in the quiz. */
   outsideMonth: boolean;
+  /** Length of this flight's trip in days (first to last day), and the length chosen in the quiz. */
+  tripDays: number;
+  quizDays: number | null;
   deal: DropDeal;
 }
 
@@ -53,6 +56,10 @@ export function dealMatchesCity(deal: Pick<DropDeal, "origin" | "city_code" | "c
   return deal.city_code === destinationCodeFor(city, deal.origin) || deal.city_name === dealCityName(city);
 }
 
+function tripDays(from: string, to: string): number {
+  return Math.round((Date.parse(`${to}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`)) / DAY_MS) + 1;
+}
+
 function localDate(iso: string): string {
   return iso.slice(0, 10);
 }
@@ -64,7 +71,7 @@ function localDate(iso: string): string {
  */
 export function selectCardDeal(
   dest: { city: string; country: string },
-  quiz: Pick<QuizAnswers, "airports" | "month">,
+  quiz: Pick<QuizAnswers, "airports" | "month"> & { duration?: number | null },
   deals: DropDeal[],
   now = Date.now(),
 ): CardDealPrice | null {
@@ -105,6 +112,8 @@ export function selectCardDeal(
     checkedAt,
     expiresAt: Math.min(checkedAt + FRESH_DEAL_MAX_AGE_DAYS * DAY_MS, departure),
     outsideMonth: quiz.month != null && Number(departDate.slice(5, 7)) !== quiz.month,
+    tripDays: tripDays(departDate, localDate(best.return_at)),
+    quizDays: Number.isInteger(quiz.duration) && (quiz.duration as number) > 0 ? (quiz.duration as number) : null,
     deal: best,
   };
 }
@@ -113,7 +122,9 @@ export function selectCardDeal(
 export function dealPriceNotes(quote: CardDealPrice, seats: number): string[] {
   const notes = [`Za 1 dorosłego, w obie strony · ${quote.origin} → ${quote.cityName}`];
   if (seats > 1) notes.push("To cena za jedną osobę. Dla całej grupy sprawdź ją w wyszukiwarce.");
+  const longer = quote.quizDays !== null && Math.abs(quote.tripDays - quote.quizDays) >= 2;
   if (quote.outsideMonth) notes.push("To najbliższy weekend z tygodniowych okazji, nie wybrany w quizie miesiąc.");
   else notes.push("Z tygodniowych okazji, na najbliższy weekend.");
+  if (longer) notes.push(`Ten lot to wyjazd na ${quote.tripDays} ${quote.tripDays === 1 ? "dzień" : "dni"}, w quizie wybrano ${quote.quizDays}.`);
   return notes;
 }

@@ -134,7 +134,7 @@ export async function getDealsForCards(cities: CatalogEntry[], origins: string[]
     const weeks = [...new Set(latest.values())];
     const codes = [...new Set(cities.flatMap((c) => [c.iataWro, c.iataBer].filter((x): x is string => !!x)))];
     const names = [...new Set(cities.map(dealCityName))];
-    const base = () => db.from("drop_deals").select("*").in("origin", [...latest.keys()]).in("week", weeks);
+    const base = () => db.from("drop_deals").select("*").in("origin", [...latest.keys()]).in("week", weeks).order("price", { ascending: true });
     const [byCode, byName] = await Promise.all([base().in("city_code", codes).limit(500), base().in("city_name", names).limit(500)]);
     if (byCode.error || byName.error) throw new Error((byCode.error ?? byName.error)!.message);
     const rows = new Map<string, DropDeal>();

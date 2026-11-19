@@ -15,16 +15,18 @@ function dealsBuilder() {
   let columns = "*";
   let limit = Infinity;
   let desc = false;
+  let sortPrice = false;
   const b: Record<string, unknown> = {
     select: (c: string) => { columns = c; return b; },
     eq: (col: string, v: unknown) => { filters.push([col, [v]]); return b; },
     in: (col: string, v: unknown[]) => { filters.push([col, v]); return b; },
-    order: (_c: string, o: { ascending: boolean }) => { desc = !o.ascending; return b; },
+    order: (c: string, o: { ascending: boolean }) => { if (c === "price") sortPrice = true; else desc = !o.ascending; return b; },
     limit: (n: number) => { limit = n; return b; },
     then: (resolve: (v: unknown) => void) => {
       db.dealQueries++;
       if (db.dealsError) return resolve({ data: null, error: db.dealsError });
       let rows = db.deals.filter((r) => filters.every(([c, vs]) => vs.includes((r as unknown as Record<string, unknown>)[c])));
+      if (sortPrice) rows = [...rows].sort((a, c) => (a as DropDeal).price - (c as DropDeal).price);
       if (desc) rows = [...rows].sort((a, c) => String(c.week).localeCompare(String(a.week)));
       const out: unknown[] = rows.slice(0, limit).map((r) => (columns === "week" ? { week: r.week } : r));
       return resolve({ data: out, error: null });

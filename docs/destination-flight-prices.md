@@ -119,7 +119,7 @@ on `/okazje`; `utm_medium=cards`. The deal link carries one adult, not the group
 
 **Limits.** Only the nearest weekend and only destinations that the cron found a deal for (the cron
 stores the cheapest offers per airport, not every catalog city); other cards still say
-“Sprawdź w wyszukiwarce” with no amount. The quiz duration is not matched. Needs `drop_deals` and
+“Sprawdź w wyszukiwarce” with no amount. The quiz duration is not matched; the card states the flight's trip length when it differs from the quiz by 2 days or more. Needs `drop_deals` and
 `SUPABASE_SERVICE_ROLE_KEY` in production (already used by `/okazje`); without them the cards behave as before.
 
 **Tests.** `card-deals.test.ts` (matching, freshness, 8-day boundary, departed, stale/older week, BER,

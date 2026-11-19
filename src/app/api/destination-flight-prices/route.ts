@@ -47,6 +47,6 @@ export async function POST(req: NextRequest) {
   });
   const deals = missing.length ? await getDealsForCards(missing, quiz.airports ?? []) : [];
   const prices: (CardPrice | null)[] = cachePrices.map((price, i) =>
-    price ?? selectCardDeal(destinations[i], { airports: quiz.airports, month: quiz.month }, deals));
+    price ?? selectCardDeal(destinations[i], { airports: quiz.airports, month: quiz.month, duration: quiz.duration }, deals));
   return NextResponse.json({ prices }, { headers });
 }
