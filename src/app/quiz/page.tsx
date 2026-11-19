@@ -11,7 +11,7 @@ import { useAppStore } from "@/lib/store";
 import type { TravelStyle, TripDuration, TravelVibe, QuizAnswers } from "@/types";
 import { MONTH_NAMES } from "@/lib/constants";
 import { trackEvent, quizGaEventName } from "@/lib/analytics";
-import { captureEntry, entryEventParams, entryStorage, type EntryAttribution } from "@/lib/entryAttribution";
+import { captureEntry, entryEventParams, entryStorage, landingReferrer, type EntryAttribution } from "@/lib/entryAttribution";
 import { cityAfterLogin, quizLoginNext } from "@/lib/quizLogin";
 import { parseDropParams } from "@/lib/drop/quizParams";
 import QuizProgress from "@/components/quiz/QuizProgress";
@@ -212,8 +212,9 @@ function QuizPageInner() {
 
   useEffect(() => {
     // Skąd wejście (kanał i materiał), zanim URL zostanie oczyszczony; dopisywane do zdarzeń aż do planu.
-    entryRef.current = captureEntry(searchParams, entryStorage(), document.referrer, window.location.origin);
-    trackEvent("quiz_entry", { ...entryEventParams(entryRef.current), has_src: Boolean(homeParams.src || dropPrefill), flow_version: "human_v1" });
+    entryRef.current = captureEntry(searchParams, entryStorage(), landingReferrer(), window.location.origin);
+    // Powrót z logowania (afterLogin) to ciąg dalszy tego samego wejścia, nie nowe wejście.
+    if (searchParams.get("afterLogin") !== "1") trackEvent("quiz_entry", { ...entryEventParams(entryRef.current), has_src: Boolean(homeParams.src || dropPrefill), flow_version: "human_v1" });
     if (dropPrefill) {
       setQuizAnswer("preferredCity", dropPrefill.preferredCity);
       setQuizAnswer("airports", dropPrefill.airports);
@@ -306,7 +307,7 @@ function QuizPageInner() {
     setSubmitting(true);
     track("quiz_complete");
     const profile = await fetch("/api/profile").then((r) => r.json()).catch(() => ({}));
-    router.push(profile.authenticated ? "/destinations" : `/login?next=${encodeURIComponent(quizLoginNext(quizAnswers.preferredCity, entryRef.current))}`);
+    router.push(profile.authenticated ? "/destinations" : `/login?next=${encodeURIComponent(quizLoginNext(quizAnswers.preferredCity, entryStorage() ? entryRef.current : null))}`);
     submittingRef.current = false;
     setSubmitting(false);
   };

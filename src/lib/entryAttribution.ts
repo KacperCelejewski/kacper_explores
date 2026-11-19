@@ -145,6 +145,43 @@ export const loadContentRef = (storage: EntryStorage | null, now = Date.now()) =
 export const saveContentRef = (storage: EntryStorage | null, ref: EntryAttribution | null, now = Date.now()) =>
   write(storage, REF_KEY, ref, now);
 
+// Pamięć w obrębie otwartej karty (zmienna modułu, nic nie trafia do urządzenia): wejście rozpoznane przed zgodą na baner
+// jest dostępne, gdy zgoda przyjdzie chwilę później. Wygasa jak sessionStorage i jest kasowana po odrzuceniu zgody.
+let memEntry: { entry: EntryAttribution; t: number } | null = null;
+let memRef: { entry: EntryAttribution; t: number } | null = null;
+const fresh = (m: { t: number } | null, ttl: number, now: number) => m !== null && now >= m.t && now - m.t <= ttl;
+
+export function currentEntry(storage: EntryStorage | null, now = Date.now()): EntryAttribution | null {
+  return loadEntry(storage, now) ?? (fresh(memEntry, ENTRY_TTL_MS, now) ? memEntry!.entry : null);
+}
+export function clearEntry(storage: EntryStorage | null) {
+  memEntry = null;
+  saveEntry(storage, null);
+}
+export function rememberContentRef(storage: EntryStorage | null, ref: EntryAttribution | null, now = Date.now()) {
+  memRef = ref ? { entry: ref, t: now } : null;
+  saveContentRef(storage, ref, now);
+}
+// Odrzucenie zgody kasuje ślady z pamięci i z sessionStorage.
+export function clearEntryTraces() {
+  memEntry = null;
+  memRef = null;
+  try {
+    window.sessionStorage.removeItem(ENTRY_KEY);
+    window.sessionStorage.removeItem(REF_KEY);
+  } catch { /* storage zablokowany */ }
+}
+
+// document.referrer opisuje tylko pierwsze załadowanie karty; po nawigacji w aplikacji jest nieaktualny.
+// Używamy go więc raz i tylko wtedy, gdy karta została załadowana od razu na /quiz.
+const landingPath = typeof window === "undefined" ? null : (window.location?.pathname ?? null);
+let landingUsed = false;
+export function landingReferrer(): string | null {
+  if (landingUsed || landingPath !== "/quiz" || typeof document === "undefined") return null;
+  landingUsed = true;
+  return document.referrer || null;
+}
+
 // Magazyn tylko po zgodzie: bez niej nic nie zapisujemy w urządzeniu, a zdarzenia GA4 i tak się nie wysyłają.
 export function entryStorage(): EntryStorage | null {
   if (typeof window === "undefined" || loadConsent() !== "accepted") return null;
@@ -155,12 +192,16 @@ export function entryStorage(): EntryStorage | null {
 export function captureEntry(params: ParamGetter, storage: EntryStorage | null, referrer: string | null, origin: string, now = Date.now()): EntryAttribution {
   const entry = resolveEntry({
     params,
-    contentRef: loadContentRef(storage, now),
+    contentRef: loadContentRef(storage, now) ?? (fresh(memRef, REF_TTL_MS, now) ? memRef!.entry : null),
     referrerPath: sameOriginPath(referrer, origin),
-    stored: loadEntry(storage, now),
+    stored: currentEntry(storage, now),
   });
+  memRef = null;
   saveContentRef(storage, null, now);
-  if (entry.channel !== DIRECT_ENTRY.channel) saveEntry(storage, entry, now);
+  if (entry.channel !== DIRECT_ENTRY.channel) {
+    memEntry = { entry, t: now };
+    saveEntry(storage, entry, now);
+  }
   return entry;
 }
 

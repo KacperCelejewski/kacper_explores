@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   captureEntry, contentRefFromPath, entryEventParams, entryFromUrl, entryUrlParams,
-  loadEntry, parseEntryParams, resolveEntry, saveEntry, DIRECT_ENTRY,
+  clearEntry, currentEntry, loadEntry, parseEntryParams, resolveEntry, saveEntry, DIRECT_ENTRY,
 } from "./entryAttribution";
 
 const q = (s: string) => new URLSearchParams(s);
@@ -76,5 +76,24 @@ describe("pamięć", () => {
   it("bez magazynu działa", () => {
     expect(captureEntry(q("src=home-solo"), null, null, "https://x").channel).toBe("home");
     expect(entryEventParams(null)).toEqual({});
+  });
+});
+
+describe("pamięć karty przed zgodą", () => {
+  it("wejście rozpoznane bez magazynu jest dostępne po zgodzie i kasowane po planie", () => {
+    clearEntry(null);
+    expect(currentEntry(null)).toBeNull();
+    captureEntry(q("utm_source=instagram&utm_campaign=bio&utm_content=ekipa"), null, null, "https://x", 1000);
+    expect(currentEntry(null, 2000)?.material).toBe("ig:bio:ekipa");
+    expect(currentEntry(mem(), 2000)?.material).toBe("ig:bio:ekipa");
+    expect(currentEntry(null, 1000 + 2 * 3600_000)).toBeNull();
+    clearEntry(null);
+    expect(currentEntry(null, 2000)).toBeNull();
+  });
+  it("kolejne wejście bez źródła dziedziczy zapamiętane, a referrer innej witryny nie liczy się", () => {
+    clearEntry(null);
+    captureEntry(q("src=home-ekipa"), null, null, "https://x", 1000);
+    expect(captureEntry(q("step=when"), null, "https://google.com/", "https://x", 2000).material).toBe("home:home-ekipa");
+    clearEntry(null);
   });
 });

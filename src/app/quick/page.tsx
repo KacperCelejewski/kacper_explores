@@ -2,7 +2,7 @@
 
 import { EDGE_COPY, ServerMessage, friendlyError } from "@/lib/edgeCopy";
 import { planGeneratedParams, trackEvent } from "@/lib/analytics";
-import { DIRECT_ENTRY, entryStorage, loadEntry, saveEntry } from "@/lib/entryAttribution";
+import { DIRECT_ENTRY, clearEntry, currentEntry, entryStorage } from "@/lib/entryAttribution";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -373,8 +373,8 @@ export default function QuickPage() {
             }
           }
           if (msg.done) {
-            trackEvent("plan_generated", planGeneratedParams(dest.city, (msg.plan as import("@/types").TripPlan).days?.length ?? 0, quiz, loadEntry(entryStorage()) ?? DIRECT_ENTRY));
-            saveEntry(entryStorage(), null); // jedno wejście = jeden plan
+            trackEvent("plan_generated", planGeneratedParams(dest.city, (msg.plan as import("@/types").TripPlan).days?.length ?? 0, quiz, currentEntry(entryStorage()) ?? DIRECT_ENTRY));
+            clearEntry(entryStorage()); // jedno wejście = jeden plan
             setCurrentTrip({
               id: msg.tripId as string,
               destination: dest,
