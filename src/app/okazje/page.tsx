@@ -7,6 +7,7 @@ import { POLISH_AIRPORTS } from "@/lib/airports";
 import { ORIGIN_GENITIVE } from "@/lib/drop/email";
 import { getCitiesWithDeals, getDealsForOrigin } from "@/lib/drop/read";
 import CityLinks from "@/app/components/CityLinks";
+import { dealsPriceNote } from "@/lib/priceTrust";
 import { AIRPORT_FACTS } from "@/lib/seo/airportFacts";
 import { socialMeta } from "@/lib/seo/social";
 import { breadcrumbLd, itemListLd, jsonLdScript } from "@/lib/seo/jsonld";
@@ -37,6 +38,9 @@ export default async function DealsHubPage() {
     }),
   );
 
+  const priceNote = dealsPriceNote(rows.flatMap((r) => (r.cheapest ? [r.cheapest] : [])))
+    ?? "Ceny pochodzą z wyszukiwań, nie z rezerwacji na żywo. Przed zakupem sprawdź aktualną.";
+
   const ld = [
     breadcrumbLd([{ name: "Strona główna", path: "/" }, { name: "Okazje na weekend", path: "/okazje" }]),
     itemListLd(AIRPORTS.map((a) => ({ name: `Tanie loty na weekend z ${ORIGIN_GENITIVE[a.code] ?? a.city}`, path: `/okazje/${a.code.toLowerCase()}` }))),
@@ -54,7 +58,7 @@ export default async function DealsHubPage() {
           <h1 className="text-3xl font-bold leading-tight">Tanie loty na weekend z polskich lotnisk</h1>
           <p className="text-base mt-3 leading-relaxed" style={{ color: "var(--text-muted)" }}>
             Co tydzień sprawdzamy najtańsze loty tam i z powrotem na najbliższy weekend. Wybierz lotnisko, a zobaczysz kierunki,
-            daty i to, ile godzin zostaje na miejscu. Ceny pochodzą z wyszukiwań z ostatnich dni, więc przed zakupem sprawdź aktualną.
+            daty i to, ile godzin zostaje na miejscu. {priceNote}
           </p>
         </div>
 
@@ -71,7 +75,7 @@ export default async function DealsHubPage() {
                 >
                   <span className="flex items-baseline justify-between gap-3">
                     <span className="text-lg font-bold">Weekend z {from}</span>
-                    {cheapest && <span className="font-bold" style={{ color: "var(--accent)" }}>od {cheapest.price} zł</span>}
+                    {cheapest && <span className="font-bold" style={{ color: "var(--accent)" }}>lot od {cheapest.price} zł</span>}
                   </span>
                   <span className="block text-sm mt-1" style={{ color: "var(--text-muted)" }}>
                     {cheapest ? `Teraz najtaniej: ${cheapest.city_name}. ` : "Świeże okazje pojawią się w środę wieczorem. "}

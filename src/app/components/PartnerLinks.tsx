@@ -94,7 +94,7 @@ export function FlightCard({ offer, city, group }: { offer: FlightOffer | undefi
             <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{soloNote}</p>
           )}
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-            cena z ostatnich wyszukiwań, może się zmienić
+            cena orientacyjna, ze starszego wyszukiwania, bez daty sprawdzenia; cenę trzeba potwierdzić przed zakupem
           </p>
           {droppedNote && (
             <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{droppedNote}</p>

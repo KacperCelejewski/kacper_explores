@@ -1,6 +1,7 @@
 import { loadConsent } from "./cookieConsent";
 import type { QuizAnswers } from "@/types";
 import { groupFromCompanion, groupSize } from "./group";
+import { entryEventParams, type EntryAttribution } from "./entryAttribution";
 
 // Google Analytics 4 — skrypt i zdarzenia dopiero po wyraźnej zgodzie z banera.
 export const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
@@ -14,9 +15,23 @@ declare global {
   }
 }
 
+// Zdarzenia z chwili, gdy skrypt GA jeszcze się nie załadował (np. lądowanie od razu na /quiz po wcześniejszej zgodzie),
+// czekają w pamięci do gotowości gtag. Zgodę sprawdzamy ponownie przy wysyłce.
+const pending: Array<[string, Params]> = [];
+const MAX_PENDING = 30;
+
 export function trackEvent(name: string, params: Params = {}) {
-  if (typeof window === "undefined" || !GA_ID || loadConsent() !== "accepted" || !window.gtag) return;
+  if (typeof window === "undefined" || !GA_ID || loadConsent() !== "accepted") return;
+  if (!window.gtag) {
+    if (pending.length < MAX_PENDING) pending.push([name, params]);
+    return;
+  }
   window.gtag("event", name, params);
+}
+
+export function flushPendingEvents() {
+  const queued = pending.splice(0);
+  for (const [name, params] of queued) trackEvent(name, params);
 }
 
 // Nazwa zdarzenia quizu w GA4. Kroki dostają prefiks quiz_, ale quiz_complete i from_* zostają bez zmian.
@@ -78,6 +93,7 @@ export function planGeneratedParams(
   city: string,
   days: number,
   quiz: Pick<QuizAnswers, "companion" | "group">,
+  entry?: EntryAttribution | null,
 ) {
-  return { city, days, group_size: groupSize(groupFromCompanion(quiz.companion, quiz.group)) };
+  return { city, days, group_size: groupSize(groupFromCompanion(quiz.companion, quiz.group)), ...entryEventParams(entry) };
 }

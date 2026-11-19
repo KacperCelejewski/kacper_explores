@@ -2,6 +2,7 @@
 
 import { dropEventName, reportDropEvent, takeDropPlanAttribution } from "@/lib/drop/attribution";
 import { planGeneratedParams, trackEvent } from "@/lib/analytics";
+import { DIRECT_ENTRY, clearEntry, currentEntry, entryStorage } from "@/lib/entryAttribution";
 import { flightLink, flightSearchLink, partnerLinkProps, type PartnerLink } from "@/lib/affiliate";
 import { useAffiliateConfig } from "@/app/components/AffiliateProvider";
 import { groupFromCompanion, toFlightPassengers } from "@/lib/group";
@@ -17,7 +18,9 @@ import { getCityPhoto, type CityPhoto as Photo } from "@/lib/cityPhotos";
 import CityPhoto from "@/app/components/CityPhoto";
 import { formatPlans } from "@/lib/formatPlans";
 import { IconPin, IconPlane, IconCheck } from "@/app/components/Icons";
-import { cardFlightPriceCopy, type CardFlightPrice } from "@/lib/flights/card-price";
+import { cardFlightPriceCopy } from "@/lib/flights/card-price";
+import { dealPriceNotes, isDealPrice, type CardPrice } from "@/lib/flights/card-deals";
+import { buildFlightLink } from "@/lib/drop/links";
 import { useFlightPrices } from "./useFlightPrices";
 
 interface UserStatus {
@@ -314,7 +317,7 @@ function DestCard({
   onPlan: (dest: DestinationRecommendation) => void;
   airports: string[];
   month: number | null;
-  quote: CardFlightPrice | null;
+  quote: CardPrice | null;
 }) {
   const highlights = (dest as DestinationRecommendation & { highlights?: string[] }).highlights ?? [];
   const [photo, setPhoto] = useState<Photo>(() => getCityPhoto(dest.city, 800));
@@ -325,12 +328,20 @@ function DestCard({
   const origin = airports[0] ?? "WRO";
   const destination = origin === "BER" ? catalogCity?.iataBer ?? catalogCity?.iataWro : catalogCity?.iataWro;
   const freshQuote = quote;
+  const dealQuote = isDealPrice(freshQuote) ? freshQuote : null;
+  const cacheQuote = freshQuote && !dealQuote ? freshQuote : null;
   const priceCopy = cardFlightPriceCopy(freshQuote);
-  const flightTotal = freshQuote ? flightTotalNote(freshQuote.price, quiz.companion, quiz.group) : null;
-  const flight: PartnerLink = freshQuote
-    ? flightSearchLink({ origin: freshQuote.origin, destination: freshQuote.destination,
-        depart: freshQuote.departDate, returnDate: freshQuote.returnDate, passengers }, config)
-    : flightLink(dest.bestOffer, config, passengers) ?? flightSearchLink({ origin, destination: destination ?? "", passengers }, config);
+  // Per-person cache quote may be multiplied by the group; a deal is for 1 adult and is never multiplied.
+  const flightTotal = cacheQuote ? flightTotalNote(cacheQuote.price, quiz.companion, quiz.group) : null;
+  const seats = passengers.adults + passengers.children + passengers.infants;
+  const dealNotes = dealQuote ? dealPriceNotes(dealQuote, seats) : [];
+  const flight: PartnerLink = dealQuote
+    // The exact flight the amount comes from (same dates), partner-marked like /okazje; unpaid without consent.
+    ? buildFlightLink(dealQuote.deal, config.marker, dealQuote.deal.week, "cards", config.projectId)
+    : cacheQuote
+      ? flightSearchLink({ origin: cacheQuote.origin, destination: cacheQuote.destination,
+          depart: cacheQuote.departDate, returnDate: cacheQuote.returnDate, passengers }, config)
+      : flightLink(dest.bestOffer, config, passengers) ?? flightSearchLink({ origin, destination: destination ?? "", passengers }, config);
   useEffect(() => {
     const controller = new AbortController();
     fetch(`/api/city-photo?city=${encodeURIComponent(dest.city)}`, { signal: controller.signal })
@@ -426,7 +437,11 @@ function DestCard({
             <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{priceCopy.note}</p>
             {freshQuote && (
               <>
-                <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Za osobę, w obie strony · {freshQuote.origin} → {dest.city}</p>
+                {dealQuote
+                  ? dealNotes.map((line) => (
+                    <p key={line} className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{line}</p>
+                  ))
+                  : <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Za osobę, w obie strony · {freshQuote.origin} → {dest.city}</p>}
                 {flightTotal && (
                   <p className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>{flightTotal}</p>
                 )}
@@ -799,9 +814,10 @@ export default function DestinationsPage() {
             }
           }
           if (msg.done) {
-            trackEvent("plan_generated", planGeneratedParams(dest.city, (msg.plan as import("@/types").TripPlan).days?.length ?? 0, quizAnswers));
+            trackEvent("plan_generated", planGeneratedParams(dest.city, (msg.plan as import("@/types").TripPlan).days?.length ?? 0, quizAnswers, currentEntry(entryStorage()) ?? DIRECT_ENTRY));
             const dropAttr = takeDropPlanAttribution(typeof window === "undefined" ? null : window.sessionStorage, dest.city);
             if (dropAttr) reportDropEvent(dropEventName("plan", dropAttr), dropAttr.sessionId);
+            clearEntry(entryStorage()); // jedno wejście = jeden plan
             setCurrentTrip({
               id: msg.tripId as string,
               destination: dest,

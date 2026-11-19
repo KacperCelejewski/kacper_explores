@@ -13,6 +13,7 @@ import { bookingLink, partnerLinkProps, readAffiliateConfig } from "@/lib/affili
 import { ORIGIN_GENITIVE, formatLocal, transfersLabel } from "@/lib/drop/email";
 import { buildFlightLink, buildPlanUrl } from "@/lib/drop/links";
 import { getDealsForOrigin, originFromSlug } from "@/lib/drop/read";
+import { dealsPriceNote } from "@/lib/priceTrust";
 import { dealNotes, hoursInCity } from "@/lib/drop/stay";
 import { AIRPORT_FACTS } from "@/lib/seo/airportFacts";
 import { breadcrumbLd, faqLd, itemListLd, jsonLdScript } from "@/lib/seo/jsonld";
@@ -36,7 +37,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const { deals } = await getDealsForOrigin(origin);
   const lowest = deals[0] ? ` Teraz najtaniej: ${deals[0].city_name} od ${deals[0].price} zł w obie strony.` : "";
   const title = `Tanie loty na weekend z ${from}`;
-  const description = `Najtańsze wyjazdy na najbliższy weekend z ${from}: cena lotu, daty i ile godzin zostaje na miejscu.${lowest} Ceny z wyszukiwań z ostatnich dni.`;
+  const description = `Najtańsze wyjazdy na najbliższy weekend z ${from}: cena lotu, daty i ile godzin zostaje na miejscu.${lowest} Ceny orientacyjne, z wyszukiwań, nie z rezerwacji na żywo.`;
   return {
     title,
     description,
@@ -55,15 +56,13 @@ export default async function DealsPage({ params }: { params: Params }) {
   const { deals, teasers } = await getDealsForOrigin(origin);
   const { marker, projectId } = readAffiliateConfig();
   const hint = deals[0] ? { from, price: deals[0].price, thirdPrice: (deals[2] ?? deals[deals.length - 1]).price } : null;
-  const seen = deals[0]
-    ? new Date(deals[0].fetched_at).toLocaleDateString("pl-PL", { timeZone: "Europe/Warsaw", day: "numeric", month: "long" })
-    : null;
+  const priceNote = dealsPriceNote(deals);
 
   const facts = AIRPORT_FACTS[origin];
   const faq = [
     {
       q: `Skąd są ceny lotów z ${from}?`,
-      a: "Z wyszukiwań w serwisie Aviasales (Travelpayouts) z ostatnich dni, nie z rezerwacji na żywo. Cena może się zmienić, więc zawsze sprawdź aktualną przed zakupem.",
+      a: "Z wyszukiwań w serwisie Aviasales (Travelpayouts), nie z rezerwacji na żywo; datę wyszukiwania podajemy nad listą. Cena może się zmienić, więc zawsze sprawdź aktualną przed zakupem.",
     },
     {
       q: "Co znaczy „najbliższy weekend”?",
@@ -102,6 +101,7 @@ export default async function DealsPage({ params }: { params: Params }) {
           <h1 className="text-3xl font-bold leading-tight">Weekend z {from}</h1>
           <p className="text-sm mt-2 leading-relaxed" style={{ color: "var(--text-muted)" }}>
             Najtańsze loty tam i z powrotem na najbliższy weekend. Cena to lot, bez noclegu i bagażu.
+            {priceNote && <> {priceNote}</>}
             {facts && <> Wylot z lotniska {facts.name} ({facts.place}).</>}
           </p>
           <nav aria-label="Lotnisko" className="flex flex-wrap gap-2 mt-4">
@@ -193,9 +193,8 @@ export default async function DealsPage({ params }: { params: Params }) {
           </ul>
         )}
 
-        {seen && (
+        {priceNote && (
           <p className="text-xs mt-5 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-            Ceny z wyszukiwań z okolic {seen}, nie z rezerwacji na żywo, więc mogą się zmienić. Zawsze sprawdź aktualną cenę przed zakupem.
             Linki do rezerwacji bywają partnerskie: jeśli zarezerwujesz, dostajemy prowizję, a Ty płacisz tyle samo.
           </p>
         )}
