@@ -1,5 +1,6 @@
 "use client";
 
+import { dropEventName, reportDropEvent, takeDropPlanAttribution } from "@/lib/drop/attribution";
 import { planGeneratedParams, trackEvent } from "@/lib/analytics";
 import { flightLink, flightSearchLink, partnerLinkProps, type PartnerLink } from "@/lib/affiliate";
 import { useAffiliateConfig } from "@/app/components/AffiliateProvider";
@@ -799,6 +800,8 @@ export default function DestinationsPage() {
           }
           if (msg.done) {
             trackEvent("plan_generated", planGeneratedParams(dest.city, (msg.plan as import("@/types").TripPlan).days?.length ?? 0, quizAnswers));
+            const dropAttr = takeDropPlanAttribution(typeof window === "undefined" ? null : window.sessionStorage, dest.city);
+            if (dropAttr) reportDropEvent(dropEventName("plan", dropAttr), dropAttr.sessionId);
             setCurrentTrip({
               id: msg.tripId as string,
               destination: dest,
