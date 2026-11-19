@@ -141,7 +141,7 @@ export async function GET(req: NextRequest) {
       firstError ??= `zapis drop_sends: ${insertError.message}`;
       await logDropEvents(db, batch.map((r) => ({
         event: "send_failed" as const, week, subscriber_id: r.sub.id,
-        source_id: `send_failed:${week}:${r.sub.id}`, detail: { stage: "reserve", message: insertError.message },
+        detail: { stage: "reserve", message: insertError.message },
       })));
       continue;
     }
@@ -214,7 +214,7 @@ export async function GET(req: NextRequest) {
       await releaseRows(db, week, ids);
       await logDropEvents(db, mine.map((r) => ({
         event: "send_failed" as const, week, subscriber_id: r.sub.id,
-        source_id: `send_failed:${week}:${r.sub.id}:${Date.now()}`, detail: { kind, message: label },
+        detail: { kind, message: label },
       })));
       if (kind === "quota") {
         quotaHit = true;
@@ -232,7 +232,6 @@ export async function GET(req: NextRequest) {
       errors += failed.length;
       await logDropEvents(db, failed.map((i) => ({
         event: "send_rejected" as const, week, subscriber_id: mine[i].sub.id,
-        source_id: `send_rejected:${week}:${mine[i].sub.id}:${Date.now()}`,
         detail: { message: result.data?.errors?.find((e) => e.index === i)?.message ?? null },
       })));
       const rejected = result.data.errors?.[0]?.message;

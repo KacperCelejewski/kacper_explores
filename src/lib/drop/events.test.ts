@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { classifyClickLink, logDropEvents, mapResendEvent } from "./events";
+import { classifyClickLink, logDropEvents, mapResendEvent, scrubDetail } from "./events";
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -71,5 +71,20 @@ describe("mapResendEvent", () => {
   it("pomija otwarcia, nieznane typy i zdarzenia bez email_id", () => {
     expect(mapResendEvent({ type: "email.opened", data: { email_id: "r" } }, "m")).toBeNull();
     expect(mapResendEvent({ type: "email.delivered", data: {} }, "m")).toBeNull();
+  });
+});
+
+describe("scrubDetail", () => {
+  it("maskuje adresy w tekstach błędów i skraca", () => {
+    const d = scrubDetail({ message: "invalid to: jan.kowalski@example.com (rejected)", n: 3, long: "x".repeat(500) });
+    expect(d.message).toBe("invalid to: [email] (rejected)");
+    expect(d.n).toBe(3);
+    expect((d.long as string).length).toBe(300);
+  });
+  it("logDropEvents nie zapisuje adresu z detail", async () => {
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    const d = db(null);
+    await logDropEvents(d.client, [{ event: "send_failed", detail: { message: "bad a@b.pl" } }]);
+    expect(JSON.stringify(d.upsert.mock.calls)).not.toContain("a@b.pl");
   });
 });

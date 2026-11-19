@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
   const supabase = createServiceClient();
   const { data: existing } = await supabase
     .from("newsletter_subscribers")
-    .select("id, verified, drop_disabled_reason, unsubscribe_token")
+    .select("id, verified, drop_enabled, drop_disabled_reason, unsubscribe_token")
     .eq("email", signup.email)
     .maybeSingle();
 
@@ -93,7 +93,9 @@ export async function POST(req: NextRequest) {
       .update({ ...fields, verified: true, ...(existing.verified ? {} : { verified_at: now }) })
       .eq("email", signup.email);
     if (error) return NextResponse.json({ error: GENERIC_ERROR }, { status: 500 });
-    await logDropEvents(supabase, [{ event: "consent_given", subscriber_id: existing.id as string, detail: { source: "profile" } }]);
+    if (existing.drop_enabled !== true) {
+      await logDropEvents(supabase, [{ event: "consent_given", subscriber_id: existing.id as string, detail: { source: "profile" } }]);
+    }
     return NextResponse.json({ enabled: true });
   }
 

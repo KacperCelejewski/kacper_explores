@@ -38,13 +38,19 @@ describe("wypis ze zrzutu", () => {
     const res = await post();
     expect(res.status).toBe(200);
     expect(st.updates).toEqual([{ drop_enabled: false, drop_disabled_reason: "user" }]);
-    expect(st.events).toEqual([expect.objectContaining({ event: "unsubscribed", subscriber_id: "sub-1", detail: { was_enabled: true } })]);
+    expect(st.events).toEqual([expect.objectContaining({ event: "unsubscribed", subscriber_id: "sub-1", })]);
   });
 
   it("skarga/odbicie: nie nadpisuje powodu i nie zapisuje wypisu", async () => {
     st.row = { id: "sub-1", drop_enabled: false, drop_disabled_reason: "complaint" };
     await post();
     expect(st.updates).toHaveLength(0);
+    expect(st.events).toHaveLength(0);
+  });
+
+  it("powtórny wypis (zrzut już wyłączony przez użytkownika) nie liczy się drugi raz", async () => {
+    st.row = { id: "sub-1", drop_enabled: false, drop_disabled_reason: "user" };
+    await post();
     expect(st.events).toHaveLength(0);
   });
 

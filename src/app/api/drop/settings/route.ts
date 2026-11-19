@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   const supabase = createServiceClient();
   const { data: row } = await supabase
     .from("newsletter_subscribers")
-    .select("id, verified, drop_disabled_reason")
+    .select("id, verified, drop_enabled, drop_disabled_reason")
     .eq("unsubscribe_token", token)
     .maybeSingle();
   if (!row) return NextResponse.json({ error: "Ten link jest nieaktualny." }, { status: 404 });
@@ -50,7 +50,9 @@ export async function POST(req: NextRequest) {
     console.error("[drop] settings update failed:", error);
     return NextResponse.json({ error: GENERIC_ERROR }, { status: 500 });
   }
-  if (result.update.drop_enabled === true || result.update.drop_enabled === false) {
+  // tylko zmiana stanu przełącznika, nie każdy zapis lotnisk lub budżetu
+  const wasEnabled = row.drop_enabled === true;
+  if (typeof result.update.drop_enabled === "boolean" && result.update.drop_enabled !== wasEnabled) {
     await logDropEvents(supabase, [{
       event: result.update.drop_enabled ? "consent_given" : "settings_disabled",
       subscriber_id: row.id as string,

@@ -36,9 +36,21 @@ type Insertable = {
   };
 };
 
+const EMAIL_IN_TEXT = /[^\s@<>"',;]+@[^\s@<>"',;]+/g;
+
+// Wolny tekst błędów (Resend, Postgres) może zawierać adres: maskujemy i skracamy.
+export function scrubDetail(detail: Record<string, unknown> | undefined): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(detail ?? {})) {
+    out[k] = typeof v === "string" ? v.replace(EMAIL_IN_TEXT, "[email]").slice(0, 300) : v;
+  }
+  return out;
+}
+
 // Nigdy nie rzuca: brak tabeli albo błąd bazy nie mogą zatrzymać wysyłki ani webhooka.
 export async function logDropEvents(db: unknown, events: DropEvent[]): Promise<{ stored: boolean }> {
   if (events.length === 0) return { stored: true };
+  events = events.map((e) => ({ ...e, detail: scrubDetail(e.detail) }));
   for (const e of events) console.log(`[drop-event] ${JSON.stringify(e)}`);
   try {
     const rows = events.map((e) => ({
@@ -47,7 +59,7 @@ export async function logDropEvents(db: unknown, events: DropEvent[]): Promise<{
       subscriber_id: e.subscriber_id ?? null,
       resend_id: e.resend_id ?? null,
       source_id: e.source_id ?? null,
-      detail: e.detail ?? {},
+      detail: e.detail,
     }));
     const { error } = await (db as Insertable)
       .from("drop_events")

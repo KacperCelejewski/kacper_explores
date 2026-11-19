@@ -44,9 +44,13 @@ export async function POST(req: NextRequest) {
         .select("week, subscriber_id")
         .eq("resend_id", mapped.resend_id)
         .maybeSingle();
-      if (send) {
-        await logDropEvents(db, [{ ...mapped, week: send.week as string, subscriber_id: send.subscriber_id as string }]);
-      }
+      // Brak wiersza: webhook mógł wyprzedzić zapis resend_id albo to mail spoza zrzutu. Zapisujemy
+      // samo zdarzenie z resend_id (bez danych osobowych), dopasowanie robi się później po resend_id.
+      await logDropEvents(db, [
+        send
+          ? { ...mapped, week: send.week as string, subscriber_id: send.subscriber_id as string }
+          : { ...mapped, detail: { ...mapped.detail, unmatched: true } },
+      ]);
     } catch (err) {
       console.error("[resend-webhook] dziennik zdarzeń", err);
     }

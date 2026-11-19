@@ -56,11 +56,12 @@ describe("webhook Resend", () => {
     expect(st.updates).toHaveLength(0);
   });
 
-  it("mail spoza zrzutu (brak w drop_sends) nie trafia do dziennika", async () => {
+  it("zdarzenie bez wiersza w drop_sends (wyprzedza zapis resend_id) jest zachowane jako unmatched", async () => {
     st.sendRow = null;
-    st.event = { type: "email.delivered", data: { email_id: "r9" } };
-    await call();
-    expect(st.events).toHaveLength(0);
+    st.event = { type: "email.delivered", data: { email_id: "r9", to: ["a@b.pl"] } };
+    expect((await call()).status).toBe(200);
+    expect(st.events).toEqual([expect.objectContaining({ event: "delivered", resend_id: "r9", week: null, subscriber_id: null, detail: { unmatched: true } })]);
+    expect(JSON.stringify(st.events)).not.toContain("a@b.pl");
   });
 
   it("odbicie trwałe: zapis zdarzenia i dalej wyłączenie zrzutu", async () => {

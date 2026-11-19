@@ -69,11 +69,10 @@ export async function POST(req: NextRequest) {
         console.error("[drop] unsubscribe failed:", error);
         return page("Wypis ze zrzutu", "<p>Coś poszło nie tak. Spróbuj jeszcze raz.</p>", 500);
       }
-      await logDropEvents(db, [{
-        event: "unsubscribed",
-        subscriber_id: row.id as string,
-        detail: { was_enabled: row.drop_enabled === true },
-      }]);
+      // tylko realna zmiana stanu: powtórny POST (ponowienie one-click) nie liczy się drugi raz
+      if (row.drop_enabled === true) {
+        await logDropEvents(db, [{ event: "unsubscribed", subscriber_id: row.id as string }]);
+      }
     }
   }
 
