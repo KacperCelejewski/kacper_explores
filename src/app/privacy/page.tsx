@@ -52,7 +52,7 @@ const Ul = ({ children }: { children: React.ReactNode }) => (
 );
 
 export default function PrivacyPage() {
-  const updatedAt = "16 listopada 2026";
+  const updatedAt = "19 listopada 2026";
   const adminEmail = "hej@wloczykij.me";
 
   const schema = {
@@ -148,6 +148,15 @@ export default function PrivacyPage() {
                 na Czwartkowy zrzut, zapisujemy adres e-mail oraz wybrane lotniska i próg
                 ceny. Jeśli masz konto i zaplanowany wyjazd, wyślemy Ci też jedną
                 wiadomość z przypomnieniem na 3 dni przed wylotem.
+              </Li>
+              <Li>
+                <strong>Zdarzenia wiadomości z Czwartkowego zrzutu:</strong> zapisujemy,
+                że wiadomość została wysłana, dostarczona, odbita, oznaczona jako spam
+                albo że kliknięto w link, a także że z maila przeszedłeś do quizu lub
+                planu. Zapisujemy rodzaj zdarzenia, tydzień i identyfikator subskrypcji,
+                bez adresu e-mail i bez pełnych linków. Kliknięcia mierzy dla nas Resend.
+                Zdarzenia służą do sprawdzenia, czy zrzut dociera i jest przydatny;
+                kasujemy je razem z Twoim zapisem.
               </Li>
               <Li>
                 <strong>Opinie:</strong> ocena i tekst, które wpiszesz w formularzu opinii
