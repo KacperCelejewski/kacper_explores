@@ -108,7 +108,7 @@ export function maxOneWayHours(mode: GroundTransport, duration: number | null): 
 }
 
 /** Odległość mniejsza niż to nie jest wyjazdem: to to samo miasto. */
-const MIN_DISTANCE_KM = 15;
+const MIN_DISTANCE_KM = 25;
 
 export interface GroundCandidate {
   place: GroundPlace;
