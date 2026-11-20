@@ -4,6 +4,7 @@ import { groupLabel, groupSize } from "@/lib/group";
 import { costBasisFor } from "@/lib/costModel";
 import { calcTripSchedule, formatScheduleForPrompt } from "@/lib/tripSchedule";
 import { dayLabel, resolveTripTerm, termDays, tripTermPrompt } from "@/lib/tripTerm";
+import { activeTripType, planTripTypePrompt, tripTypeSeason } from "@/lib/tripType";
 
 export function buildPlanPrompt(
   destination: DestinationRecommendation,
@@ -20,6 +21,14 @@ export function buildPlanPrompt(
   const duration = term.duration;
   const termPrompt = tripTermPrompt(term);
   const day1Label = dayLabel(1, termDays(term)[0]?.date ?? null);
+
+  // Rodzaj wyjazdu (narty, góry...) zmienia strukturę dnia; zwiedzanie i brak odpowiedzi dają prompt jak dotąd.
+  const tripType = activeTripType(quiz.tripType);
+  const season = tripTypeSeason(tripType, term.month ?? quiz.month);
+  const seasonNote = season.fit === "ok" ? ""
+    : `UWAGA, termin: ${season.message} Zaplanuj uczciwie: jeśli rodzaj wyjazdu w tym terminie jest niepewny lub niemożliwy, zacznij generalTips od tej informacji i podaj wariant zastępczy (np. spokojniejszy dzień zamiast stoku).\n`;
+  const tripTypeBlock = tripType ? `${planTripTypePrompt(tripType)}${seasonNote}` : "";
+  const headerTripType = tripType ? `"tripType":"${tripType}",` : "";
 
   // Te same założenia (noce, osoby, standard) zapisujemy w planie i pokazujemy pod kwotą: costBasisFor jest jedynym źródłem.
   const basis = costBasisFor(quiz, duration);
@@ -106,7 +115,7 @@ ZASADY DLA WSZYSTKICH DNI — BEZWZGLĘDNIE OBOWIĄZUJĄCE:
 4. Praktyczne wskazówki budżetowe
 5. Szacunkowe koszty każdej aktywności w PLN${hasGroup ? " (za osobę)" : ""}
 6. Pole "location" — pełna nazwa miejsca z ulicą lub dzielnicą (nie dla transportu i wskazówek)
-
+${tripTypeBlock}
 KRYTYCZNE WYMAGANIA DOTYCZĄCE LICZBY DNI:
 - Wygeneruj DOKŁADNIE ${duration} linii z dniami (od day:1 do day:${duration})
 - Każdy dzień musi istnieć nawet jeśli ma mało aktywności (np. dzień przylotu wieczorem)
@@ -114,7 +123,7 @@ KRYTYCZNE WYMAGANIA DOTYCZĄCE LICZBY DNI:
 Odpowiedz w formacie NDJSON — każdy obiekt na OSOBNEJ LINII, bez żadnego dodatkowego tekstu.
 
 Linia 1 — nagłówek (jeden obiekt):
-{"type":"header","city":"${destination.city}","country":"${destination.country}","duration":${duration},"totalBudgetEstimate":"np. 650-880 PLN (suma czterech pozycji poniżej)","budgetBreakdown":{"flights":"Sprawdź w wyszukiwarce","accommodation":"np. 300-400 PLN","food":"np. 200-250 PLN","attractions":"np. 100-150 PLN","transport":"np. 50-80 PLN"},"generalTips":["tip1","tip2","tip3","tip4","tip5"]}
+{"type":"header",${headerTripType}"city":"${destination.city}","country":"${destination.country}","duration":${duration},"totalBudgetEstimate":"np. 650-880 PLN (suma czterech pozycji poniżej)","budgetBreakdown":{"flights":"Sprawdź w wyszukiwarce","accommodation":"np. 300-400 PLN","food":"np. 200-250 PLN","attractions":"np. 100-150 PLN","transport":"np. 50-80 PLN"},"generalTips":["tip1","tip2","tip3","tip4","tip5"]}
 
 Linie 2–${duration + 1} — każdy dzień osobno (jeden obiekt na linię):
 {"type":"day","day":1,"date":"${day1Label}","theme":"krótki motyw dnia","activities":[{"time":"10:00","title":"Nazwa aktywności","description":"2-3 zdania z konkretnymi wskazówkami","type":"attraction|food|transport|tip|accommodation","cost":"Free lub ~15 PLN","location":"Nazwa miejsca lub adres","emoji":"emoji"}]}

@@ -163,3 +163,48 @@ describe("buildPlanPrompt", () => {
     expect(prompt).not.toMatch(/\b(Ania|Kasia|Tomek)\b/);
   });
 });
+
+describe("buildPlanPrompt: rodzaj wyjazdu", () => {
+  const destination = { city: "Zakopane", country: "Polska" } as unknown as Parameters<typeof buildPlanPrompt>[0];
+  const base = { budget: "low", styles: ["history"], duration: 3, month: 1 } as unknown as Parameters<typeof buildPlanPrompt>[1];
+  const withType = (tripType: string, month = 1) => buildPlanPrompt(destination, { ...base, month, tripType } as never, null);
+
+  it("brak rodzaju i zwiedzanie dają ten sam prompt, bez pola tripType (zgodność wsteczna)", () => {
+    const plain = buildPlanPrompt(destination, base, null);
+    expect(withType("zwiedzanie")).toBe(plain);
+    expect(plain).not.toMatch(/RODZAJ WYJAZDU/);
+    expect(plain).not.toMatch(/"tripType"/);
+  });
+
+  it("narty: blok o stoku wchodzi przed formatem odpowiedzi, a nagłówek wymaga pola tripType", () => {
+    const p = withType("narty");
+    expect(p).toMatch(/RODZAJ WYJAZDU: NARTY/);
+    expect(p).toMatch(/jeździe na nartach/);
+    expect(p).toMatch(/NIE układaj programu dnia ze zwiedzania/);
+    expect(p).toContain('{"type":"header","tripType":"narty","city":"Zakopane"');
+    expect(p.indexOf("RODZAJ WYJAZDU")).toBeLessThan(p.indexOf("Odpowiedz w formacie NDJSON"));
+    expect(p.indexOf("RODZAJ WYJAZDU")).toBeGreaterThan(p.indexOf("ZASADY DLA WSZYSTKICH DNI"));
+  });
+
+  it("każdy rodzaj poza zwiedzaniem ma w prompcie własny blok i swoje pole tripType", () => {
+    for (const t of ["wypoczynek", "narty", "gory", "plaza", "aktywny", "wieczory"]) {
+      const p = withType(t, 7);
+      expect(p, t).toContain(`"tripType":"${t}"`);
+      expect(p, t).toMatch(/RODZAJ WYJAZDU:/);
+      expect(p, t).toMatch(/Motyw \(theme\) każdego dnia musi pasować/);
+    }
+  });
+
+  it("narty poza sezonem: prompt każe uczciwie ostrzec w generalTips i podać wariant zastępczy", () => {
+    const p = withType("narty", 7);
+    expect(p).toMatch(/UWAGA, termin: Sezon narciarski to zwykle grudzień–marzec/);
+    expect(p).toMatch(/zacznij generalTips od tej informacji/);
+    expect(withType("narty", 1)).not.toMatch(/UWAGA, termin:/);
+  });
+
+  it("karnet i sprzęt: bez wymyślonych cen", () => {
+    const p = withType("narty");
+    expect(p).toMatch(/sprawdź cennik ośrodka/);
+    expect(p).toMatch(/orientacyjnie/);
+  });
+});

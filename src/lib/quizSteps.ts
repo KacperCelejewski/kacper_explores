@@ -1,18 +1,23 @@
 import type { QuizAnswers } from "@/types";
 import { highBudgetAvailable } from "@/lib/quizOptions";
 
-// "region" (Dokąd?) stoi zaraz po "Z kim jedziesz?": kierunek to najwęższe z pytań, a od niego zależy,
-// czy budżet w ogóle ma wyższy przedział. Odpowiedź jest opcjonalna (puste = obojętnie).
-export const QUIZ_STEPS = ["companion", "region", "vibe", "styles", "when", "departure", "budget"] as const;
+// Kolejność docelowa (uwagi 7-9): Z kim -> Dokąd (region, P7) -> Jaki wyjazd (tripType, P8) -> Czym (transport, P9)
+// -> ochota -> zainteresowania -> termin -> skąd -> budżet. "Dokąd?" stoi zaraz po "Z kim jedziesz?": kierunek to
+// najwęższe z pytań, a od niego zależy, czy budżet ma wyższy przedział. "region" i "tripType" są opcjonalne
+// (puste = obojętnie / zwiedzanie).
+export const QUIZ_STEPS = ["companion", "region", "tripType", "vibe", "styles", "when", "departure", "budget"] as const;
 export type QuizStepId = typeof QUIZ_STEPS[number];
 /** Liczba pytań w pełnym quizie: teksty na stronach biorą ją stąd, żeby nie rozjeżdżały się z quizem. */
 export const QUIZ_QUESTION_COUNT = QUIZ_STEPS.length;
 export const DROP_QUIZ_STEPS: readonly QuizStepId[] = ["companion", "vibe", "styles", "budget"];
 const LEGACY_STEPS: readonly QuizStepId[] = ["companion", "budget", "vibe", "styles", "when", "departure"];
-// Kolejność z zapisów w wersji 5 (bez "region"): indeks w localStorage odnosi się do tej listy.
+// Kolejność z zapisów w wersji 5 (bez "region" i "tripType"): indeks w localStorage odnosi się do tej listy.
 const V5_STEPS: readonly QuizStepId[] = ["companion", "vibe", "styles", "when", "departure", "budget"];
-// Numery kroków w analityce: dotychczasowe sześć zachowuje stare znaczenie, nowy krok dostaje kolejny numer.
-const ANALYTICS_STEPS: readonly QuizStepId[] = [...LEGACY_STEPS, "region"];
+// Kolejność z zapisów w wersji 6 (z "region", bez "tripType").
+const V6_STEPS: readonly QuizStepId[] = ["companion", "region", "vibe", "styles", "when", "departure", "budget"];
+// Numery kroków w analityce: dotychczasowe sześć zachowuje stare znaczenie, nowe kroki dostają kolejne numery
+// (region 6, rodzaj wyjazdu 7, transport P9 dostanie 8) i nigdy nie przesuwają starych.
+const ANALYTICS_STEPS: readonly QuizStepId[] = [...LEGACY_STEPS, "region", "tripType"];
 
 /**
  * Kroki do pokazania: skrócona ścieżka okazji, albo pełna. Gdy kierunek jest już wybrany (miasto z galerii),
@@ -40,9 +45,13 @@ export function migrateQuizStep(index: unknown): number {
   return quizStepIndex(LEGACY_STEPS[typeof index === "number" ? index : -1] ?? "companion");
 }
 
-// Zapis w wersji 5 miał indeksy bez kroku "region"; zachowujemy to samo pytanie, nie ten sam numer.
+// Zapisy w wersji 5 i 6 miały indeksy bez nowszych kroków; zachowujemy to samo pytanie, nie ten sam numer.
 export function migrateQuizStepV5(index: unknown): number {
   return quizStepIndex(V5_STEPS[typeof index === "number" ? index : -1] ?? "companion");
+}
+
+export function migrateQuizStepV6(index: unknown): number {
+  return quizStepIndex(V6_STEPS[typeof index === "number" ? index : -1] ?? "companion");
 }
 
 // Keep the historic meaning of step in quiz_events and GA4 reports.
@@ -56,6 +65,8 @@ export function canCompleteQuizStep(id: QuizStepId, answers: QuizAnswers): boole
     case "region": return true;
     case "vibe": return answers.vibe !== null;
     case "styles": return true;
+    // Bez wyboru: zwiedzanie, jak przed dodaniem pytania
+    case "tripType": return true;
     case "when": return answers.month !== null && answers.duration !== null;
     case "departure": return answers.airports.length > 0;
     // Wyższy przedział istnieje tylko dla dalekich regionów; po zmianie regionu stary wybór przestaje wystarczać.

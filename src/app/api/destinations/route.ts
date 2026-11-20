@@ -8,9 +8,10 @@ import { budgetPromptLabel, VIBE_LABELS, PLACE_LABELS, DESTINATION_CACHE_TTL_MS 
 import { destinationCacheKey } from "@/lib/destinationCacheKey";
 import { excludeOriginCities, originExclusionPrompt } from "@/lib/originCities";
 import { monthYearLabel } from "@/lib/tripMonth";
-import { effectiveRegions, normalizeFoundation } from "@/lib/quizOptions";
+import { destinationTripTypePrompt, filterDestinationsForTripType } from "@/lib/tripType";
+import { effectiveRegions, isTripType, normalizeFoundation } from "@/lib/quizOptions";
 import { filterByRegions, MIN_CACHED_REGION_RESULTS, regionPromptLine, regionRetryLine } from "@/lib/regionFilter";
-import type { DestinationRecommendation, TravelStyle, TravelVibe, PlaceType, Region } from "@/types";
+import type { DestinationRecommendation, TravelStyle, TravelVibe, PlaceType, Region, TripType } from "@/types";
 
 export const maxDuration = 30;
 
@@ -32,6 +33,7 @@ function buildPrompt(body: Record<string, unknown>, retryNote = ""): string {
   const airports = (body.airports as string[]) ?? ["WRO"];
   const preferredCity = (body.preferredCity as string | undefined) ?? null;
 
+  const tripType = isTripType(body.tripType) ? body.tripType : null;
   const monthName = month ? monthYearLabel(month) : "dowolny";
   const budgetLabel = budgetPromptLabel(budget === "low" || budget === "high" ? budget : "medium");
   // Wybrane miasto z galerii wygrywa z regionem: quiz wtedy nie pyta o region, a stary wybór nie może po cichu zawężać reszty.
@@ -51,7 +53,7 @@ PROFIL:
 - Miesiąc: ${monthName}
 - Długość: ${duration ? `${duration} dni` : "nieokreślona"}
 - ${originDesc}
-${originExclusionPrompt(airports)}${regionPromptLine(regions) ? `\n${regionPromptLine(regions)}` : ""}${retryNote}
+${originExclusionPrompt(airports)}${regionPromptLine(regions) ? `\n${regionPromptLine(regions)}` : ""}${destinationTripTypePrompt(tripType, month) ? `\n${destinationTripTypePrompt(tripType, month).trim()}` : ""}${retryNote}
 
 Zwróć tablicę JSON "destinations" z dokładnie 6 obiektami. Każdy obiekt MUSI mieć te pola:
 - city (string): nazwa miasta
@@ -155,9 +157,17 @@ export async function POST(req: NextRequest) {
   const prompt = buildPrompt(body as Record<string, unknown>);
   const regions = preferredCity ? [] : effectiveRegions(normalizeFoundation(body as Record<string, unknown>));
   const originAirports = (body as { airports?: string[] }).airports ?? ["WRO"];
+  const activeType = isTripType((body as { tripType?: unknown }).tripType) ? (body as { tripType: TripType }).tripType : null;
+  const preferredLower = preferredCity ? preferredCity.trim().toLowerCase() : null;
+  // Rodzaj wyjazdu to cel, nie ozdoba: dla nart zostają tylko miejsca z infrastrukturą narciarską.
+  // Miasto wybrane przez użytkownika zostaje, bo to jego jawna decyzja.
+  let droppedByType = 0;
 
   // Szybszy model najpierw — flash-lite wystarczy do polecenia destynacji
   const MODELS = ["gemini-2.5-flash-lite", "gemini-2.5-flash"];
+
+  // Gdy model zwrócił kierunki, ale żaden nie pasuje do rodzaju wyjazdu (np. same miasta dla nart), próbujemy dalej.
+  let sawMismatch = false;
 
   for (const modelName of MODELS) {
     try {
@@ -198,11 +208,21 @@ export async function POST(req: NextRequest) {
             placeTypes: ((d.placeTypes ?? []) as string[]) as PlaceType[],
           }));
         // Prompt prosi o pominięcie miast wylotu, ale model bywa nieposłuszny, więc filtrujemy też odpowiedź.
-        return excludeOriginCities(candidates, originAirports);
+        const notOrigin = excludeOriginCities(candidates, originAirports);
+        const fitting = new Set(filterDestinationsForTripType(notOrigin, activeType));
+        const byType = notOrigin.filter((d) => fitting.has(d) || (preferredLower !== null && d.city.toLowerCase() === preferredLower));
+        droppedByType += notOrigin.length - byType.length;
+        return byType;
       };
 
       const first = await ask(prompt);
       if (first === null) continue;
+      if (first.length === 0 && droppedByType > 0 && regions.length === 0) {
+        console.error("[destinations] no destination matches tripType", activeType);
+        sawMismatch = true;
+        void logGeminiCall({ endpoint: "destinations", model: modelName, success: false, error_code: "trip_type_mismatch" });
+        continue;
+      }
       void logGeminiCall({ endpoint: "destinations", model: modelName, success: true });
 
       let destinations = first;
@@ -250,5 +270,10 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Brak pasujących kierunków to nie awaria: lista jest pusta i nie trafia do cache.
+  if (sawMismatch) return NextResponse.json({ destinations: [] });
+
+  // Model odpowiadał, ale nic nie pasowało do rodzaju wyjazdu: to pusta lista, nie awaria dostawcy.
+  if (sawMismatch) return NextResponse.json({ destinations: [] });
   return NextResponse.json({ error: "Mamy teraz tłok. Spróbuj za minutę." }, { status: 503 });
 }
