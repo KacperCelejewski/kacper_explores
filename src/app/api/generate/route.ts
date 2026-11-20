@@ -14,7 +14,11 @@ import { getUserProfile, canGenerate, isPro } from "@/lib/userProfile";
 import { createServiceClient } from "@/lib/supabase/service";
 import { FREE_PLANS_PER_MONTH, plansAvailable } from "@/lib/credits";
 import { guardGlobalFuse } from "@/lib/aiGuard";
-import type { QuizAnswers, DestinationRecommendation, FlightDetails, TripPlan } from "@/types";
+import { tripTypeLabel } from "@/lib/quizOptions";
+import type { QuizAnswers, DestinationRecommendation, FlightDetails, TripPlan, TripType } from "@/types";
+
+const MISMATCH_TIP = (tripType: TripType) =>
+  `Ten plan może tylko częściowo pasować do rodzaju wyjazdu „${tripTypeLabel(tripType).toLowerCase()}”. Przed rezerwacją sprawdź, czy program dnia odpowiada temu, po co jedziesz.`;
 
 export async function POST(req: NextRequest) {
   // 1. Auth — wymagane logowanie
@@ -132,7 +136,8 @@ export async function POST(req: NextRequest) {
         // z programem zwiedzania miasta), próbujemy raz jeszcze innym modelem, o ile starczy czasu; inaczej
         // zostaje pierwszy plan, żeby błąd kontroli nie zamieniał się w błąd dla użytkownika.
         const tripType = activeTripType(quiz.tripType);
-        const RETRY_BUDGET_MS = 25_000;
+        // Ponowienie to drugie pełne generowanie (do ~35 s); funkcja ma 60 s, a po jej ubiciu kredyt by nie wrócił.
+        const RETRY_BUDGET_MS = 15_000;
         let fallbackPlan: TripPlan | null = null;
         let plan: TripPlan | null = null;
         let lastErr: unknown;
@@ -178,18 +183,21 @@ export async function POST(req: NextRequest) {
             }
             if (tripType) {
               const check = checkPlanTripType(candidate, tripType);
-              candidate = { ...candidate, tripType };
               const hasNext = MODELS.indexOf(name) < MODELS.length - 1;
               if (!check.ok) {
                 console.warn(`Generate: plan niezgodny z rodzajem wyjazdu ${tripType}:`, check.issues.join("; "));
-                void logGeminiCall({ endpoint: "generate", model: name, success: false, error_code: "trip_type_mismatch" });
                 if (hasNext && Date.now() - startedAt < RETRY_BUDGET_MS) {
                   fallbackPlan ??= candidate;
                   continue;
                 }
-                plan = fallbackPlan ?? candidate;
+                // Plan nie spełnia rodzaju wyjazdu: bez etykiety tripType i z uczciwą uwagą na początku wskazówek.
+                // Etykietę tripType z nagłówka modelu też zdejmujemy: plan nie może twierdzić, że pasuje.
+                const { tripType: _claimed, ...plain } = fallbackPlan ?? candidate;
+                void _claimed;
+                plan = { ...plain, generalTips: [MISMATCH_TIP(tripType), ...(plain.generalTips ?? [])] };
                 break;
               }
+              candidate = { ...candidate, tripType };
             }
             plan = candidate;
             break;

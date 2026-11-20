@@ -59,7 +59,7 @@ const post = async (quizAnswers: object) => {
     headers: { "x-forwarded-for": `203.0.113.${(n += 1)}` },
   }) as never);
   const lines = (await res.text()).split("\n").filter(Boolean).map((l) => JSON.parse(l));
-  return { status: res.status, done: lines.find((l) => l.done) as { plan: { tripType?: string; days: Array<{ theme: string }> } } | undefined, lines };
+  return { status: res.status, done: lines.find((l) => l.done) as { plan: { tripType?: string; generalTips: string[]; days: Array<{ theme: string }> } } | undefined, lines };
 };
 
 beforeEach(() => {
@@ -95,12 +95,25 @@ describe("POST /api/generate: rodzaj wyjazdu", () => {
     expect(done?.plan.days.some((d) => /Krupówki/.test(d.theme))).toBe(false);
   });
 
-  it("narty: gdy każdy model zignoruje rodzaj, użytkownik dostaje pierwszy plan zamiast błędu (kredyt nie przepada)", async () => {
+  it("narty: gdy każdy model zignoruje rodzaj, użytkownik dostaje plan z uczciwą uwagą zamiast błędu i bez etykiety tripType", async () => {
     mock.replies.push(krupowkiReply, krupowkiReply, krupowkiReply);
     const { done, lines } = await post({ ...quiz, tripType: "narty" });
     expect(lines.some((l) => l.error)).toBe(false);
     expect(done).toBeDefined();
-    expect(done?.plan.tripType).toBe("narty");
+    expect(done?.plan.tripType).toBeUndefined();
+    expect(done?.plan.generalTips[0]).toMatch(/tylko częściowo pasować do rodzaju wyjazdu „narty”/);
+    expect(mock.inserted[0].ai_plan_json).not.toHaveProperty("tripType");
+  });
+
+  it("narty: gdy pierwsza próba trwała zbyt długo, nie ma ponowienia (limit 60 s, kredyt)", async () => {
+    mock.replies.push(krupowkiReply, skiReply);
+    const now = vi.spyOn(Date, "now");
+    let t = 1_000_000;
+    now.mockImplementation(() => (t += 20_000)); // każdy odczyt zegara to +20 s
+    const { done } = await post({ ...quiz, tripType: "narty" });
+    now.mockRestore();
+    expect(mock.models).toHaveLength(1);
+    expect(done?.plan.generalTips[0]).toMatch(/częściowo pasować/);
   });
 
   it("narty: brak pola tripType w odpowiedzi nie jest błędem, serwer je uzupełnia", async () => {

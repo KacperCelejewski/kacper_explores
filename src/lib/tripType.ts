@@ -36,7 +36,7 @@ export function tripTypeSeason(tripType: TripType | null | undefined, month: num
       if ([11, 4].includes(month)) {
         return { fit: "marginal", message: "O tej porze śnieg bywa niepewny, a część wyciągów jeszcze lub już nie działa. Warunki w ośrodku warto sprawdzić przed rezerwacją." };
       }
-      return { fit: "off", message: "Sezon narciarski to zwykle grudzień–marzec, a w tym miesiącu wyciągi w większości ośrodków nie działają. Pokażemy tylko miejsca, gdzie narty są realne w tym terminie (na przykład lodowce), albo zmień termin lub rodzaj wyjazdu." };
+      return { fit: "off", message: "Sezon narciarski to zwykle grudzień–marzec, a w tym miesiącu wyciągi w większości ośrodków nie działają. Proponujemy tylko miejsca, w których narty są realne w tym terminie (na przykład lodowce), o ile takie znajdziemy. Można też zmienić termin lub rodzaj wyjazdu." };
     case "plaza":
       if ([6, 7, 8, 9].includes(month)) return OK;
       if ([5, 10].includes(month)) {
@@ -137,11 +137,11 @@ const CITY_SIGHTSEEING: readonly string[] = [
 
 const KEYWORDS: Partial<Record<TripType, Keywords>> = {
   narty: {
-    on: ["narty|", "nart", "narciar", "stok", "wyciąg", "karnet", "snowboard", "skipass", "ski pass", "gondol", "wypożyczaln", "instruktor", "kolejk", "snowpark", "trasa zjazd", "trasy zjazd", "zjazd"],
+    on: ["narty|", "nart", "narciar", "stok", "wyciąg", "karnet", "snowboard", "skipass", "ski pass", "instruktor", "snowpark", "zjazdy|", "trasa zjazd", "trasy zjazd"],
     cityAxis: CITY_SIGHTSEEING,
   },
   gory: {
-    on: ["szlak", "szczyt", "góry|", "górsk", "schroni", "dolin", "wędrów", "trekking", "przełęcz", "turyst", "wodospad", "grań", "wejści"],
+    on: ["szlak", "szczyt", "góry|", "górsk", "schroni", "dolin", "wędrów", "trekking", "przełęcz", "wodospad", "grań", "wejście na"],
     cityAxis: CITY_SIGHTSEEING,
   },
   plaza: {
@@ -152,7 +152,7 @@ const KEYWORDS: Partial<Record<TripType, Keywords>> = {
     on: ["spa|", "relaks", "odpoczyn", "odpoczy", "termy|", "termach|", "termal", "sauna", "basen", "masaż", "leniw", "spacer", "kawiar", "śniadani", "wolny czas", "widok", "ogród", "jezior"],
   },
   aktywny: {
-    on: ["rower", "kajak", "biegan", "bieg|", "wspinacz", "pływ", "tras", "szlak", "wypożyczaln", "sup|", "żagl", "nurk", "trening", "siłown", "narty|", "jazda"],
+    on: ["rower", "kajak", "biegan", "bieg|", "wspinacz", "pływ", "trasa rower", "trasa bieg", "szlak", "sup|", "żagl", "nurk", "trening", "siłown", "narty|"],
     cityAxis: CITY_SIGHTSEEING,
   },
   wieczory: {
@@ -214,6 +214,9 @@ export interface PlanTripTypeCheck {
   onTopicDays: number;
 }
 
+/** Minimalny udział aktywności programu (poza jedzeniem, transportem, wskazówkami i noclegiem) w temacie rodzaju. */
+const MIN_ON_TOPIC_SHARE = 0.4;
+
 const SUPPORT_TYPES = new Set(["food", "transport", "tip", "accommodation"]);
 
 function dayIsOnTopic(day: DayPlan, kw: Keywords): boolean {
@@ -249,6 +252,10 @@ export function checkPlanTripType(plan: Pick<TripPlan, "days"> & { tripType?: un
       return hasAny(t, kw.cityAxis!) && !hasAny(t, kw.on);
     }).length;
     if (city > onTopic) issues.push(`zwiedzanie miasta (${city}) przeważa nad aktywnościami w temacie "${active}" (${onTopic})`);
+    // Dzień z jedną wzmianką o stoku nie czyni planu narciarskim: w temacie ma być co najmniej 40% aktywności programu.
+    if (activities.length > 0 && onTopic < Math.ceil(activities.length * MIN_ON_TOPIC_SHARE)) {
+      issues.push(`tylko ${onTopic} z ${activities.length} aktywności programu pasuje do rodzaju "${active}"`);
+    }
   }
   return { ok: issues.length === 0, issues, onTopicDays };
 }

@@ -782,7 +782,7 @@ export default function DestinationsPage() {
       .then(([destData, profileData]) => {
         if (!destData.destinations?.length) {
           setError(activeTripType(quizAnswers.tripType)
-            ? `Nie znaleźliśmy kierunków pasujących do wyjazdu „${tripTypeLabel(quizAnswers.tripType!).toLowerCase()}" w tym terminie. Zmień termin albo rodzaj wyjazdu.`
+            ? `Nie znaleźliśmy kierunków pasujących do wyjazdu „${tripTypeLabel(quizAnswers.tripType!).toLowerCase()}” w tym terminie. Zmień termin albo rodzaj wyjazdu.`
             : "Tym razem nic nie wpadło. Spróbuj jeszcze raz — zwykle działa za drugim.");
         } else {
           setDestinations(destData.destinations);

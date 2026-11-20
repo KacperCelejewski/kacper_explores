@@ -180,6 +180,28 @@ describe("zgodność planu z rodzajem wyjazdu", () => {
     expect(r.issues.join(" ")).toMatch(/zwiedzanie miasta/);
     expect(r.ok).toBe(false);
   });
+  it("narty: kolejka na Gubałówkę i Muzeum Tatrzańskie to nadal zwiedzanie, nie stok", () => {
+    const plan = { days: [
+      day(1, "Zakopane", act("Kolejka na Gubałówkę"), act("Muzeum Tatrzańskie"), act("Krupówki"), act("Informacja turystyczna")),
+      day(2, "Zakopane", act("Zjazd kolejką z Gubałówki"), act("Katedra")),
+    ] };
+    const r = checkPlanTripType(plan, "narty");
+    expect(r.ok).toBe(false);
+    expect(r.onTopicDays).toBe(0);
+  });
+  it("góry: wejście do muzeum i punkt informacji turystycznej nie są szlakiem", () => {
+    const plan = { days: [day(1, "Miasto", act("Wejście do muzeum"), act("Informacja turystyczna")), day(2, "Miasto", act("Ratusz"))] };
+    expect(checkPlanTripType(plan, "gory").ok).toBe(false);
+  });
+  it("narty: jedna wzmianka o stoku w dniu zwiedzania nie wystarcza (udział aktywności w temacie)", () => {
+    const plan = { days: [
+      day(1, "Dzień w Zakopanem", act("Karnet na wyciąg"), act("Muzeum Tatrzańskie"), act("Galeria sztuki"), act("Kościół"), act("Ratusz")),
+      day(2, "Dzień w Zakopanem", act("Jazda na nartach"), act("Zamek"), act("Rynek"), act("Pomnik")),
+    ] };
+    const r = checkPlanTripType(plan, "narty");
+    expect(r.ok).toBe(false);
+    expect(r.issues.join(" ")).toMatch(/aktywności programu/);
+  });
   it("pole tripType w odpowiedzi musi się zgadzać; jego brak nie jest błędem", () => {
     expect(checkPlanTripType({ ...skiPlan, tripType: "plaza" }, "narty").ok).toBe(false);
     expect(checkPlanTripType({ days: skiPlan.days }, "narty").ok).toBe(true);
