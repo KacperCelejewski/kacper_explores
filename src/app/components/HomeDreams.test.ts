@@ -40,7 +40,13 @@ describe("dream examples, separate from live deals", () => {
     expect(html).toMatch(/<article[^>]*hidden=""/);
     expect(html).toContain("nie oferta ani wyszukiwanie lotów");
     expect(html).toContain("<noscript>");
-    expect(html).not.toContain('href="/quiz');
+    // Karty to linki do quizu (nie przyciski), z miastem, liczbą osób i poziomem budżetu z kontrolek.
+    for (const city of ["Budapeszt", "Lizbona", "Porto"]) {
+      expect(html).toContain(`href="/quiz?src=home-dream&amp;city=${city}&amp;people=4&amp;budget=low"`);
+      expect(html).toContain(`${city} na próbę →`);
+    }
+    expect(html).not.toContain("aria-pressed");
+    expect(html).not.toContain("Wybór dotyczy tylko tego przykładu");
     const text = html.replace(/<[^>]*>/g, " ");
     for (const pattern of FORBIDDEN_COPY) expect(text).not.toMatch(pattern);
   });

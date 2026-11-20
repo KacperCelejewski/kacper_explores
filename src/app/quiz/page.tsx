@@ -41,7 +41,7 @@ import type { Companion, GroupComposition } from "@/types";
 import GroupSizePicker from "@/app/components/GroupSizePicker";
 import { groupFromCompanion } from "@/lib/group";
 import { CREW_COPY, companionTrailLabel, crewBudgetTogether } from "@/lib/groupFlow";
-import { parseHomeParams, homeFriendsAnswers, srcEventName, keepUtmQuery } from "@/lib/homeParams";
+import { parseHomeParams, homeFriendsAnswers, homeDreamAnswers, parseHomeDream, srcEventName, keepUtmQuery } from "@/lib/homeParams";
 
 type IconFC = React.FC<{ size?: number }>;
 
@@ -238,6 +238,17 @@ function QuizPageInner() {
       setQuizAnswer("companion", next.companion);
       setQuizAnswer("group", next.group);
       setCurrentQuizStep(quizStepIndex("companion"));
+    }
+    // Karta-marzenie ze strony głównej: miasto, ekipa i budżet są już znane, quiz zaczyna od pierwszego brakującego pytania.
+    const dream = dropPrefill ? null : parseHomeDream(searchParams);
+    if (dream) {
+      const next = homeDreamAnswers(dream);
+      setQuizAnswer("preferredCity", next.preferredCity);
+      setQuizAnswer("companion", next.companion);
+      setQuizAnswer("group", next.group);
+      setQuizAnswer("budget", next.budget);
+      const missing = firstIncompleteQuizStep({ ...quizAnswers, ...next }, QUIZ_STEPS);
+      setCurrentQuizStep(quizStepIndex(missing ?? "budget"));
     }
     const requested = parseQuizStep(searchParams.get("step"));
     if (requested && !dropPrefill) setCurrentQuizStep(quizStepIndex(requested));
