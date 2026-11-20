@@ -44,22 +44,15 @@ export function matchesRegions(country: string, regions: readonly Region[]): boo
   return regionsOfCountry(country).some((r) => regions.includes(r));
 }
 
-/**
- * Dzieli propozycje na pasujące do regionów i odrzucone. `keepCity` to miasto wybrane przez użytkownika
- * w galerii: jego wybór jest jawny, więc region go nie odrzuca.
- */
-export function filterByRegions<T extends { city: string; country: string }>(
+/** Dzieli propozycje na pasujące do regionów i odrzucone (kolejność zostaje). */
+export function filterByRegions<T extends { country: string }>(
   items: T[],
   regions: readonly Region[],
-  keepCity?: string | null,
 ): { kept: T[]; rejected: T[] } {
   if (regions.length === 0) return { kept: items, rejected: [] };
   const kept: T[] = [];
   const rejected: T[] = [];
-  for (const item of items) {
-    const explicit = keepCity && item.city.toLowerCase() === keepCity.toLowerCase();
-    (explicit || matchesRegions(item.country, regions) ? kept : rejected).push(item);
-  }
+  for (const item of items) (matchesRegions(item.country, regions) ? kept : rejected).push(item);
   return { kept, rejected };
 }
 

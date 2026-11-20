@@ -34,7 +34,8 @@ function buildPrompt(body: Record<string, unknown>, retryNote = ""): string {
 
   const monthName = month ? monthYearLabel(month) : "dowolny";
   const budgetLabel = budgetPromptLabel(budget === "low" || budget === "high" ? budget : "medium");
-  const regions = effectiveRegions(normalizeFoundation(body));
+  // Wybrane miasto z galerii wygrywa z regionem: quiz wtedy nie pyta o region, a stary wybór nie może po cichu zawężać reszty.
+  const regions = preferredCity ? [] : effectiveRegions(normalizeFoundation(body));
 
   const originDesc = airports.length === 1
     ? `lotnisko wylotu: ${airports[0]}`
@@ -80,6 +81,8 @@ Format odpowiedzi (wyłącznie JSON, bez markdown):
 }
 
 const MAX_DESTINATIONS = 6;
+const TOP_UP_DEADLINE_MS = 12_000; // po tylu ms od startu nie dopraszamy już o uzupełnienie (maxDuration = 30 s)
+const MIN_CACHED_REGION_RESULTS = 3;
 const norm = (city: string) => city.trim().toLowerCase();
 
 /**
@@ -89,15 +92,14 @@ const norm = (city: string) => city.trim().toLowerCase();
 async function keepInRegions(
   candidates: DestinationRecommendation[],
   regions: readonly Region[],
-  preferredCity: string | null,
   topUp: (rejectedCities: string[], keptCities: string[]) => Promise<DestinationRecommendation[]>,
 ): Promise<DestinationRecommendation[]> {
-  const firstPass = filterByRegions(candidates, regions, preferredCity);
+  const firstPass = filterByRegions(candidates, regions);
   if (firstPass.kept.length >= MAX_DESTINATIONS) return firstPass.kept.slice(0, MAX_DESTINATIONS);
   const extra = await topUp(firstPass.rejected.map((d) => d.city), firstPass.kept.map((d) => d.city));
   const seen = new Set(firstPass.kept.map((d) => norm(d.city)));
   const merged = [...firstPass.kept];
-  for (const d of filterByRegions(extra, regions, preferredCity).kept) {
+  for (const d of filterByRegions(extra, regions).kept) {
     if (seen.has(norm(d.city))) continue;
     seen.add(norm(d.city));
     merged.push(d);
@@ -138,14 +140,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ destinations: cached.data });
   }
 
-  const prompt = buildPrompt(body as Record<string, unknown>);
-  const regions = effectiveRegions(normalizeFoundation(body as Record<string, unknown>));
+  const startedAt = Date.now();
   const preferredCity = (body as { preferredCity?: string }).preferredCity ?? null;
+  const prompt = buildPrompt(body as Record<string, unknown>);
+  const regions = preferredCity ? [] : effectiveRegions(normalizeFoundation(body as Record<string, unknown>));
   const originAirports = (body as { airports?: string[] }).airports ?? ["WRO"];
 
   // Szybszy model najpierw — flash-lite wystarczy do polecenia destynacji
   const MODELS = ["gemini-2.5-flash-lite", "gemini-2.5-flash"];
-  let answeredEmpty = false;
 
   for (const modelName of MODELS) {
     try {
@@ -194,8 +196,10 @@ export async function POST(req: NextRequest) {
       void logGeminiCall({ endpoint: "destinations", model: modelName, success: true });
 
       let destinations = first;
-      if (regions.length > 0) destinations = await keepInRegions(first, regions, preferredCity, async (rejected, kept) => {
+      if (regions.length > 0) destinations = await keepInRegions(first, regions, async (rejected, kept) => {
         // Uzupełnienie: jedno powtórne zapytanie z listą odrzuconych; jego błąd nie psuje tego, co już mamy.
+        // Przy wolnej odpowiedzi pierwszego zapytania go pomijamy, bo funkcja ma limit czasu (maxDuration).
+        if (Date.now() - startedAt > TOP_UP_DEADLINE_MS) return [];
         try {
           const more = await ask(buildPrompt(body as Record<string, unknown>, regionRetryLine(regions, rejected, kept)));
           void logGeminiCall({ endpoint: "destinations", model: modelName, success: more !== null });
@@ -207,8 +211,11 @@ export async function POST(req: NextRequest) {
         }
       });
 
-      if (destinations.length === 0 && regions.length > 0) { answeredEmpty = true; continue; }
-      destCache.set(key, { data: destinations, ts: Date.now() });
+      // Model odpowiedział, ale nic nie mieściło się w regionie: pusta lista (to nie błąd dostawcy), bez ponawiania
+      // drugim modelem, żeby nie przekroczyć limitu czasu, i bez cache.
+      if (destinations.length === 0 && regions.length > 0) return NextResponse.json({ destinations: [] });
+      // Za mało propozycji z regionu nie zostaje w cache, żeby kolejna próba mogła trafić lepiej.
+      if (regions.length === 0 || destinations.length >= MIN_CACHED_REGION_RESULTS) destCache.set(key, { data: destinations, ts: Date.now() });
       return NextResponse.json({ destinations });
 
     } catch (err) {
@@ -223,7 +230,5 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Model odpowiedział, ale nic nie mieściło się w wybranym regionie: pusta lista (nie błąd dostawcy), bez cache.
-  if (answeredEmpty) return NextResponse.json({ destinations: [] });
   return NextResponse.json({ error: "Mamy teraz tłok. Spróbuj za minutę." }, { status: 503 });
 }

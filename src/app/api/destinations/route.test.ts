@@ -156,10 +156,28 @@ describe("POST /api/destinations: region", () => {
     expect(gemini.prompts).toHaveLength(1); // ten sam klucz cache
   });
 
-  it("miasto wybrane w galerii zostaje pierwsze mimo regionu", async () => {
+  it("miasto wybrane w galerii wygrywa z regionem: bez ograniczenia w prompcie i bez filtra", async () => {
     gemini.replies.push({ destinations: [city("Porto", "Portugalia"), ...southAmerica.slice(0, 5)] });
     const res = await post({ ...quiz, month: 6, regions: ["ameryka_poludniowa"], preferredCity: "Porto" });
-    expect((await cities(res))[0]).toBe("Porto");
+    expect(gemini.prompts[0]).not.toContain("TWARDE OGRANICZENIE");
+    expect(await cities(res)).toEqual(["Porto", ...southAmerica.slice(0, 5).map((d) => d.city)]);
+    expect(gemini.prompts).toHaveLength(1);
+  });
+
+  it("za mało propozycji z regionu nie trafia do cache, a pusty wynik nie ponawia drugim modelem", async () => {
+    const q = { ...quiz, month: 8, regions: ["azja"] };
+    gemini.replies.push({ destinations: [city("Tokio", "Japonia")] }, { destinations: [city("Seul", "Korea Południowa")] });
+    await post(q);
+    const before = gemini.prompts.length;
+    gemini.replies.push({ destinations: [city("Tokio", "Japonia")] }, { destinations: [city("Seul", "Korea Południowa")] });
+    await post(q);
+    expect(gemini.prompts.length).toBe(before + 2); // drugi raz znów pytamy: poprzedni wynik (1-2 kierunki) nie został zapamiętany
+
+    gemini.prompts.length = 0;
+    gemini.replies.push({ destinations: [city("Paryż", "Francja")] }, { destinations: [city("Rzym", "Włochy")] });
+    const empty = await post({ ...quiz, month: 9, regions: ["azja"] });
+    expect((await empty.json()).destinations).toEqual([]);
+    expect(gemini.prompts).toHaveLength(2); // pierwsze zapytanie + jedno uzupełnienie, bez drugiego modelu
   });
 
   it("odrzuca nieznany region (400) i wyższy budżet przyjmuje", async () => {

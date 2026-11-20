@@ -60,11 +60,6 @@ describe("matchesRegions / filterByRegions", () => {
     const { kept } = filterByRegions(items, ["ameryka_poludniowa", "europa"]);
     expect(kept.map((d) => d.city)).toEqual(["Buenos Aires", "Lima", "Porto"]);
   });
-
-  it("miasto wybrane w galerii nie jest odrzucane przez region", () => {
-    const { kept } = filterByRegions(items, ["ameryka_poludniowa"], "porto");
-    expect(kept.map((d) => d.city)).toEqual(["Buenos Aires", "Lima", "Porto"]);
-  });
 });
 
 describe("prompt regionu", () => {

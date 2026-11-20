@@ -12,7 +12,10 @@ type KeyInput = Partial<Pick<QuizAnswers, "styles" | "budget" | "vibe" | "placeT
  */
 export function destinationCacheKey(a: KeyInput): string {
   const { styles, budget, vibe, placeType, month, duration, airports, preferredCity } = a;
-  const { regions, tripType, transport } = normalizeFoundation(a);
+  const foundation = normalizeFoundation(a);
+  // Wybrane miasto z galerii wygrywa z regionem (pytanie o region wtedy odpada), więc zostały region nie zmienia wyniku.
+  const regions = preferredCity ? undefined : foundation.regions;
+  const { tripType, transport } = foundation;
   const isDefaultTransport = transport?.length === DEFAULT_TRANSPORT.length && transport.every((t, i) => t === DEFAULT_TRANSPORT[i]);
   return JSON.stringify({
     styles, budget, vibe, placeType, month, duration, airports, preferredCity,
