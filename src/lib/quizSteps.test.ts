@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { QuizAnswers } from "@/types";
-import { QUIZ_STEPS, DROP_QUIZ_STEPS, quizStepAt, quizStepIndex, migrateQuizStep, parseQuizStep, quizAnalyticsStep, canCompleteQuizStep, firstIncompleteQuizStep, resolveQuizStep } from "./quizSteps";
+import { QUIZ_STEPS, DROP_QUIZ_STEPS, QUIZ_QUESTION_COUNT, quizStepAt, quizStepIndex, quizStepsFor, migrateQuizStep, migrateQuizStepV5, parseQuizStep, quizAnalyticsStep, canCompleteQuizStep, firstIncompleteQuizStep, resolveQuizStep } from "./quizSteps";
 
 const empty: QuizAnswers = {
   budget: null, vibe: null, styles: [], placeType: null, month: null,
@@ -10,7 +10,7 @@ const complete: QuizAnswers = { ...empty, budget: "low", vibe: "chill", month: 1
 
 describe("human quiz navigation", () => {
   it("puts practical details after the trip idea, and budget last in both flows", () => {
-    expect(QUIZ_STEPS).toEqual(["companion", "vibe", "styles", "when", "departure", "budget"]);
+    expect(QUIZ_STEPS).toEqual(["companion", "region", "vibe", "styles", "when", "departure", "budget"]);
     expect(DROP_QUIZ_STEPS).toEqual(["companion", "vibe", "styles", "budget"]);
     // The shortened flow still persists the canonical full-flow budget index.
     expect(quizStepAt(quizStepIndex(DROP_QUIZ_STEPS[3]))).toBe("budget");
@@ -24,6 +24,7 @@ describe("human quiz navigation", () => {
   });
   it("handles malformed saved positions and accepts only named edit links", () => {
     for (const value of [undefined, null, -1, 6, 999, 1.5, "4"]) expect(migrateQuizStep(value)).toBe(0);
+    for (const value of [undefined, null, -1, 6, 999, 1.5, "4"]) expect(migrateQuizStepV5(value)).toBe(0);
     expect(parseQuizStep("when")).toBe("when");
     expect(parseQuizStep("companion")).toBe("companion");
     for (const value of [null, "4", "WHEN", "<script>"]) expect(parseQuizStep(value)).toBeNull();
@@ -49,5 +50,37 @@ describe("human quiz navigation", () => {
     expect(resolveQuizStep(quizStepIndex("budget"), complete, DROP_QUIZ_STEPS)).toBe("budget");
     expect(resolveQuizStep(quizStepIndex("when"), complete, DROP_QUIZ_STEPS)).toBe("companion");
     expect(complete.group?.adults).toBe(4);
+  });
+
+  it("pytanie o region jest opcjonalne i stoi zaraz po tym, kto jedzie", () => {
+    expect(quizStepIndex("region")).toBe(quizStepIndex("companion") + 1);
+    expect(canCompleteQuizStep("region", empty)).toBe(true);
+    expect(canCompleteQuizStep("region", { ...empty, regions: ["azja"] })).toBe(true);
+    // brak odpowiedzi o region nie zatrzymuje starego quizu ani zapisanych sesji
+    expect(firstIncompleteQuizStep(complete, QUIZ_STEPS)).toBeUndefined();
+  });
+  it("liczba pytań to długość pełnego quizu, a miasto z galerii i okazje go skracają", () => {
+    expect(QUIZ_QUESTION_COUNT).toBe(QUIZ_STEPS.length);
+    expect(quizStepsFor({ drop: false })).toBe(QUIZ_STEPS);
+    expect(quizStepsFor({ drop: false, preferredCity: null })).toBe(QUIZ_STEPS);
+    expect(quizStepsFor({ drop: false, preferredCity: "Porto" })).toEqual(QUIZ_STEPS.filter((id) => id !== "region"));
+    expect(quizStepsFor({ drop: true, preferredCity: "Porto" })).toBe(DROP_QUIZ_STEPS);
+    expect(DROP_QUIZ_STEPS).not.toContain("region");
+  });
+  it("analityka: dotychczasowe numery kroków bez zmian, region dostaje kolejny", () => {
+    expect(quizAnalyticsStep("region")).toBe(6);
+    expect(QUIZ_STEPS.filter((id) => id !== "region").map(quizAnalyticsStep).sort()).toEqual([0, 1, 2, 3, 4, 5]);
+  });
+  it("zapis z v5 (bez kroku region) wraca do tego samego pytania", () => {
+    const v5 = ["companion", "vibe", "styles", "when", "departure", "budget"] as const;
+    v5.forEach((id, oldIndex) => expect(quizStepAt(migrateQuizStepV5(oldIndex))).toBe(id));
+  });
+  it("wyższy przedział budżetu wymaga dalekiego regionu", () => {
+    const high = { ...complete, budget: "high" as const };
+    expect(canCompleteQuizStep("budget", high)).toBe(false);
+    expect(canCompleteQuizStep("budget", { ...high, regions: ["europa"] })).toBe(false);
+    expect(canCompleteQuizStep("budget", { ...high, regions: ["europa", "ameryka_poludniowa"] })).toBe(true);
+    expect(firstIncompleteQuizStep({ ...high, regions: ["europa"] }, QUIZ_STEPS)).toBe("budget");
+    expect(canCompleteQuizStep("budget", { ...complete, budget: "medium" })).toBe(true);
   });
 });

@@ -388,7 +388,7 @@ function DestCard({
                 color: "#fff",
               }}
             >
-              {dest.budgetLevel === "low" ? "Tanie" : "Średnie"}
+              {dest.budgetLevel === "low" ? "Tanie" : dest.budgetLevel === "high" ? "Dalekie" : "Średnie"}
             </span>
           </div>
         </CityPhoto>
