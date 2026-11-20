@@ -118,7 +118,7 @@ export default function DealsStrip({
               >
                 <span style={{ display: "flex", justifyContent: "space-between", fontWeight: 700 }}>
                   <span>{d.city}</span>
-                  <span style={{ color: "var(--accent)" }}>{d.price} zł</span>
+                  <span style={{ color: "var(--accent)" }}>lot {d.price} zł</span>
                 </span>
                 <span style={{ display: "block", fontSize: 14, color: "var(--text-muted)", marginTop: 2 }}>
                   {formatLocal(d.departure_at)} → {formatLocal(d.return_at)}{d.hours ? ` · ok. ${d.hours} h na miejscu` : ""}

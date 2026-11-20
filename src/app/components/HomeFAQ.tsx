@@ -4,7 +4,7 @@ import { QUIZ_QUESTION_COUNT } from "@/lib/quizSteps";
 export const FAQS = [
   {
     q: "Jedziemy ekipą, co dostajemy?",
-    a: "Mówisz, ilu Was jedzie, a my podajemy kierunki w Waszym budżecie, szacunek kosztu na osobę i razem oraz plan godzina po godzinie. Gotowy plan wysyłacie znajomym linkiem do podglądu.",
+    a: "Mówisz, ilu Was jedzie, a my podajemy kierunki w Waszym budżecie, szacunek kosztu na miejscu (bez lotu) na osobę i razem oraz plan godzina po godzinie. Gotowy plan wysyłacie znajomym linkiem do podglądu.",
   },
   {
     q: "Kto płaci?",

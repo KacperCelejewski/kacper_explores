@@ -119,7 +119,7 @@ export default async function WeekendCityPage({ params }: { params: Params }) {
                     >
                       <span className="flex items-baseline justify-between gap-3">
                         <span className="font-bold">Z {ORIGIN_GENITIVE[d.origin] ?? d.origin}</span>
-                        <span className="font-bold" style={{ color: "var(--accent)" }}>{d.price} zł</span>
+                        <span className="font-bold" style={{ color: "var(--accent)" }}>lot {d.price} zł</span>
                       </span>
                       <span className="block text-sm mt-1" style={{ color: "var(--text-muted)" }}>
                         {formatLocal(d.departure_at)} → {formatLocal(d.return_at)}

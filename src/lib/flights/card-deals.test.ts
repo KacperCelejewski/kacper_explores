@@ -19,7 +19,7 @@ describe("selectCardDeal", () => {
     expect(isDealPrice(q)).toBe(true);
     expect(q).toMatchObject({ source: "deal", origin: "WRO", destination: "BCN", price: 389,
       departDate: "2026-11-20", returnDate: "2026-11-22", outsideMonth: false, checkedAt: Date.parse("2026-11-18T18:00:00Z") });
-    expect(cardFlightPriceCopy(q)).toEqual({ amount: "od 389 zł", note: "sprawdzone 18.11" });
+    expect(cardFlightPriceCopy(q)).toMatchObject({ amount: "od 389 zł", note: "sprawdzone 18.11" });
   });
 
   it("returns null for no deals, another airport, another city and unknown (non-catalog) cities", () => {
