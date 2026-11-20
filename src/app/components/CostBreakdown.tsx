@@ -77,9 +77,9 @@ export default function CostBreakdown({ model, note }: { model: PlanCostModel; n
               )}
             </div>
           </div>
-        ) : (
+        ) : model.flightLine ? (
           <p className="text-sm mt-2" style={muted}>{model.flightLine}</p>
-        )}
+        ) : null}
         {withFlight && <p className="text-xs mt-1" style={muted}>{withFlight.note}</p>}
       </div>
 

@@ -60,16 +60,16 @@ describe("POST /api/destinations: nowe pola quizu", () => {
     expect(gemini.prompts).toHaveLength(1);
   });
 
-  it("przyjmuje poprawne nowe pola; transport nie zmienia promptu (zakres P9), region i rodzaj wyjazdu tak", async () => {
+  it("przyjmuje poprawne nowe pola; samolot (domyślny transport) nie zmienia promptu lotów, rodzaj wyjazdu tak", async () => {
     const plain = await post({ ...quiz, month: 8 });
     expect(plain.status).toBe(200);
-    const withFields = await post({ ...quiz, month: 8, transport: ["auto"] });
+    const withFields = await post({ ...quiz, month: 8, transport: ["samolot"] });
     expect(withFields.status).toBe(200);
-    expect(gemini.prompts).toHaveLength(2);
-    expect(gemini.prompts[1]).toBe(gemini.prompts[0]);
+    // Samolot to domyślny transport: ten sam klucz cache, więc bez drugiego zapytania do modelu.
+    expect(gemini.prompts).toHaveLength(1);
     const withTrip = await post({ ...quiz, month: 8, tripType: "plaza" });
     expect(withTrip.status).toBe(200);
-    expect(gemini.prompts[2]).toMatch(/RODZAJ WYJAZDU: Plaża/);
+    expect(gemini.prompts[1]).toMatch(/RODZAJ WYJAZDU: Plaża/);
   });
 
   it("cache serwera rozróżnia odpowiedzi różniące się nowymi polami", async () => {

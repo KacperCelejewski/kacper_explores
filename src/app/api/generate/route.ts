@@ -15,6 +15,7 @@ import { getUserProfile, canGenerate, isPro } from "@/lib/userProfile";
 import { createServiceClient } from "@/lib/supabase/service";
 import { FREE_PLANS_PER_MONTH, plansAvailable } from "@/lib/credits";
 import { guardGlobalFuse } from "@/lib/aiGuard";
+import { withTravelBudget } from "@/lib/transport/plan";
 import { tripTypeLabel } from "@/lib/quizOptions";
 import type { QuizAnswers, DestinationRecommendation, FlightDetails, TripPlan, TripType } from "@/types";
 
@@ -171,7 +172,7 @@ export async function POST(req: NextRequest) {
             });
 
             const rawPlan = { ...header, days };
-            let candidate = validateAndFixPlan(rawPlan, duration);
+            let candidate = withTravelBudget(validateAndFixPlan(rawPlan, duration), quiz, dest.city);
             // Data dnia 1 (kalendarz, nagłówek, mail przed wylotem) to data z wyboru użytkownika. Etykiety dni z dniem tygodnia:
             // wpisujemy je sami, zamiast ufać, że model policzy kalendarz.
             if (term.startDate) {

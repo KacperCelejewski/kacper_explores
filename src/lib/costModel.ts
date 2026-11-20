@@ -1,6 +1,6 @@
 import { extractBudgetNumbers, groupSize, mapBudgetNumbers, scaleBudgetText } from "./group";
 import type { QuizAnswers, TripPlan } from "@/types";
-import { PLAN_TOTAL_LABEL, isFreshDeal } from "./priceTrust";
+import { PLAN_TOTAL_LABEL, PLAN_TOTAL_LABEL_GROUND, isFreshDeal } from "./priceTrust";
 
 /**
  * Jeden model prezentacji kosztu wyjazdu: z czego składa się kwota, co jest prawdziwe z datą,
@@ -57,6 +57,12 @@ export interface PlanCostInput {
   basis?: CostBasis | null;
   flight?: FlightQuote | null;
   access?: AccessCost | null;
+  /**
+   * Plan na środek lądowy (auto, pociąg lub bus, rower): bez pozycji Lot i bez "Razem z lotem". Pole `flights`
+   * w podziale kosztów niesie wtedy nasz szacunek dojazdu (przekazany w `access`), a nie kwotę od modelu,
+   * więc plan nie jest "starszym planem".
+   */
+  ground?: boolean;
   now?: number;
 }
 
@@ -178,10 +184,11 @@ function totals(perPerson: string, people: number, group: boolean): { perPerson:
 export function buildPlanCostModel(input: PlanCostInput): PlanCostModel {
   const now = input.now ?? Date.now();
   const people = Math.max(1, Math.round(input.people));
-  const flight = usableFlight(input.flight, now);
+  const flight = input.ground ? null : usableFlight(input.flight, now);
   const group = input.group && people > 1;
   // Starszy plan: model wpisał w "flights" kwotę, więc jego suma mogła zawierać lot.
-  const legacy = hasAmount(input.breakdown.flights);
+  const ground = input.ground === true;
+  const legacy = !ground && hasAmount(input.breakdown.flights);
 
   const drafts: Draft[] = [
     estimateComponent("accommodation", "Nocleg", input.breakdown.accommodation, "Szacunek modelu AI, wliczony w sumę na miejscu."),
@@ -201,7 +208,8 @@ export function buildPlanCostModel(input: PlanCostInput): PlanCostModel {
   }
 
   // Lot: nigdy tekst od modelu (mógłby być wymyślony), tylko prawdziwa cena z datą albo "sprawdź w wyszukiwarce".
-  drafts.push(flight
+  // Plan lądowy nie ma pozycji Lot: dojazd jest niżej, jako orientacyjny szacunek.
+  if (!ground) drafts.push(flight
     ? {
         key: "flight", label: "Lot", value: pln(flight.pricePerPerson), display: pln(flight.pricePerPerson), status: "verified",
         statusLabel: `cena z ${costDate(flight.checkedAt)}`, inOnSiteTotal: false,
@@ -212,8 +220,8 @@ export function buildPlanCostModel(input: PlanCostInput): PlanCostModel {
         inOnSiteTotal: false, note: "Cenę sprawdź w wyszukiwarce. Poza sumą na miejscu.",
       });
 
-  // Miejsce na P9: dojazd autem, busem lub pociągiem zamiast lotu. Zawsze orientacyjny, zawsze poza sumą.
-  if (input.access && hasAmount(input.access.value)) {
+  // P9: dojazd autem, busem, pociągiem lub rowerem zamiast lotu. Zawsze orientacyjny, zawsze poza sumą.
+  if (input.access && (ground ? input.access.value.trim() !== "" : hasAmount(input.access.value))) {
     drafts.push({
       key: "access", label: input.access.label ?? "Dojazd", value: input.access.value.trim(), display: input.access.value.trim(), status: "estimate",
       statusLabel: ROUGH_LABEL, inOnSiteTotal: false,
@@ -229,12 +237,13 @@ export function buildPlanCostModel(input: PlanCostInput): PlanCostModel {
       : "poza sumą na miejscu",
   }));
 
+  const totalLabel = ground ? PLAN_TOTAL_LABEL_GROUND : ON_SITE_TOTAL_LABEL;
   const onSiteText = hasAmount(input.totalEstimate) ? input.totalEstimate.trim() : null;
   const onSite: CostTotal = onSiteText
     ? legacy
       ? { label: LEGACY_TOTAL_LABEL, ...totals(onSiteText, people, group), note: "Ten plan powstał, zanim liczyliśmy sumę bez lotu: model mógł wliczyć do niej lot." }
-      : { label: ON_SITE_TOTAL_LABEL, ...totals(onSiteText, people, group), note: "Nocleg, jedzenie, atrakcje i transport na miejscu. Bez lotu." }
-    : { label: legacy ? LEGACY_TOTAL_LABEL : ON_SITE_TOTAL_LABEL, perPerson: null, groupTotal: null, note: "Plan nie podaje szacunku." };
+      : { label: totalLabel, ...totals(onSiteText, people, group), note: `Nocleg, jedzenie, atrakcje i transport na miejscu. ${ground ? "Bez dojazdu." : "Bez lotu."}` }
+    : { label: legacy ? LEGACY_TOTAL_LABEL : totalLabel, perPerson: null, groupTotal: null, note: "Plan nie podaje szacunku." };
 
   let withFlight: CostTotal | null = null;
   // Starszego planu nie łączymy z lotem: nie wiemy, czy lot nie siedzi już w jego sumie.
@@ -251,9 +260,11 @@ export function buildPlanCostModel(input: PlanCostInput): PlanCostModel {
 
   return {
     components, onSite, withFlight,
-    flightLine: flight
-      ? `Lot: ${pln(flight.pricePerPerson)} za osobę, w obie strony, cena z ${costDate(flight.checkedAt)}`
-      : FLIGHT_UNKNOWN_LINE,
+    flightLine: ground
+      ? ""
+      : flight
+        ? `Lot: ${pln(flight.pricePerPerson)} za osobę, w obie strony, cena z ${costDate(flight.checkedAt)}`
+        : FLIGHT_UNKNOWN_LINE,
     assumptions: costAssumptions(input.basis, group),
     legacy,
   };

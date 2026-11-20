@@ -20,9 +20,12 @@ import { FlightCard, HotelLinks, LuggageTile, TicketsLink } from "@/app/componen
 import { IconFork, IconLock, IconDownload, IconCalendar, IconGlobe, IconCheck, IconClose, IconRefresh, IconPin, IconSuitcase } from "@/app/components/Icons";
 import type { DayPlan, DayActivity, TripPlan, DestinationRecommendation, QuizAnswers } from "@/types";
 import { PRICES } from "@/lib/prices";
-import { PLAN_TOTAL_NOTE } from "@/lib/priceTrust";
+import { PLAN_TOTAL_NOTE, PLAN_TOTAL_NOTE_GROUND } from "@/lib/priceTrust";
 import { buildPlanCostModel } from "@/lib/costModel";
 import CostBreakdown from "@/app/components/CostBreakdown";
+import TravelBlock from "@/app/components/TravelBlock";
+import { originCityName, planTravel } from "@/lib/transport";
+import { planAccessInput } from "@/lib/transport/plan";
 import { isFreeCost } from "@/lib/affiliate";
 import { groupFromCompanion, groupSize, scaleBudgetText, showGroupBudget } from "@/lib/group";
 import { CREW_COPY, crewSummary, sendPlanTitle } from "@/lib/groupFlow";
@@ -383,8 +386,15 @@ export default function PlanPage() {
     people,
     group: groupBudget,
     basis: plan.costBasis ?? null,
+
+    // Plan na auto, pociąg lub bus albo rower: bez pozycji Lot, z orientacyjnym dojazdem.
+    ...planAccessInput(plan),
   });
   const crew = crewSummary(tripCompanion, tripGroup);
+  // Plan na środek lądowy: pozycja kosztów to dojazd, a zamiast karty lotu jest szacunek drogi z odległości.
+  const groundMode = plan.transport ?? null;
+  const tripAirports = currentTrip.quizAnswers?.airports;
+  const groundTravel = groundMode ? planTravel({ transport: [groundMode], airports: tripAirports ?? [] }, plan.city) : null;
 
   return (
     <div className="flex flex-col flex-1 pb-8" id="plan-print-area">
@@ -440,14 +450,14 @@ export default function PlanPage() {
               {crew.title}: {crew.detail}
               {groupBudget && (
                 <span className="block text-xs font-normal mt-0.5" style={{ color: "var(--text-muted)" }}>
-                  Nocleg, jedzenie, atrakcje i transport poniżej są {CREW_COPY.perPerson}; sumę na miejscu podajemy też {CREW_COPY.total}. Lot liczymy osobno.
+                  Nocleg, jedzenie, atrakcje i transport poniżej są {CREW_COPY.perPerson}; sumę na miejscu podajemy też {CREW_COPY.total}. {groundMode ? "Dojazd liczymy osobno." : "Lot liczymy osobno."}
                 </span>
               )}
             </p>
           )}
 
           {/* Koszt: składniki, co jest w sumie na miejscu, co poza nią, skąd kwoty */}
-          <CostBreakdown model={costModel} note={PLAN_TOTAL_NOTE} />
+          <CostBreakdown model={costModel} note={groundMode ? PLAN_TOTAL_NOTE_GROUND : PLAN_TOTAL_NOTE} />
         </motion.div>
       </div>
 
@@ -463,7 +473,17 @@ export default function PlanPage() {
       </div>
 
       {/* Lot i noclegi */}
-      <FlightCard offer={dest?.bestOffer} city={plan.city} group={group} />
+      {groundMode ? (
+        groundTravel && (
+          <div className="px-5 mb-4 no-print">
+            <div className="p-4 rounded-2xl" style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}>
+              <TravelBlock estimates={[groundTravel]} origin={originCityName(tripAirports)} city={plan.city} seats={people} />
+            </div>
+          </div>
+        )
+      ) : (
+        <FlightCard offer={dest?.bestOffer} city={plan.city} group={group} />
+      )}
       <HotelLinks
         city={plan.city}
         country={plan.country}

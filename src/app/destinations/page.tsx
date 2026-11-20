@@ -6,7 +6,10 @@ import { destinationCacheKey } from "@/lib/destinationCacheKey";
 import { DIRECT_ENTRY, clearEntry, currentEntry, entryStorage } from "@/lib/entryAttribution";
 import { flightLink, flightSearchLink, partnerLinkProps, type PartnerLink } from "@/lib/affiliate";
 import { useAffiliateConfig } from "@/app/components/AffiliateProvider";
-import { groupFromCompanion, toFlightPassengers } from "@/lib/group";
+import { groupFromCompanion, groupSize, toFlightPassengers } from "@/lib/group";
+import { originCityName, usesFlights } from "@/lib/transport";
+import { cardTransport, planChoices, withPlanTransport } from "@/lib/transport/choice";
+import TravelBlock from "@/app/components/TravelBlock";
 import { CREW_COPY, crewBudgetNote, crewSummary, flightTotalNote } from "@/lib/groupFlow";
 import { CATALOG } from "@/lib/destinations/catalog";
 import { PartnerNote } from "@/app/components/PartnerLinks";
@@ -17,7 +20,8 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/lib/store";
 import { checkDateRange, resolveTripTerm } from "@/lib/tripTerm";
-import type { DestinationRecommendation, FlightDetails } from "@/types";
+import type { DestinationRecommendation, FlightDetails, Transport } from "@/types";
+import { transportLabel } from "@/lib/quizOptions";
 import { getCityPhoto, type CityPhoto as Photo } from "@/lib/cityPhotos";
 import CityPhoto from "@/app/components/CityPhoto";
 import { formatPlans } from "@/lib/formatPlans";
@@ -339,6 +343,10 @@ function DestCard({
   const dealQuote = isDealPrice(freshQuote) ? freshQuote : null;
   const cacheQuote = freshQuote && !dealQuote ? freshQuote : null;
   const priceCopy = cardFlightPriceCopy(freshQuote);
+  // Loty (cena, linki, okazje) tylko przy wyborze samolotu; inne środki dostają dojazd z odległości.
+  const { showFlight, travel } = cardTransport(quiz, dest);
+  const seatsForTravel = groupSize(groupFromCompanion(quiz.companion, quiz.group));
+  const originCity = originCityName(airports);
   // Per-person cache quote may be multiplied by the group; a deal is for 1 adult and is never multiplied.
   const flightTotal = cacheQuote ? flightTotalNote(cacheQuote.price, quiz.companion, quiz.group) : null;
   const seats = passengers.adults + passengers.children + passengers.infants;
@@ -433,7 +441,7 @@ function DestCard({
         )}
 
         {/* Flight cost + actions */}
-        <div
+        {showFlight && <div
           className="flex flex-wrap items-center justify-between gap-3 pt-3"
           style={{ borderTop: "1px solid var(--border)" }}
         >
@@ -478,7 +486,34 @@ function DestCard({
               Planuj wyjazd →
             </button>
           </div>
-        </div>
+        </div>}
+
+        {/* Dojazd bez samolotu: szacunek z odległości, bez cen biletów */}
+        {travel.length > 0 && (
+          <div className={`flex flex-col gap-3 pt-3${showFlight ? " mt-3" : ""}`} style={{ borderTop: "1px solid var(--border)" }}>
+            <TravelBlock estimates={travel} origin={originCity} city={dest.city} seats={seatsForTravel} />
+            {!showFlight && (
+              <button
+                onClick={() => onPlan(dest, null)}
+                className="text-xs font-bold px-3 rounded-xl transition-opacity hover:opacity-85 self-end"
+                style={{ background: "var(--accent)", color: "#fff", minHeight: 44 }}
+              >
+                Planuj wyjazd →
+              </button>
+            )}
+          </div>
+        )}
+        {!showFlight && travel.length === 0 && (
+          <div className="flex justify-end pt-3" style={{ borderTop: "1px solid var(--border)" }}>
+            <button
+              onClick={() => onPlan(dest, null)}
+              className="text-xs font-bold px-3 rounded-xl transition-opacity hover:opacity-85"
+              style={{ background: "var(--accent)", color: "#fff", minHeight: 44 }}
+            >
+              Planuj wyjazd →
+            </button>
+          </div>
+        )}
       </div>
     </motion.div>
   );
@@ -494,15 +529,20 @@ function FlightModal({
   isGenerating,
   quizDuration,
   priceDates,
+  choices,
 }: {
   dest: DestinationRecommendation;
   airports: string[];
   quizDuration: number | null;
   priceDates: { departDate: string; returnDate: string } | null;
+  /** Środki, którymi da się tam dojechać; przy kilku użytkownik wybiera, według którego powstaje plan */
+  choices: Transport[];
   onClose: () => void;
-  onGenerate: (dest: DestinationRecommendation, details: FlightDetails | null) => void;
+  onGenerate: (dest: DestinationRecommendation, details: FlightDetails | null, mode: Transport) => void;
   isGenerating: boolean;
 }) {
+  const [mode, setMode] = useState<Transport>(choices[0]);
+  const viaFlight = mode === "samolot";
   const [arrivalDate, setArrivalDate] = useState(priceDates?.departDate ?? "");
   const [arrivalTime, setArrivalTime] = useState("");
   const [returnDate, setReturnDate]   = useState(priceDates?.returnDate ?? "");
@@ -524,7 +564,7 @@ function FlightModal({
           ...(returnTime ? { returnTime } : {}),
         }
       : null;
-    onGenerate(dest, details);
+    onGenerate(dest, details, mode);
   };
 
   return (
@@ -547,23 +587,50 @@ function FlightModal({
               {dest.city}, {dest.country}
             </h3>
             <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-              Podaj daty lotu, a ułożymy plan pod godziny przylotu i wylotu
+              {viaFlight ? "Podaj daty lotu, a ułożymy plan pod godziny przylotu i wylotu" : "Podaj daty, a ułożymy plan pod godziny przyjazdu i wyjazdu"}
             </p>
           </div>
         </div>
+
+        {choices.length > 1 && (
+          <fieldset className="mb-5">
+            <legend className="block text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+              Plan według środka transportu
+            </legend>
+            <div className="flex flex-wrap gap-2">
+              {choices.map((choice) => (
+                <button
+                  key={choice}
+                  type="button"
+                  aria-pressed={mode === choice}
+                  onClick={() => setMode(choice)}
+                  className="px-3 rounded-xl text-sm font-semibold"
+                  style={{
+                    minHeight: 44,
+                    background: mode === choice ? "var(--accent)" : "var(--bg-surface)",
+                    color: mode === choice ? "#fff" : "var(--text-secondary)",
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  {transportLabel(choice)}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+        )}
 
         {/* Flight details form */}
         <div className="space-y-4 mb-6">
           <div>
             <label className="block text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-              Przylot do {dest.city}
+              {viaFlight ? "Przylot do" : "Przyjazd do"} {dest.city}
             </label>
             <div className="flex gap-2">
               <input
                 type="date"
                 value={arrivalDate}
                 min={todayISO}
-                aria-label={`Data przylotu do ${dest.city}`}
+                aria-label={`${viaFlight ? "Data przylotu do" : "Data przyjazdu do"} ${dest.city}`}
                 onChange={(e) => setArrivalDate(e.target.value)}
                 className="flex-1 px-3 py-2 rounded-xl text-sm outline-none"
                 style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
@@ -581,14 +648,14 @@ function FlightModal({
 
           <div>
             <label className="block text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-              Wylot z {dest.city} (powrót)
+              {viaFlight ? "Wylot z" : "Wyjazd z"} {dest.city} (powrót)
             </label>
             <div className="flex gap-2">
               <input
                 type="date"
                 value={returnDate}
                 min={arrivalDate || todayISO}
-                aria-label={`Data wylotu z ${dest.city}`}
+                aria-label={`${viaFlight ? "Data wylotu z" : "Data wyjazdu z"} ${dest.city}`}
                 onChange={(e) => setReturnDate(e.target.value)}
                 className="flex-1 px-3 py-2 rounded-xl text-sm outline-none"
                 style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
@@ -611,23 +678,23 @@ function FlightModal({
         <div aria-live="polite">
           {range?.ok && (
             <p className="text-sm mb-2 text-center" style={{ color: "var(--text-secondary)" }}>
-              Plan obejmie {range.days} dni, licząc dzień przylotu i dzień powrotu
+              Plan obejmie {range.days} dni, licząc dzień {viaFlight ? "przylotu" : "przyjazdu"} i dzień powrotu
               {quizDuration && quizDuration !== range.days ? ` (w quizie było ${quizDuration})` : ""}.
             </p>
           )}
-          {range?.ok && priceDates && arrivalDate === priceDates.departDate && returnDate === priceDates.returnDate && (
+          {viaFlight && range?.ok && priceDates && arrivalDate === priceDates.departDate && returnDate === priceDates.returnDate && (
             <p className="text-xs mb-4 text-center" style={{ color: "var(--text-muted)" }}>
               To dni z ceny lotu na karcie. Zmień je, jeśli lecisz kiedy indziej.
             </p>
           )}
-          {range?.ok && priceDates && (arrivalDate !== priceDates.departDate || returnDate !== priceDates.returnDate) && (
+          {viaFlight && range?.ok && priceDates && (arrivalDate !== priceDates.departDate || returnDate !== priceDates.returnDate) && (
             <p className="text-xs mb-4 text-center" style={{ color: "var(--text-muted)" }}>
               Cena lotu na karcie dotyczy innych dni. Aktualną cenę dla Twoich dat sprawdzisz w wyszukiwarce lotów.
             </p>
           )}
           {(!!arrivalDate !== !!returnDate) && (
             <p className="text-sm mb-4 text-center" style={{ color: "var(--text-muted)" }}>
-              Podaj obie daty, przylotu i powrotu. Z jedną plan będzie miał {quizDuration ?? 3} dni, bez konkretnych dat.
+              Podaj obie daty, {viaFlight ? "przylotu" : "przyjazdu"} i powrotu. Z jedną plan będzie miał {quizDuration ?? 3} dni, bez konkretnych dat.
             </p>
           )}
           {!hasDates && !arrivalDate && !returnDate && (
@@ -638,7 +705,7 @@ function FlightModal({
         </div>
         {hasDates && !hasFlightData && range?.ok && (
           <p className="text-xs mb-4 text-center" style={{ color: "var(--text-muted)" }}>
-            Bez godzin lotu pierwszy i ostatni dzień będą bardziej elastyczne.
+            {viaFlight ? "Bez godzin lotu" : "Bez godzin"} pierwszy i ostatni dzień będą bardziej elastyczne.
           </p>
         )}
 
@@ -738,9 +805,12 @@ export default function DestinationsPage() {
     cachedDestinations?.key !== destCacheKey
   );
   const [error, setError]               = useState<string | null>(null);
+  // Brak miejsc w zasięgu wybranych środków: ponowienie nic nie zmieni, trzeba zmienić odpowiedzi.
+  const [noReach, setNoReach]           = useState(false);
   const [userStatus, setUserStatus]     = useState<UserStatus | null>(null);
   const [fetchKey, setFetchKey]         = useState(0);
-  const flightPrices = useFlightPrices(destinations, quizAnswers, _hasHydrated && !loading);
+  const flying = usesFlights(quizAnswers);
+  const flightPrices = useFlightPrices(destinations, quizAnswers, _hasHydrated && !loading && flying);
   const crew = crewSummary(quizAnswers.companion, quizAnswers.group);
   const budgetNote = crewBudgetNote(quizAnswers.budget, quizAnswers.companion, quizAnswers.group);
   // Termin, który nie pasuje do rodzaju wyjazdu (np. narty w lipcu): mówimy to wprost nad listą.
@@ -786,8 +856,9 @@ export default function DestinationsPage() {
     ])
       .then(([destData, profileData]) => {
         if (!destData.destinations?.length) {
+          setNoReach(Boolean(destData.note));
           setError(
-            quizAnswers.regions && quizAnswers.regions.length > 0 && !quizAnswers.preferredCity
+            destData.note ? destData.note : quizAnswers.regions && quizAnswers.regions.length > 0 && !quizAnswers.preferredCity
               ? REGION_EMPTY_MESSAGE
               : activeTripType(quizAnswers.tripType)
                 ? `Nie znaleźliśmy kierunków pasujących do wyjazdu „${tripTypeLabel(quizAnswers.tripType!).toLowerCase()}” w tym terminie. Zmień termin albo rodzaj wyjazdu.`
@@ -824,8 +895,10 @@ export default function DestinationsPage() {
     setPlanModal(dest);
   };
 
-  const handleGenerate = async (dest: DestinationRecommendation, details: FlightDetails | null) => {
+  const handleGenerate = async (dest: DestinationRecommendation, details: FlightDetails | null, mode: Transport) => {
     setPlanModal(null);
+    // Plan powstaje według jednego środka; przy samym samolocie (i braku wyboru) quiz zostaje bez zmian.
+    const planQuiz = withPlanTransport(quizAnswers, mode);
     selectDestination(dest);
     setFlightDetails(details);
     setIsGeneratingPlan(true);
@@ -837,7 +910,7 @@ export default function DestinationsPage() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ destination: dest, quizAnswers, flightDetails: details }),
+        body: JSON.stringify({ destination: dest, quizAnswers: planQuiz, flightDetails: details }),
       });
 
       if (!res.ok || !res.body) {
@@ -876,16 +949,16 @@ export default function DestinationsPage() {
             }
           }
           if (msg.done) {
-            trackEvent("plan_generated", planGeneratedParams(dest.city, (msg.plan as import("@/types").TripPlan).days?.length ?? 0, quizAnswers, currentEntry(entryStorage()) ?? DIRECT_ENTRY));
+            trackEvent("plan_generated", planGeneratedParams(dest.city, (msg.plan as import("@/types").TripPlan).days?.length ?? 0, planQuiz, currentEntry(entryStorage()) ?? DIRECT_ENTRY));
             const dropAttr = takeDropPlanAttribution(typeof window === "undefined" ? null : window.sessionStorage, dest.city);
             if (dropAttr) reportDropEvent(dropEventName("plan", dropAttr), dropAttr.sessionId);
             clearEntry(entryStorage()); // jedno wejście = jeden plan
             // Zapisany wyjazd ma długość i miesiąc, które weszły do planu (zakres dat bije quiz), jak w bazie.
-            const term = resolveTripTerm(quizAnswers, details);
+            const term = resolveTripTerm(planQuiz, details);
             setCurrentTrip({
               id: msg.tripId as string,
               destination: dest,
-              quizAnswers: term.ok ? { ...quizAnswers, duration: term.duration, month: term.month ?? quizAnswers.month } : quizAnswers,
+              quizAnswers: term.ok ? { ...planQuiz, duration: term.duration, month: term.month ?? planQuiz.month } : planQuiz,
               plan: msg.plan as import("@/types").TripPlan,
               createdAt: new Date().toISOString(),
             });
@@ -916,11 +989,11 @@ export default function DestinationsPage() {
       <div className="flex flex-col flex-1 items-center justify-center gap-4 px-8 text-center">
         <p className="text-base font-semibold" style={{ color: "var(--text-primary)" }}>{error}</p>
         <button
-          onClick={() => setFetchKey((k) => k + 1)}
+          onClick={() => (noReach ? router.push("/quiz?step=transport") : setFetchKey((k) => k + 1))}
           className="px-5 py-2.5 rounded-xl text-sm font-bold"
-          style={{ background: "var(--accent)", color: "#fff" }}
+          style={{ background: "var(--accent)", color: "#fff", minHeight: 44 }}
         >
-          Spróbuj ponownie
+          {noReach ? "Zmień środek transportu" : "Spróbuj ponownie"}
         </button>
         {error === REGION_EMPTY_MESSAGE && (
           <Link href="/quiz?step=region" className="text-sm font-semibold underline" style={{ color: "var(--accent)" }}>
@@ -982,8 +1055,13 @@ export default function DestinationsPage() {
           {crew
             ? "Dopasowane do Waszego budżetu i stylu. "
             : "Dopasowane do Twojego budżetu i stylu. "}
-          Kliknij &ldquo;Planuj wyjazd&rdquo; i podaj daty lotu.
+          Kliknij &ldquo;Planuj wyjazd&rdquo; i podaj {flying ? "daty lotu" : "daty wyjazdu"}.
         </p>
+        {!flying && destinations.length > 0 && destinations.length < 6 && (
+          <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>
+            W zasięgu wybranych środków mieści się tylko tyle miejsc. Dodaj samolot albo wydłuż wyjazd, żeby zobaczyć więcej.
+          </p>
+        )}
         {seasonCheck.message && quizAnswers.tripType && (
           <p
             role="status"
@@ -1113,6 +1191,7 @@ export default function DestinationsPage() {
             airports={quizAnswers.airports}
             quizDuration={quizAnswers.duration}
             priceDates={planDates}
+            choices={planChoices(quizAnswers, planModal)}
             onClose={() => setPlanModal(null)}
             onGenerate={handleGenerate}
             isGenerating={isGeneratingPlan}

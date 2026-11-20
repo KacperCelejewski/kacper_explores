@@ -1,7 +1,8 @@
 "use client";
 
-import { PLAN_TOTAL_NOTE_SHARED } from "@/lib/priceTrust";
+import { PLAN_TOTAL_NOTE_SHARED, PLAN_TOTAL_NOTE_SHARED_GROUND } from "@/lib/priceTrust";
 import { QUIZ_QUESTION_COUNT } from "@/lib/quizSteps";
+import { planAccessInput } from "@/lib/transport/plan";
 import { buildPlanCostModel } from "@/lib/costModel";
 import CostBreakdown from "@/app/components/CostBreakdown";
 import { useEffect, useState } from "react";
@@ -119,6 +120,9 @@ export default function ShareClient() {
     group: !!trip.crew && showGroupBudget(trip.crew.companion, trip.crew.group),
     // Publiczny podgląd nie pokazuje standardu z quizu (poziomu budżetu), tylko noce i liczbę osób
     basis: plan.costBasis ? { ...plan.costBasis, standard: null } : null,
+
+    // Plan na auto, pociąg lub bus albo rower: bez pozycji Lot, z orientacyjnym dojazdem.
+    ...planAccessInput(plan),
   });
 
   return (
@@ -163,13 +167,13 @@ export default function ShareClient() {
             <p className="mt-3 text-sm font-bold" style={{ color: "var(--accent)" }}>
               {CREW_COPY.shareCrewTitle}: {crew.detail}
               <span className="block text-xs font-normal mt-0.5" style={{ color: "var(--text-muted)" }}>
-                Kwoty poniżej są {CREW_COPY.perPerson}; suma na miejscu jest też podana {CREW_COPY.total}. Lot liczymy osobno.
+                Kwoty poniżej są {CREW_COPY.perPerson}; suma na miejscu jest też podana {CREW_COPY.total}. {plan.transport ? "Dojazd liczymy osobno." : "Lot liczymy osobno."}
               </span>
             </p>
           )}
 
           <div className="mt-4 pt-4 border-t" style={{ borderColor: "var(--border)" }}>
-            <CostBreakdown model={costModel} note={PLAN_TOTAL_NOTE_SHARED} />
+            <CostBreakdown model={costModel} note={plan.transport ? PLAN_TOTAL_NOTE_SHARED_GROUND : PLAN_TOTAL_NOTE_SHARED} />
           </div>
         </motion.div>
       </div>

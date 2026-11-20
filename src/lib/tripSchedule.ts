@@ -1,4 +1,10 @@
-import type { FlightDetails } from "@/types";
+import type { FlightDetails, GroundTransport } from "@/types";
+
+/** Dojazd lądowy zamiast lotu: środek i, jeśli znamy, czas drogi w jedną stronę. */
+export interface GroundLeg {
+  mode: GroundTransport;
+  hours: number | null;
+}
 
 export interface DaySchedule {
   dayNumber: number;
@@ -97,9 +103,70 @@ function fullDay(dayNumber: number): DaySchedule {
   };
 }
 
+const GROUND_NOUN: Record<GroundTransport, string> = { auto: "autem", pociag_bus: "pociągiem lub busem", rower: "rowerem" };
+
+function groundTravelText(leg: GroundLeg): string {
+  return leg.hours ? ` Droga ${GROUND_NOUN[leg.mode]} zajmuje ok. ${String(leg.hours).replace(".", ",")} h w jedną stronę.` : "";
+}
+
+// Dojazd lądowy: czas przyjazdu to czas na miejscu, bez lotniska i bez półtorej godziny dojazdu do centrum.
+function groundArrivalDay(dayNumber: number, leg: GroundLeg, arrivalTime?: string): DaySchedule {
+  const travel = groundTravelText(leg);
+  const bike = leg.mode === "rower"
+    ? " Rower: zaplanuj trasę dzienną, nocleg z miejscem na rower i krótki, płaski odcinek na koniec dnia."
+    : leg.mode === "auto"
+    ? " Auto: uwzględnij parking przy noclegu (płatny lub bezpłatny) i dojście pieszo do pierwszych atrakcji."
+    : "";
+  if (arrivalTime) {
+    const from = formatTime(addHours(arrivalTime, 0.5));
+    const fromHour = parseHour(arrivalTime) + 0.5;
+    const body = fromHour >= 21
+      ? `TYLKO: zameldowanie, kolacja w pobliżu. Maksymalnie 2 aktywności. BEZ zwiedzania.`
+      : fromHour >= 15
+      ? `Zaplanuj popołudnie i wieczór: zameldowanie, spacer, kolacja. 4-5 aktywności od ${from}.`
+      : `Zaplanuj pełne popołudnie: zameldowanie, pierwsze atrakcje, kolacja. 5-6 aktywności od ${from}.`;
+    return {
+      dayNumber, type: "arrival", availableFrom: from, availableTo: "23:00",
+      instruction: `DZIEŃ ${dayNumber} — PRZYJAZD o ${arrivalTime} (czas lokalny).${travel} Dostępny od ~${from}. ${body}${bike}`,
+    };
+  }
+  return {
+    dayNumber, type: "arrival", availableFrom: "14:30", availableTo: "23:00",
+    instruction: `DZIEŃ ${dayNumber} — DZIEŃ PRZYJAZDU (godzina przyjazdu nieznana).${travel} Przyjmij, że podróżnik jest na miejscu ok. 14:30. Zaplanuj: zameldowanie, spacer orientacyjny, kolacja. 4-5 aktywności od 14:30. BEZ wczesnych atrakcji.${bike}`,
+  };
+}
+
+function groundDepartureDay(dayNumber: number, leg: GroundLeg, returnTime?: string): DaySchedule {
+  const travel = groundTravelText(leg);
+  const tail = leg.mode === "rower"
+    ? " Rower: zostaw zapas czasu na odcinek powrotny i jazdę w świetle dnia."
+    : leg.mode === "auto"
+    ? " Auto: wymeldowanie i odbiór auta z parkingu liczone w czasie."
+    : "";
+  if (returnTime) {
+    const retHour = parseHour(returnTime);
+    const checkoutHour = Math.max(6, retHour - 1);
+    const checkoutTime = formatTime(String(Math.floor(checkoutHour)).padStart(2, "0") + ":00");
+    const body = retHour <= 10
+      ? `Wyjazd o ${returnTime}: TYLKO śniadanie na wynos i wymeldowanie. BEZ zwiedzania.`
+      : retHour <= 15
+      ? `Wyjazd o ${returnTime}: zaplanuj TYLKO poranek: śniadanie, krótki spacer w pobliżu noclegu, wymeldowanie. Maksymalnie 2-3 aktywności.`
+      : `Wyjazd o ${returnTime}: spokojne przedpołudnie, do 4 aktywności blisko noclegu, wymeldowanie do ${checkoutTime}.`;
+    return {
+      dayNumber, type: "departure", availableFrom: "07:00", availableTo: checkoutTime,
+      instruction: `DZIEŃ ${dayNumber} — POWRÓT.${travel} ${body}${tail}`,
+    };
+  }
+  return {
+    dayNumber, type: "departure", availableFrom: "07:00", availableTo: "11:00",
+    instruction: `DZIEŃ ${dayNumber} — DZIEŃ POWROTU (godzina wyjazdu nieznana).${travel} Przyjmij wymeldowanie do 11:00. Zaplanuj TYLKO: śniadanie, krótki spacer, wymeldowanie. Maksymalnie 3 aktywności do 11:00. ZERO odległych miejsc.${tail}`,
+  };
+}
+
 export function calcTripSchedule(
   duration: number,
-  flightDetails?: FlightDetails | null
+  flightDetails?: FlightDetails | null,
+  ground?: GroundLeg | null
 ): TripSchedule {
   const arrivalTime = flightDetails?.arrivalTime ?? null;
   const arrivalDate = flightDetails?.arrivalDate ?? null;
@@ -108,29 +175,31 @@ export function calcTripSchedule(
   const days: DaySchedule[] = [];
 
   if (duration === 1) {
-    const fromTime = arrivalTime ? formatTime(addHours(arrivalTime, 1.5)) : "14:00";
+    const fromTime = arrivalTime ? formatTime(addHours(arrivalTime, ground ? 0.5 : 1.5)) : "14:00";
     const toTime = flightDetails?.returnTime
-      ? formatTime(String(Math.max(6, parseHour(flightDetails.returnTime) - 3)).padStart(2, "0") + ":00")
+      ? formatTime(String(Math.max(6, parseHour(flightDetails.returnTime) - (ground ? 1 : 3))).padStart(2, "0") + ":00")
       : "11:00";
     days.push({
       dayNumber: 1,
       type: "arrival_and_departure",
       availableFrom: fromTime,
       availableTo: toTime,
-      instruction: flightDetails
+      instruction: ground
+        ? `DZIEŃ 1 — PRZYJAZD I POWRÓT TEGO SAMEGO DNIA.${groundTravelText(ground)} Czas na miejscu: ${fromTime}–${toTime}. Zaplanuj 3-4 aktywności blisko centrum. Lekki plan.`
+        : flightDetails
         ? `DZIEŃ 1 — PRZYLOT O ${arrivalTime}, POWRÓT O ${flightDetails.returnTime}. Czas w mieście: ${fromTime}–${toTime}. Zaplanuj 3-4 aktywności blisko centrum.`
         : `DZIEŃ 1 — PRZYLOT I POWRÓT TEGO SAMEGO DNIA. Zaplanuj 3-4 aktywności blisko centrum. Lekki plan.`,
     });
     return { days, arrivalTime: arrivalTime ?? "14:00", arrivalDate, returnDate, usefulDays: 1 };
   }
 
-  days.push(calcArrivalDay(1, arrivalTime ?? undefined));
+  days.push(ground ? groundArrivalDay(1, ground, arrivalTime ?? undefined) : calcArrivalDay(1, arrivalTime ?? undefined));
 
   for (let d = 2; d < duration; d++) {
     days.push(fullDay(d));
   }
 
-  days.push(calcDepartureDay(duration, flightDetails?.returnTime ?? undefined));
+  days.push(ground ? groundDepartureDay(duration, ground, flightDetails?.returnTime ?? undefined) : calcDepartureDay(duration, flightDetails?.returnTime ?? undefined));
 
   const usefulDays = days.filter((d) => {
     const from = parseHour(d.availableFrom);

@@ -8,10 +8,12 @@ import { budgetPromptLabel, VIBE_LABELS, PLACE_LABELS, DESTINATION_CACHE_TTL_MS 
 import { destinationCacheKey } from "@/lib/destinationCacheKey";
 import { excludeOriginCities, originExclusionPrompt } from "@/lib/originCities";
 import { monthYearLabel } from "@/lib/tripMonth";
-import { destinationTripTypePrompt, filterDestinationsForTripType } from "@/lib/tripType";
+import { destinationMatchesTripType, destinationTripTypePrompt, filterDestinationsForTripType } from "@/lib/tripType";
 import { effectiveRegions, isTripType, normalizeFoundation } from "@/lib/quizOptions";
-import { filterByRegions, MIN_CACHED_REGION_RESULTS, regionPromptLine, regionRetryLine } from "@/lib/regionFilter";
-import type { DestinationRecommendation, TravelStyle, TravelVibe, PlaceType, Region, TripType } from "@/types";
+import { filterByRegions, matchesRegions, MIN_CACHED_REGION_RESULTS, regionPromptLine, regionRetryLine } from "@/lib/regionFilter";
+import { groundModes, reachablePlaces, usesFlights } from "@/lib/transport";
+import { annotateTravel, groundDestinationPrompt, groundFallback, mixedPromptLine, NO_REACH_MESSAGE, reconcileGround } from "@/lib/transport/destinations";
+import type { DestinationRecommendation, QuizAnswers, TravelStyle, TravelVibe, PlaceType, Region, TripType } from "@/types";
 
 export const maxDuration = 30;
 
@@ -154,11 +156,26 @@ export async function POST(req: NextRequest) {
   }
 
   const preferredCity = (body as { preferredCity?: string }).preferredCity ?? null;
-  const prompt = buildPrompt(body as Record<string, unknown>);
   const regions = preferredCity ? [] : effectiveRegions(normalizeFoundation(body as Record<string, unknown>));
   const originAirports = (body as { airports?: string[] }).airports ?? ["WRO"];
   const activeType = isTripType((body as { tripType?: unknown }).tripType) ? (body as { tripType: TripType }).tripType : null;
   const preferredLower = preferredCity ? preferredCity.trim().toLowerCase() : null;
+
+  // Transport: sam samolot (i brak wyboru) działa jak dotąd; bez samolotu model wybiera z listy miejsc w zasięgu.
+  // Region i rodzaj wyjazdu zawężają tę listę tak samo jak odpowiedź modelu przy lotach.
+  const answers = body as unknown as QuizAnswers;
+  const flying = usesFlights(answers);
+  const candidates = groundModes(answers).length > 0
+    ? reachablePlaces(answers, 24, (p) => matchesRegions(p.country, regions))
+    : [];
+  // Narty, góry i plaża wymagają potwierdzenia w opisie (nasza lista miejsc nie niesie danych o stokach):
+  // wtedy zostają tylko miejsca, które model sam opisał jako pasujące, bez dopełniania listy.
+  const strictType = activeType !== null && !destinationMatchesTripType({ city: "" }, activeType);
+  if (!flying && candidates.length === 0) {
+    return NextResponse.json({ destinations: [], note: NO_REACH_MESSAGE });
+  }
+  const mixedLine = flying ? mixedPromptLine(candidates) : "";
+  const prompt = flying ? buildPrompt(body as Record<string, unknown>, mixedLine) : groundDestinationPrompt(answers, candidates);
   // Rodzaj wyjazdu to cel, nie ozdoba: dla nart zostają tylko miejsca z infrastrukturą narciarską.
   // Miasto wybrane przez użytkownika zostaje, bo to jego jawna decyzja.
   let droppedByType = 0;
@@ -177,6 +194,32 @@ export async function POST(req: NextRequest) {
         model: modelName,
         generationConfig: { responseMimeType: "application/json" },
       });
+
+      // Bez lotów: model wybiera z naszej listy, a odpowiedź uzgadniamy z nią po stronie serwera.
+      if (!flying) {
+        const text = (await model.generateContent(prompt)).response.text();
+        console.log(`[destinations] raw response (first 300): ${text.slice(0, 300)}`);
+        let parsed: { destinations?: Array<Record<string, unknown>> };
+        try {
+          parsed = JSON.parse(text.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "").trim());
+        } catch (parseErr) {
+          console.error("[destinations] JSON parse error:", parseErr, "raw:", text.slice(0, 500));
+          continue;
+        }
+        const groundList = reconcileGround(Array.isArray(parsed.destinations) ? parsed.destinations : [], candidates, MAX_DESTINATIONS, {
+          topUp: !strictType,
+          accept: (entry) => destinationMatchesTripType({
+            city: String(entry.city),
+            description: typeof entry.description === "string" ? entry.description : "",
+            highlights: Array.isArray(entry.highlights) ? entry.highlights.filter((h): h is string => typeof h === "string") : [],
+          }, activeType),
+        });
+        void logGeminiCall({ endpoint: "destinations", model: modelName, success: true });
+        // Brak pasujących miejsc nie jest awarią i nie trafia do cache (jak przy lotach).
+        if (groundList.length === 0) return NextResponse.json({ destinations: [] });
+        destCache.set(key, { data: groundList, ts: Date.now() });
+        return NextResponse.json({ destinations: groundList });
+      }
 
       // Jedno zapytanie do modelu: surowa odpowiedź -> kandydaci bez miast wylotu (null, gdy nie da się jej odczytać).
       const ask = async (text: string): Promise<DestinationRecommendation[] | null> => {
@@ -234,7 +277,7 @@ export async function POST(req: NextRequest) {
           const elapsed = Date.now() - startedAt;
           if (elapsed > TOP_UP_START_LIMIT_MS) return null;
           try {
-            const more = await withTimeout(ask(buildPrompt(body as Record<string, unknown>, regionRetryLine(regions, rejected, keptCities))), TOP_UP_HARD_LIMIT_MS - elapsed);
+            const more = await withTimeout(ask(buildPrompt(body as Record<string, unknown>, mixedLine + regionRetryLine(regions, rejected, keptCities))), TOP_UP_HARD_LIMIT_MS - elapsed);
             void logGeminiCall({ endpoint: "destinations", model: modelName, success: more !== TIMED_OUT && more !== null });
             return more === TIMED_OUT ? null : (more ?? []);
           } catch (err) {
@@ -254,6 +297,8 @@ export async function POST(req: NextRequest) {
           ? NextResponse.json({ destinations: [] })
           : NextResponse.json({ error: "Mamy teraz tłok. Spróbuj za minutę." }, { status: 503 });
       }
+      // Obok samolotu wybrano też auto, pociąg lub bus albo rower: dopisujemy nasz szacunek dojazdu.
+      destinations = annotateTravel(destinations, answers);
       // Za mało propozycji z regionu nie zostaje w cache, żeby kolejna próba mogła trafić lepiej.
       if (regions.length === 0 || destinations.length >= MIN_CACHED_REGION_RESULTS) destCache.set(key, { data: destinations, ts: Date.now() });
       return NextResponse.json({ destinations });
@@ -270,8 +315,13 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Brak pasujących kierunków to nie awaria: lista jest pusta i nie trafia do cache.
-  if (sawMismatch) return NextResponse.json({ destinations: [] });
+  // Bez lotów mamy własną listę z opisami: lepsza niż błąd, gdy model jest przeciążony.
+  // Przy rodzaju wyjazdu, którego nie umiemy sprawdzić sami (narty, góry, plaża), uczciwy jest błąd, nie przypadkowa lista.
+  if (!flying) {
+    return strictType
+      ? NextResponse.json({ error: "Mamy teraz tłok. Spróbuj za minutę." }, { status: 503 })
+      : NextResponse.json({ destinations: groundFallback(candidates) });
+  }
 
   // Model odpowiadał, ale nic nie pasowało do rodzaju wyjazdu: to pusta lista, nie awaria dostawcy.
   if (sawMismatch) return NextResponse.json({ destinations: [] });
