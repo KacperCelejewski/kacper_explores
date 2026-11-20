@@ -94,3 +94,103 @@ describe("keepUtmQuery", () => {
     expect(k("utm_medium=social&utm_campaign=" + encodeURIComponent("x y"))).toBe("?utm_medium=social");
   });
 });
+
+import {
+  HOME_DREAM_CITIES, dreamBudgetLevel, homeDreamAnswers, homeDreamHref, parseHomeDream,
+} from "./homeParams";
+import { entryFromUrl } from "./entryAttribution";
+import { getDreamPreview } from "@/app/components/HomeDreams";
+import { firstIncompleteQuizStep, QUIZ_STEPS } from "./quizSteps";
+import { isValidGroup } from "./group";
+import type { QuizAnswers } from "@/types";
+
+const hrefParams = (href: string) => new URLSearchParams(href.split("?")[1]);
+
+describe("dreamBudgetLevel", () => {
+  it("zgadza się z progami quizu: do 1 500 zł niski, wyżej średni", () => {
+    expect(dreamBudgetLevel(400)).toBe("low");
+    expect(dreamBudgetLevel(1100)).toBe("low");
+    expect(dreamBudgetLevel(1500)).toBe("low");
+    expect(dreamBudgetLevel(1550)).toBe("medium");
+    expect(dreamBudgetLevel(2000)).toBe("medium");
+  });
+});
+
+describe("homeDreamHref", () => {
+  it("buduje adres do quizu z miastem, liczbą osób, budżetem i src", () => {
+    expect(homeDreamHref({ city: "Lizbona", people: 4, budgetPerPerson: 1100 }))
+      .toBe("/quiz?src=home-dream&city=Lizbona&people=4&budget=low");
+    expect(homeDreamHref({ city: "Porto", people: 6, budgetPerPerson: 1800 }))
+      .toBe("/quiz?src=home-dream&city=Porto&people=6&budget=medium");
+  });
+
+  it("dokleja utm z bieżącej strony (zachowanie atrybucji)", () => {
+    const href = homeDreamHref({ city: "Porto", people: 2, budgetPerPerson: 1400, utmQuery: "?utm_source=instagram&utm_campaign=bio" });
+    expect(href).toBe("/quiz?src=home-dream&city=Porto&people=2&budget=low&utm_source=instagram&utm_campaign=bio");
+    expect(entryFromUrl(hrefParams(href))).toEqual({ channel: "ig", material: "ig:bio" });
+  });
+
+  it("bez utm atrybucja wejścia to home:home-dream", () => {
+    const href = homeDreamHref({ city: "Lizbona", people: 3, budgetPerPerson: 900 });
+    expect(entryFromUrl(hrefParams(href))).toEqual({ channel: "home", material: "home:home-dream" });
+  });
+
+  it("znaki specjalne w mieście są kodowane", () => {
+    expect(homeDreamHref({ city: "A&b c", people: 2, budgetPerPerson: 500 })).toContain("city=A%26b%20c");
+  });
+});
+
+describe("parseHomeDream", () => {
+  const d = (q: string) => parseHomeDream(new URLSearchParams(q));
+
+  it("odczytuje poprawny adres z karty", () => {
+    expect(d("src=home-dream&city=Lizbona&people=4&budget=low")).toEqual({ city: "Lizbona", people: 4, budget: "low" });
+    expect(d("src=home-dream&city=Porto&people=9&budget=medium")).toEqual({ city: "Porto", people: 9, budget: "medium" });
+  });
+
+  it("wymaga src=home-dream i miasta z listy", () => {
+    expect(d("city=Lizbona&people=4&budget=low")).toBeNull();
+    expect(d("src=home-ekipa&city=Lizbona&people=4&budget=low")).toBeNull();
+    expect(d("src=home-dream&city=Paryz&people=4&budget=low")).toBeNull();
+    expect(d("src=home-dream&city=" + encodeURIComponent("<script>") + "&people=4&budget=low")).toBeNull();
+    expect(d("src=home-dream&people=4&budget=low")).toBeNull();
+  });
+
+  it("odrzuca niepoprawną liczbę osób i budżet", () => {
+    for (const people of ["", "1", "10", "4.5", "abc", "-2", "0x4"]) {
+      expect(d(`src=home-dream&city=Lizbona&people=${people}&budget=low`)).toBeNull();
+    }
+    for (const budget of ["", "high", "LOW", "1100"]) {
+      expect(d(`src=home-dream&city=Lizbona&people=4&budget=${budget}`)).toBeNull();
+    }
+  });
+});
+
+describe("homeDreamAnswers", () => {
+  const empty: QuizAnswers = { budget: null, vibe: null, styles: [], placeType: null, month: null, duration: null, airports: [], companion: null };
+
+  it("ustawia ekipę, budżet i miasto, a quiz wznawia od pierwszego brakującego pytania", () => {
+    const answers = homeDreamAnswers({ city: "Lizbona", people: 5, budget: "medium" });
+    expect(answers).toEqual({ preferredCity: "Lizbona", companion: "friends", group: { adults: 5, childrenAges: [] }, budget: "medium" });
+    expect(isValidGroup(answers.group)).toBe(true);
+    expect(firstIncompleteQuizStep({ ...empty, ...answers }, QUIZ_STEPS)).toBe("vibe");
+  });
+});
+
+describe("karty HomeDreams prowadzą do quizu", () => {
+  const cards = getDreamPreview(2000, 2).cards;
+
+  it("każde miasto z karty jest na liście dozwolonych i daje poprawny adres dla wszystkich ustawień", () => {
+    expect(cards.map((c) => c.city).sort()).toEqual([...HOME_DREAM_CITIES].sort());
+    for (const { city } of cards) {
+      for (const people of [2, 3, 4, 5, 6, 7, 8, 9]) {
+        for (const budgetPerPerson of [400, 1100, 1500, 1550, 2000]) {
+          const href = homeDreamHref({ city, people, budgetPerPerson });
+          expect(href.startsWith("/quiz?")).toBe(true);
+          const parsed = parseHomeDream(hrefParams(href));
+          expect(parsed).toEqual({ city, people, budget: dreamBudgetLevel(budgetPerPerson) });
+        }
+      }
+    }
+  });
+});

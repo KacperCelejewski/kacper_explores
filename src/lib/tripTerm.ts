@@ -1,5 +1,5 @@
 import type { FlightDetails, QuizAnswers } from "@/types";
-import { MONTH_NAMES } from "@/lib/constants";
+import { monthYearLabel } from "@/lib/tripMonth";
 
 /**
  * Jedno źródło prawdy o terminie wyjazdu.
@@ -185,7 +185,7 @@ export function tripTermPrompt(term: Extract<TripTerm, { ok: true }>): string {
     lines.push("Dni planu:");
     for (const d of termDays(term)) lines.push(`- Dzień ${d.day}: ${d.weekday} ${dmy(d.date)}`);
   } else {
-    const monthName = term.month ? MONTH_NAMES[term.month - 1] : "nieokreślony";
+    const monthName = term.month ? monthYearLabel(term.month) : "nieokreślony";
     lines.push(
       `TERMIN WYJAZDU: ${monthName}, ${term.duration} dni łącznie z dniem przylotu i dniem powrotu. Konkretne daty i dni tygodnia nieznane.`
     );

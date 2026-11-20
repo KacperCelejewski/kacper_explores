@@ -172,7 +172,7 @@ describe("tripTermPrompt", () => {
     const r = resolveTripTerm(quiz({ month: 7, duration: 6 }), null);
     if (!r.ok) throw new Error("oczekiwano ok");
     const text = tripTermPrompt(r);
-    expect(text).toContain("Lipiec");
+    expect(text).toMatch(/[Ll]ipiec 20\d\d/);
     expect(text).toContain("lato");
     expect(text).toContain("6 dni");
     expect(text).toMatch(/dni tygodnia nieznane/i);
@@ -202,7 +202,7 @@ describe("buildPlanPrompt używa tego samego terminu", () => {
   it("sam miesiąc + dni: liczba dni z quizu i nazwa miesiąca", () => {
     const prompt = buildPlanPrompt(dest, quiz({ month: 7, duration: 6 }), null);
     expect(prompt).toContain("DOKŁADNIE 6 linii");
-    expect(prompt).toContain("Lipiec");
+    expect(prompt).toMatch(/[Ll]ipiec 20\d\d/);
   });
 
   it("daty bez godzin lotu: nie wpisuje pustych godzin do promptu", () => {
