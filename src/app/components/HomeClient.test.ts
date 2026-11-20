@@ -49,7 +49,7 @@ describe("homepage server-rendered content", () => {
       expect(first).toContain(`>${HOME.h1}</h1>`);
       expect([...first!.matchAll(/<a\b[^>]*href="([^"]*)"/g)].map((m) => m[1].replaceAll("&amp;", "&")))
         .toEqual([HOME.ctaTeamHref, HOME.ctaSoloHref]);
-      expect(first).not.toContain("<p");
+      expect(first).not.toMatch(/<p[\s>]/);
       expect(first).not.toContain(HOME.micro);
       expect(first).not.toContain("#zrzut");
 
