@@ -13,6 +13,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/lib/store";
+import { checkDateRange } from "@/lib/tripTerm";
 import type { DestinationRecommendation, FlightDetails } from "@/types";
 import { getCityPhoto, type CityPhoto as Photo } from "@/lib/cityPhotos";
 import CityPhoto from "@/app/components/CityPhoto";
@@ -483,9 +484,11 @@ function FlightModal({
   onClose,
   onGenerate,
   isGenerating,
+  quizDuration,
 }: {
   dest: DestinationRecommendation;
   airports: string[];
+  quizDuration: number | null;
   onClose: () => void;
   onGenerate: (dest: DestinationRecommendation, details: FlightDetails | null) => void;
   isGenerating: boolean;
@@ -495,11 +498,20 @@ function FlightModal({
   const [returnDate, setReturnDate]   = useState("");
   const [returnTime, setReturnTime]   = useState("");
 
-  const hasFlightData = arrivalDate && arrivalTime && returnDate && returnTime;
+  // Daty wyznaczają termin i liczbę dni planu; godziny lotu tylko dopasowują pierwszy i ostatni dzień.
+  const hasDates = !!arrivalDate && !!returnDate;
+  const range = hasDates ? checkDateRange(arrivalDate, returnDate) : null;
+  const hasFlightData = hasDates && !!arrivalTime && !!returnTime;
 
   const handleSubmit = () => {
-    const details: FlightDetails | null = hasFlightData
-      ? { arrivalDate, arrivalTime, returnDate, returnTime }
+    if (range && !range.ok) return;
+    const details: FlightDetails | null = hasDates
+      ? {
+          arrivalDate,
+          returnDate,
+          ...(arrivalTime ? { arrivalTime } : {}),
+          ...(returnTime ? { returnTime } : {}),
+        }
       : null;
     onGenerate(dest, details);
   };
@@ -578,9 +590,23 @@ function FlightModal({
           </div>
         </div>
 
-        {!hasFlightData && (
+        {range && !range.ok && (
+          <p role="alert" className="text-xs mb-4 text-center" style={{ color: "var(--error)" }}>{range.error}</p>
+        )}
+        {range?.ok && (
+          <p className="text-xs mb-4 text-center" style={{ color: "var(--text-secondary)" }} aria-live="polite">
+            Plan obejmie {range.days} dni, licząc dzień przylotu i dzień powrotu
+            {quizDuration && quizDuration !== range.days ? ` (w quizie było ${quizDuration})` : ""}.
+          </p>
+        )}
+        {!hasDates && (
           <p className="text-xs mb-4 text-center" style={{ color: "var(--text-muted)" }}>
-            Możesz też wygenerować plan bez podawania dat — będzie mniej dopasowany godzinowo.
+            Bez dat plan będzie miał {quizDuration ?? 3} dni, tyle, ile wybrano w quizie, i mniej dopasowane godziny.
+          </p>
+        )}
+        {hasDates && !hasFlightData && range?.ok && (
+          <p className="text-xs mb-4 text-center" style={{ color: "var(--text-muted)" }}>
+            Bez godzin lotu pierwszy i ostatni dzień będą bardziej elastyczne.
           </p>
         )}
 
@@ -594,13 +620,13 @@ function FlightModal({
           </button>
           <button
             onClick={handleSubmit}
-            disabled={isGenerating}
+            disabled={isGenerating || (!!range && !range.ok)}
             className="flex-[2] py-3 rounded-xl font-bold text-sm transition-opacity hover:opacity-85 disabled:opacity-50"
             style={{ background: "var(--accent)", color: "#fff" }}
           >
             {isGenerating
               ? "Generuję plan…"
-              : hasFlightData
+              : hasDates
               ? "Wygeneruj plan"
               : "Generuj bez dat"}
           </button>
@@ -1016,6 +1042,7 @@ export default function DestinationsPage() {
             key="flight-modal"
             dest={planModal}
             airports={quizAnswers.airports}
+            quizDuration={quizAnswers.duration}
             onClose={() => setPlanModal(null)}
             onGenerate={handleGenerate}
             isGenerating={isGeneratingPlan}

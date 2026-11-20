@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { IconPlane, IconBed, IconFork, IconTicket, IconCheck, IconPin } from "@/app/components/Icons";
 import type { TripPlan, DayPlan, DayActivity, DestinationRecommendation } from "@/types";
 import Link from "next/link";
+import { formatTripWhen } from "@/lib/shareOg";
 import { CREW_COPY, crewSummary, crewTotalBudget, type SharedCrew } from "@/lib/groupFlow";
 
 const ACTIVITY_COLORS: Record<string, string> = {
@@ -140,7 +141,7 @@ export default function ShareClient() {
                 {plan.city} {destination?.countryFlag ?? ""}
               </h1>
               <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
-                {plan.duration} dni · {plan.country}
+                {plan.duration} dni · {plan.country}{plan.startDate ? ` · ${formatTripWhen(plan.startDate, plan.duration)}` : ""}
               </p>
             </div>
           </div>
