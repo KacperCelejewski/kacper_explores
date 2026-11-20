@@ -2,6 +2,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { FLIGHT_CACHE_TTL_MS } from "@/lib/constants";
 import { SKY_IDS } from "@/lib/flights/sky-ids";
 import { MAX_GROUP, type FlightPassengers } from "@/lib/group";
+import { resolveDepartureYear, SEARCH_DAYS_OF_MONTH } from "@/lib/tripMonth";
 import type { CachedFlightPair, FlightCachePair } from "./card-price";
 
 const SOLO: FlightPassengers = { adults: 1, children: 0, infants: 0 };
@@ -77,14 +78,10 @@ function fmtDate(d: Date): string {
 // Returns up to 4 candidate departure dates for the month, sorted nearest first.
 // Tries days 10, 15, 20, 25; each picks the first occurrence ≥3 days from now.
 export function candidateDates(month: number, duration: number, now = new Date()): Array<{ departDate: string; returnDate: string }> {
-  const minTime = now.getTime() + 3 * 24 * 60 * 60 * 1000;
   const results: Array<{ departDate: string; returnDate: string; t: number }> = [];
 
-  for (const day of [10, 15, 20, 25]) {
-    let depart = new Date(Date.UTC(now.getFullYear(), month - 1, day));
-    if (depart.getTime() < minTime) {
-      depart = new Date(Date.UTC(now.getFullYear() + 1, month - 1, day));
-    }
+  for (const day of SEARCH_DAYS_OF_MONTH) {
+    const depart = new Date(Date.UTC(resolveDepartureYear(month, day, now), month - 1, day));
     const ret = new Date(depart.getTime() + (duration - 1) * 24 * 60 * 60 * 1000);
     results.push({ departDate: fmtDate(depart), returnDate: fmtDate(ret), t: depart.getTime() });
   }
