@@ -2,7 +2,7 @@ import type { QuizAnswers, DestinationRecommendation, TripPlan } from "@/types";
 import { isValidGroup } from "@/lib/group";
 import { validateFoundationFields } from "@/lib/quizOptions";
 
-const VALID_BUDGETS = new Set(["low", "medium"]);
+const VALID_BUDGETS = new Set(["low", "medium", "high"]);
 const VALID_STYLES = new Set(["nature", "history", "architecture", "food", "beach", "nightlife"]);
 const VALID_VIBES = new Set(["chill", "intense", "social", "active"]);
 const VALID_PLACE_TYPES = new Set(["big_city", "charming", "beach_sun"]);
