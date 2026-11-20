@@ -35,8 +35,13 @@ describe("homepage server-rendered content", () => {
       const quizHrefs = [...html.matchAll(/<a\b[^>]*href="(\/quiz(?:\?[^\"]*)?)"/g)]
         .map((match) => match[1].replaceAll("&amp;", "&"));
       expect(quizHrefs.length).toBeGreaterThan(0);
+      // Limit dotyczy ogólnych wezwań do działania. Trzy linki kart-marzeń ("{Miasto} na próbę") niosą wstępne
+      // odpowiedzi (miasto, osoby, budżet), więc liczymy je osobno: dokładnie po jednym na kartę.
+      const dreamHrefs = quizHrefs.filter((href) => href.startsWith("/quiz?src=home-dream&"));
+      expect(dreamHrefs).toHaveLength(3);
+      const generalHrefs = quizHrefs.filter((href) => !dreamHrefs.includes(href));
       // Reserve one link for the global menu when it is opened.
-      expect(quizHrefs.length).toBeLessThanOrEqual(6);
+      expect(generalHrefs.length).toBeLessThanOrEqual(6);
       expect(quizHrefs.filter((href) => href === HOME.ctaTeamHref)).toHaveLength(2);
       expect(quizHrefs.filter((href) => href === HOME.ctaSoloHref)).toHaveLength(2);
       expect(html).toContain(HOME.h1);
