@@ -3,6 +3,8 @@ import type { BudgetLevel, TravelStyle } from "@/types";
 // Własne dane o odległościach (współrzędne miast, publiczna wiedza geograficzna, dokładność ok. 5 km).
 // Nie pochodzą z zewnętrznego API: dystans liczymy sami (patrz `index.ts`). Lista celów dla auta,
 // pociągu lub busa i roweru jest zamknięta: model poleca tylko z niej, więc nie zmyśla odległości.
+// Uwaga: linia prosta zaniża drogę tam, gdzie trasę wydłuża woda lub góry (np. Hel przez Zatokę Pucką: 30 km po prostej,
+// ok. 100 km drogą), więc takich miejsc na liście nie ma. Reszta to szacunek z błędem rzędu kilkunastu procent.
 
 export type Coords = readonly [lat: number, lng: number];
 
@@ -52,7 +54,6 @@ const ROWS: Row[] = [
   ["Szczecin", PL, "🇵🇱", 53.4285, 14.5528, ["architecture", "history", "nature"], "low", "⚓", "Wały Chrobrego, port i Puszcza Bukowa za miastem."],
   ["Gdynia", PL, "🇵🇱", 54.5189, 18.5305, ["beach", "architecture", "food"], "low", "🌊", "Modernizm, Skwer Kościuszki i bulwar nad morzem."],
   ["Sopot", PL, "🇵🇱", 54.4418, 18.5601, ["beach", "nightlife", "food"], "medium", "🏖️", "Molo, plaża i Monciak."],
-  ["Hel", PL, "🇵🇱", 54.6083, 18.8, ["beach", "nature"], "low", "🌬️", "Wąski cypel, kitesurfing i foki w fokarium."],
   ["Kołobrzeg", PL, "🇵🇱", 54.1757, 15.5834, ["beach", "nature"], "low", "🌅", "Szeroka plaża, latarnia morska i spacer po molo."],
   ["Świnoujście", PL, "🇵🇱", 53.91, 14.2472, ["beach", "nature"], "low", "⛴️", "Promenada, szeroka plaża i prom przez Świnę."],
   ["Malbork", PL, "🇵🇱", 54.0357, 19.0289, ["history", "architecture"], "low", "🏯", "Gotycki zamek z cegły, jeden z największych na świecie, dobry na jeden dzień."],
