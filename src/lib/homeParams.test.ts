@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseHomeParams, keepUtmQuery } from "./homeParams";
+import { parseHomeParams, keepUtmQuery, parseFoundationParams, foundationQuery } from "./homeParams";
 
 const p = (q: string) => parseHomeParams(new URLSearchParams(q));
 
@@ -92,5 +92,46 @@ describe("keepUtmQuery", () => {
     expect(k("utm_source=" + encodeURIComponent("<script>"))).toBe("");
     expect(k("utm_campaign=" + "a".repeat(101))).toBe("");
     expect(k("utm_medium=social&utm_campaign=" + encodeURIComponent("x y"))).toBe("?utm_medium=social");
+  });
+});
+
+describe("parseFoundationParams / foundationQuery", () => {
+  const f = (q: string) => parseFoundationParams(new URLSearchParams(q));
+
+  it("czyta region, rodzaj wyjazdu i transport", () => {
+    expect(f("region=europa,azja&trip=narty&transport=auto,pociag_bus")).toEqual({
+      regions: ["europa", "azja"], tripType: "narty", transport: ["auto", "pociag_bus"],
+    });
+  });
+
+  it("brak parametrów daje pusty wynik, stare adresy działają jak dotąd", () => {
+    expect(f("")).toEqual({});
+    expect(f("companion=friends&src=home-ekipa&utm_source=ig")).toEqual({});
+  });
+
+  it("ignoruje nieznane, podrabiane i zbyt długie wartości", () => {
+    expect(f("region=atlantyda,europa&trip=kosmos&transport=rakieta")).toEqual({ regions: ["europa"] });
+    expect(f("trip=NARTY")).toEqual({});
+    expect(f(`region=${encodeURIComponent("<script>alert(1)</script>")}`)).toEqual({});
+    expect(f(`region=${"europa,".repeat(100)}`)).toEqual({});
+    expect(f("region=europa,europa,europa")).toEqual({ regions: ["europa"] });
+    expect(f("trip=constructor&region=__proto__")).toEqual({});
+  });
+
+  it("serializacja i parsowanie są wzajemnie odwrotne", () => {
+    const answers = { regions: ["afryka" as const, "oceania" as const], tripType: "plaza" as const, transport: ["samolot" as const, "rower" as const] };
+    const q = foundationQuery(answers);
+    expect(q).toBe("region=afryka%2Coceania&trip=plaza&transport=samolot%2Crower");
+    expect(f(q)).toEqual(answers);
+  });
+
+  it("pusta odpowiedź nie dopisuje nic do adresu", () => {
+    expect(foundationQuery({})).toBe("");
+    expect(foundationQuery({ regions: [], transport: [] })).toBe("");
+  });
+
+  it("nie zmienia parseHomeParams ani keepUtmQuery", () => {
+    expect(parseHomeParams(new URLSearchParams("region=europa&trip=narty&companion=friends"))).toEqual({ companion: "friends", src: null });
+    expect(keepUtmQuery(new URLSearchParams("region=europa&utm_source=ig"))).toBe("?utm_source=ig");
   });
 });

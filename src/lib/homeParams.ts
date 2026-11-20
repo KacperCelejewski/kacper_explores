@@ -1,5 +1,7 @@
 import type { Companion, GroupComposition } from "@/types";
 import { groupFromCompanion } from "@/lib/group";
+import { normalizeFoundation, isRegion, isTripType, isTransport } from "@/lib/quizOptions";
+import type { QuizAnswers } from "@/types";
 
 // Parametry z linków na stronie głównej. Tylko dokładne wartości z listy dozwolonych,
 // cokolwiek innego jest ignorowane, żeby nic z adresu nie trafiało do stanu ani do zdarzeń.
@@ -48,4 +50,37 @@ export function keepUtmQuery(params: { get(name: string): string | null }): stri
   }
   const q = out.toString();
   return q ? `?${q}` : "";
+}
+
+// Region, rodzaj wyjazdu i transport w adresie: ?region=europa,azja&trip=narty&transport=auto,pociag_bus.
+// Tylko wartości z zamkniętych list, reszta jest ignorowana (nic z adresu poza listą nie trafia do stanu).
+// Samo parsowanie niczego nie ustawia: pytania w quizie podłączają to dopiero w kolejnych etapach.
+export const FOUNDATION_PARAM = { regions: "region", tripType: "trip", transport: "transport" } as const;
+
+export type FoundationParams = Pick<QuizAnswers, "regions" | "tripType" | "transport">;
+
+const MAX_PARAM_LEN = 200;
+
+function parseList<T extends string>(raw: string | null, guard: (v: unknown) => v is T): T[] {
+  if (!raw || raw.length > MAX_PARAM_LEN) return [];
+  return [...new Set(raw.split(",").filter(guard))];
+}
+
+export function parseFoundationParams(params: { get(name: string): string | null }): FoundationParams {
+  const rawTrip = params.get(FOUNDATION_PARAM.tripType);
+  return normalizeFoundation({
+    regions: parseList(params.get(FOUNDATION_PARAM.regions), isRegion),
+    tripType: isTripType(rawTrip) ? rawTrip : undefined,
+    transport: parseList(params.get(FOUNDATION_PARAM.transport), isTransport),
+  });
+}
+
+/** Odwrotność `parseFoundationParams`: pusta odpowiedź daje pusty ciąg, więc stare adresy się nie zmieniają. */
+export function foundationQuery(answers: FoundationParams): string {
+  const { regions, tripType, transport } = normalizeFoundation(answers);
+  const out = new URLSearchParams();
+  if (regions) out.set(FOUNDATION_PARAM.regions, regions.join(","));
+  if (tripType) out.set(FOUNDATION_PARAM.tripType, tripType);
+  if (transport) out.set(FOUNDATION_PARAM.transport, transport.join(","));
+  return out.toString();
 }

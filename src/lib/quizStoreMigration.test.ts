@@ -35,3 +35,36 @@ describe("persisted quiz v5", () => {
     expect(quizStepAt(migrated.currentQuizStep)).toBe("vibe");
   });
 });
+
+describe("quiz: region, rodzaj wyjazdu, transport w zapisanym stanie", () => {
+  const migrate = (state: unknown, version: number) => useAppStore.persist.getOptions().migrate!(state, version) as Promise<{ quizAnswers: Record<string, unknown> }> | { quizAnswers: Record<string, unknown> };
+
+  it("stary zapis bez nowych pól zostaje bez zmian (nie dostaje nowych kluczy)", async () => {
+    const answers = { budget: "low", styles: ["food"], airports: ["WRO"], companion: "solo", month: 6, duration: 3 };
+    const migrated = await migrate({ quizAnswers: { ...answers }, currentQuizStep: 0 }, 5);
+    expect(migrated.quizAnswers).toEqual(answers);
+    expect(Object.keys(migrated.quizAnswers)).not.toContain("regions");
+    expect(Object.keys(migrated.quizAnswers)).not.toContain("tripType");
+    expect(Object.keys(migrated.quizAnswers)).not.toContain("transport");
+  });
+
+  it("zapis z nowymi polami zachowuje je", async () => {
+    const answers = { budget: "low", styles: [], airports: ["WRO"], regions: ["europa"], tripType: "narty", transport: ["auto"] };
+    const migrated = await migrate({ quizAnswers: { ...answers }, currentQuizStep: 0 }, 5);
+    expect(migrated.quizAnswers).toEqual(answers);
+  });
+
+  it("domyślny stan quizu nie ma nowych pól, a ich ustawienie czyści cache kierunków", () => {
+    const { quizAnswers, setQuizAnswer, setCachedDestinations } = useAppStore.getState();
+    expect(quizAnswers.regions).toBeUndefined();
+    expect(quizAnswers.tripType).toBeUndefined();
+    expect(quizAnswers.transport).toBeUndefined();
+    setCachedDestinations("k", []);
+    expect(useAppStore.getState().cachedDestinations).not.toBeNull();
+    setQuizAnswer("tripType", "narty");
+    expect(useAppStore.getState().quizAnswers.tripType).toBe("narty");
+    expect(useAppStore.getState().cachedDestinations).toBeNull();
+    useAppStore.getState().resetQuiz();
+    expect(useAppStore.getState().quizAnswers.tripType).toBeUndefined();
+  });
+});
