@@ -8,6 +8,8 @@ import { budgetPromptLabel, VIBE_LABELS, PLACE_LABELS, DESTINATION_CACHE_TTL_MS 
 import { destinationCacheKey } from "@/lib/destinationCacheKey";
 import { excludeOriginCities, originExclusionPrompt } from "@/lib/originCities";
 import { monthYearLabel } from "@/lib/tripMonth";
+import { destinationTripTypePrompt, filterDestinationsForTripType } from "@/lib/tripType";
+import { isTripType } from "@/lib/quizOptions";
 import type { DestinationRecommendation, TravelStyle, TravelVibe, PlaceType } from "@/types";
 
 export const maxDuration = 30;
@@ -30,6 +32,7 @@ function buildPrompt(body: Record<string, unknown>): string {
   const airports = (body.airports as string[]) ?? ["WRO"];
   const preferredCity = (body.preferredCity as string | undefined) ?? null;
 
+  const tripType = isTripType(body.tripType) ? body.tripType : null;
   const monthName = month ? monthYearLabel(month) : "dowolny";
   const budgetLabel = budgetPromptLabel(budget === "low" ? "low" : "medium");
 
@@ -48,7 +51,7 @@ PROFIL:
 - Długość: ${duration ? `${duration} dni` : "nieokreślona"}
 - ${originDesc}
 ${originExclusionPrompt(airports)}
-
+${destinationTripTypePrompt(tripType, month)}
 Zwróć tablicę JSON "destinations" z dokładnie 6 obiektami. Każdy obiekt MUSI mieć te pola:
 - city (string): nazwa miasta
 - country (string): nazwa kraju po polsku
@@ -114,6 +117,9 @@ export async function POST(req: NextRequest) {
   // Szybszy model najpierw — flash-lite wystarczy do polecenia destynacji
   const MODELS = ["gemini-2.5-flash-lite", "gemini-2.5-flash"];
 
+  // Gdy model zwrócił kierunki, ale żaden nie pasuje do rodzaju wyjazdu (np. same miasta dla nart), próbujemy dalej.
+  let sawMismatch = false;
+
   for (const modelName of MODELS) {
     try {
       console.log(`[destinations] trying model: ${modelName}`);
@@ -155,7 +161,19 @@ export async function POST(req: NextRequest) {
           vibes: ((d.vibes ?? []) as string[]) as TravelVibe[],
           placeTypes: ((d.placeTypes ?? []) as string[]) as PlaceType[],
         }));
-      const destinations = excludeOriginCities(candidates, originAirports);
+      const notOrigin = excludeOriginCities(candidates, originAirports);
+      // Rodzaj wyjazdu to cel, nie ozdoba: dla nart zostają tylko miejsca z infrastrukturą narciarską.
+      // Miasto wybrane przez użytkownika zostaje, bo to jego jawna decyzja.
+      const preferred = typeof (body as { preferredCity?: unknown }).preferredCity === "string"
+        ? ((body as { preferredCity: string }).preferredCity).trim().toLowerCase() : null;
+      const fitting = new Set(filterDestinationsForTripType(notOrigin, (body as { tripType?: unknown }).tripType as never));
+      const destinations = notOrigin.filter((d) => fitting.has(d) || (preferred !== null && d.city.toLowerCase() === preferred));
+      if (notOrigin.length > 0 && destinations.length === 0) {
+        console.error("[destinations] no destination matches tripType", (body as { tripType?: unknown }).tripType);
+        sawMismatch = true;
+        void logGeminiCall({ endpoint: "destinations", model: modelName, success: false, error_code: "trip_type_mismatch" });
+        continue;
+      }
 
       void logGeminiCall({ endpoint: "destinations", model: modelName, success: true });
       destCache.set(key, { data: destinations, ts: Date.now() });
@@ -172,6 +190,9 @@ export async function POST(req: NextRequest) {
       // retryable (quota / 503) → try next model
     }
   }
+
+  // Brak pasujących kierunków to nie awaria: lista jest pusta i nie trafia do cache.
+  if (sawMismatch) return NextResponse.json({ destinations: [] });
 
   return NextResponse.json({ error: "Mamy teraz tłok. Spróbuj za minutę." }, { status: 503 });
 }

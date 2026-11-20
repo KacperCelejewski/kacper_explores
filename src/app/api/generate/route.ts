@@ -7,13 +7,14 @@ import { logGeminiCall } from "@/lib/geminiLog";
 export const maxDuration = 60;
 import { buildPlanPrompt, parseNdjsonStream, validateAndFixPlan } from "@/lib/gemini";
 import { addDaysISO, dayLabel, resolveTripTerm } from "@/lib/tripTerm";
+import { activeTripType, checkPlanTripType } from "@/lib/tripType";
 import { checkRateLimit, LIMITS } from "@/lib/rateLimit";
 import { validateQuizAnswers, validateDestination, getClientIp } from "@/lib/validate";
 import { getUserProfile, canGenerate, isPro } from "@/lib/userProfile";
 import { createServiceClient } from "@/lib/supabase/service";
 import { FREE_PLANS_PER_MONTH, plansAvailable } from "@/lib/credits";
 import { guardGlobalFuse } from "@/lib/aiGuard";
-import type { QuizAnswers, DestinationRecommendation, FlightDetails } from "@/types";
+import type { QuizAnswers, DestinationRecommendation, FlightDetails, TripPlan } from "@/types";
 
 export async function POST(req: NextRequest) {
   // 1. Auth — wymagane logowanie
@@ -126,7 +127,14 @@ export async function POST(req: NextRequest) {
         }
 
         const duration = term.duration;
-        let plan = null;
+        const startedAt = Date.now();
+        // Rodzaj wyjazdu inny niż zwiedzanie: plan musi mu odpowiadać. Gdy model zignoruje rodzaj (np. narty
+        // z programem zwiedzania miasta), próbujemy raz jeszcze innym modelem, o ile starczy czasu; inaczej
+        // zostaje pierwszy plan, żeby błąd kontroli nie zamieniał się w błąd dla użytkownika.
+        const tripType = activeTripType(quiz.tripType);
+        const RETRY_BUDGET_MS = 25_000;
+        let fallbackPlan: TripPlan | null = null;
+        let plan: TripPlan | null = null;
         let lastErr: unknown;
         let usedModel = MODELS[0];
         for (const name of MODELS) {
@@ -157,17 +165,37 @@ export async function POST(req: NextRequest) {
             });
 
             const rawPlan = { ...header, days };
-            plan = validateAndFixPlan(rawPlan, duration);
+            let candidate = validateAndFixPlan(rawPlan, duration);
             // Data dnia 1 (kalendarz, nagłówek, mail przed wylotem) to data z wyboru użytkownika. Etykiety dni z dniem tygodnia:
             // wpisujemy je sami, zamiast ufać, że model policzy kalendarz.
             if (term.startDate) {
               const start = term.startDate;
-              plan.startDate = start;
-              plan.days = plan.days.map((d, i) => ({ ...d, date: dayLabel(i + 1, addDaysISO(start, i)) }));
+              candidate = {
+                ...candidate,
+                startDate: start,
+                days: candidate.days.map((d, i) => ({ ...d, date: dayLabel(i + 1, addDaysISO(start, i)) })),
+              };
             }
+            if (tripType) {
+              const check = checkPlanTripType(candidate, tripType);
+              candidate = { ...candidate, tripType };
+              const hasNext = MODELS.indexOf(name) < MODELS.length - 1;
+              if (!check.ok) {
+                console.warn(`Generate: plan niezgodny z rodzajem wyjazdu ${tripType}:`, check.issues.join("; "));
+                void logGeminiCall({ endpoint: "generate", model: name, success: false, error_code: "trip_type_mismatch" });
+                if (hasNext && Date.now() - startedAt < RETRY_BUDGET_MS) {
+                  fallbackPlan ??= candidate;
+                  continue;
+                }
+                plan = fallbackPlan ?? candidate;
+                break;
+              }
+            }
+            plan = candidate;
             break;
           } catch (err) {
             lastErr = err;
+            if (fallbackPlan) { plan = fallbackPlan; break; }
             if (isQuotaError(err)) {
               void logGeminiCall({ endpoint: "generate", model: name, success: false, error_code: "quota" });
               continue;
@@ -177,6 +205,7 @@ export async function POST(req: NextRequest) {
             throw err;
           }
         }
+        if (!plan && fallbackPlan) plan = fallbackPlan;
         if (!plan) {
           void logGeminiCall({ endpoint: "generate", model: usedModel, success: false, error_code: "all_models_failed" });
           throw lastErr;
