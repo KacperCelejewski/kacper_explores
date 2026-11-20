@@ -133,7 +133,11 @@ const OLD_PLAN_ASSUMPTIONS = "Założeń szacunku (noce, osoby, standard) nie za
 
 /** Założenia szacunku: liczba nocy, osób i standard. Bez zapisanych założeń mówimy to wprost. */
 export function costAssumptions(basis: CostBasis | null | undefined, perPerson = false): string {
-  if (!basis) return OLD_PLAN_ASSUMPTIONS;
+  // Plan z konta może zostać zmieniony przez PATCH: zły kształt traktujemy jak brak zapisanych założeń
+  const valid = !!basis && Number.isInteger(basis.nights) && basis.nights >= 1 && basis.nights <= 60
+    && Number.isInteger(basis.seats) && basis.seats >= 1 && basis.seats <= 50
+    && (basis.standard === null || basis.standard === "low" || basis.standard === "medium");
+  if (!basis || !valid) return OLD_PLAN_ASSUMPTIONS;
   const persons = Math.max(1, Math.round(basis.seats));
   const parts = [
     `${basis.nights} ${plural(basis.nights, "noc", "noce", "nocy")}`,

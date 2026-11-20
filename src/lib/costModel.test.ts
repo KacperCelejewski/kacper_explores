@@ -187,6 +187,13 @@ describe("założenia noclegu", () => {
     // znajomi bez jawnego składu nie dostają liczby osób z powietrza
     expect(costBasisFor({ budget: "low", companion: "friends" }, 3).seats).toBe(1);
   });
+  it("zepsute założenia z zapisanego planu nie dają 'NaN osób' ani 'undefined noc'", () => {
+    for (const bad of [{ nights: "x", seats: 4, standard: null }, { nights: 2, seats: NaN, standard: null }, { nights: 2, seats: 1, standard: "luksus" }, {}, []]) {
+      const text = costAssumptions(bad as never);
+      expect(text).not.toMatch(/NaN|undefined|object/);
+      expect(text).toMatch(/nie zapisaliśmy/);
+    }
+  });
   it("plan bez zapisanych założeń (sprzed zmiany) mówi to wprost zamiast zmyślać noce i osoby", () => {
     const m = buildPlanCostModel({ ...base, basis: null });
     expect(m.assumptions).toMatch(/nie zapisaliśmy/);
