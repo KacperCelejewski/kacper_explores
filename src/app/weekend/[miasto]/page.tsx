@@ -92,7 +92,7 @@ export default async function WeekendCityPage({ params }: { params: Params }) {
 
         {/* Zdjęcie z atrybucją albo ilustracja Włóczykija; ramka ma stałą wysokość, więc układ nie skacze */}
         <div className="mb-8 rounded-2xl overflow-hidden" style={{ height: 224, border: "1px solid var(--border)" }}>
-          <CityPhoto city={city.city} width={1200} sizes="(max-width: 672px) 100vw, 672px" />
+          <CityPhoto city={city.city} width={900} sizes="(max-width: 672px) 100vw, 672px" />
         </div>
 
         {audience.length > 0 && (

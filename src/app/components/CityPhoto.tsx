@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { CITY_ILLUSTRATION, getCityPhoto, type CityPhoto as Photo } from "@/lib/cityPhotos";
+import { CITY_ILLUSTRATION, cityPhotoAlt, getCityPhoto, isBrokenImage, type CityPhoto as Photo } from "@/lib/cityPhotos";
 
 /**
  * Keep credits outside navigation links; children are overlays on the image only.
@@ -25,10 +25,9 @@ export default function CityPhoto({ city, photo, width = 800, sizes = "100vw", e
   // An image that failed before hydration never fires onError in React: check it once on mount.
   useEffect(() => {
     const img = imgRef.current;
-    if (img && img.complete && img.naturalWidth === 0 && candidate.source === "unsplash") setFailedUrl(candidate.url);
+    if (img && isBrokenImage(img) && candidate.source === "unsplash") setFailedUrl(candidate.url);
   }, [candidate.url, candidate.source]);
 
-  const label = city.trim();
   return (
     <figure style={{ margin: 0, height: "100%", display: "flex", flexDirection: "column" }}>
       <div style={{
@@ -39,7 +38,7 @@ export default function CityPhoto({ city, photo, width = 800, sizes = "100vw", e
         <Image
           ref={imgRef}
           src={shown.url}
-          alt={shown.source === "unsplash" ? `${label}: zdjęcie miasta` : `Ilustracja podróży${label ? `: ${label}` : ""}`}
+          alt={cityPhotoAlt(shown, city)}
           fill
           sizes={sizes}
           unoptimized
