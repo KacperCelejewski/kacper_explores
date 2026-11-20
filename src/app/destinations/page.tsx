@@ -13,7 +13,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/lib/store";
-import { checkDateRange } from "@/lib/tripTerm";
+import { checkDateRange, resolveTripTerm } from "@/lib/tripTerm";
 import type { DestinationRecommendation, FlightDetails } from "@/types";
 import { getCityPhoto, type CityPhoto as Photo } from "@/lib/cityPhotos";
 import CityPhoto from "@/app/components/CityPhoto";
@@ -315,7 +315,7 @@ function DestCard({
   quote,
 }: {
   dest: DestinationRecommendation;
-  onPlan: (dest: DestinationRecommendation) => void;
+  onPlan: (dest: DestinationRecommendation, priceDates?: { departDate: string; returnDate: string } | null) => void;
   airports: string[];
   month: number | null;
   quote: CardPrice | null;
@@ -463,7 +463,7 @@ function DestCard({
               Szukaj lotów ↗
             </a>
             <button
-              onClick={() => onPlan(dest)}
+              onClick={() => onPlan(dest, freshQuote ? { departDate: freshQuote.departDate, returnDate: freshQuote.returnDate } : null)}
               className="text-xs font-bold px-3 rounded-xl transition-opacity hover:opacity-85"
               style={{ background: "var(--accent)", color: "#fff", minHeight: 44 }}
             >
@@ -485,19 +485,22 @@ function FlightModal({
   onGenerate,
   isGenerating,
   quizDuration,
+  priceDates,
 }: {
   dest: DestinationRecommendation;
   airports: string[];
   quizDuration: number | null;
+  priceDates: { departDate: string; returnDate: string } | null;
   onClose: () => void;
   onGenerate: (dest: DestinationRecommendation, details: FlightDetails | null) => void;
   isGenerating: boolean;
 }) {
-  const [arrivalDate, setArrivalDate] = useState("");
+  const [arrivalDate, setArrivalDate] = useState(priceDates?.departDate ?? "");
   const [arrivalTime, setArrivalTime] = useState("");
-  const [returnDate, setReturnDate]   = useState("");
+  const [returnDate, setReturnDate]   = useState(priceDates?.returnDate ?? "");
   const [returnTime, setReturnTime]   = useState("");
 
+  const todayISO = new Date(Date.now() - new Date().getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
   // Daty wyznaczają termin i liczbę dni planu; godziny lotu tylko dopasowują pierwszy i ostatni dzień.
   const hasDates = !!arrivalDate && !!returnDate;
   const range = hasDates ? checkDateRange(arrivalDate, returnDate) : null;
@@ -551,6 +554,8 @@ function FlightModal({
               <input
                 type="date"
                 value={arrivalDate}
+                min={todayISO}
+                aria-label={`Data przylotu do ${dest.city}`}
                 onChange={(e) => setArrivalDate(e.target.value)}
                 className="flex-1 px-3 py-2 rounded-xl text-sm outline-none"
                 style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
@@ -574,6 +579,8 @@ function FlightModal({
               <input
                 type="date"
                 value={returnDate}
+                min={arrivalDate || todayISO}
+                aria-label={`Data wylotu z ${dest.city}`}
                 onChange={(e) => setReturnDate(e.target.value)}
                 className="flex-1 px-3 py-2 rounded-xl text-sm outline-none"
                 style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
@@ -591,19 +598,26 @@ function FlightModal({
         </div>
 
         {range && !range.ok && (
-          <p role="alert" className="text-xs mb-4 text-center" style={{ color: "var(--error)" }}>{range.error}</p>
+          <p role="alert" className="text-sm mb-4 text-center" style={{ color: "var(--error)" }}>{range.error}</p>
         )}
-        {range?.ok && (
-          <p className="text-xs mb-4 text-center" style={{ color: "var(--text-secondary)" }} aria-live="polite">
-            Plan obejmie {range.days} dni, licząc dzień przylotu i dzień powrotu
-            {quizDuration && quizDuration !== range.days ? ` (w quizie było ${quizDuration})` : ""}.
-          </p>
-        )}
-        {!hasDates && (
-          <p className="text-xs mb-4 text-center" style={{ color: "var(--text-muted)" }}>
-            Bez dat plan będzie miał {quizDuration ?? 3} dni, tyle, ile wybrano w quizie, i mniej dopasowane godziny.
-          </p>
-        )}
+        <div aria-live="polite">
+          {range?.ok && (
+            <p className="text-sm mb-2 text-center" style={{ color: "var(--text-secondary)" }}>
+              Plan obejmie {range.days} dni, licząc dzień przylotu i dzień powrotu
+              {quizDuration && quizDuration !== range.days ? ` (w quizie było ${quizDuration})` : ""}.
+            </p>
+          )}
+          {range?.ok && priceDates && arrivalDate === priceDates.departDate && returnDate === priceDates.returnDate && (
+            <p className="text-xs mb-4 text-center" style={{ color: "var(--text-muted)" }}>
+              To dni z ceny lotu na karcie. Zmień je, jeśli lecisz kiedy indziej.
+            </p>
+          )}
+          {!hasDates && (
+            <p className="text-sm mb-4 text-center" style={{ color: "var(--text-muted)" }}>
+              Bez dat plan będzie miał {quizDuration ?? 3} dni, tyle, ile wybrano w quizie, bez konkretnych dat i z mniej dopasowanymi godzinami.
+            </p>
+          )}
+        </div>
         {hasDates && !hasFlightData && range?.ok && (
           <p className="text-xs mb-4 text-center" style={{ color: "var(--text-muted)" }}>
             Bez godzin lotu pierwszy i ostatni dzień będą bardziej elastyczne.
@@ -722,6 +736,8 @@ export default function DestinationsPage() {
   const budgetNote = crewBudgetNote(quizAnswers.budget, quizAnswers.companion, quizAnswers.group);
 
   const [planModal, setPlanModal]       = useState<DestinationRecommendation | null>(null);
+  // Daty z ceny lotu na karcie: modal podpowiada właśnie je, żeby cena i plan mówiły o tych samych dniach.
+  const [planDates, setPlanDates]       = useState<{ departDate: string; returnDate: string } | null>(null);
   const [upgradeModal, setUpgradeModal] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [showSavePrompt, setShowSavePrompt] = useState(false);
@@ -776,7 +792,7 @@ export default function DestinationsPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_hasHydrated, fetchKey, router]);
 
-  const handlePlanClick = (dest: DestinationRecommendation) => {
+  const handlePlanClick = (dest: DestinationRecommendation, priceDates?: { departDate: string; returnDate: string } | null) => {
     if (!userStatus?.authenticated) {
       router.push(`/login?next=/destinations`);
       return;
@@ -785,6 +801,7 @@ export default function DestinationsPage() {
       setUpgradeModal(true);
       return;
     }
+    setPlanDates(priceDates ?? null);
     setPlanModal(dest);
   };
 
@@ -844,10 +861,12 @@ export default function DestinationsPage() {
             const dropAttr = takeDropPlanAttribution(typeof window === "undefined" ? null : window.sessionStorage, dest.city);
             if (dropAttr) reportDropEvent(dropEventName("plan", dropAttr), dropAttr.sessionId);
             clearEntry(entryStorage()); // jedno wejście = jeden plan
+            // Zapisany wyjazd ma długość i miesiąc, które weszły do planu (zakres dat bije quiz), jak w bazie.
+            const term = resolveTripTerm(quizAnswers, details);
             setCurrentTrip({
               id: msg.tripId as string,
               destination: dest,
-              quizAnswers,
+              quizAnswers: term.ok ? { ...quizAnswers, duration: term.duration, month: term.month ?? quizAnswers.month } : quizAnswers,
               plan: msg.plan as import("@/types").TripPlan,
               createdAt: new Date().toISOString(),
             });
@@ -1043,6 +1062,7 @@ export default function DestinationsPage() {
             dest={planModal}
             airports={quizAnswers.airports}
             quizDuration={quizAnswers.duration}
+            priceDates={planDates}
             onClose={() => setPlanModal(null)}
             onGenerate={handleGenerate}
             isGenerating={isGeneratingPlan}

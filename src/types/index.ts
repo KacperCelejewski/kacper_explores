@@ -132,7 +132,7 @@ export interface TripPlan {
   };
   generalTips: string[];
   days: DayPlan[];
-  /** Calendar date of day 1 ("2026-11-27"): the traveller's flight dates, or the dates of the flight offer they saw. */
+  /** Calendar date of day 1 ("2026-11-27"): saved only when the traveller chose a date range. */
   startDate?: string;
 }
 

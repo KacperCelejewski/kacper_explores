@@ -10,7 +10,6 @@ import {
   weekdayPl,
 } from "./tripTerm";
 import { buildPlanPrompt, validateAndFixPlan } from "./gemini";
-import { candidateDates } from "./flights/rapidapi";
 import type { DestinationRecommendation, FlightDetails, QuizAnswers, TripPlan } from "@/types";
 
 const quiz = (over: Partial<QuizAnswers> = {}): QuizAnswers => ({
@@ -114,24 +113,6 @@ describe("resolveTripTerm: liczba dni wynika z wyboru terminu", () => {
   it("miesiąc dla pory roku pochodzi z dat, nie z quizu", () => {
     const r = resolveTripTerm(quiz({ month: 7 }), dates("2026-12-12", "2026-12-14"));
     expect(r.ok && r.month).toBe(12);
-  });
-
-  it("daty z oferty lotu pasują do quizu, gdy mają tę samą długość", () => {
-    const offer = { departureDate: "2026-12-10", returnDate: "2026-12-12" };
-    const r = resolveTripTerm(quiz({ duration: 3 }), null, offer);
-    expect(r).toMatchObject({ ok: true, duration: 3, source: "offer", startDate: "2026-12-10" });
-  });
-
-  it("daty z oferty o innej długości są pomijane", () => {
-    const offer = { departureDate: "2026-12-10", returnDate: "2026-12-16" };
-    const r = resolveTripTerm(quiz({ duration: 3 }), null, offer);
-    expect(r).toMatchObject({ ok: true, duration: 3, source: "month", startDate: null });
-  });
-
-  it("daty z oferty zgadzają się z kandydatami wyszukiwarki lotów", () => {
-    const [c] = candidateDates(12, 5, new Date(2026, 10, 20));
-    const r = resolveTripTerm(quiz({ duration: 5 }), null, { departureDate: c.departDate, returnDate: c.returnDate });
-    expect(r).toMatchObject({ ok: true, duration: 5, source: "offer", startDate: c.departDate });
   });
 
   it("granice 2 i 21 dni są dozwolone", () => {

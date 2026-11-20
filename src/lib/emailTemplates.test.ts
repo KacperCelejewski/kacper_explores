@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { dropConfirmationMail, dropManageLinkMail, newsletterConfirmationMail } from "./email";
-import { renderPreTripEmail } from "./preTripEmail";
+import { preTripWhen, renderPreTripEmail } from "./preTripEmail";
 import { mailShell, stripTags } from "./emailLayout";
 import { FORBIDDEN_COPY } from "./homeCopy";
 
@@ -88,5 +88,30 @@ describe("mailShell", () => {
     });
     expect(html).not.toContain("<script>");
     expect(html).toContain("a &amp; b");
+  });
+});
+
+describe("mail przed wylotem: termin", () => {
+  it("pokazuje daty planu, gdy są zapisane", () => {
+    const m = renderPreTripEmail({ city: "Porto", country: "Portugalia", planUrl: "https://wloczykij.me/plan/1", when: "12–14 grudnia 2026" });
+    expect(m.html).toContain("12–14 grudnia 2026");
+    expect(m.text).toContain("(12–14 grudnia 2026)");
+  });
+
+  it("bez terminu mail wygląda jak dotąd", () => {
+    const m = renderPreTripEmail({ city: "Porto", country: "Portugalia", planUrl: "https://wloczykij.me/plan/1" });
+    expect(m.text).toContain("Portugalia czeka gotowy");
+  });
+
+  it("termin z planu ma pierwszeństwo przed ofertą lotu", () => {
+    expect(preTripWhen({ planStart: "2026-12-12", planDays: "3", offerDeparture: "2026-12-05", offerReturn: "2026-12-07" })).toBe("12–14 grudnia 2026");
+  });
+
+  it("bez daty planu bierze daty oferty lotu", () => {
+    expect(preTripWhen({ offerDeparture: "2026-12-30", offerReturn: "2027-01-02" })).toBe("30 grudnia 2026 – 2 stycznia 2027");
+  });
+
+  it("bez żadnej daty zwraca null", () => {
+    expect(preTripWhen({})).toBeNull();
   });
 });

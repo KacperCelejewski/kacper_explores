@@ -60,11 +60,7 @@ export async function POST(req: NextRequest) {
 
   // Termin: zakres dat wyznacza liczbę dni planu, inaczej miesiąc + dni z quizu. Sprawdzamy przed
   // zajęciem planu, żeby błędne daty nie kosztowały kredytu.
-  const term = resolveTripTerm(
-    quizAnswers as QuizAnswers,
-    flightDetails ?? null,
-    (destination as DestinationRecommendation).bestOffer
-  );
+  const term = resolveTripTerm(quizAnswers as QuizAnswers, flightDetails ?? null);
   if (!term.ok) {
     return NextResponse.json({ error: term.error, code: "INVALID_TERM" }, { status: 400 });
   }
@@ -162,7 +158,7 @@ export async function POST(req: NextRequest) {
 
             const rawPlan = { ...header, days };
             plan = validateAndFixPlan(rawPlan, duration);
-            // Data dnia 1 (kalendarz, nagłówek, mail przed wylotem) to data z wyboru użytkownika albo z oferty lotu, której cenę widział. Etykiety dni z dniem tygodnia:
+            // Data dnia 1 (kalendarz, nagłówek, mail przed wylotem) to data z wyboru użytkownika. Etykiety dni z dniem tygodnia:
             // wpisujemy je sami, zamiast ufać, że model policzy kalendarz.
             if (term.startDate) {
               const start = term.startDate;

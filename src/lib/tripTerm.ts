@@ -80,14 +80,14 @@ function dm(date: string): string {
   return `${String(day).padStart(2, "0")}.${String(month).padStart(2, "0")}`;
 }
 
-export type TermSource = "dates" | "offer" | "month";
+export type TermSource = "dates" | "month";
 
 export type TripTerm =
   | {
       ok: true;
       /** Liczba dni planu: jedyna wartość, którą wolno przekazać generatorowi i walidacji planu. */
       duration: number;
-      /** `dates`: zakres podany przez użytkownika; `offer`: daty oferty lotu pasujące do wyboru z quizu; `month`: sam miesiąc + liczba dni. */
+      /** `dates`: zakres dat podany przez użytkownika; `month`: sam miesiąc + liczba dni z quizu. */
       source: TermSource;
       startDate: string | null;
       endDate: string | null;
@@ -122,8 +122,7 @@ export function checkDateRange(
 
 export function resolveTripTerm(
   quiz: QuizAnswers,
-  flightDetails?: Partial<FlightDetails> | null,
-  offer?: { departureDate?: string | null; returnDate?: string | null } | null
+  flightDetails?: Partial<FlightDetails> | null
 ): TripTerm {
   const arrival = flightDetails?.arrivalDate;
   const back = flightDetails?.returnDate;
@@ -152,21 +151,6 @@ export function resolveTripTerm(
   const duration = quiz.duration ?? DEFAULT_TRIP_DAYS;
   const month = quiz.month ?? null;
 
-  // Daty oferty lotu to te same dni, które pokazała cena: bierzemy je tylko wtedy,
-  // gdy mają długość wybraną w quizie (tak je układa wyszukiwarka lotów).
-  const offerDays = inclusiveDays(offer?.departureDate, offer?.returnDate);
-  if (offer?.departureDate && offer.returnDate && offerDays === duration) {
-    return {
-      ok: true,
-      duration,
-      source: "offer",
-      startDate: offer.departureDate,
-      endDate: offer.returnDate,
-      month: dayMonthParts(offer.departureDate).month,
-      flightDetails: null,
-    };
-  }
-
   return { ok: true, duration, source: "month", startDate: null, endDate: null, month, flightDetails: null };
 }
 
@@ -191,9 +175,8 @@ export function tripTermPrompt(term: Extract<TripTerm, { ok: true }>): string {
   const lines: string[] = [];
 
   if (term.startDate && term.endDate) {
-    const origin = term.source === "offer" ? " (daty z oferty lotu, orientacyjne)" : "";
     lines.push(
-      `TERMIN WYJAZDU${origin}: ${dmy(term.startDate)} (${weekdayPl(term.startDate)}) – ${dmy(term.endDate)} (${weekdayPl(term.endDate)}), ${term.duration} dni łącznie z dniem przylotu i dniem powrotu.`
+      `TERMIN WYJAZDU: ${dmy(term.startDate)} (${weekdayPl(term.startDate)}) – ${dmy(term.endDate)} (${weekdayPl(term.endDate)}), ${term.duration} dni łącznie z dniem przylotu i dniem powrotu.`
     );
     if (season) lines.push(`Pora roku: ${season}.`);
     lines.push("Dni planu:");

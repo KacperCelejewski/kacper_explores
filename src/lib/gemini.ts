@@ -14,7 +14,7 @@ export function buildPlanPrompt(
   const vibeLabel = quiz.vibe ? VIBE_LABELS[quiz.vibe] : null;
   const placeLabel = quiz.placeType ? PLACE_LABELS[quiz.placeType] : null;
   // Liczba dni i daty z jednego miejsca: zakres dat bije `quiz.duration` (patrz tripTerm.ts).
-  const term = resolveTripTerm(quiz, flightDetails, destination.bestOffer);
+  const term = resolveTripTerm(quiz, flightDetails);
   if (!term.ok) throw new Error(term.error);
   const duration = term.duration;
   const termPrompt = tripTermPrompt(term);
