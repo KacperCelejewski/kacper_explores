@@ -1,7 +1,6 @@
-import type { Companion, GroupComposition } from "@/types";
 import { groupFromCompanion } from "@/lib/group";
 import { normalizeFoundation, isRegion, isTripType, isTransport } from "@/lib/quizOptions";
-import type { QuizAnswers } from "@/types";
+import type { Companion, GroupComposition, QuizAnswers } from "@/types";
 
 // Parametry z linków na stronie głównej. Tylko dokładne wartości z listy dozwolonych,
 // cokolwiek innego jest ignorowane, żeby nic z adresu nie trafiało do stanu ani do zdarzeń.

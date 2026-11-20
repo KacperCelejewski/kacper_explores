@@ -89,24 +89,27 @@ const unique = <T extends string>(list: readonly T[]): T[] => [...new Set(list)]
  * opcji, puste listy i brak pola dają to samo (pominięte). Stare odpowiedzi bez tych pól dają pusty wynik,
  * więc nie zmieniają żadnego klucza.
  */
-export function normalizeFoundation(a: Partial<FoundationFields>): FoundationFields {
+export function normalizeFoundation(a: { regions?: Region[] | null; tripType?: TripType | null; transport?: Transport[] | null }): FoundationFields {
   const out: FoundationFields = {};
-  const regions = REGION_VALUES.filter((r) => a.regions?.includes(r));
+  const regions = Array.isArray(a.regions) ? REGION_VALUES.filter((r) => a.regions?.includes(r)) : [];
   if (regions.length > 0) out.regions = regions;
-  if (a.tripType !== undefined && isTripType(a.tripType)) out.tripType = a.tripType;
-  const transport = TRANSPORT_VALUES.filter((t) => a.transport?.includes(t));
+  if (isTripType(a.tripType)) out.tripType = a.tripType;
+  const transport = Array.isArray(a.transport) ? TRANSPORT_VALUES.filter((t) => a.transport?.includes(t)) : [];
   if (transport.length > 0) out.transport = transport;
   return out;
 }
 
-/** Walidacja kształtu trzech pól; używa jej `validateQuizAnswers`. */
+/**
+ * Walidacja kształtu trzech pól; używa jej `validateQuizAnswers`. Brak pola i `null` znaczą to samo
+ * ("nie wybrano"), tak jak przy `vibe` i `placeType`, żeby wyczyszczenie odpowiedzi nie kończyło się błędem 400.
+ */
 export function validateFoundationFields(d: Record<string, unknown>): boolean {
-  if (d.regions !== undefined) {
+  if (d.regions != null) {
     if (!Array.isArray(d.regions) || d.regions.length > MAX_REGIONS) return false;
     if (!d.regions.every(isRegion) || unique(d.regions).length !== d.regions.length) return false;
   }
-  if (d.tripType !== undefined && !isTripType(d.tripType)) return false;
-  if (d.transport !== undefined) {
+  if (d.tripType != null && !isTripType(d.tripType)) return false;
+  if (d.transport != null) {
     if (!Array.isArray(d.transport) || d.transport.length > MAX_TRANSPORT) return false;
     if (!d.transport.every(isTransport) || unique(d.transport).length !== d.transport.length) return false;
   }

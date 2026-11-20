@@ -26,6 +26,13 @@ describe("destinationCacheKey", () => {
     expect(destinationCacheKey({ ...base, regions: [], transport: [] })).toBe(legacyKey(base));
   });
 
+  it("jawna wartość domyślna ma ten sam klucz co brak odpowiedzi (zwiedzanie, sam samolot, null)", () => {
+    expect(destinationCacheKey({ ...base, tripType: "zwiedzanie" })).toBe(legacyKey(base));
+    expect(destinationCacheKey({ ...base, transport: ["samolot"] })).toBe(legacyKey(base));
+    expect(destinationCacheKey({ ...base, tripType: null, regions: null, transport: null } as never)).toBe(legacyKey(base));
+    expect(destinationCacheKey({ ...base, transport: ["samolot", "auto"] })).not.toBe(legacyKey(base));
+  });
+
   it("klucz działa też na surowym ciele żądania (serwer)", () => {
     const body = { ...base } as Record<string, unknown>;
     expect(destinationCacheKey(body)).toBe(destinationCacheKey(base));

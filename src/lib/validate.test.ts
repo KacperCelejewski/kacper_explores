@@ -65,6 +65,10 @@ describe("validateQuizAnswers: region, rodzaj wyjazdu, transport", () => {
     }
   });
 
+  it("przyjmuje null jako \"nie wybrano\" (jak vibe i placeType)", () => {
+    expect(validateQuizAnswers({ regions: null, tripType: null, transport: null })).toBe(true);
+  });
+
   it("przyjmuje puste listy (puste = obojętnie / domyślnie) i brak pól", () => {
     expect(validateQuizAnswers({ regions: [], transport: [] })).toBe(true);
     expect(validateQuizAnswers({ budget: "low", airports: ["WRO"] })).toBe(true);
@@ -79,7 +83,6 @@ describe("validateQuizAnswers: region, rodzaj wyjazdu, transport", () => {
     ["region nie będący tekstem", { regions: [1] }],
     ["nieznany rodzaj wyjazdu", { tripType: "kosmos" }],
     ["rodzaj wyjazdu jako lista", { tripType: ["narty"] }],
-    ["rodzaj wyjazdu null", { tripType: null }],
     ["pusty rodzaj wyjazdu", { tripType: "" }],
     ["nieznany transport", { transport: ["rakieta"] }],
     ["transport nie jako lista", { transport: "auto" }],

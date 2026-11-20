@@ -11,7 +11,7 @@ import { QUIZ_STEPS, DROP_QUIZ_STEPS, quizStepIndex, parseQuizStep, resolveQuizS
 import { useAppStore } from "@/lib/store";
 import type { TravelStyle, TripDuration, TravelVibe, QuizAnswers } from "@/types";
 import { MONTH_NAMES } from "@/lib/constants";
-import { trackEvent, quizGaEventName } from "@/lib/analytics";
+import { trackEvent, quizGaEventName, quizFoundationParams } from "@/lib/analytics";
 import { captureEntry, entryEventParams, entryStorage, landingReferrer, type EntryAttribution } from "@/lib/entryAttribution";
 import { cityAfterLogin, quizLoginNext } from "@/lib/quizLogin";
 import { parseDropParams } from "@/lib/drop/quizParams";
@@ -203,6 +203,7 @@ function QuizPageInner() {
     trackEvent(quizGaEventName(event), {
       step, step_id: id, step_position: id ? steps.indexOf(id) + 1 : undefined,
       flow_version: "human_v1",
+      ...(event === "quiz_complete" ? quizFoundationParams(useAppStore.getState().quizAnswers) : {}),
       ...entryEventParams(entryRef.current),
     });
     void fetch("/api/track", {
@@ -290,6 +291,8 @@ function QuizPageInner() {
       group: savedPrefs.group,
       styles: savedPrefs.styles ?? [],
       airports: savedPrefs.airports?.length ? savedPrefs.airports : ["WRO"],
+      // Nowe pola tylko z zapisanych preferencji: starsze ich nie mają, a stan bieżący nie może ich podtrzymać.
+      regions: savedPrefs.regions, tripType: savedPrefs.tripType, transport: savedPrefs.transport,
     };
     resetQuiz();
     (Object.keys(answers) as (keyof QuizAnswers)[]).forEach((key) => setQuizAnswer(key, answers[key]));
