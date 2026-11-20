@@ -595,7 +595,7 @@ function StepWhen({
 
       {/* Month picker: chronologicznie od najbliższego, z rokiem w nagłówku każdej grupy */}
       <p className="text-sm font-semibold mb-2" style={{ color: "var(--text-secondary)" }}>Miesiąc wyjazdu</p>
-      <div className="mb-6">
+      <div className="mb-6" role="group" aria-label="Wybierz miesiąc wyjazdu">
         {yearGroups.map(({ year, months }) => (
           <div key={year} role="group" aria-labelledby={`when-year-${year}`} className="mb-3 last:mb-0">
             <p
