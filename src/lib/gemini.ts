@@ -1,20 +1,24 @@
 import type { QuizAnswers, DestinationRecommendation, FlightDetails, TripPlan, DayPlan } from "@/types";
 import { budgetPromptLabel, STYLE_LABELS, VIBE_LABELS, PLACE_LABELS } from "@/lib/constants";
 import { groupLabel, groupSize } from "@/lib/group";
-import { monthYearLabel } from "@/lib/tripMonth";
 import { calcTripSchedule, formatScheduleForPrompt } from "@/lib/tripSchedule";
+import { dayLabel, resolveTripTerm, termDays, tripTermPrompt } from "@/lib/tripTerm";
 
 export function buildPlanPrompt(
   destination: DestinationRecommendation,
   quiz: QuizAnswers,
   flightDetails?: FlightDetails | null
 ): string {
-  const monthName = quiz.month ? monthYearLabel(quiz.month) : "nieokreślony";
   const stylesList = quiz.styles.map((s) => STYLE_LABELS[s] ?? s).join(", ") || "brak preferencji";
   const budgetLabel = budgetPromptLabel(quiz.budget);
   const vibeLabel = quiz.vibe ? VIBE_LABELS[quiz.vibe] : null;
   const placeLabel = quiz.placeType ? PLACE_LABELS[quiz.placeType] : null;
-  const duration = quiz.duration ?? 3;
+  // Liczba dni i daty z jednego miejsca: zakres dat bije `quiz.duration` (patrz tripTerm.ts).
+  const term = resolveTripTerm(quiz, flightDetails);
+  if (!term.ok) throw new Error(term.error);
+  const duration = term.duration;
+  const termPrompt = tripTermPrompt(term);
+  const day1Label = dayLabel(1, termDays(term)[0]?.date ?? null);
 
   const vibeInstruction = vibeLabel ? `- Energia wyjazdu: ${vibeLabel}` : "";
   const placeInstruction = placeLabel ? `- Preferowany typ miejsca: ${placeLabel}` : "";
@@ -54,16 +58,23 @@ export function buildPlanPrompt(
     ? "Uwzględnij aktywności fizyczne — piesze trasy, rowery miejskie, pływanie, sport. Mniej muzeów, więcej ruchu."
     : "Zbalansowane tempo — mix atrakcji i odpoczynku.";
 
-  const schedule = calcTripSchedule(duration, flightDetails);
+  const details = term.flightDetails;
+  const schedule = calcTripSchedule(duration, details);
   const schedulePrompt = formatScheduleForPrompt(schedule);
 
-  const flightNote = flightDetails
-    ? `DANE LOTU: przylot ${flightDetails.arrivalDate} o ${flightDetails.arrivalTime} (czas lokalny), powrót ${flightDetails.returnDate} wylot o ${flightDetails.returnTime}. Plan MUSI uwzględniać te godziny.`
+  const flightNote = details
+    ? `DANE LOTU: przylot ${details.arrivalDate}${details.arrivalTime ? ` o ${details.arrivalTime} (czas lokalny)` : ""}, powrót ${details.returnDate}${details.returnTime ? ` wylot o ${details.returnTime}` : ""}. ${
+        details.arrivalTime && details.returnTime
+          ? "Plan MUSI uwzględniać te godziny."
+          : "Brakujących godzin lotu nie zgaduj: plan musi być elastyczny."
+      }`
     : `UWAGA: Dokładne godziny lotu nieznane — użytkownik rezerwuje samodzielnie. Plan musi być elastyczny.`;
 
   return `Jesteś ekspertem od podróży. Stwórz szczegółowy plan podróży do ${destination.city}, ${destination.country}.
 
 ${flightNote}
+
+${termPrompt}
 
 PROFIL PODRÓŻNIKA:
 - Kto podróżuje: ${companionLabel}${groupProfile}
@@ -71,7 +82,6 @@ PROFIL PODRÓŻNIKA:
 - Zainteresowania: ${stylesList}
 ${vibeInstruction}
 ${placeInstruction}
-- Miesiąc: ${monthName}
 - Cena lotu jest NIEZNANA (użytkownik sprawdzi ją sam w wyszukiwarce). Nie zgaduj jej i policz totalBudgetEstimate BEZ lotów: tylko nocleg, jedzenie, atrakcje i transport na miejscu.
 
 INSTRUKCJE DLA KAŻDEGO DNIA (${duration} dni łącznie):
@@ -100,7 +110,7 @@ Linia 1 — nagłówek (jeden obiekt):
 {"type":"header","city":"${destination.city}","country":"${destination.country}","duration":${duration},"totalBudgetEstimate":"np. 1200-1500 PLN","budgetBreakdown":{"flights":"Sprawdź w wyszukiwarce","accommodation":"np. 300-400 PLN","food":"np. 200-250 PLN","attractions":"np. 100-150 PLN"},"generalTips":["tip1","tip2","tip3","tip4","tip5"]}
 
 Linie 2–${duration + 1} — każdy dzień osobno (jeden obiekt na linię):
-{"type":"day","day":1,"date":"Dzień 1 – [dzień tygodnia jeśli znany]","theme":"krótki motyw dnia","activities":[{"time":"10:00","title":"Nazwa aktywności","description":"2-3 zdania z konkretnymi wskazówkami","type":"attraction|food|transport|tip|accommodation","cost":"Free lub ~15 PLN","location":"Nazwa miejsca lub adres","emoji":"emoji"}]}
+{"type":"day","day":1,"date":"${day1Label}","theme":"krótki motyw dnia","activities":[{"time":"10:00","title":"Nazwa aktywności","description":"2-3 zdania z konkretnymi wskazówkami","type":"attraction|food|transport|tip|accommodation","cost":"Free lub ~15 PLN","location":"Nazwa miejsca lub adres","emoji":"emoji"}]}
 
 Każda linia musi być poprawnym, kompletnym JSON-em. Żadnych przerw w środku obiektu.`;
 }
@@ -159,7 +169,9 @@ export function parsePlanResponse(raw: string): TripPlan {
 
 // Validates and fixes day count after generation
 export function validateAndFixPlan(plan: TripPlan, expectedDuration: number): TripPlan {
-  if (plan.days.length === expectedDuration) return plan;
+  if (plan.days.length === expectedDuration) {
+    return plan.duration === expectedDuration ? plan : { ...plan, duration: expectedDuration };
+  }
 
   // Too many days — trim
   if (plan.days.length > expectedDuration) {

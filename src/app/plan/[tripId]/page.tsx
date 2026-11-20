@@ -9,6 +9,7 @@ import { useAppStore } from "@/lib/store";
 import { downloadICS } from "@/app/utils/ics-download";
 import { adjustPlanBudget } from "@/lib/budgetAdjust";
 import { resolveIcsStartDate } from "@/lib/ics";
+import { formatTripWhen } from "@/lib/shareOg";
 import ChatPanel from "@/app/components/ChatPanel";
 import BudgetTracker from "@/app/components/BudgetTracker";
 import FeedbackWidget from "@/app/components/FeedbackWidget";
@@ -364,6 +365,7 @@ export default function PlanPage() {
 
   const { plan, destination } = currentTrip;
   const dest = destination as DestinationRecommendation | null;
+  const tripWhen = plan.startDate ? formatTripWhen(plan.startDate, plan.duration) : null;
   // Wyjazd bez zapisanych odpowiedzi to solo: nie podpinamy bieżącego quizu.
   const tripCompanion = currentTrip.quizAnswers ? currentTrip.quizAnswers.companion : "solo";
   const tripGroup = currentTrip.quizAnswers?.group;
@@ -407,6 +409,7 @@ export default function PlanPage() {
             </h1>
             <p className="text-sm mt-0.5" style={{ color: "rgba(255,255,255,0.75)" }}>
               {plan.duration} dni · {plan.country}
+              {tripWhen && ` · ${tripWhen}`}
             </p>
           </div>
         </CityPhoto>
@@ -420,7 +423,7 @@ export default function PlanPage() {
           className="glass-card p-5"
         >
           <div className="sr-only">
-            <h1>{plan.city} {dest?.countryFlag ?? ""} — {plan.duration} dni · {plan.country}</h1>
+            <h1>{plan.city} {dest?.countryFlag ?? ""} — {plan.duration} dni · {plan.country}{tripWhen ? ` · ${tripWhen}` : ""}</h1>
           </div>
 
           {crew && (

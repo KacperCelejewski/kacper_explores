@@ -12,6 +12,7 @@ import type { Companion, GroupComposition, TravelVibe, TravelStyle, DestinationR
 import { IconPin, IconPlane, IconCheck } from "@/app/components/Icons";
 import GroupSizePicker from "@/app/components/GroupSizePicker";
 import { groupFromCompanion } from "@/lib/group";
+import { checkDateRange } from "@/lib/tripTerm";
 
 type IconFC = React.FC<{ size?: number }>;
 
@@ -264,7 +265,7 @@ export default function QuickPage() {
 
   const canNext = () => {
     if (step === 0) return city.trim().length >= 2 && country.trim().length >= 2;
-    if (step === 1) return !!arrivalDate && !!returnDate && arrivalDate < returnDate;
+    if (step === 1) return checkDateRange(arrivalDate, returnDate).ok;
     if (step === 2) return !!companion;
     return true; // step 3 — vibe+style optional
   };
@@ -296,9 +297,13 @@ export default function QuickPage() {
       return;
     }
 
-    const duration = Math.max(1, Math.round(
-      (new Date(returnDate).getTime() - new Date(arrivalDate).getTime()) / 86400000
-    ));
+    // Dni liczymy razem z dniem przylotu i dniem powrotu (jak w wyszukiwarce lotów i w planie).
+    const range = checkDateRange(arrivalDate, returnDate);
+    if (!range.ok) {
+      setGenError(range.error);
+      return;
+    }
+    const duration = range.days;
 
     const dest: DestinationRecommendation = {
       city: city.trim(),
@@ -594,9 +599,8 @@ function StepDates({
   returnDate: string; setReturnDate: (v: string) => void;
   returnTime: string; setReturnTime: (v: string) => void;
 }) {
-  const duration = arrivalDate && returnDate && returnDate > arrivalDate
-    ? Math.round((new Date(returnDate).getTime() - new Date(arrivalDate).getTime()) / 86400000)
-    : null;
+  const range = arrivalDate && returnDate ? checkDateRange(arrivalDate, returnDate) : null;
+  const duration = range?.ok ? range.days : null;
 
   return (
     <div>
@@ -650,6 +654,10 @@ function StepDates({
             />
           </div>
         </div>
+
+        {range && !range.ok && (
+          <p role="alert" className="text-sm text-center" style={{ color: "var(--error)" }}>{range.error}</p>
+        )}
 
         {duration !== null && (
           <motion.div
