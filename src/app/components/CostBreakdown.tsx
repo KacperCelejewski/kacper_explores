@@ -84,7 +84,7 @@ export default function CostBreakdown({ model, note }: { model: PlanCostModel; n
       </div>
 
       {/* Notatka o braku lotu w sumie ma sens tylko wtedy, gdy "Razem z lotem" nie jest pokazane */}
-      {!withFlight && <p className="text-xs mt-2" style={muted}>{note}</p>}
+      {!withFlight && <p className="text-xs mt-2" style={muted}>{model.legacy ? onSite.note : note}</p>}
       <p className="text-xs mt-1" style={muted}>{model.assumptions}</p>
     </div>
   );

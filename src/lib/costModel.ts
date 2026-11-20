@@ -75,10 +75,14 @@ export interface PlanCostModel {
   withFlight: CostTotal | null;
   flightLine: string;
   assumptions: string;
+  /** Starszy plan: suma mogła zawierać lot, więc nie pokazujemy notatki "lotu tu nie wliczamy". */
+  legacy: boolean;
 }
 
 export const ON_SITE_TOTAL_LABEL = PLAN_TOTAL_LABEL;
 export const WITH_FLIGHT_TOTAL_LABEL = "Razem z lotem";
+/** Plany sprzed 2026-11-19 liczyły sumę z lotem od modelu (pole flights z kwotą): nie wolno ich nazwać "bez lotu". */
+export const LEGACY_TOTAL_LABEL = "Szacunek planu (starszy plan, może zawierać lot)";
 export const FLIGHT_UNKNOWN_LINE = "Lot: sprawdź w wyszukiwarce";
 export const ESTIMATE_LABEL = "szacunek";
 export const ROUGH_LABEL = "orientacyjnie";
@@ -106,13 +110,20 @@ export function nightsFor(duration: number): number {
 }
 
 /** Założenia szacunku: liczba nocy, osób i standard. To samo mówimy modelowi w prompcie. */
-export function costAssumptions(duration: number, people: number, standard?: "low" | "medium" | null): string {
+export function costAssumptions(
+  duration: number,
+  seats: number,
+  standard?: "low" | "medium" | null,
+  /** Grupa: kwoty są na osobę, a liczba osób mówi, ile ich jedzie. Poza grupą liczymy dla jednej osoby. */
+  perPerson = false,
+): string {
   const nights = nightsFor(duration);
-  const persons = Math.max(1, Math.round(people));
+  const persons = Math.max(1, Math.round(seats));
   const parts = [
     `${nights} ${plural(nights, "noc", "noce", "nocy")}`,
     `${persons} ${plural(persons, "osoba", "osoby", "osób")}`,
     ...(standard ? [`standard ${STANDARD_LABEL[standard]}`] : []),
+    ...(perPerson && persons > 1 ? ["kwoty na osobę"] : []),
   ];
   return `Założenia szacunku: ${parts.join(", ")}. Kwoty to szacunek modelu AI, nie rezerwacja ani oferta.`;
 }
@@ -146,6 +157,8 @@ export function buildPlanCostModel(input: PlanCostInput): PlanCostModel {
   const people = Math.max(1, Math.round(input.people));
   const flight = usableFlight(input.flight, now);
   const group = input.group && people > 1;
+  // Starszy plan: model wpisał w "flights" kwotę, więc jego suma mogła zawierać lot.
+  const legacy = hasAmount(input.breakdown.flights);
 
   const components: CostComponent[] = [
     estimateComponent("accommodation", "Nocleg", input.breakdown.accommodation, "Szacunek modelu AI, wliczony w sumę na miejscu."),
@@ -187,11 +200,14 @@ export function buildPlanCostModel(input: PlanCostInput): PlanCostModel {
 
   const onSiteText = hasAmount(input.totalEstimate) ? input.totalEstimate.trim() : null;
   const onSite: CostTotal = onSiteText
-    ? { label: ON_SITE_TOTAL_LABEL, ...totals(onSiteText, people, group), note: "Nocleg, jedzenie, atrakcje i transport na miejscu. Bez lotu." }
-    : { label: ON_SITE_TOTAL_LABEL, perPerson: null, groupTotal: null, note: "Plan nie podaje szacunku." };
+    ? legacy
+      ? { label: LEGACY_TOTAL_LABEL, ...totals(onSiteText, people, group), note: "Ten plan powstał, zanim liczyliśmy sumę bez lotu: model mógł wliczyć do niej lot." }
+      : { label: ON_SITE_TOTAL_LABEL, ...totals(onSiteText, people, group), note: "Nocleg, jedzenie, atrakcje i transport na miejscu. Bez lotu." }
+    : { label: legacy ? LEGACY_TOTAL_LABEL : ON_SITE_TOTAL_LABEL, perPerson: null, groupTotal: null, note: "Plan nie podaje szacunku." };
 
   let withFlight: CostTotal | null = null;
-  if (flight && onSiteText) {
+  // Starszego planu nie łączymy z lotem: nie wiemy, czy lot nie siedzi już w jego sumie.
+  if (flight && onSiteText && !legacy) {
     // Lot (z wyszukiwania) plus szacunek modelu: łączymy tylko z jawnym oznaczeniem, skąd co pochodzi.
     const perPerson = mapBudgetNumbers(onSiteText, (n) => n + flight.pricePerPerson);
     withFlight = {
@@ -207,6 +223,7 @@ export function buildPlanCostModel(input: PlanCostInput): PlanCostModel {
     flightLine: flight
       ? `Lot: ${pln(flight.pricePerPerson)} za osobę, w obie strony, cena z ${costDate(flight.checkedAt)}`
       : FLIGHT_UNKNOWN_LINE,
-    assumptions: costAssumptions(input.duration, people, input.standard),
+    assumptions: costAssumptions(input.duration, group ? people : 1, input.standard, group),
+    legacy,
   };
 }

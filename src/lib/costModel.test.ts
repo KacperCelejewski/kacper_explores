@@ -134,7 +134,35 @@ describe("składniki", () => {
   });
 });
 
+describe("starszy plan z kwotą lotu w polu flights", () => {
+  const legacy: PlanCostInput = { ...base, breakdown: { ...base.breakdown, flights: "350-550 PLN" } };
+  it("nie nazywa sumy 'bez lotu' i nie dokłada do niej lotu", () => {
+    const m = buildPlanCostModel({ ...legacy, flight: quote() });
+    expect(m.onSite.label).toBe("Szacunek planu (starszy plan, może zawierać lot)");
+    expect(m.onSite.label).not.toMatch(/bez lotu/);
+    expect(m.onSite.note).toMatch(/mógł wliczyć do niej lot/);
+    expect(m.withFlight).toBeNull();
+    expect(m.legacy).toBe(true);
+    expect(buildPlanCostModel(base).legacy).toBe(false);
+    expect(key(m, "flight").value).toBe("320 zł"); // sam lot z wyszukiwania nadal widać jako lot
+  });
+  it("kwota lotu od modelu nadal nie jest pokazywana jako cena lotu", () => {
+    const m = buildPlanCostModel(legacy);
+    expect(key(m, "flight").value).toBeNull();
+    expect(m.flightLine).toBe(FLIGHT_UNKNOWN_LINE);
+  });
+  it("nowy plan (flights bez kwoty) dostaje zwykłą etykietę", () => {
+    expect(buildPlanCostModel(base).onSite.label).toBe(ON_SITE_TOTAL_LABEL);
+  });
+});
+
 describe("założenia noclegu", () => {
+  it("para (nie grupa) liczy się jak jedna osoba, tak jak w prompcie", () => {
+    expect(buildPlanCostModel({ ...base, people: 2, group: false }).assumptions).toContain("2 noce, 1 osoba, standard budżetowy");
+  });
+  it("grupa: liczba osób i jawne 'kwoty na osobę'", () => {
+    expect(buildPlanCostModel({ ...base, people: 4, group: true }).assumptions).toContain("4 osoby, standard budżetowy, kwoty na osobę");
+  });
   it("noce, osoby i standard w polskiej odmianie", () => {
     expect(nightsFor(3)).toBe(2);
     expect(nightsFor(1)).toBe(1);
