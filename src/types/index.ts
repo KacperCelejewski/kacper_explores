@@ -41,6 +41,23 @@ export type TripType =
 /** Czym się dostajemy na miejsce. Brak odpowiedzi znaczy "samolot", jak przed dodaniem tego pola. */
 export type Transport = "samolot" | "auto" | "pociag_bus" | "rower";
 
+/** Środki lądowe: dojazd liczymy z odległości, bez lotów i bez cen biletów. */
+export type GroundTransport = Exclude<Transport, "samolot">;
+
+/** Orientacyjny dojazd z miasta startu na miejsce, liczony z odległości (nie z cennika przewoźnika). */
+export interface TravelEstimate {
+  mode: GroundTransport;
+  /** Droga w jedną stronę (odległość po prostej × współczynnik, zaokrąglona do 10 km) */
+  distanceKm: number;
+  /** Czas w jedną stronę, zaokrąglony do 0,5 h; dla roweru czas jazdy bez postojów */
+  hours: number;
+  /** Rower: ile dni jazdy w jedną stronę (6 h jazdy dziennie) */
+  days?: number;
+  /** Koszt w obie strony, zł, zaokrąglony do 10; auto: za cały samochód, pociąg lub bus: za osobę */
+  costFrom: number;
+  costTo: number;
+}
+
 export interface QuizAnswers {
   budget: BudgetLevel | null;
   vibe: TravelVibe | null;
@@ -121,6 +138,8 @@ export interface DestinationRecommendation {
   flightBer?: FlightOffer | null;
   bestOffer?: FlightOffer;
   flights?: Record<string, FlightOffer>;
+  /** Dojazd lądowy dla wybranych środków (auto, pociąg lub bus, rower); brak = tylko lot */
+  travel?: TravelEstimate[];
 }
 
 /** Manually entered flight details by the user */

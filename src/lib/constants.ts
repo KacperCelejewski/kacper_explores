@@ -33,8 +33,8 @@ export const CHAT_MAX_OUTPUT_TOKENS = 512;
 /** Budżet z quizu to kwota na osobę za cały wyjazd (z lotem). Te same progi pokazuje karta w quizie. */
 export const BUDGET_CAPS_PLN = { low: 1500, medium: 3000 } as const;
 
-export function budgetPromptLabel(budget: "low" | "medium" | null | undefined): string {
+export function budgetPromptLabel(budget: "low" | "medium" | null | undefined, travel: "lotem" | "dojazdem" = "lotem"): string {
   return budget === "low"
-    ? `niski (backpacker, do ${BUDGET_CAPS_PLN.low} PLN na osobę za cały wyjazd, z lotem)`
-    : `średni (komfortowy, ${BUDGET_CAPS_PLN.low}–${BUDGET_CAPS_PLN.medium} PLN na osobę za cały wyjazd, z lotem)`;
+    ? `niski (backpacker, do ${BUDGET_CAPS_PLN.low} PLN na osobę za cały wyjazd, z ${travel})`
+    : `średni (komfortowy, ${BUDGET_CAPS_PLN.low}–${BUDGET_CAPS_PLN.medium} PLN na osobę za cały wyjazd, z ${travel})`;
 }

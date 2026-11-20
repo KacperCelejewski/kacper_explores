@@ -173,13 +173,13 @@ export function dayLabel(day: number, date: string | null): string {
 }
 
 /** Blok promptu o terminie: daty, dni tygodnia, pora roku. Bez wydarzeń, tylko to, co wynika z kalendarza. */
-export function tripTermPrompt(term: Extract<TripTerm, { ok: true }>): string {
+export function tripTermPrompt(term: Extract<TripTerm, { ok: true }>, arrival: "przylotu" | "przyjazdu" = "przylotu"): string {
   const season = term.month ? seasonForMonth(term.month) : null;
   const lines: string[] = [];
 
   if (term.startDate && term.endDate) {
     lines.push(
-      `TERMIN WYJAZDU: ${dmy(term.startDate)} (${weekdayPl(term.startDate)}) – ${dmy(term.endDate)} (${weekdayPl(term.endDate)}), ${term.duration} dni łącznie z dniem przylotu i dniem powrotu.`
+      `TERMIN WYJAZDU: ${dmy(term.startDate)} (${weekdayPl(term.startDate)}) – ${dmy(term.endDate)} (${weekdayPl(term.endDate)}), ${term.duration} dni łącznie z dniem ${arrival} i dniem powrotu.`
     );
     if (season) lines.push(`Pora roku: ${season}.`);
     lines.push("Dni planu:");
@@ -187,7 +187,7 @@ export function tripTermPrompt(term: Extract<TripTerm, { ok: true }>): string {
   } else {
     const monthName = term.month ? monthYearLabel(term.month) : "nieokreślony";
     lines.push(
-      `TERMIN WYJAZDU: ${monthName}, ${term.duration} dni łącznie z dniem przylotu i dniem powrotu. Konkretne daty i dni tygodnia nieznane.`
+      `TERMIN WYJAZDU: ${monthName}, ${term.duration} dni łącznie z dniem ${arrival} i dniem powrotu. Konkretne daty i dni tygodnia nieznane.`
     );
     if (season) lines.push(`Pora roku: ${season}.`);
   }

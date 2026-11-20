@@ -3,6 +3,20 @@ import { budgetPromptLabel, STYLE_LABELS, VIBE_LABELS, PLACE_LABELS } from "@/li
 import { groupLabel, groupSize } from "@/lib/group";
 import { calcTripSchedule, formatScheduleForPrompt } from "@/lib/tripSchedule";
 import { dayLabel, resolveTripTerm, termDays, tripTermPrompt } from "@/lib/tripTerm";
+import { isGroundMode, originCityName, planTransport, planTravel, travelBudgetText, travelCopy, travelDuration } from "@/lib/transport";
+import type { GroundTransport } from "@/types";
+
+// Dojazd lądowy w prompcie planu: środek, szacunek drogi i zasady dla pierwszego i ostatniego dnia.
+function groundGuide(mode: GroundTransport): string {
+  switch (mode) {
+    case "auto":
+      return "Własny samochód: wskaż, gdzie zaparkować (parking przy noclegu albo konkretny parking, strefa płatna), dolicz parking do kosztów na miejscu i zaznacz, które atrakcje są osiągalne bez auta. Noclegi z parkingiem lub blisko niego.";
+    case "pociag_bus":
+      return "Pociąg lub bus, bez auta: podaj, jak dojść z dworca lub przystanku do noclegu i pierwszych atrakcji. Plan oparty na spacerach i komunikacji miejskiej, noclegi blisko dworca lub centrum.";
+    case "rower":
+      return "Rower: układaj dni jako trasy rowerowe (nazwy szlaków i odcinków, orientacyjne kilometry, nie więcej niż ok. 6 h jazdy dziennie). Noclegi przyjazne rowerzystom (przechowalnia lub zamknięte miejsce na rower). Nie zakładaj, że rower można zostawić bez zabezpieczenia.";
+  }
+}
 
 export function buildPlanPrompt(
   destination: DestinationRecommendation,
@@ -10,14 +24,16 @@ export function buildPlanPrompt(
   flightDetails?: FlightDetails | null
 ): string {
   const stylesList = quiz.styles.map((s) => STYLE_LABELS[s] ?? s).join(", ") || "brak preferencji";
-  const budgetLabel = budgetPromptLabel(quiz.budget);
+  const mode = planTransport(quiz);
+  const groundMode = isGroundMode(mode) ? mode : null;
+  const budgetLabel = budgetPromptLabel(quiz.budget, groundMode ? "dojazdem" : "lotem");
   const vibeLabel = quiz.vibe ? VIBE_LABELS[quiz.vibe] : null;
   const placeLabel = quiz.placeType ? PLACE_LABELS[quiz.placeType] : null;
   // Liczba dni i daty z jednego miejsca: zakres dat bije `quiz.duration` (patrz tripTerm.ts).
   const term = resolveTripTerm(quiz, flightDetails);
   if (!term.ok) throw new Error(term.error);
   const duration = term.duration;
-  const termPrompt = tripTermPrompt(term);
+  const termPrompt = tripTermPrompt(term, groundMode ? "przyjazdu" : "przylotu");
   const day1Label = dayLabel(1, termDays(term)[0]?.date ?? null);
 
   const vibeInstruction = vibeLabel ? `- Energia wyjazdu: ${vibeLabel}` : "";
@@ -59,10 +75,26 @@ export function buildPlanPrompt(
     : "Zbalansowane tempo — mix atrakcji i odpoczynku.";
 
   const details = term.flightDetails;
-  const schedule = calcTripSchedule(duration, details);
+  // Samolot (także brak wyboru) zostaje dokładnie tak jak przed pytaniem o transport.
+  const travel = groundMode ? planTravel(quiz, destination.city) : null;
+  const schedule = calcTripSchedule(duration, details, groundMode ? { mode: groundMode, hours: travel?.hours ?? null } : null);
   const schedulePrompt = formatScheduleForPrompt(schedule);
+  const origin = groundMode ? originCityName(quiz.airports) : null;
 
-  const flightNote = details
+  const groundNote = groundMode
+    ? `ŚRODEK TRANSPORTU: ${groundMode === "auto" ? "własny samochód" : groundMode === "rower" ? "rower" : "pociąg lub bus"}${origin ? `, start: ${origin}` : ""}. ${
+        travel
+          ? `Droga w jedną stronę: ok. ${travel.distanceKm} km, ${travelDuration(travel)} (szacunek z odległości${travelCopy(travel).cost ? `, ${travelCopy(travel).cost}` : ""}).`
+          : "Czas i koszt drogi nieznane: nie zgaduj ich, plan musi być elastyczny."
+      } ${details
+        ? `DANE DOJAZDU: przyjazd ${details.arrivalDate}${details.arrivalTime ? ` o ${details.arrivalTime} (czas lokalny)` : ""}, wyjazd powrotny ${details.returnDate}${details.returnTime ? ` o ${details.returnTime}` : ""}. ${
+            details.arrivalTime && details.returnTime ? "Plan MUSI uwzględniać te godziny." : "Brakujących godzin nie zgaduj: plan musi być elastyczny."
+          }`
+        : "Godziny przyjazdu i wyjazdu nieznane: użytkownik jedzie na własną rękę, plan musi być elastyczny."
+      }${travel?.days && travel.days > 1 ? ` Dojazd rowerem to ${travel.days} dni jazdy w jedną stronę: pierwszy i ostatni dzień planu poświęć głównie drodze.` : ""}`
+    : "";
+
+  const flightNote = groundMode ? groundNote : details
     ? `DANE LOTU: przylot ${details.arrivalDate}${details.arrivalTime ? ` o ${details.arrivalTime} (czas lokalny)` : ""}, powrót ${details.returnDate}${details.returnTime ? ` wylot o ${details.returnTime}` : ""}. ${
         details.arrivalTime && details.returnTime
           ? "Plan MUSI uwzględniać te godziny."
@@ -82,7 +114,9 @@ PROFIL PODRÓŻNIKA:
 - Zainteresowania: ${stylesList}
 ${vibeInstruction}
 ${placeInstruction}
-- Cena lotu jest NIEZNANA (użytkownik sprawdzi ją sam w wyszukiwarce). Nie zgaduj jej i policz totalBudgetEstimate BEZ lotów: tylko nocleg, jedzenie, atrakcje i transport na miejscu.
+${groundMode
+    ? `- Dojazd na miejsce jest liczony osobno jako szacunek. Nie wliczaj go do totalBudgetEstimate: tylko nocleg, jedzenie, atrakcje i transport na miejscu. ${groundGuide(groundMode)}`
+    : "- Cena lotu jest NIEZNANA (użytkownik sprawdzi ją sam w wyszukiwarce). Nie zgaduj jej i policz totalBudgetEstimate BEZ lotów: tylko nocleg, jedzenie, atrakcje i transport na miejscu."}
 
 INSTRUKCJE DLA KAŻDEGO DNIA (${duration} dni łącznie):
 
@@ -102,12 +136,12 @@ ZASADY DLA WSZYSTKICH DNI — BEZWZGLĘDNIE OBOWIĄZUJĄCE:
 
 KRYTYCZNE WYMAGANIA DOTYCZĄCE LICZBY DNI:
 - Wygeneruj DOKŁADNIE ${duration} linii z dniami (od day:1 do day:${duration})
-- Każdy dzień musi istnieć nawet jeśli ma mało aktywności (np. dzień przylotu wieczorem)
+- Każdy dzień musi istnieć nawet jeśli ma mało aktywności (np. dzień ${groundMode ? "przyjazdu" : "przylotu"} wieczorem)
 
 Odpowiedz w formacie NDJSON — każdy obiekt na OSOBNEJ LINII, bez żadnego dodatkowego tekstu.
 
 Linia 1 — nagłówek (jeden obiekt):
-{"type":"header","city":"${destination.city}","country":"${destination.country}","duration":${duration},"totalBudgetEstimate":"np. 1200-1500 PLN","budgetBreakdown":{"flights":"Sprawdź w wyszukiwarce","accommodation":"np. 300-400 PLN","food":"np. 200-250 PLN","attractions":"np. 100-150 PLN"},"generalTips":["tip1","tip2","tip3","tip4","tip5"]}
+{"type":"header","city":"${destination.city}","country":"${destination.country}","duration":${duration},"totalBudgetEstimate":"np. 1200-1500 PLN","budgetBreakdown":{"flights":"${groundMode ? travelBudgetText(travel, groundMode) : "Sprawdź w wyszukiwarce"}","accommodation":"np. 300-400 PLN","food":"np. 200-250 PLN","attractions":"np. 100-150 PLN"},"generalTips":["tip1","tip2","tip3","tip4","tip5"]}
 
 Linie 2–${duration + 1} — każdy dzień osobno (jeden obiekt na linię):
 {"type":"day","day":1,"date":"${day1Label}","theme":"krótki motyw dnia","activities":[{"time":"10:00","title":"Nazwa aktywności","description":"2-3 zdania z konkretnymi wskazówkami","type":"attraction|food|transport|tip|accommodation","cost":"Free lub ~15 PLN","location":"Nazwa miejsca lub adres","emoji":"emoji"}]}
