@@ -11,9 +11,9 @@ vi.hoisted(() => {
   Object.defineProperty(globalThis, "window", { value: { localStorage: globalThis.localStorage } });
 });
 import { useAppStore } from "./store";
-import { quizStepAt } from "./quizSteps";
+import { quizStepAt, quizStepIndex } from "./quizSteps";
 
-describe("persisted quiz v5", () => {
+describe("persisted quiz migrations", () => {
   it("migrates the step without changing answers, the trip or selected flights", async () => {
     const answers = { companion: "friends", group: { adults: 5, childrenAges: [] }, budget: "medium", styles: ["food"], airports: ["KTW"] };
     const trip = { id: "keep-my-trip" };
@@ -26,15 +26,32 @@ describe("persisted quiz v5", () => {
     expect(migrated.currentTrip).toBe(trip);
     expect(migrated.flightDetails).toBe(flightDetails);
     expect(migrated.selectedDestination).toBe(selectedDestination);
-    expect(useAppStore.persist.getOptions().version).toBe(6);
+    expect(useAppStore.persist.getOptions().version).toBe(7);
   });
-  it("v5 -> v6: zapisany krok zostaje tym samym pytaniem mimo wstawionego pytania o rodzaj wyjazdu", async () => {
-    const v5Order = ["companion", "vibe", "styles", "when", "departure", "budget"];
-    for (const [oldIndex, id] of v5Order.entries()) {
-      const migrated = await useAppStore.persist.getOptions().migrate!({ quizAnswers: { budget: "low" }, currentQuizStep: oldIndex }, 5) as { currentQuizStep: number; quizAnswers: object };
+  it("zapis z v5 zachowuje pytanie mimo nowych kroków region i tripType i nie rusza odpowiedzi", async () => {
+    const answers = { budget: "low", styles: [], airports: ["WRO"], companion: "solo" };
+    const migrate = useAppStore.persist.getOptions().migrate!;
+    // v5: companion, vibe, styles, when, departure, budget
+    const ids = ["companion", "vibe", "styles", "when", "departure", "budget"] as const;
+    for (const [oldIndex, id] of ids.entries()) {
+      const migrated = await migrate({ quizAnswers: { ...answers }, currentQuizStep: oldIndex }, 5) as { quizAnswers: unknown; currentQuizStep: number };
       expect(quizStepAt(migrated.currentQuizStep)).toBe(id);
-      expect(migrated.quizAnswers).toEqual({ budget: "low" });
+      expect(migrated.quizAnswers).toEqual(answers);
     }
+  });
+  it("zapis z v6 (z krokiem region, bez tripType) zachowuje pytanie mimo wstawionego rodzaju wyjazdu", async () => {
+    const answers = { budget: "low", styles: [], airports: ["WRO"], companion: "solo" };
+    const migrate = useAppStore.persist.getOptions().migrate!;
+    // v6: companion, region, vibe, styles, when, departure, budget
+    const ids = ["companion", "region", "vibe", "styles", "when", "departure", "budget"] as const;
+    for (const [oldIndex, id] of ids.entries()) {
+      const migrated = await migrate({ quizAnswers: { ...answers }, currentQuizStep: oldIndex }, 6) as { quizAnswers: unknown; currentQuizStep: number };
+      expect(quizStepAt(migrated.currentQuizStep)).toBe(id);
+      expect(migrated.quizAnswers).toEqual(answers);
+    }
+    // v7 ma już aktualne indeksy: bez zmian
+    const current = await migrate({ quizAnswers: answers, currentQuizStep: quizStepIndex("tripType") }, 7) as { currentQuizStep: number };
+    expect(quizStepAt(current.currentQuizStep)).toBe("tripType");
   });
   it("retains the older airport and companion migrations", async () => {
     const migrated = await useAppStore.persist.getOptions().migrate!({ quizAnswers: {}, currentQuizStep: 2 }, 1) as { quizAnswers: { airports: string[]; companion: null }; currentQuizStep: number };

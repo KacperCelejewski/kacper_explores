@@ -213,7 +213,7 @@ export default function OdkryjPage() {
                       <p className="text-xs mt-0.5 truncate" style={{ color: "var(--text-muted)" }}>
                         {trip.country}
                         {trip.quiz_answers?.duration ? ` · ${trip.quiz_answers.duration} dni` : ""}
-                        {trip.quiz_answers?.budget === "low" ? " · Backpacker" : " · Komfort"}
+                        {trip.quiz_answers?.budget === "low" ? " · Backpacker" : trip.quiz_answers?.budget === "high" ? " · Dalekie wyprawy" : " · Komfort"}
                         {" · "}{formatDate(trip.created_at)}
                       </p>
                     </div>

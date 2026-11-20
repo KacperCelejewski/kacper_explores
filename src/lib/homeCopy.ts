@@ -1,4 +1,5 @@
 import { FEATURES, type FeatureKey } from "./features";
+import { QUIZ_QUESTION_COUNT } from "./quizSteps";
 
 // Teksty strony głównej w jednym miejscu, żeby dało się je przetestować pod kątem głosu marki
 // i obietnic funkcji, których jeszcze nie ma.
@@ -11,7 +12,7 @@ export const HOME = {
   ctaTeamHref: "/quiz?companion=friends&src=home-ekipa",
   ctaSolo: "Solo albo we dwoje →",
   ctaSoloHref: "/quiz?src=home-solo",
-  micro: "6 pytań · darmowe konto · bez karty",
+  micro: `${QUIZ_QUESTION_COUNT} pytań · darmowe konto · bez karty`,
   quickLink: "Wiem już dokąd: 4 kroki",
   quickHref: "/quick",
   dropLink: "Co czwartek 3 okazje: zapisz się",
@@ -42,8 +43,8 @@ export const META = {
   title: "Wyjazd ze znajomymi: dokąd, za ile i jaki plan",
   titleDefault: "Włóczykij: wyjazd ze znajomymi, dokąd, za ile i jaki plan",
   description:
-    "Odpowiedz na 6 pytań: dostaniesz kierunki w Waszym budżecie, plan godzina po godzinie i ceny lotów z 7 polskich lotnisk w okazjach. 2 plany za darmo co miesiąc.",
-  shortDescription: "Odpowiedz na 6 pytań i dostań kierunki w Waszym budżecie oraz plan godzina po godzinie. Ceny, knajpy i triki.",
+    `Odpowiedz na ${QUIZ_QUESTION_COUNT} pytań: dostaniesz kierunki w Waszym budżecie, plan godzina po godzinie i ceny lotów z 7 polskich lotnisk w okazjach. 2 plany za darmo co miesiąc.`,
+  shortDescription: `Odpowiedz na ${QUIZ_QUESTION_COUNT} pytań i dostań kierunki w Waszym budżecie oraz plan godzina po godzinie. Ceny, knajpy i triki.`,
   appDescription:
     "Wyjazd ze znajomymi: kierunki w Waszym budżecie, plan godzina po godzinie z cenami, knajpami i trikami oraz okazje na weekend z polskich lotnisk.",
   manifestDescription: "Wyjazd ze znajomymi: kierunki w budżecie, plan godzina po godzinie i okazje na weekend z Polski",

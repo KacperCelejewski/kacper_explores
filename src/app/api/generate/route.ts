@@ -8,6 +8,7 @@ export const maxDuration = 60;
 import { buildPlanPrompt, parseNdjsonStream, validateAndFixPlan } from "@/lib/gemini";
 import { addDaysISO, dayLabel, resolveTripTerm } from "@/lib/tripTerm";
 import { activeTripType, checkPlanTripType } from "@/lib/tripType";
+import { costBasisFor } from "@/lib/costModel";
 import { checkRateLimit, LIMITS } from "@/lib/rateLimit";
 import { validateQuizAnswers, validateDestination, getClientIp } from "@/lib/validate";
 import { getUserProfile, canGenerate, isPro } from "@/lib/userProfile";
@@ -218,6 +219,8 @@ export async function POST(req: NextRequest) {
           void logGeminiCall({ endpoint: "generate", model: usedModel, success: false, error_code: "all_models_failed" });
           throw lastErr;
         }
+        // Założenia kosztów, które dostał model: strona planu pokazuje je pod kwotą (także w planie z uwagą o rodzaju wyjazdu).
+        plan = { ...plan, costBasis: costBasisFor(quiz, plan.duration) };
 
         const tripId = makeTripId((destination as DestinationRecommendation).city, Date.now());
 

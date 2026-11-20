@@ -20,16 +20,17 @@ export function shiftBudgetText(text: string, delta: number): string {
   return mapBudgetNumbers(text, (n) => Math.max(0, n + delta));
 }
 
-type Category = "attractions" | "food" | "accommodation";
+type Category = "attractions" | "food" | "accommodation" | "transport";
 
 const CATEGORY_BY_TYPE: Partial<Record<DayActivity["type"], Category>> = {
   attraction: "attractions",
   food: "food",
   accommodation: "accommodation",
+  transport: "transport",
 };
 
 function costsByCategory(plan: TripPlan): { total: number; byCategory: Record<Category, number> } {
-  const byCategory: Record<Category, number> = { attractions: 0, food: 0, accommodation: 0 };
+  const byCategory: Record<Category, number> = { attractions: 0, food: 0, accommodation: 0, transport: 0 };
   let total = 0;
   for (const day of plan.days) {
     for (const activity of day.activities) {
@@ -56,7 +57,9 @@ export function adjustPlanBudget(before: TripPlan, after: TripPlan): TripPlan {
   const breakdown = { ...after.budgetBreakdown };
   for (const category of Object.keys(b.byCategory) as Category[]) {
     const delta = b.byCategory[category] - a.byCategory[category];
-    if (delta !== 0) breakdown[category] = shiftBudgetText(breakdown[category], delta);
+    // Starsze plany nie mają osobnej kwoty transportu: wtedy zmiana trafia tylko do sumy
+    const current = breakdown[category];
+    if (delta !== 0 && typeof current === "string") breakdown[category] = shiftBudgetText(current, delta);
   }
   return {
     ...after,

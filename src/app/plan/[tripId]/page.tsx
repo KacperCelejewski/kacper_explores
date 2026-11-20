@@ -17,10 +17,12 @@ import CheckoutButton from "@/app/components/CheckoutButton";
 import DropSignup from "@/app/components/DropSignup";
 import DropProfileButton from "@/app/components/DropProfileButton";
 import { FlightCard, HotelLinks, LuggageTile, TicketsLink } from "@/app/components/PartnerLinks";
-import { IconPlane, IconBed, IconFork, IconTicket, IconLock, IconDownload, IconCalendar, IconGlobe, IconCheck, IconClose, IconRefresh, IconPin, IconSuitcase } from "@/app/components/Icons";
+import { IconFork, IconLock, IconDownload, IconCalendar, IconGlobe, IconCheck, IconClose, IconRefresh, IconPin, IconSuitcase } from "@/app/components/Icons";
 import type { DayPlan, DayActivity, TripPlan, DestinationRecommendation, QuizAnswers } from "@/types";
 import { PRICES } from "@/lib/prices";
-import { PLAN_TOTAL_LABEL, PLAN_TOTAL_NOTE } from "@/lib/priceTrust";
+import { PLAN_TOTAL_NOTE } from "@/lib/priceTrust";
+import { buildPlanCostModel } from "@/lib/costModel";
+import CostBreakdown from "@/app/components/CostBreakdown";
 import { isFreeCost } from "@/lib/affiliate";
 import { groupFromCompanion, groupSize, scaleBudgetText, showGroupBudget } from "@/lib/group";
 import { CREW_COPY, crewSummary, sendPlanTitle } from "@/lib/groupFlow";
@@ -374,7 +376,14 @@ export default function PlanPage() {
   // Plan jest liczony na osobę tylko przy jawnie zapisanej grupie znajomych lub rodziny.
   const groupBudget = showGroupBudget(tripCompanion, tripGroup);
   const scaleForGroup = (text: string) => (groupBudget ? scaleBudgetText(text, people) ?? text : text);
-  const totalForGroup = groupBudget ? scaleBudgetText(plan.totalBudgetEstimate, people) : null;
+  // Plan nie przechowuje ceny lotu z wyszukiwania, więc "Razem z lotem" się nie pojawia: lot to "sprawdź w wyszukiwarce".
+  const costModel = buildPlanCostModel({
+    breakdown: plan.budgetBreakdown,
+    totalEstimate: plan.totalBudgetEstimate,
+    people,
+    group: groupBudget,
+    basis: plan.costBasis ?? null,
+  });
   const crew = crewSummary(tripCompanion, tripGroup);
 
   return (
@@ -431,44 +440,14 @@ export default function PlanPage() {
               {crew.title}: {crew.detail}
               {groupBudget && (
                 <span className="block text-xs font-normal mt-0.5" style={{ color: "var(--text-muted)" }}>
-                  Nocleg, jedzenie i atrakcje poniżej są {CREW_COPY.perPerson}; szacunek na miejscu podajemy też {CREW_COPY.total}. Lot liczymy osobno.
+                  Nocleg, jedzenie, atrakcje i transport poniżej są {CREW_COPY.perPerson}; sumę na miejscu podajemy też {CREW_COPY.total}. Lot liczymy osobno.
                 </span>
               )}
             </p>
           )}
 
-          {/* Budget breakdown */}
-          <div className="grid grid-cols-2 gap-3">
-            <BudgetItem label="Loty" value={plan.budgetBreakdown.flights} Icon={IconPlane} />
-            <BudgetItem label="Nocleg" value={plan.budgetBreakdown.accommodation} Icon={IconBed} />
-            <BudgetItem label="Jedzenie" value={plan.budgetBreakdown.food} Icon={IconFork} />
-            <BudgetItem label="Atrakcje" value={plan.budgetBreakdown.attractions} Icon={IconTicket} />
-          </div>
-
-          <div className="mt-3 pt-3 border-t flex items-center justify-between" style={{ borderColor: "var(--border)" }}>
-            <span className="text-sm" style={{ color: "var(--text-muted)" }}>
-              {PLAN_TOTAL_LABEL}
-            </span>
-            {groupBudget && plan.totalBudgetEstimate ? (
-              <div className="text-right">
-                <div className="text-base font-bold" style={{ color: "var(--accent)" }}>
-                  {plan.totalBudgetEstimate}
-                  <span className="text-xs font-normal ml-1" style={{ color: "var(--text-muted)" }}>na osobę</span>
-                </div>
-                {totalForGroup && (
-                  <div className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
-                    {totalForGroup} razem
-                    <span className="text-xs ml-1">(szacunek)</span>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <span className="text-base font-bold" style={{ color: "var(--accent)" }}>
-                {plan.totalBudgetEstimate}
-              </span>
-            )}
-          </div>
-        <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>{PLAN_TOTAL_NOTE}</p>
+          {/* Koszt: składniki, co jest w sumie na miejscu, co poza nią, skąd kwoty */}
+          <CostBreakdown model={costModel} note={PLAN_TOTAL_NOTE} />
         </motion.div>
       </div>
 
@@ -737,6 +716,7 @@ export default function PlanPage() {
               accommodation: scaleForGroup(plan.budgetBreakdown.accommodation),
               food: scaleForGroup(plan.budgetBreakdown.food),
               attractions: scaleForGroup(plan.budgetBreakdown.attractions),
+              ...(plan.budgetBreakdown.transport ? { transport: scaleForGroup(plan.budgetBreakdown.transport) } : {}),
             }}
             plannedTotal={scaleForGroup(plan.totalBudgetEstimate)}
           />
@@ -1003,18 +983,6 @@ export default function PlanPage() {
       {currentTrip && (
         <ChatPanel tripId={currentTrip.id} city={plan.city} />
       )}
-    </div>
-  );
-}
-
-function BudgetItem({ label, value, Icon }: { label: string; value: string; Icon: (p: { size?: number }) => React.ReactElement }) {
-  return (
-    <div className="flex items-center gap-2">
-      <span style={{ color: "var(--accent)" }}><Icon size={18} /></span>
-      <div>
-        <p className="text-xs" style={{ color: "var(--text-muted)" }}>{label}</p>
-        <p className="text-sm font-semibold">{value}</p>
-      </div>
     </div>
   );
 }

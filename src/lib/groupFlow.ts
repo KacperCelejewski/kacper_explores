@@ -75,7 +75,7 @@ export function crewSummary(
   };
 }
 
-export const BUDGET_PER_PERSON: Record<BudgetLevel, string> = { low: "do 1 500 zł", medium: "1 500–3 000 zł" };
+export const BUDGET_PER_PERSON: Record<BudgetLevel, string> = { low: "do 1 500 zł", medium: "1 500–3 000 zł", high: "powyżej 3 000 zł" };
 
 // Budżet razem dla całej ekipy ("do 6 000 zł"); null, gdy nie ma czego mnożyć (solo, para, jedna osoba).
 export function crewBudgetTogether(

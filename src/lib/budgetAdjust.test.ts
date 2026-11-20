@@ -76,6 +76,18 @@ describe("adjustPlanBudget", () => {
     expect(out.totalBudgetEstimate).toBe("1 250–1 550 PLN");
   });
 
+  it("shifts a separate transport amount when the plan has one, and never invents one when it does not", () => {
+    const withTransport = (activities: DayActivity[]): TripPlan => {
+      const p = plan(activities);
+      return { ...p, budgetBreakdown: { ...p.budgetBreakdown, transport: "50-80 PLN" } };
+    };
+    const out = adjustPlanBudget(withTransport([]), withTransport([act({ type: "transport", cost: "10 PLN" })]));
+    expect(out.budgetBreakdown.transport).toBe("60–90 PLN");
+    expect(out.totalBudgetEstimate).toBe("1 210–1 510 PLN");
+    const old = adjustPlanBudget(plan([]), plan([act({ type: "transport", cost: "10 PLN" })]));
+    expect("transport" in old.budgetBreakdown).toBe(false);
+  });
+
   it("lowers the budget when a paid activity is swapped for a free one", () => {
     const before = plan([act({ cost: "50 PLN" })]);
     const after = plan([act({ cost: "Free" })]);

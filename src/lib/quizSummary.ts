@@ -4,7 +4,7 @@ import { ORIGIN_GENITIVE } from "@/lib/drop/email";
 import { monthYearShort } from "@/lib/tripMonth";
 
 const COMPANION: Record<string, string> = { solo: "Sam/a", couple: "Para", family: "Rodzina", friends: "Znajomi" };
-const BUDGET: Record<string, string> = { low: "do 1500 zł", medium: "1500–3000 zł" };
+const BUDGET: Record<string, string> = { low: "do 1500 zł", medium: "1500–3000 zł", high: "powyżej 3000 zł" };
 
 // Odpowiedzi z quizu w kilku krótkich frazach, do pokazania na ekranie logowania.
 // Tylko to, co człowiek faktycznie wybrał; nic nie jest dopowiedziane.

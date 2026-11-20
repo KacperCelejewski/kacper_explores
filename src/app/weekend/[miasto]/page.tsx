@@ -1,4 +1,5 @@
 import { socialMeta } from "@/lib/seo/social";
+import { quizStepsFor } from "@/lib/quizSteps";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -118,7 +119,7 @@ export default async function WeekendCityPage({ params }: { params: Params }) {
                     >
                       <span className="flex items-baseline justify-between gap-3">
                         <span className="font-bold">Z {ORIGIN_GENITIVE[d.origin] ?? d.origin}</span>
-                        <span className="font-bold" style={{ color: "var(--accent)" }}>{d.price} zł</span>
+                        <span className="font-bold" style={{ color: "var(--accent)" }}>lot {d.price} zł</span>
                       </span>
                       <span className="block text-sm mt-1" style={{ color: "var(--text-muted)" }}>
                         {formatLocal(d.departure_at)} → {formatLocal(d.return_at)}
@@ -141,7 +142,7 @@ export default async function WeekendCityPage({ params }: { params: Params }) {
         <section aria-label="Plan wyjazdu" className="mb-10 rounded-2xl p-5" style={{ background: "var(--accent-light)", border: "1px solid var(--border)" }}>
           <p className="text-lg font-bold">Plan na weekend: {city.city}</p>
           <p className="text-sm mt-1 mb-4" style={{ color: "var(--text-muted)" }}>
-            Odpowiedz na 6 pytań, a dostaniesz plan godzina po godzinie z cenami i miejscami.
+            Odpowiedz na {quizStepsFor({ drop: false, preferredCity: city.city }).length} pytań, a dostaniesz plan godzina po godzinie z cenami i miejscami.
           </p>
           <Link href={`/quiz?city=${encodeURIComponent(city.city)}`} className="btn-primary" style={{ display: "inline-block", width: "auto", textDecoration: "none" }}>
             Zaplanuj wyjazd: {city.city} →

@@ -56,7 +56,7 @@ describe("potwierdzenia", () => {
   });
 
   it("zrzut mówi, skąd i do ilu zł", () => {
-    expect(mails.dropConfirm.text).toContain("z Wrocławia i Krakowa do 400 zł");
+    expect(mails.dropConfirm.text).toContain("z Wrocławia i Krakowa (lot w obie strony do 400 zł)");
   });
 });
 

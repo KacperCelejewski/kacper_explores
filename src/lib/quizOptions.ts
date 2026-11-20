@@ -38,6 +38,20 @@ export const TRANSPORT_OPTIONS: readonly QuizOption<Transport>[] = [
   { value: "rower", label: "Rower", hint: "Wolniej, ale przygoda jest po drodze." },
 ];
 
+/** Etykieta pustego wyboru: brak regionu znaczy "obojętnie". */
+export const REGION_ANY_LABEL = "Obojętnie, zaskoczcie nas";
+export const REGION_ANY_HINT = "Dobierzemy kierunki z całego świata, w Waszym budżecie.";
+
+/**
+ * Regiony, do których lot z Polski często przekracza zwykłe progi budżetu (do 1500 zł, 1500–3000 zł).
+ * Po wybraniu któregoś z nich quiz pokazuje wyższy przedział. Bez cen: to tylko decyzja, kiedy go odsłonić.
+ */
+export const HIGH_BUDGET_REGIONS: readonly Region[] = ["ameryka_poludniowa", "ameryka_polnocna", "azja", "afryka", "oceania"];
+
+export function highBudgetAvailable(regions: readonly Region[] | null | undefined): boolean {
+  return (regions ?? []).some((r) => HIGH_BUDGET_REGIONS.includes(r));
+}
+
 export const REGION_VALUES: readonly Region[] = REGION_OPTIONS.map((o) => o.value);
 export const TRIP_TYPE_VALUES: readonly TripType[] = TRIP_TYPE_OPTIONS.map((o) => o.value);
 export const TRANSPORT_VALUES: readonly Transport[] = TRANSPORT_OPTIONS.map((o) => o.value);
