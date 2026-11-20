@@ -5,6 +5,7 @@ import { checkRateLimit, LIMITS } from "@/lib/rateLimit";
 import { validateQuizAnswers, getClientIp } from "@/lib/validate";
 import { logGeminiCall } from "@/lib/geminiLog";
 import { budgetPromptLabel, MONTH_NAMES, VIBE_LABELS, PLACE_LABELS, DESTINATION_CACHE_TTL_MS } from "@/lib/constants";
+import { destinationCacheKey } from "@/lib/destinationCacheKey";
 import { excludeOriginCities, originExclusionPrompt } from "@/lib/originCities";
 import type { DestinationRecommendation, TravelStyle, TravelVibe, PlaceType } from "@/types";
 
@@ -15,8 +16,7 @@ export const maxDuration = 30;
 const destCache = new Map<string, { data: DestinationRecommendation[]; ts: number }>();
 
 function cacheKey(body: Record<string, unknown>): string {
-  const { styles, budget, vibe, placeType, month, duration, airports, preferredCity } = body;
-  return JSON.stringify({ styles, budget, vibe, placeType, month, duration, airports, preferredCity });
+  return destinationCacheKey(body);
 }
 
 function buildPrompt(body: Record<string, unknown>): string {

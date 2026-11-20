@@ -45,6 +45,52 @@ describe("validateQuizAnswers", () => {
   });
 });
 
+describe("validateQuizAnswers: region, rodzaj wyjazdu, transport", () => {
+  it("przyjmuje poprawne wartości", () => {
+    expect(validateQuizAnswers({
+      budget: "low", airports: ["WRO"],
+      regions: ["europa", "azja"], tripType: "narty", transport: ["auto", "pociag_bus"],
+    })).toBe(true);
+  });
+
+  it("przyjmuje wszystkie dozwolone wartości, pojedynczo", () => {
+    for (const r of ["europa", "ameryka_poludniowa", "ameryka_polnocna", "azja", "afryka", "bliski_wschod", "oceania"]) {
+      expect(validateQuizAnswers({ regions: [r] })).toBe(true);
+    }
+    for (const t of ["zwiedzanie", "wypoczynek", "narty", "gory", "plaza", "aktywny", "wieczory"]) {
+      expect(validateQuizAnswers({ tripType: t })).toBe(true);
+    }
+    for (const t of ["samolot", "auto", "pociag_bus", "rower"]) {
+      expect(validateQuizAnswers({ transport: [t] })).toBe(true);
+    }
+  });
+
+  it("przyjmuje puste listy (puste = obojętnie / domyślnie) i brak pól", () => {
+    expect(validateQuizAnswers({ regions: [], transport: [] })).toBe(true);
+    expect(validateQuizAnswers({ budget: "low", airports: ["WRO"] })).toBe(true);
+  });
+
+  it.each([
+    ["nieznany region", { regions: ["atlantyda"] }],
+    ["region z polskimi znakami zamiast klucza", { regions: ["Europa"] }],
+    ["regiony nie jako lista", { regions: "europa" }],
+    ["powtórzony region", { regions: ["europa", "europa"] }],
+    ["za dużo regionów", { regions: ["europa", "azja", "afryka", "oceania", "ameryka_polnocna", "ameryka_poludniowa", "bliski_wschod", "europa"] }],
+    ["region nie będący tekstem", { regions: [1] }],
+    ["nieznany rodzaj wyjazdu", { tripType: "kosmos" }],
+    ["rodzaj wyjazdu jako lista", { tripType: ["narty"] }],
+    ["rodzaj wyjazdu null", { tripType: null }],
+    ["pusty rodzaj wyjazdu", { tripType: "" }],
+    ["nieznany transport", { transport: ["rakieta"] }],
+    ["transport nie jako lista", { transport: "auto" }],
+    ["powtórzony transport", { transport: ["auto", "auto"] }],
+    ["za dużo pozycji transportu", { transport: ["samolot", "auto", "pociag_bus", "rower", "auto"] }],
+    ["klucz z prototypu", { tripType: "constructor" }],
+  ])("odrzuca %s", (_, input) => {
+    expect(validateQuizAnswers(input)).toBe(false);
+  });
+});
+
 describe("validateDestination", () => {
   it("accepts a city and country", () => {
     expect(validateDestination({ city: "Lizbona", country: "Portugalia" })).toBe(true);
