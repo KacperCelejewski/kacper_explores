@@ -612,7 +612,17 @@ function FlightModal({
               To dni z ceny lotu na karcie. Zmień je, jeśli lecisz kiedy indziej.
             </p>
           )}
-          {!hasDates && (
+          {range?.ok && priceDates && (arrivalDate !== priceDates.departDate || returnDate !== priceDates.returnDate) && (
+            <p className="text-xs mb-4 text-center" style={{ color: "var(--text-muted)" }}>
+              Cena lotu na karcie dotyczy innych dni. Aktualną cenę dla Twoich dat sprawdzisz w wyszukiwarce lotów.
+            </p>
+          )}
+          {(!!arrivalDate !== !!returnDate) && (
+            <p className="text-sm mb-4 text-center" style={{ color: "var(--text-muted)" }}>
+              Podaj obie daty, przylotu i powrotu. Z jedną plan będzie miał {quizDuration ?? 3} dni, bez konkretnych dat.
+            </p>
+          )}
+          {!hasDates && !arrivalDate && !returnDate && (
             <p className="text-sm mb-4 text-center" style={{ color: "var(--text-muted)" }}>
               Bez dat plan będzie miał {quizDuration ?? 3} dni, tyle, ile wybrano w quizie, bez konkretnych dat i z mniej dopasowanymi godzinami.
             </p>

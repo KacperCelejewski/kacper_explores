@@ -130,6 +130,12 @@ describe("resolveTripTerm: liczba dni wynika z wyboru terminu", () => {
     if (!long.ok) expect(long.error).toMatch(/22 dni/);
   });
 
+  it("błędny format daty: osobny komunikat niż powrót przed przylotem", () => {
+    const r = resolveTripTerm(quiz(), dates("2026-02-30", "2026-03-03"));
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).not.toMatch(/przed przylotem/);
+  });
+
   it("powrót przed przylotem: czytelny komunikat", () => {
     const r = resolveTripTerm(quiz(), dates("2026-12-14", "2026-12-12"));
     expect(r.ok).toBe(false);

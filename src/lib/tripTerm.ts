@@ -107,6 +107,9 @@ export function checkDateRange(
   start: string | undefined | null,
   end: string | undefined | null
 ): { ok: true; days: number } | { ok: false; error: string } {
+  if (parseUTC(start) === null || parseUTC(end) === null) {
+    return { ok: false, error: "Daty wyjazdu są nieprawidłowe. Podaj datę przylotu i datę powrotu." };
+  }
   const days = inclusiveDays(start, end);
   if (days === null) {
     return { ok: false, error: "Daty wyjazdu są nieprawidłowe: powrót nie może wypadać przed przylotem." };
@@ -194,7 +197,7 @@ export function tripTermPrompt(term: Extract<TripTerm, { ok: true }>): string {
   );
   if (term.startDate) {
     lines.push(
-      "Dni tygodnia: w niedziele część sklepów, restauracji i muzeów bywa zamknięta, w poniedziałki wiele muzeów jest nieczynnych. Gdy dzień planu wypada w takim dniu, dodaj uwagę, żeby sprawdzić godziny otwarcia."
+      "Dni tygodnia: gdy dzień planu wypada w niedzielę lub poniedziałek, dodaj uwagę, żeby sprawdzić godziny otwarcia wybranych miejsc, bo w te dni bywają zamknięte. Nie podawaj dni zamknięcia, których nie znasz."
     );
   }
   if (season === "zima") {
