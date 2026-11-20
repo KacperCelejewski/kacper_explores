@@ -58,12 +58,15 @@ const checkedDate = new Intl.DateTimeFormat("pl-PL", {
 });
 
 /** The selector and the client expiry timer remove stale quotes before presentation. */
+export const CARD_FLIGHT_SCOPE = "Sam lot, bez noclegu i wydatków na miejscu";
+
 export function cardFlightPriceCopy(quote: Pick<CardFlightPrice, "price" | "checkedAt"> | null) {
   if (!quote) {
-    return { amount: "Sprawdź w wyszukiwarce", note: "Bez aktualnej ceny" };
+    return { amount: "Sprawdź w wyszukiwarce", note: "Bez aktualnej ceny", scope: CARD_FLIGHT_SCOPE };
   }
   return {
     amount: `od ${formatFlightPLN(quote.price)}`,
     note: `sprawdzone ${checkedDate.format(quote.checkedAt)}`,
+    scope: CARD_FLIGHT_SCOPE,
   };
 }

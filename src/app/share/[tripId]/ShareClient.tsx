@@ -1,14 +1,17 @@
 "use client";
 
-import { PLAN_TOTAL_LABEL, PLAN_TOTAL_NOTE_SHARED } from "@/lib/priceTrust";
+import { PLAN_TOTAL_NOTE_SHARED } from "@/lib/priceTrust";
+import { buildPlanCostModel } from "@/lib/costModel";
+import CostBreakdown from "@/app/components/CostBreakdown";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { IconPlane, IconBed, IconFork, IconTicket, IconCheck, IconPin } from "@/app/components/Icons";
+import { IconPlane, IconCheck, IconPin } from "@/app/components/Icons";
 import type { TripPlan, DayPlan, DayActivity, DestinationRecommendation } from "@/types";
 import Link from "next/link";
 import { formatTripWhen } from "@/lib/shareOg";
-import { CREW_COPY, crewSummary, crewTotalBudget, type SharedCrew } from "@/lib/groupFlow";
+import { CREW_COPY, crewSummary, type SharedCrew } from "@/lib/groupFlow";
+import { groupSize, showGroupBudget } from "@/lib/group";
 
 const ACTIVITY_COLORS: Record<string, string> = {
   attraction: "var(--accent-light)",
@@ -106,7 +109,15 @@ export default function ShareClient() {
 
   const { plan, destination } = trip;
   const crew = crewSummary(trip.crew?.companion, trip.crew?.group);
-  const crewTotal = crewTotalBudget(plan.totalBudgetEstimate, trip.crew ?? null);
+  const people = trip.crew ? groupSize(trip.crew.group) : 1;
+  // Publiczny podgląd nie zna standardu z quizu ani ceny lotu: nie zgadujemy ani jednego, ani drugiego.
+  const costModel = buildPlanCostModel({
+    breakdown: plan.budgetBreakdown,
+    totalEstimate: plan.totalBudgetEstimate,
+    duration: plan.duration,
+    people,
+    group: !!trip.crew && showGroupBudget(trip.crew.companion, trip.crew.group),
+  });
 
   return (
     <div className="flex flex-col flex-1 pb-8">
@@ -150,46 +161,14 @@ export default function ShareClient() {
             <p className="mt-3 text-sm font-bold" style={{ color: "var(--accent)" }}>
               {CREW_COPY.shareCrewTitle}: {crew.detail}
               <span className="block text-xs font-normal mt-0.5" style={{ color: "var(--text-muted)" }}>
-                Kwoty poniżej są {CREW_COPY.perPerson}; szacunek na miejscu jest też podany {CREW_COPY.total}. Lot liczymy osobno.
+                Kwoty poniżej są {CREW_COPY.perPerson}; suma na miejscu jest też podana {CREW_COPY.total}. Lot liczymy osobno.
               </span>
             </p>
           )}
 
-          <div className="mt-4 pt-4 border-t grid grid-cols-2 gap-3" style={{ borderColor: "var(--border)" }}>
-            {[
-              { label: "Loty", value: plan.budgetBreakdown.flights, Icon: IconPlane },
-              { label: "Nocleg", value: plan.budgetBreakdown.accommodation, Icon: IconBed },
-              { label: "Jedzenie", value: plan.budgetBreakdown.food, Icon: IconFork },
-              { label: "Atrakcje", value: plan.budgetBreakdown.attractions, Icon: IconTicket },
-            ].map((item) => (
-              <div key={item.label} className="flex items-center gap-2">
-                <span aria-hidden="true" style={{ color: "var(--accent)" }}><item.Icon size={18} /></span>
-                <div>
-                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>{item.label}</p>
-                  <p className="text-sm font-semibold">{item.value}</p>
-                </div>
-              </div>
-            ))}
+          <div className="mt-4 pt-4 border-t" style={{ borderColor: "var(--border)" }}>
+            <CostBreakdown model={costModel} note={PLAN_TOTAL_NOTE_SHARED} />
           </div>
-
-          <div className="mt-3 pt-3 border-t flex items-center justify-between" style={{ borderColor: "var(--border)" }}>
-            <span className="text-sm" style={{ color: "var(--text-muted)" }}>{PLAN_TOTAL_LABEL}</span>
-            {crewTotal ? (
-              <div className="text-right">
-                <div className="text-base font-bold" style={{ color: "var(--accent)" }}>
-                  {plan.totalBudgetEstimate}
-                  <span className="text-xs font-normal ml-1" style={{ color: "var(--text-muted)" }}>{CREW_COPY.perPerson}</span>
-                </div>
-                <div className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
-                  {crewTotal} {CREW_COPY.total}
-                  <span className="text-xs ml-1">(szacunek)</span>
-                </div>
-              </div>
-            ) : (
-              <span className="text-base font-bold" style={{ color: "var(--accent)" }}>{plan.totalBudgetEstimate}</span>
-            )}
-          </div>
-        <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>{PLAN_TOTAL_NOTE_SHARED}</p>
         </motion.div>
       </div>
 

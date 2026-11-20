@@ -158,6 +158,8 @@ export interface TripPlan {
     accommodation: string;
     food: string;
     attractions: string;
+    /** Transport na miejscu (komunikacja, taksówki). Starsze plany go nie mają: kwota była tylko w sumie. */
+    transport?: string;
   };
   generalTips: string[];
   days: DayPlan[];

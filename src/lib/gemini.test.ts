@@ -104,6 +104,13 @@ describe("buildPlanPrompt", () => {
     expect(prompt).toMatch(/BEZ lotów/);
   });
 
+  it("states the cost assumptions (nights, people, standard) and asks for a transport line in the breakdown", () => {
+    const prompt = buildPlanPrompt(destination, { ...quiz, budget: "low" } as never, null);
+    expect(prompt).toMatch(/Założenia kosztów: liczba nocy: \d+, liczba osób: 1, wszystkie kwoty na osobę, standard budżetowy/);
+    expect(prompt).toContain('"transport":"np. 50-80 PLN"');
+    expect(prompt).toMatch(/suma accommodation, food, attractions i transport/);
+  });
+
   it("solo prompt keeps the unchanged companion line and has no group wording", () => {
     const prompt = buildPlanPrompt(destination, { ...quiz, companion: "solo" } as never, null);
     expect(prompt).toContain("Kto podróżuje: solo (samotny podróżnik)");
