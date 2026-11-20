@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useAppStore } from "@/lib/store";
 import type { QuizAnswers } from "@/types";
+import { normalizeFoundation } from "@/lib/quizOptions";
 import { PRICES } from "@/lib/prices";
 import DropProfileButton from "@/app/components/DropProfileButton";
 import { formatPlans } from "@/lib/formatPlans";
@@ -92,6 +93,11 @@ export default function ProfilePage() {
     if (p.month) setQuizAnswer("month", p.month);
     if (p.duration) setQuizAnswer("duration", p.duration);
     p.styles.forEach((s) => toggleStyle(s));
+    // Region, rodzaj wyjazdu i transport: tylko gdy zapisane (starsze preferencje ich nie mają).
+    const foundation = normalizeFoundation(p);
+    if (foundation.regions) setQuizAnswer("regions", foundation.regions);
+    if (foundation.tripType) setQuizAnswer("tripType", foundation.tripType);
+    if (foundation.transport) setQuizAnswer("transport", foundation.transport);
     router.push("/destinations");
   };
 

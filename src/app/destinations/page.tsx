@@ -2,6 +2,7 @@
 
 import { dropEventName, reportDropEvent, takeDropPlanAttribution } from "@/lib/drop/attribution";
 import { planGeneratedParams, trackEvent } from "@/lib/analytics";
+import { destinationCacheKey } from "@/lib/destinationCacheKey";
 import { DIRECT_ENTRY, clearEntry, currentEntry, entryStorage } from "@/lib/entryAttribution";
 import { flightLink, flightSearchLink, partnerLinkProps, type PartnerLink } from "@/lib/affiliate";
 import { useAffiliateConfig } from "@/app/components/AffiliateProvider";
@@ -721,16 +722,7 @@ export default function DestinationsPage() {
   } = useAppStore();
 
   // Klucz cache oparty na tych samych polach co serwer
-  const destCacheKey = JSON.stringify({
-    styles: quizAnswers.styles,
-    budget: quizAnswers.budget,
-    vibe: quizAnswers.vibe,
-    placeType: quizAnswers.placeType,
-    month: quizAnswers.month,
-    duration: quizAnswers.duration,
-    airports: quizAnswers.airports,
-    preferredCity: quizAnswers.preferredCity,
-  });
+  const destCacheKey = destinationCacheKey(quizAnswers);
 
   const [destinations, setDestinations] = useState<DestinationRecommendation[]>(
     cachedDestinations?.key === destCacheKey ? cachedDestinations.destinations : []

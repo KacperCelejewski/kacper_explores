@@ -1,5 +1,6 @@
 import type { QuizAnswers, DestinationRecommendation, TripPlan } from "@/types";
 import { isValidGroup } from "@/lib/group";
+import { validateFoundationFields } from "@/lib/quizOptions";
 
 const VALID_BUDGETS = new Set(["low", "medium"]);
 const VALID_STYLES = new Set(["nature", "history", "architecture", "food", "beach", "nightlife"]);
@@ -35,6 +36,8 @@ export function validateQuizAnswers(data: unknown): data is Partial<QuizAnswers>
   }
   // Brak `group` to stare dane albo solo/para; jeśli jest, musi być poprawny.
   if (d.group !== undefined && !isValidGroup(d.group)) return false;
+  // Region, rodzaj wyjazdu i transport: opcjonalne; brak pola to stary quiz.
+  if (!validateFoundationFields(d)) return false;
 
   return true;
 }

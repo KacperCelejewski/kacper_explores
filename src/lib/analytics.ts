@@ -2,6 +2,7 @@ import { loadConsent } from "./cookieConsent";
 import type { QuizAnswers } from "@/types";
 import { groupFromCompanion, groupSize } from "./group";
 import { entryEventParams, type EntryAttribution } from "./entryAttribution";
+import { normalizeFoundation } from "./quizOptions";
 
 // Google Analytics 4 — skrypt i zdarzenia dopiero po wyraźnej zgodzie z banera.
 export const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
@@ -88,12 +89,27 @@ export function purchaseFromSession(session: {
   };
 }
 
+// Parametry zdarzeń z odpowiedzi quizu: region, rodzaj wyjazdu, transport. Same klucze techniczne z zamkniętej
+// listy (np. "europa,azja"), bez danych osobowych i bez tekstu wpisanego przez użytkownika. Brak odpowiedzi
+// nie dopisuje parametru, więc zdarzenia starego quizu wyglądają jak dotąd.
+// W GA4 trzeba je zarejestrować jako wymiary własne (zakres: zdarzenie): quiz_regions, quiz_trip_type, quiz_transport.
+export function quizFoundationParams(
+  quiz: Pick<QuizAnswers, "regions" | "tripType" | "transport">,
+): { quiz_regions?: string; quiz_trip_type?: string; quiz_transport?: string } {
+  const { regions, tripType, transport } = normalizeFoundation(quiz);
+  return {
+    ...(regions ? { quiz_regions: regions.join(",") } : {}),
+    ...(tripType ? { quiz_trip_type: tripType } : {}),
+    ...(transport ? { quiz_transport: transport.join(",") } : {}),
+  };
+}
+
 // Parametry zdarzenia plan_generated; tylko liczba miejsc, bez danych osobowych.
 export function planGeneratedParams(
   city: string,
   days: number,
-  quiz: Pick<QuizAnswers, "companion" | "group">,
+  quiz: Pick<QuizAnswers, "companion" | "group"> & Partial<Pick<QuizAnswers, "regions" | "tripType" | "transport">>,
   entry?: EntryAttribution | null,
 ) {
-  return { city, days, group_size: groupSize(groupFromCompanion(quiz.companion, quiz.group)), ...entryEventParams(entry) };
+  return { city, days, group_size: groupSize(groupFromCompanion(quiz.companion, quiz.group)), ...quizFoundationParams(quiz), ...entryEventParams(entry) };
 }

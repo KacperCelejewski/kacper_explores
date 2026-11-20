@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { planGeneratedParams, purchaseAction, purchaseFromSession, rememberPurchase } from "./analytics";
+import { planGeneratedParams, quizFoundationParams, purchaseAction, purchaseFromSession, rememberPurchase } from "./analytics";
 
 function memoryStorage() {
   const map = new Map<string, string>();
@@ -99,5 +99,28 @@ describe("quizGaEventName", () => {
 
   it("zdarzenia źródła ruchu zostają from_*, bez prefiksu", () => {
     expect(quizGaEventName("from_ig_ekipa")).toBe("from_ig_ekipa");
+  });
+});
+
+describe("quizFoundationParams", () => {
+  it("stary quiz bez nowych pól nie dopisuje parametrów", () => {
+    expect(quizFoundationParams({})).toEqual({});
+    expect(quizFoundationParams({ regions: [], transport: [] })).toEqual({});
+  });
+
+  it("zapisuje klucze techniczne z zamkniętej listy", () => {
+    expect(quizFoundationParams({ regions: ["azja", "europa"], tripType: "narty", transport: ["auto", "rower"] })).toEqual({
+      quiz_regions: "europa,azja", quiz_trip_type: "narty", quiz_transport: "auto,rower",
+    });
+  });
+
+  it("odrzuca wartości spoza listy (żadnych danych od użytkownika w parametrach)", () => {
+    const dirty = { regions: ["jan.kowalski@example.com"], tripType: "mój wyjazd", transport: ["x"] } as unknown as Parameters<typeof quizFoundationParams>[0];
+    expect(quizFoundationParams(dirty)).toEqual({});
+  });
+
+  it("plan_generated dopisuje je tylko, gdy są; bez nich wygląda jak dotąd", () => {
+    expect(Object.keys(planGeneratedParams("Rzym", 4, { companion: "solo" }))).toEqual(["city", "days", "group_size"]);
+    expect(planGeneratedParams("Zakopane", 3, { companion: "friends", tripType: "narty" })).toMatchObject({ quiz_trip_type: "narty" });
   });
 });

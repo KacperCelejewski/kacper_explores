@@ -12,7 +12,8 @@ import { useAppStore } from "@/lib/store";
 import type { TravelStyle, TripDuration, TravelVibe, QuizAnswers } from "@/types";
 import { MONTH_NAMES } from "@/lib/constants";
 import { monthYearLabel, monthYearShort, upcomingMonthsByYear } from "@/lib/tripMonth";
-import { trackEvent, quizGaEventName } from "@/lib/analytics";
+import { trackEvent, quizGaEventName, quizFoundationParams } from "@/lib/analytics";
+import { normalizeFoundation } from "@/lib/quizOptions";
 import { captureEntry, entryEventParams, entryStorage, landingReferrer, type EntryAttribution } from "@/lib/entryAttribution";
 import { cityAfterLogin, quizLoginNext } from "@/lib/quizLogin";
 import { parseDropParams } from "@/lib/drop/quizParams";
@@ -204,6 +205,7 @@ function QuizPageInner() {
     trackEvent(quizGaEventName(event), {
       step, step_id: id, step_position: id ? steps.indexOf(id) + 1 : undefined,
       flow_version: "human_v1",
+      ...(event === "quiz_complete" ? quizFoundationParams(useAppStore.getState().quizAnswers) : {}),
       ...entryEventParams(entryRef.current),
     });
     void fetch("/api/track", {
@@ -295,6 +297,7 @@ function QuizPageInner() {
   };
   const handleUseSaved = () => {
     if (!savedPrefs) return;
+    const foundation = normalizeFoundation(savedPrefs);
     const answers: QuizAnswers = {
       ...quizAnswers, ...savedPrefs,
       preferredCity: quizAnswers.preferredCity,
@@ -302,6 +305,8 @@ function QuizPageInner() {
       group: savedPrefs.group,
       styles: savedPrefs.styles ?? [],
       airports: savedPrefs.airports?.length ? savedPrefs.airports : ["WRO"],
+      // Nowe pola tylko z zapisanych preferencji: starsze ich nie mają, a stan bieżący nie może ich podtrzymać.
+      regions: foundation.regions, tripType: foundation.tripType, transport: foundation.transport,
     };
     resetQuiz();
     (Object.keys(answers) as (keyof QuizAnswers)[]).forEach((key) => setQuizAnswer(key, answers[key]));

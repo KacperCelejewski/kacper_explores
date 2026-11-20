@@ -18,6 +18,29 @@ export type PlaceType = "big_city" | "charming" | "beach_sun";
 
 export type TripDuration = number; // 2–21 dni
 
+/** Dokąd na świecie. Klucze techniczne (ASCII); polskie etykiety: `src/lib/quizOptions.ts`. */
+export type Region =
+  | "europa"
+  | "ameryka_poludniowa"
+  | "ameryka_polnocna"
+  | "azja"
+  | "afryka"
+  | "bliski_wschod"
+  | "oceania";
+
+/** Rodzaj wyjazdu. Brak odpowiedzi znaczy "zwiedzanie", jak przed dodaniem tego pola. */
+export type TripType =
+  | "zwiedzanie"
+  | "wypoczynek"
+  | "narty"
+  | "gory"
+  | "plaza"
+  | "aktywny"
+  | "wieczory";
+
+/** Czym się dostajemy na miejsce. Brak odpowiedzi znaczy "samolot", jak przed dodaniem tego pola. */
+export type Transport = "samolot" | "auto" | "pociag_bus" | "rower";
+
 export interface QuizAnswers {
   budget: BudgetLevel | null;
   vibe: TravelVibe | null;
@@ -33,6 +56,12 @@ export interface QuizAnswers {
   companion: Companion | null;
   /** Skład grupy; gdy brak, wynika z `companion` */
   group?: GroupComposition;
+  /** Wybrane regiony świata; puste lub brak = obojętnie */
+  regions?: Region[];
+  /** Rodzaj wyjazdu; brak = zwiedzanie */
+  tripType?: TripType;
+  /** Środki transportu; brak = samolot */
+  transport?: Transport[];
 }
 
 /** Skład grupy: dorośli i wiek każdego dziecka (w latach) */
