@@ -146,6 +146,7 @@ export function planTravel(a: Pick<QuizAnswers, "transport" | "airports">, city:
 export function reachablePlaces(
   answers: Pick<QuizAnswers, "transport" | "airports" | "duration" | "styles">,
   limit = 24,
+  accept: (place: GroundPlace) => boolean = () => true,
 ): GroundCandidate[] {
   const modes = groundModes(answers);
   const from = originCoords(answers.airports);
@@ -154,7 +155,7 @@ export function reachablePlaces(
   const originKey = normalizePlaceName(originCityName(answers.airports) ?? "");
 
   return GROUND_PLACES.flatMap((place) => {
-    if (normalizePlaceName(place.city) === originKey) return [];
+    if (normalizePlaceName(place.city) === originKey || !accept(place)) return [];
     const travel = travelInReach(modes, from, place.coords, answers.duration);
     return travel.length ? [{ place, travel }] : [];
   })

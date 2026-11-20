@@ -1,12 +1,34 @@
 import type { QuizAnswers } from "@/types";
+import { highBudgetAvailable } from "@/lib/quizOptions";
 
-// "transport" (Czym jedziecie?) stoi po "companion"; region i rodzaj wyjazdu (P7, P8) wejdą między nimi.
-export const QUIZ_STEPS = ["companion", "transport", "vibe", "styles", "when", "departure", "budget"] as const;
+// Kolejność docelowa (uwagi 7-9): Z kim -> Dokąd (region, P7) -> Jaki wyjazd (tripType, P8) -> Czym (transport, P9)
+// -> ochota -> zainteresowania -> termin -> skąd -> budżet. "Dokąd?" stoi zaraz po "Z kim jedziesz?": kierunek to
+// najwęższe z pytań, a od niego zależy, czy budżet ma wyższy przedział. "region", "tripType" i "transport" są
+// opcjonalne (puste = obojętnie / zwiedzanie / samolot).
+export const QUIZ_STEPS = ["companion", "region", "tripType", "transport", "vibe", "styles", "when", "departure", "budget"] as const;
 export type QuizStepId = typeof QUIZ_STEPS[number];
+/** Liczba pytań w pełnym quizie: teksty na stronach biorą ją stąd, żeby nie rozjeżdżały się z quizem. */
+export const QUIZ_QUESTION_COUNT = QUIZ_STEPS.length;
 export const DROP_QUIZ_STEPS: readonly QuizStepId[] = ["companion", "vibe", "styles", "budget"];
 const LEGACY_STEPS: readonly QuizStepId[] = ["companion", "budget", "vibe", "styles", "when", "departure"];
-// Kolejność zapisana w store v5 (przed pytaniem o transport).
-const STEPS_V5: readonly QuizStepId[] = ["companion", "vibe", "styles", "when", "departure", "budget"];
+// Kolejność z zapisów w wersji 5 (bez "region" i "tripType"): indeks w localStorage odnosi się do tej listy.
+const V5_STEPS: readonly QuizStepId[] = ["companion", "vibe", "styles", "when", "departure", "budget"];
+// Kolejność z zapisów w wersji 6 (z "region", bez "tripType").
+const V6_STEPS: readonly QuizStepId[] = ["companion", "region", "vibe", "styles", "when", "departure", "budget"];
+// Kolejność z zapisów w wersji 7 (z "region" i "tripType", bez "transport").
+const V7_STEPS: readonly QuizStepId[] = ["companion", "region", "tripType", "vibe", "styles", "when", "departure", "budget"];
+// Numery kroków w analityce: dotychczasowe sześć zachowuje stare znaczenie, nowe kroki dostają kolejne numery
+// (region 6, rodzaj wyjazdu 7, transport 8) i nigdy nie przesuwają starych.
+const ANALYTICS_STEPS: readonly QuizStepId[] = [...LEGACY_STEPS, "region", "tripType", "transport"];
+
+/**
+ * Kroki do pokazania: skrócona ścieżka okazji, albo pełna. Gdy kierunek jest już wybrany (miasto z galerii),
+ * pytanie "Dokąd?" odpada, bo przeczyłoby wyborowi.
+ */
+export function quizStepsFor(opts: { drop: boolean; preferredCity?: string | null }): readonly QuizStepId[] {
+  if (opts.drop) return DROP_QUIZ_STEPS;
+  return opts.preferredCity ? QUIZ_STEPS.filter((id) => id !== "region") : QUIZ_STEPS;
+}
 
 export function quizStepIndex(id: QuizStepId): number {
   return QUIZ_STEPS.indexOf(id);
@@ -25,27 +47,37 @@ export function migrateQuizStep(index: unknown): number {
   return quizStepIndex(LEGACY_STEPS[typeof index === "number" ? index : -1] ?? "companion");
 }
 
-// Zapisany numer kroku ze store v5 na bieżący indeks: wstawienie pytania w środku nie przesuwa odpowiedzi.
+// Zapisy w wersji 5, 6 i 7 miały indeksy bez nowszych kroków; zachowujemy to samo pytanie, nie ten sam numer.
 export function migrateQuizStepV5(index: unknown): number {
-  return quizStepIndex(STEPS_V5[typeof index === "number" ? index : -1] ?? "companion");
+  return quizStepIndex(V5_STEPS[typeof index === "number" ? index : -1] ?? "companion");
 }
 
-// Keep the historic meaning of step in quiz_events and GA4 reports; new questions get the numbers after them.
+export function migrateQuizStepV6(index: unknown): number {
+  return quizStepIndex(V6_STEPS[typeof index === "number" ? index : -1] ?? "companion");
+}
+
+export function migrateQuizStepV7(index: unknown): number {
+  return quizStepIndex(V7_STEPS[typeof index === "number" ? index : -1] ?? "companion");
+}
+
+// Keep the historic meaning of step in quiz_events and GA4 reports.
 export function quizAnalyticsStep(id: QuizStepId): number {
-  const legacy = LEGACY_STEPS.indexOf(id);
-  if (legacy >= 0) return legacy;
-  return LEGACY_STEPS.length + QUIZ_STEPS.filter((step) => !LEGACY_STEPS.includes(step)).indexOf(id);
+  return ANALYTICS_STEPS.indexOf(id);
 }
 
 export function canCompleteQuizStep(id: QuizStepId, answers: QuizAnswers): boolean {
   switch (id) {
     case "companion": return answers.companion !== null;
+    case "region": return true;
     case "vibe": return answers.vibe !== null;
     case "styles": return true;
+    // Bez wyboru: zwiedzanie, jak przed dodaniem pytania
+    case "tripType": return true;
     case "transport": return true; // brak wyboru = samolot
     case "when": return answers.month !== null && answers.duration !== null;
     case "departure": return answers.airports.length > 0;
-    case "budget": return answers.budget !== null;
+    // Wyższy przedział istnieje tylko dla dalekich regionów; po zmianie regionu stary wybór przestaje wystarczać.
+    case "budget": return answers.budget !== null && (answers.budget !== "high" || highBudgetAvailable(answers.regions));
   }
 }
 

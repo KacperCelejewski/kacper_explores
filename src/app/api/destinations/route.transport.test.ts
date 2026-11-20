@@ -109,3 +109,29 @@ describe("POST /api/destinations: transport lądowy", () => {
     expect(gemini.prompts[0]).not.toContain("dopuszcza też dojazd");
   });
 });
+
+describe("POST /api/destinations: transport lądowy z regionem i rodzajem wyjazdu", () => {
+  it("region spoza zasięgu lądowego (Azja + auto): pusta lista z komunikatem, bez pytania modelu", async () => {
+    const res = await post(unique({ transport: ["auto"], regions: ["azja"] }, 2));
+    const data = await res.json();
+    expect(data.destinations).toEqual([]);
+    expect(data.note).toBeTruthy();
+    expect(gemini.prompts).toHaveLength(0);
+  });
+  it("region Europa + auto: lista w zasięgu jak bez regionu, z naszym dojazdem", async () => {
+    const res = await post(unique({ transport: ["auto"], regions: ["europa"] }, 3));
+    const data = await res.json();
+    expect(data.destinations.length).toBeGreaterThan(0);
+    expect(data.destinations.every((d: { travel?: unknown[] }) => d.travel && d.travel.length > 0)).toBe(true);
+  });
+  it("rodzaj wyjazdu narty + auto: prompt niesie blok rodzaju, a lista zostaje tylko z miejsc opisanych przez model jako narciarskie", async () => {
+    gemini.reply = JSON.stringify({ destinations: [
+      { city: "Zakopane", description: "Ośrodek narciarski z wyciągami na Kasprowym Wierchu.", highlights: ["stoki", "wyciągi", "narty"] },
+      { city: "Praga", description: "Miasto do zwiedzania.", highlights: ["Most Karola", "piwo", "Zamek"] },
+    ] });
+    const res = await post(unique({ transport: ["auto"], tripType: "narty" }, 4));
+    expect(gemini.prompts[0]).toMatch(/RODZAJ WYJAZDU: Narty/);
+    const data = await res.json();
+    expect(data.destinations.map((d: { city: string }) => d.city)).toEqual(["Zakopane"]);
+  });
+});

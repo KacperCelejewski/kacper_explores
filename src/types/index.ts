@@ -1,6 +1,7 @@
 import type { FlightPassengers } from "@/lib/group";
 
-export type BudgetLevel = "low" | "medium";
+/** low: do 1500 zł, medium: 1500–3000 zł, high: powyżej 3000 zł (tylko po wyborze dalekiego regionu), na osobę */
+export type BudgetLevel = "low" | "medium" | "high";
 
 export type Companion = "solo" | "couple" | "family" | "friends";
 
@@ -177,6 +178,8 @@ export interface TripPlan {
     accommodation: string;
     food: string;
     attractions: string;
+    /** Transport na miejscu (komunikacja, taksówki). Starsze plany go nie mają: kwota była tylko w sumie. */
+    transport?: string;
   };
   generalTips: string[];
   days: DayPlan[];
@@ -184,6 +187,10 @@ export interface TripPlan {
   startDate?: string;
   /** Środek lądowy, według którego powstał plan; brak = samolot (pozycja `budgetBreakdown.flights` to wtedy dojazd) */
   transport?: GroundTransport;
+  /** Rodzaj wyjazdu, pod który ułożono plan; brak = zwiedzanie (plany sprzed tego pola). */
+  tripType?: TripType;
+  /** Założenia, które dostał model przy liczeniu kosztów (noce, osoby, standard). Brak = plan sprzed ich zapisywania. */
+  costBasis?: { nights: number; seats: number; standard: "low" | "medium" | null };
 }
 
 export interface Trip {

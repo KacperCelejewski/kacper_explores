@@ -147,7 +147,7 @@ export default async function DealsPage({ params }: { params: Params }) {
                 <li id={deal.city_code} className="rounded-2xl p-5 scroll-mt-4" style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}>
                   <div className="flex items-baseline justify-between gap-3">
                     <h2 className="text-xl font-bold">{deal.city_name}</h2>
-                    <p className="text-xl font-bold" style={{ color: "var(--accent)" }}>{deal.price} zł</p>
+                    <p className="text-xl font-bold" style={{ color: "var(--accent)" }}>lot {deal.price} zł</p>
                   </div>
                   <p className="text-sm mt-2">{formatLocal(deal.departure_at)} → {formatLocal(deal.return_at)}</p>
                   <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>

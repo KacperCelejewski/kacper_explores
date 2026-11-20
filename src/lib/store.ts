@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { adjustPlanBudget } from "@/lib/budgetAdjust";
-import { migrateQuizStep, migrateQuizStepV5 } from "@/lib/quizSteps";
+import { migrateQuizStep, migrateQuizStepV5, migrateQuizStepV6, migrateQuizStepV7 } from "@/lib/quizSteps";
 import type { QuizAnswers, DestinationRecommendation, FlightDetails, Trip, DayPlan, DayActivity } from "@/types";
 
 
@@ -169,7 +169,7 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: "kacper-explores-store",
-      version: 6,
+      version: 8,
       onRehydrateStorage: () => (state) => {
         if (state) state.setHasHydrated(true);
       },
@@ -190,7 +190,12 @@ export const useAppStore = create<AppState>()(
         // v4: dodano opcjonalne `group`; jego brak oznacza stary zapis (solo/para), więc nic nie zmieniamy.
         // v5: budżet jest na końcu. Zachowujemy znaczenie starego kroku i wszystkie odpowiedzi.
         if (version < 5) s.currentQuizStep = migrateQuizStep(s.currentQuizStep);
-        else if (version < 6) s.currentQuizStep = migrateQuizStepV5(s.currentQuizStep);
+        // v6: nowy krok "region" po "Z kim jedziesz?", v7: "tripType" zaraz za nim, v8: "transport" po nim. Zapis z v5, v6 i v7 liczył indeksy
+        // bez nowszych kroków, więc przeliczamy na to samo pytanie (starsze zapisy przechodzą już przez
+        // migrateQuizStep, który zna aktualną listę).
+        else if (version === 5) s.currentQuizStep = migrateQuizStepV5(s.currentQuizStep);
+        else if (version === 6) s.currentQuizStep = migrateQuizStepV6(s.currentQuizStep);
+        else if (version === 7) s.currentQuizStep = migrateQuizStepV7(s.currentQuizStep);
         return s;
       },
       partialize: (state) => ({

@@ -257,7 +257,7 @@ export default function ProfilePage() {
           <div className="glass-card p-4">
             <div className="flex flex-wrap gap-2">
               {prefs.budget && (
-                <Chip label={prefs.budget === "low" ? "Backpacker" : "Komfortowy"} />
+                <Chip label={prefs.budget === "low" ? "Backpacker" : prefs.budget === "high" ? "Dalekie wyprawy" : "Komfortowy"} />
               )}
               {prefs.vibe && <Chip label={VIBE_LABELS[prefs.vibe] ?? prefs.vibe} />}
               {prefs.placeType && <Chip label={PLACE_LABELS[prefs.placeType] ?? prefs.placeType} />}

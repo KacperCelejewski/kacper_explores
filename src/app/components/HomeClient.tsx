@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { QUIZ_QUESTION_COUNT } from "@/lib/quizSteps";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import DropSignup from "@/app/components/DropSignup";
@@ -17,7 +18,7 @@ import { IconCompass, IconClock, IconBook, IconCoin } from "./Icons";
 const STEPS = [
   {
     num: "01",
-    title: "6 pytań o Was",
+    title: `${QUIZ_QUESTION_COUNT} pytań o Was`,
     desc: "Ilu Was jedzie, kiedy, jaki budżet na osobę i co lubicie robić. Zajmuje mniej niż 3 minuty.",
   },
   {
@@ -377,7 +378,7 @@ export default function HomeClient({
                 boxShadow: `0 4px 28px rgba(196,98,45,0.22)`,
               }}
             >
-              Zacznij za darmo — 6 pytań →
+              Zacznij za darmo — {QUIZ_QUESTION_COUNT} pytań →
             </Link>
           </motion.div>
         </div>

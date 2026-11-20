@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { QuizAnswers } from "@/types";
-import { QUIZ_STEPS, DROP_QUIZ_STEPS, quizStepAt, quizStepIndex, migrateQuizStep, migrateQuizStepV5, parseQuizStep, quizAnalyticsStep, canCompleteQuizStep, firstIncompleteQuizStep, resolveQuizStep } from "./quizSteps";
+import { QUIZ_STEPS, DROP_QUIZ_STEPS, QUIZ_QUESTION_COUNT, quizStepAt, quizStepIndex, quizStepsFor, migrateQuizStep, migrateQuizStepV5, migrateQuizStepV6, migrateQuizStepV7, parseQuizStep, quizAnalyticsStep, canCompleteQuizStep, firstIncompleteQuizStep, resolveQuizStep } from "./quizSteps";
 
 const empty: QuizAnswers = {
   budget: null, vibe: null, styles: [], placeType: null, month: null,
@@ -10,7 +10,8 @@ const complete: QuizAnswers = { ...empty, budget: "low", vibe: "chill", month: 1
 
 describe("human quiz navigation", () => {
   it("puts practical details after the trip idea, and budget last in both flows", () => {
-    expect(QUIZ_STEPS).toEqual(["companion", "transport", "vibe", "styles", "when", "departure", "budget"]);
+    // Kolejność docelowa: Z kim, Dokąd (P7), Jaki wyjazd (P8), Czym (P9).
+    expect(QUIZ_STEPS).toEqual(["companion", "region", "tripType", "transport", "vibe", "styles", "when", "departure", "budget"]);
     expect(DROP_QUIZ_STEPS).toEqual(["companion", "vibe", "styles", "budget"]);
     // The shortened flow still persists the canonical full-flow budget index.
     expect(quizStepAt(quizStepIndex(DROP_QUIZ_STEPS[3]))).toBe("budget");
@@ -22,21 +23,42 @@ describe("human quiz navigation", () => {
       expect(quizAnalyticsStep(id)).toBe(oldIndex);
     });
   });
+  it("keeps the trip type question optional: skipping means sightseeing, as before the question existed", () => {
+    expect(canCompleteQuizStep("tripType", empty)).toBe(true);
+    expect(canCompleteQuizStep("tripType", { ...empty, tripType: "narty" })).toBe(true);
+    expect(firstIncompleteQuizStep({ ...complete }, QUIZ_STEPS)).toBeUndefined();
+  });
+  it("gives the new questions analytics numbers after the six legacy ones", () => {
+    expect(quizAnalyticsStep("tripType")).toBe(7);
+    expect(quizAnalyticsStep("region")).toBe(6);
+    expect(quizAnalyticsStep("transport")).toBe(8);
+    expect(QUIZ_STEPS.filter((id) => id !== "tripType" && id !== "region" && id !== "transport").every((id) => quizAnalyticsStep(id) >= 0 && quizAnalyticsStep(id) <= 5)).toBe(true);
+  });
+  it("maps a step saved before the trip type question to the same question afterwards", () => {
+    const v5 = ["companion", "vibe", "styles", "when", "departure", "budget"] as const;
+    v5.forEach((id, oldIndex) => expect(quizStepAt(migrateQuizStepV5(oldIndex))).toBe(id));
+    for (const value of [undefined, null, -1, 6, 99, "2"]) expect(migrateQuizStepV5(value)).toBe(0);
+  });
+  it("maps a step saved before the trip type question (v6, with region) to the same question afterwards", () => {
+    const v6 = ["companion", "region", "vibe", "styles", "when", "departure", "budget"] as const;
+    v6.forEach((id, oldIndex) => expect(quizStepAt(migrateQuizStepV6(oldIndex))).toBe(id));
+    for (const value of [undefined, null, -1, 7, 99, "2"]) expect(migrateQuizStepV6(value)).toBe(0);
+  });
   it("transport is optional (no choice = plane), keeps its own analytics number after the legacy ones", () => {
     expect(canCompleteQuizStep("transport", empty)).toBe(true);
     expect(firstIncompleteQuizStep({ ...complete, transport: [] }, QUIZ_STEPS)).toBeUndefined();
-    expect(quizAnalyticsStep("transport")).toBe(6);
     const used = QUIZ_STEPS.map(quizAnalyticsStep);
     expect(new Set(used).size).toBe(QUIZ_STEPS.length);
     expect(DROP_QUIZ_STEPS).not.toContain("transport");
   });
-  it("moves a v5 saved position to the same question after inserting transport", () => {
-    const v5 = ["companion", "vibe", "styles", "when", "departure", "budget"] as const;
-    v5.forEach((id, oldIndex) => expect(quizStepAt(migrateQuizStepV5(oldIndex))).toBe(id));
-    for (const value of [undefined, null, -1, 6, 99, "2"]) expect(quizStepAt(migrateQuizStepV5(value))).toBe("companion");
+  it("maps a step saved before the transport question (v7, with region and trip type) to the same question afterwards", () => {
+    const v7 = ["companion", "region", "tripType", "vibe", "styles", "when", "departure", "budget"] as const;
+    v7.forEach((id, oldIndex) => expect(quizStepAt(migrateQuizStepV7(oldIndex))).toBe(id));
+    for (const value of [undefined, null, -1, 8, 99, "2"]) expect(migrateQuizStepV7(value)).toBe(0);
   });
   it("handles malformed saved positions and accepts only named edit links", () => {
     for (const value of [undefined, null, -1, 6, 999, 1.5, "4"]) expect(migrateQuizStep(value)).toBe(0);
+    for (const value of [undefined, null, -1, 6, 999, 1.5, "4"]) expect(migrateQuizStepV5(value)).toBe(0);
     expect(parseQuizStep("when")).toBe("when");
     expect(parseQuizStep("companion")).toBe("companion");
     for (const value of [null, "4", "WHEN", "<script>"]) expect(parseQuizStep(value)).toBeNull();
@@ -62,5 +84,37 @@ describe("human quiz navigation", () => {
     expect(resolveQuizStep(quizStepIndex("budget"), complete, DROP_QUIZ_STEPS)).toBe("budget");
     expect(resolveQuizStep(quizStepIndex("when"), complete, DROP_QUIZ_STEPS)).toBe("companion");
     expect(complete.group?.adults).toBe(4);
+  });
+
+  it("pytanie o region jest opcjonalne i stoi zaraz po tym, kto jedzie", () => {
+    expect(quizStepIndex("region")).toBe(quizStepIndex("companion") + 1);
+    expect(canCompleteQuizStep("region", empty)).toBe(true);
+    expect(canCompleteQuizStep("region", { ...empty, regions: ["azja"] })).toBe(true);
+    // brak odpowiedzi o region nie zatrzymuje starego quizu ani zapisanych sesji
+    expect(firstIncompleteQuizStep(complete, QUIZ_STEPS)).toBeUndefined();
+  });
+  it("liczba pytań to długość pełnego quizu, a miasto z galerii i okazje go skracają", () => {
+    expect(QUIZ_QUESTION_COUNT).toBe(QUIZ_STEPS.length);
+    expect(quizStepsFor({ drop: false })).toBe(QUIZ_STEPS);
+    expect(quizStepsFor({ drop: false, preferredCity: null })).toBe(QUIZ_STEPS);
+    expect(quizStepsFor({ drop: false, preferredCity: "Porto" })).toEqual(QUIZ_STEPS.filter((id) => id !== "region"));
+    expect(quizStepsFor({ drop: true, preferredCity: "Porto" })).toBe(DROP_QUIZ_STEPS);
+    expect(DROP_QUIZ_STEPS).not.toContain("region");
+  });
+  it("analityka: dotychczasowe numery kroków bez zmian, region dostaje 6, rodzaj wyjazdu 7, transport 8", () => {
+    expect(quizAnalyticsStep("region")).toBe(6);
+    expect(QUIZ_STEPS.filter((id) => id !== "region" && id !== "tripType" && id !== "transport").map(quizAnalyticsStep).sort()).toEqual([0, 1, 2, 3, 4, 5]);
+  });
+  it("zapis z v5 (bez kroku region) wraca do tego samego pytania", () => {
+    const v5 = ["companion", "vibe", "styles", "when", "departure", "budget"] as const;
+    v5.forEach((id, oldIndex) => expect(quizStepAt(migrateQuizStepV5(oldIndex))).toBe(id));
+  });
+  it("wyższy przedział budżetu wymaga dalekiego regionu", () => {
+    const high = { ...complete, budget: "high" as const };
+    expect(canCompleteQuizStep("budget", high)).toBe(false);
+    expect(canCompleteQuizStep("budget", { ...high, regions: ["europa"] })).toBe(false);
+    expect(canCompleteQuizStep("budget", { ...high, regions: ["europa", "ameryka_poludniowa"] })).toBe(true);
+    expect(firstIncompleteQuizStep({ ...high, regions: ["europa"] }, QUIZ_STEPS)).toBe("budget");
+    expect(canCompleteQuizStep("budget", { ...complete, budget: "medium" })).toBe(true);
   });
 });

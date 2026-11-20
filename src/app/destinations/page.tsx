@@ -13,6 +13,8 @@ import TravelBlock from "@/app/components/TravelBlock";
 import { CREW_COPY, crewBudgetNote, crewSummary, flightTotalNote } from "@/lib/groupFlow";
 import { CATALOG } from "@/lib/destinations/catalog";
 import { PartnerNote } from "@/app/components/PartnerLinks";
+import Link from "next/link";
+import { MIN_CACHED_REGION_RESULTS } from "@/lib/regionFilter";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,11 +25,15 @@ import { transportLabel } from "@/lib/quizOptions";
 import { getCityPhoto, type CityPhoto as Photo } from "@/lib/cityPhotos";
 import CityPhoto from "@/app/components/CityPhoto";
 import { formatPlans } from "@/lib/formatPlans";
+import { activeTripType, tripTypeSeason } from "@/lib/tripType";
+import { tripTypeLabel } from "@/lib/quizOptions";
 import { IconPin, IconPlane, IconCheck } from "@/app/components/Icons";
 import { cardFlightPriceCopy } from "@/lib/flights/card-price";
 import { dealPriceNotes, isDealPrice, type CardPrice } from "@/lib/flights/card-deals";
 import { buildFlightLink } from "@/lib/drop/links";
 import { useFlightPrices } from "./useFlightPrices";
+
+const REGION_EMPTY_MESSAGE = "Nie znaleźliśmy kierunków w wybranym regionie. Zmień region w quizie albo wybierz obojętnie.";
 
 interface UserStatus {
   authenticated: boolean;
@@ -396,7 +402,7 @@ function DestCard({
                 color: "#fff",
               }}
             >
-              {dest.budgetLevel === "low" ? "Tanie" : "Średnie"}
+              {dest.budgetLevel === "low" ? "Tanie" : dest.budgetLevel === "high" ? "Dalekie" : "Średnie"}
             </span>
           </div>
         </CityPhoto>
@@ -445,6 +451,7 @@ function DestCard({
               {priceCopy.amount}
             </p>
             <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{priceCopy.note}</p>
+            <p className="text-xs mt-1 font-semibold" style={{ color: "var(--text-secondary)" }}>{priceCopy.scope}</p>
             {freshQuote && (
               <>
                 {dealQuote
@@ -806,6 +813,8 @@ export default function DestinationsPage() {
   const flightPrices = useFlightPrices(destinations, quizAnswers, _hasHydrated && !loading && flying);
   const crew = crewSummary(quizAnswers.companion, quizAnswers.group);
   const budgetNote = crewBudgetNote(quizAnswers.budget, quizAnswers.companion, quizAnswers.group);
+  // Termin, który nie pasuje do rodzaju wyjazdu (np. narty w lipcu): mówimy to wprost nad listą.
+  const seasonCheck = tripTypeSeason(quizAnswers.tripType, quizAnswers.month);
 
   const [planModal, setPlanModal]       = useState<DestinationRecommendation | null>(null);
   // Daty z ceny lotu na karcie: modal podpowiada właśnie je, żeby cena i plan mówiły o tych samych dniach.
@@ -848,10 +857,18 @@ export default function DestinationsPage() {
       .then(([destData, profileData]) => {
         if (!destData.destinations?.length) {
           setNoReach(Boolean(destData.note));
-          setError(destData.note ?? "Tym razem nic nie wpadło. Spróbuj jeszcze raz — zwykle działa za drugim.");
+          setError(
+            destData.note ? destData.note : quizAnswers.regions && quizAnswers.regions.length > 0 && !quizAnswers.preferredCity
+              ? REGION_EMPTY_MESSAGE
+              : activeTripType(quizAnswers.tripType)
+                ? `Nie znaleźliśmy kierunków pasujących do wyjazdu „${tripTypeLabel(quizAnswers.tripType!).toLowerCase()}” w tym terminie. Zmień termin albo rodzaj wyjazdu.`
+                : "Tym razem nic nie wpadło. Spróbuj jeszcze raz — zwykle działa za drugim.",
+          );
         } else {
           setDestinations(destData.destinations);
-          if (!hasDestCache) {
+          // Za mało propozycji z regionu nie zapamiętujemy, tak jak serwer: kolejna próba może trafić lepiej.
+          const regionPick = !quizAnswers.preferredCity && (quizAnswers.regions?.length ?? 0) > 0;
+          if (!hasDestCache && (!regionPick || destData.destinations.length >= MIN_CACHED_REGION_RESULTS)) {
             setCachedDestinations(destCacheKey, destData.destinations);
           }
         }
@@ -978,6 +995,20 @@ export default function DestinationsPage() {
         >
           {noReach ? "Zmień środek transportu" : "Spróbuj ponownie"}
         </button>
+        {error === REGION_EMPTY_MESSAGE && (
+          <Link href="/quiz?step=region" className="text-sm font-semibold underline" style={{ color: "var(--accent)" }}>
+            Zmień region w quizie
+          </Link>
+        )}
+        {activeTripType(quizAnswers.tripType) && (
+          <button
+            onClick={() => router.push("/quiz?step=tripType")}
+            className="text-sm font-semibold underline"
+            style={{ color: "var(--accent)", minHeight: 44 }}
+          >
+            Zmień rodzaj wyjazdu
+          </button>
+        )}
       </div>
     );
   }
@@ -1029,6 +1060,23 @@ export default function DestinationsPage() {
         {!flying && destinations.length > 0 && destinations.length < 6 && (
           <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>
             W zasięgu wybranych środków mieści się tylko tyle miejsc. Dodaj samolot albo wydłuż wyjazd, żeby zobaczyć więcej.
+          </p>
+        )}
+        {seasonCheck.message && quizAnswers.tripType && (
+          <p
+            role="status"
+            className="mt-3 rounded-2xl px-4 py-3 text-sm leading-snug"
+            style={{ background: "var(--accent-light)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}
+          >
+            <strong style={{ color: "var(--text-primary)" }}>{tripTypeLabel(quizAnswers.tripType)}:</strong> {seasonCheck.message}{" "}
+            <button
+              type="button"
+              onClick={() => router.push("/quiz?step=when")}
+              className="font-semibold underline"
+              style={{ color: "var(--accent)", minHeight: 44 }}
+            >
+              Zmień termin
+            </button>
           </p>
         )}
         {crew && (

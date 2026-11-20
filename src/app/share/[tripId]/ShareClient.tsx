@@ -1,14 +1,19 @@
 "use client";
 
-import { PLAN_TOTAL_LABEL, PLAN_TOTAL_NOTE_SHARED, PLAN_TOTAL_LABEL_GROUND, PLAN_TOTAL_NOTE_SHARED_GROUND } from "@/lib/priceTrust";
+import { PLAN_TOTAL_NOTE_SHARED, PLAN_TOTAL_NOTE_SHARED_GROUND } from "@/lib/priceTrust";
+import { QUIZ_QUESTION_COUNT } from "@/lib/quizSteps";
+import { planAccessInput } from "@/lib/transport/plan";
+import { buildPlanCostModel } from "@/lib/costModel";
+import CostBreakdown from "@/app/components/CostBreakdown";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { IconPlane, IconCar, IconBed, IconFork, IconTicket, IconCheck, IconPin } from "@/app/components/Icons";
+import { IconPlane, IconCheck, IconPin } from "@/app/components/Icons";
 import type { TripPlan, DayPlan, DayActivity, DestinationRecommendation } from "@/types";
 import Link from "next/link";
 import { formatTripWhen } from "@/lib/shareOg";
-import { CREW_COPY, crewSummary, crewTotalBudget, type SharedCrew } from "@/lib/groupFlow";
+import { CREW_COPY, crewSummary, type SharedCrew } from "@/lib/groupFlow";
+import { groupSize, showGroupBudget } from "@/lib/group";
 
 const ACTIVITY_COLORS: Record<string, string> = {
   attraction: "var(--accent-light)",
@@ -106,7 +111,19 @@ export default function ShareClient() {
 
   const { plan, destination } = trip;
   const crew = crewSummary(trip.crew?.companion, trip.crew?.group);
-  const crewTotal = crewTotalBudget(plan.totalBudgetEstimate, trip.crew ?? null);
+  const people = trip.crew ? groupSize(trip.crew.group) : 1;
+  // Publiczny podgląd nie zna ceny lotu: nie zgadujemy jej.
+  const costModel = buildPlanCostModel({
+    breakdown: plan.budgetBreakdown,
+    totalEstimate: plan.totalBudgetEstimate,
+    people,
+    group: !!trip.crew && showGroupBudget(trip.crew.companion, trip.crew.group),
+    // Publiczny podgląd nie pokazuje standardu z quizu (poziomu budżetu), tylko noce i liczbę osób
+    basis: plan.costBasis ? { ...plan.costBasis, standard: null } : null,
+
+    // Plan na auto, pociąg lub bus albo rower: bez pozycji Lot, z orientacyjnym dojazdem.
+    ...planAccessInput(plan),
+  });
 
   return (
     <div className="flex flex-col flex-1 pb-8">
@@ -150,46 +167,14 @@ export default function ShareClient() {
             <p className="mt-3 text-sm font-bold" style={{ color: "var(--accent)" }}>
               {CREW_COPY.shareCrewTitle}: {crew.detail}
               <span className="block text-xs font-normal mt-0.5" style={{ color: "var(--text-muted)" }}>
-                Kwoty poniżej są {CREW_COPY.perPerson}; szacunek na miejscu jest też podany {CREW_COPY.total}. {plan.transport ? "Dojazd liczymy osobno." : "Lot liczymy osobno."}
+                Kwoty poniżej są {CREW_COPY.perPerson}; suma na miejscu jest też podana {CREW_COPY.total}. {plan.transport ? "Dojazd liczymy osobno." : "Lot liczymy osobno."}
               </span>
             </p>
           )}
 
-          <div className="mt-4 pt-4 border-t grid grid-cols-2 gap-3" style={{ borderColor: "var(--border)" }}>
-            {[
-              { label: plan.transport ? "Dojazd" : "Loty", value: plan.budgetBreakdown.flights, Icon: plan.transport ? IconCar : IconPlane },
-              { label: "Nocleg", value: plan.budgetBreakdown.accommodation, Icon: IconBed },
-              { label: "Jedzenie", value: plan.budgetBreakdown.food, Icon: IconFork },
-              { label: "Atrakcje", value: plan.budgetBreakdown.attractions, Icon: IconTicket },
-            ].map((item) => (
-              <div key={item.label} className="flex items-center gap-2">
-                <span aria-hidden="true" style={{ color: "var(--accent)" }}><item.Icon size={18} /></span>
-                <div>
-                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>{item.label}</p>
-                  <p className="text-sm font-semibold">{item.value}</p>
-                </div>
-              </div>
-            ))}
+          <div className="mt-4 pt-4 border-t" style={{ borderColor: "var(--border)" }}>
+            <CostBreakdown model={costModel} note={plan.transport ? PLAN_TOTAL_NOTE_SHARED_GROUND : PLAN_TOTAL_NOTE_SHARED} />
           </div>
-
-          <div className="mt-3 pt-3 border-t flex items-center justify-between" style={{ borderColor: "var(--border)" }}>
-            <span className="text-sm" style={{ color: "var(--text-muted)" }}>{plan.transport ? PLAN_TOTAL_LABEL_GROUND : PLAN_TOTAL_LABEL}</span>
-            {crewTotal ? (
-              <div className="text-right">
-                <div className="text-base font-bold" style={{ color: "var(--accent)" }}>
-                  {plan.totalBudgetEstimate}
-                  <span className="text-xs font-normal ml-1" style={{ color: "var(--text-muted)" }}>{CREW_COPY.perPerson}</span>
-                </div>
-                <div className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
-                  {crewTotal} {CREW_COPY.total}
-                  <span className="text-xs ml-1">(szacunek)</span>
-                </div>
-              </div>
-            ) : (
-              <span className="text-base font-bold" style={{ color: "var(--accent)" }}>{plan.totalBudgetEstimate}</span>
-            )}
-          </div>
-        <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>{plan.transport ? PLAN_TOTAL_NOTE_SHARED_GROUND : PLAN_TOTAL_NOTE_SHARED}</p>
         </motion.div>
       </div>
 
@@ -250,7 +235,7 @@ export default function ShareClient() {
             {crew ? CREW_COPY.shareStartOwn : "Ułóż swój plan"} →
           </p>
           <p className="text-xs mt-1 mb-4" style={{ color: "var(--text-muted)" }}>
-            Odpowiedz na 6 pytań, a ułożymy plan godzina po godzinie
+            Odpowiedz na {QUIZ_QUESTION_COUNT} pytań, a ułożymy plan godzina po godzinie
           </p>
           <Link
             href={crew ? "/quiz?companion=friends" : "/"}

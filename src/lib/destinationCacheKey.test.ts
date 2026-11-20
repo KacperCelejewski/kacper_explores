@@ -33,6 +33,12 @@ describe("destinationCacheKey", () => {
     expect(destinationCacheKey({ ...base, transport: ["samolot", "auto"] })).not.toBe(legacyKey(base));
   });
 
+  it("wybrane miasto wygrywa z regionem: stary region nie zmienia klucza", () => {
+    const withCity = { ...base, preferredCity: "Porto" };
+    expect(destinationCacheKey({ ...withCity, regions: ["azja"] })).toBe(destinationCacheKey(withCity));
+    expect(destinationCacheKey({ ...base, regions: ["azja"] })).not.toBe(destinationCacheKey(base));
+  });
+
   it("klucz działa też na surowym ciele żądania (serwer)", () => {
     const body = { ...base } as Record<string, unknown>;
     expect(destinationCacheKey(body)).toBe(destinationCacheKey(base));

@@ -35,6 +35,9 @@ const COUNTRY_TO_CONTINENT: Record<string, Continent> = {
   "South Korea": "Azja", "China": "Azja", "India": "Azja",
   "Maldives": "Azja", "Georgia": "Azja", "Taiwan": "Azja",
   "Hong Kong": "Azja",
+  "Bangladesz": "Azja", "Pakistan": "Azja", "Bhutan": "Azja", "Brunei": "Azja",
+  "Kirgistan": "Azja", "Tadżykistan": "Azja", "Turkmenistan": "Azja",
+  "Timor Wschodni": "Azja", "Afganistan": "Azja", "Korea Północna": "Azja",
 
   // Bliski Wschód
   "Turcja": "Bliski Wschód", "Izrael": "Bliski Wschód", "Jordania": "Bliski Wschód",
@@ -44,7 +47,7 @@ const COUNTRY_TO_CONTINENT: Record<string, Continent> = {
   "Irak": "Bliski Wschód", "Liban": "Bliski Wschód", "Syria": "Bliski Wschód",
   "Turkey": "Bliski Wschód", "Israel": "Bliski Wschód", "Jordan": "Bliski Wschód",
   "UAE": "Bliski Wschód", "Dubai": "Bliski Wschód", "Saudi Arabia": "Bliski Wschód",
-  "Qatar": "Bliski Wschód",
+  "Qatar": "Bliski Wschód", "Jemen": "Bliski Wschód", "Palestyna": "Bliski Wschód",
 
   // Ameryki
   "USA": "Ameryki", "Stany Zjednoczone": "Ameryki", "Kanada": "Ameryki",
@@ -56,7 +59,12 @@ const COUNTRY_TO_CONTINENT: Record<string, Continent> = {
   "United States": "Ameryki", "Canada": "Ameryki", "Mexico": "Ameryki", "Cuba": "Ameryki",
   "Jamaica": "Ameryki", "Costa Rica": "Ameryki", "Colombia": "Ameryki", "Brazil": "Ameryki",
   "Argentina": "Ameryki", "Bolivia": "Ameryki", "Ecuador": "Ameryki",
-  "Uruguay": "Ameryki",
+  "Uruguay": "Ameryki", "Venezuela": "Ameryki", "Paraguay": "Ameryki",
+  "Gujana": "Ameryki", "Surinam": "Ameryki", "Belize": "Ameryki", "Bahamy": "Ameryki",
+  "Barbados": "Ameryki", "Haiti": "Ameryki", "Trynidad i Tobago": "Ameryki",
+  "Portoryko": "Ameryki", "Aruba": "Ameryki", "Curaçao": "Ameryki", "Gwadelupa": "Ameryki",
+  "Martynika": "Ameryki", "Antigua i Barbuda": "Ameryki", "Saint Lucia": "Ameryki",
+  "Wyspy Dziewicze": "Ameryki", "Kajmany": "Ameryki",
 
   // Afryka
   "Maroko": "Afryka", "Egipt": "Afryka", "Tunezja": "Afryka", "Kenia": "Afryka",
@@ -66,10 +74,17 @@ const COUNTRY_TO_CONTINENT: Record<string, Continent> = {
   "Botswana": "Afryka", "Zimbabwe": "Afryka", "Uganda": "Afryka", "Rwanda": "Afryka",
   "Morocco": "Afryka", "Egypt": "Afryka", "Tunisia": "Afryka", "Kenya": "Afryka",
   "South Africa": "Afryka", "Ethiopia": "Afryka",
+  "Algieria": "Afryka", "Zambia": "Afryka", "Malawi": "Afryka", "Angola": "Afryka",
+  "Mauritius": "Afryka", "Seszele": "Afryka", "Wyspy Zielonego Przylądka": "Afryka",
+  "Republika Zielonego Przylądka": "Afryka", "Gambia": "Afryka", "Wybrzeże Kości Słoniowej": "Afryka",
+  "Kamerun": "Afryka", "Gabon": "Afryka", "Sudan": "Afryka", "Libia": "Afryka",
+  "Lesotho": "Afryka", "Eswatini": "Afryka", "Reunion": "Afryka",
 
   // Oceania
   "Australia": "Oceania", "Nowa Zelandia": "Oceania", "Fidżi": "Oceania",
   "Papua Nowa Gwinea": "Oceania", "New Zealand": "Oceania", "Fiji": "Oceania",
+  "Samoa": "Oceania", "Tonga": "Oceania", "Vanuatu": "Oceania", "Polinezja Francuska": "Oceania",
+  "Nowa Kaledonia": "Oceania", "Wyspy Cooka": "Oceania", "Wyspy Salomona": "Oceania",
 };
 
 export const CONTINENTS: Continent[] = ["Europa", "Azja", "Bliski Wschód", "Ameryki", "Afryka", "Oceania"];

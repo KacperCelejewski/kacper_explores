@@ -1,13 +1,14 @@
 import type { DestinationRecommendation, QuizAnswers, TravelStyle } from "@/types";
 import { budgetPromptLabel, VIBE_LABELS, PLACE_LABELS } from "@/lib/constants";
 import { monthYearLabel } from "@/lib/tripMonth";
+import { destinationTripTypePrompt } from "@/lib/tripType";
 import { originCityName, travelDuration, travelFor, travelModeName, type GroundCandidate } from "./index";
 import { findGroundPlace } from "./places";
 
 // Kierunki dla auta, pociągu lub busa i roweru: model wybiera TYLKO z listy miejsc w zasięgu, którą liczymy sami
 // (patrz `reachablePlaces`). Odległość i czas dopisujemy po stronie serwera, nie bierzemy ich z odpowiedzi modelu.
 
-type DestinationAnswers = Pick<QuizAnswers, "styles" | "budget" | "vibe" | "placeType" | "month" | "duration" | "airports" | "preferredCity" | "transport">;
+type DestinationAnswers = Pick<QuizAnswers, "styles" | "budget" | "vibe" | "placeType" | "month" | "duration" | "airports" | "preferredCity" | "transport" | "tripType">;
 
 const STYLES: ReadonlySet<string> = new Set<TravelStyle>(["nature", "history", "architecture", "food", "beach", "nightlife"]);
 
@@ -18,10 +19,12 @@ function candidateLine({ place, travel }: GroundCandidate): string {
 
 /** Prompt dla wyjazdu bez lotu: wybór dokładnie 6 miejsc z gotowej listy. */
 export function groundDestinationPrompt(body: Partial<DestinationAnswers>, candidates: readonly GroundCandidate[]): string {
-  const budgetLabel = budgetPromptLabel(body.budget === "medium" ? "medium" : "low", "dojazdem");
+  const budgetLabel = budgetPromptLabel(body.budget === "high" || body.budget === "medium" ? body.budget : "low", "dojazdem");
   const origin = originCityName(body.airports) ?? "miasta startu";
   const modes = [...new Set(candidates.flatMap((c) => c.travel.map((t) => travelModeName(t.mode).toLowerCase())))].join(", ");
   const count = Math.min(6, candidates.length);
+  // Rodzaj wyjazdu jak przy lotach; lista miejsc nie niesie danych o stokach, więc rozstrzyga model, a serwer sprawdza jego opis.
+  const tripBlock = destinationTripTypePrompt(body.tripType, body.month ?? null).trim();
   return `Jesteś ekspertem od budżetowych podróży z Polski. Zaproponuj DOKŁADNIE ${count} destynacji pasujących do profilu, do których da się dojechać bez samolotu.
 ${body.preferredCity ? `\nWAŻNE: Użytkownik wybrał miasto ${body.preferredCity}: jeśli jest na liście poniżej, MUSI być pierwszą rekomendacją.\n` : ""}
 PROFIL:
@@ -31,7 +34,7 @@ PROFIL:
 - Typ miejsca: ${body.placeType ? PLACE_LABELS[body.placeType] : "dowolny"}
 - Miesiąc: ${body.month ? monthYearLabel(body.month) : "dowolny"}
 - Długość: ${body.duration ? `${body.duration} dni` : "nieokreślona"}
-- Start: ${origin}, środek transportu: ${modes}
+- Start: ${origin}, środek transportu: ${modes}${tripBlock ? `\n${tripBlock}` : ""}
 
 WYBIERZ WYŁĄCZNIE Z TEJ LISTY (odległości policzyliśmy sami, nie zmieniaj ich i nie dopisuj własnych miejsc):
 ${candidates.map(candidateLine).join("\n")}
@@ -75,7 +78,13 @@ function fromCandidate(candidate: GroundCandidate, over: Record<string, unknown>
 }
 
 /** Odpowiedź modelu zawężona do listy kandydatów (nazwy bez polskich znaków i angielskie też), uzupełniona do `limit`. */
-export function reconcileGround(raw: ReadonlyArray<Record<string, unknown>>, candidates: readonly GroundCandidate[], limit = 6): DestinationRecommendation[] {
+export function reconcileGround(
+  raw: ReadonlyArray<Record<string, unknown>>,
+  candidates: readonly GroundCandidate[],
+  limit = 6,
+  // `accept`: dodatkowa kontrola wpisu modelu (np. rodzaj wyjazdu); `topUp: false` nie dopełnia listy miejscami spoza odpowiedzi.
+  options: { topUp?: boolean; accept?: (entry: Record<string, unknown>) => boolean } = {},
+): DestinationRecommendation[] {
   const byCity = new Map(candidates.map((c) => [c.place.city, c]));
   const picked = new Map<string, DestinationRecommendation>();
   for (const entry of raw) {
@@ -83,10 +92,11 @@ export function reconcileGround(raw: ReadonlyArray<Record<string, unknown>>, can
     const place = findGroundPlace(entry.city);
     const candidate = place ? byCity.get(place.city) : undefined;
     if (!candidate || picked.has(candidate.place.city)) continue;
+    if (options.accept && !options.accept(entry)) continue;
     picked.set(candidate.place.city, fromCandidate(candidate, entry));
     if (picked.size >= limit) break;
   }
-  for (const candidate of candidates) {
+  for (const candidate of options.topUp === false ? [] : candidates) {
     if (picked.size >= limit) break;
     if (!picked.has(candidate.place.city)) picked.set(candidate.place.city, fromCandidate(candidate));
   }

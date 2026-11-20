@@ -60,7 +60,7 @@ describe("dealsPriceNote", () => {
 
 describe("plan budget copy", () => {
   it("labels the estimate as excluding flights and says flights must be added", () => {
-    expect(PLAN_TOTAL_LABEL).toMatch(/bez lotów/);
+    expect(PLAN_TOTAL_LABEL).toBe("Razem na miejscu (bez lotu)");
     expect(PLAN_TOTAL_NOTE).toMatch(/Lotu tu nie wliczamy/);
     expect(PLAN_TOTAL_LABEL + PLAN_TOTAL_NOTE + PLAN_TOTAL_NOTE_SHARED).not.toContain("!");
     expect(PLAN_TOTAL_NOTE_SHARED).not.toMatch(/quiz/); // odbiorca linku nie robił quizu
@@ -68,7 +68,9 @@ describe("plan budget copy", () => {
   it("plan and shared plan show the new label, not the old 'całkowity koszt'", () => {
     for (const file of ["src/app/plan/[tripId]/page.tsx", "src/app/share/[tripId]/ShareClient.tsx"]) {
       const src = readFileSync(file, "utf8");
-      expect(src).toContain("PLAN_TOTAL_LABEL");
+      // etykiety sum i notatka pochodzą z jednego modelu kosztu (costModel) i wspólnego komponentu
+      expect(src).toContain("buildPlanCostModel");
+      expect(src).toContain("CostBreakdown");
       expect(src).toContain(file.includes("share") ? "PLAN_TOTAL_NOTE_SHARED" : "PLAN_TOTAL_NOTE");
       expect(src).not.toContain("Szacowany całkowity koszt");
       expect(src).not.toContain("koszt całkowity");

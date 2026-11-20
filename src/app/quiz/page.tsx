@@ -7,13 +7,14 @@ import { Suspense } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 import styles from "./quiz.module.css";
-import { QUIZ_STEPS, DROP_QUIZ_STEPS, quizStepIndex, parseQuizStep, resolveQuizStep, canCompleteQuizStep, firstIncompleteQuizStep, quizAnalyticsStep, type QuizStepId } from "@/lib/quizSteps";
+import { QUIZ_STEPS, quizStepsFor, quizStepIndex, parseQuizStep, resolveQuizStep, canCompleteQuizStep, firstIncompleteQuizStep, quizAnalyticsStep, type QuizStepId } from "@/lib/quizSteps";
 import { useAppStore } from "@/lib/store";
-import type { TravelStyle, TripDuration, TravelVibe, QuizAnswers, Transport } from "@/types";
+import type { TravelStyle, TripDuration, TravelVibe, QuizAnswers, Region, BudgetLevel, TripType, Transport } from "@/types";
 import { MONTH_NAMES } from "@/lib/constants";
 import { monthYearLabel, monthYearShort, upcomingMonthsByYear } from "@/lib/tripMonth";
 import { trackEvent, quizGaEventName, quizFoundationParams } from "@/lib/analytics";
-import { normalizeFoundation, TRANSPORT_OPTIONS, TRANSPORT_VALUES, transportLabel } from "@/lib/quizOptions";
+import { normalizeFoundation, effectiveRegions, highBudgetAvailable, regionLabel, REGION_OPTIONS, REGION_ANY_LABEL, REGION_ANY_HINT, TRIP_TYPE_OPTIONS, tripTypeLabel, TRANSPORT_OPTIONS, TRANSPORT_VALUES, transportLabel } from "@/lib/quizOptions";
+import { tripTypeSeason } from "@/lib/tripType";
 import { usesFlights } from "@/lib/transport";
 import { captureEntry, entryEventParams, entryStorage, landingReferrer, type EntryAttribution } from "@/lib/entryAttribution";
 import { cityAfterLogin, quizLoginNext } from "@/lib/quizLogin";
@@ -40,12 +41,15 @@ import {
   IconArrowLeft,
   IconArrowRight,
   IconCheck,
+  IconCity,
+  IconHouseSmall,
+  IconSunWave,
 } from "@/app/components/Icons";
 import type { Companion, GroupComposition } from "@/types";
 import GroupSizePicker from "@/app/components/GroupSizePicker";
 import { groupFromCompanion } from "@/lib/group";
 import { CREW_COPY, companionTrailLabel, crewBudgetTogether } from "@/lib/groupFlow";
-import { parseHomeParams, homeFriendsAnswers, homeDreamAnswers, parseHomeDream, srcEventName, keepUtmQuery } from "@/lib/homeParams";
+import { parseHomeParams, parseFoundationParams, homeFriendsAnswers, homeDreamAnswers, parseHomeDream, srcEventName, keepUtmQuery } from "@/lib/homeParams";
 
 type IconFC = React.FC<{ size?: number }>;
 
@@ -122,7 +126,7 @@ const DURATION_PRESETS: { value: number; label: string; sub?: string }[] = [
 const COMPANION_LABELS: Record<Companion, string> = {
   solo: "Sam/a", couple: "Para", family: "Rodzina", friends: "Znajomi",
 };
-const BUDGET_LABELS = { low: "Do 1500 zł / os.", medium: "1500–3000 zł / os." } as const;
+const BUDGET_LABELS: Record<BudgetLevel, string> = { low: "Do 1500 zł / os.", medium: "1500–3000 zł / os.", high: "Powyżej 3000 zł / os." };
 const VIBE_LABELS: Record<TravelVibe, string> = {
   chill: "Reset", intense: "Pełny program", social: "Towarzyski", active: "Aktywny",
 };
@@ -144,6 +148,11 @@ function answeredLabels(a: QuizAnswers, previous: readonly QuizStepId[]): string
   return previous.flatMap((id): string[] => {
     switch (id) {
       case "companion": return a.companion ? [companionTrailLabel(a.companion, a.group, COMPANION_LABELS[a.companion])] : [];
+      case "region": {
+        const regions = effectiveRegions(a);
+        return regions.length === 0 ? [] : [regions.length > 2 ? `${regions.length} regiony` : regions.map(regionLabel).join(", ")];
+      }
+      case "tripType": return a.tripType ? [tripTypeLabel(a.tripType)] : [];
       case "transport": return a.transport?.length ? [a.transport.map(transportLabel).join(", ")] : [];
       case "vibe": return a.vibe ? [VIBE_LABELS[a.vibe]] : [];
       case "styles": return a.styles.length ? [`${a.styles.length} zainteresowań`] : [];
@@ -185,7 +194,7 @@ function QuizPageInner() {
   const { quizAnswers, currentQuizStep: storeStep, setQuizAnswer, toggleStyle, setCurrentQuizStep, resetQuiz } = useAppStore();
   const dropPrefill = useMemo(() => parseDropParams(searchParams), [searchParams]);
   const homeParams = useMemo(() => parseHomeParams(searchParams), [searchParams]);
-  const steps = dropPrefill ? DROP_QUIZ_STEPS : QUIZ_STEPS;
+  const steps = quizStepsFor({ drop: Boolean(dropPrefill), preferredCity: quizAnswers.preferredCity });
   const stepId = resolveQuizStep(storeStep, quizAnswers, steps);
   const position = steps.indexOf(stepId);
   const [entryReady, setEntryReady] = useState(false);
@@ -256,10 +265,13 @@ function QuizPageInner() {
       const missing = firstIncompleteQuizStep({ ...quizAnswers, ...next }, QUIZ_STEPS);
       setCurrentQuizStep(quizStepIndex(missing ?? "budget"));
     }
+    // Rodzaj wyjazdu z adresu (?trip=narty, np. z reklamy): tylko wartość z listy; pytanie zostaje do potwierdzenia.
+    const entryTripType = dropPrefill ? undefined : parseFoundationParams(searchParams).tripType;
+    if (entryTripType) setQuizAnswer("tripType", entryTripType);
     const requested = parseQuizStep(searchParams.get("step"));
     if (requested && !dropPrefill) setCurrentQuizStep(quizStepIndex(requested));
     if (homeParams.src) track(srcEventName(homeParams.src));
-    if (homeParams.companion || homeParams.src || requested) {
+    if (homeParams.companion || homeParams.src || requested || entryTripType) {
       router.replace(`/quiz${keepUtmQuery(searchParams)}`, { scroll: false });
     }
     setEntryReady(true);
@@ -285,6 +297,15 @@ function QuizPageInner() {
     if (hasMoved) window.scrollTo({ top: 0, behavior: "instant" });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, stepId]);
+
+  // Wybrane miasto (galeria, okazje) wygrywa z regionem, a pytanie o region wtedy odpada: stary wybór nie może
+  // po cichu zawężać propozycji ani odsłaniać wyższego budżetu z powodu regionu, którego nie widać.
+  useEffect(() => {
+    if (!ready || !quizAnswers.preferredCity || !quizAnswers.regions?.length) return;
+    setQuizAnswer("regions", undefined);
+    if (quizAnswers.budget === "high") setQuizAnswer("budget", null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, quizAnswers.preferredCity, quizAnswers.regions, quizAnswers.budget]);
 
   const goTo = (id: QuizStepId) => {
     setDir(steps.indexOf(id) > position ? 1 : -1);
@@ -317,6 +338,15 @@ function QuizPageInner() {
     if (missing) goTo(missing);
     else router.push("/destinations");
   };
+  const pickRegion = (value: Region | "any") => {
+    const current = effectiveRegions(quizAnswers);
+    const next = value === "any" ? [] : current.includes(value) ? current.filter((r) => r !== value) : [...current, value];
+    // Kolejność opcji, nie kolejność klikania: ten sam wybór daje te same kierunki i ten sam klucz cache.
+    const ordered = REGION_OPTIONS.map((o) => o.value).filter((r) => next.includes(r));
+    setQuizAnswer("regions", ordered.length > 0 ? ordered : undefined);
+    // Wyższy przedział budżetu istnieje tylko dla dalekich regionów; bez nich stary wybór trzeba zrobić na nowo.
+    if (quizAnswers.budget === "high" && !highBudgetAvailable(ordered)) setQuizAnswer("budget", null);
+  };
   const pickCompanion = (value: Companion) => {
     if (quizAnswers.companion === value) return;
     setQuizAnswer("companion", value);
@@ -342,7 +372,7 @@ function QuizPageInner() {
   const flying = usesFlights(quizAnswers);
   const ctaLabel = submitting ? "Przechodzimy dalej…" : isLast
     ? quizAnswers.preferredCity ? `Zaplanuj wyjazd: ${quizAnswers.preferredCity}` : "Dobierz kierunki"
-    : stepId === "styles" && quizAnswers.styles.length === 0 ? "Pomiń to pytanie" : "Dalej";
+    : (stepId === "styles" && quizAnswers.styles.length === 0) || (stepId === "tripType" && !quizAnswers.tripType) ? "Pomiń to pytanie" : "Dalej";
 
   if (!ready) return <div className={styles.loading} role="status">Przygotowujemy quiz…</div>;
 
@@ -365,12 +395,14 @@ function QuizPageInner() {
             <motion.div key={stepId} custom={dir} variants={reducedMotion ? undefined : slideVariants}
               initial={reducedMotion ? false : "enter"} animate="center" exit="exit" transition={slideTransition}>
               {stepId === "companion" && <StepCompanion companion={quizAnswers.companion} group={quizAnswers.group} onPick={pickCompanion} onGroupChange={(group) => setQuizAnswer("group", group)} />}
+              {stepId === "region" && <StepRegion regions={effectiveRegions(quizAnswers)} plural={quizAnswers.companion !== "solo"} onPick={pickRegion} />}
+              {stepId === "tripType" && <StepTripType tripType={quizAnswers.tripType} onPick={(v) => setQuizAnswer("tripType", quizAnswers.tripType === v ? undefined : v)} />}
               {stepId === "transport" && <StepTransport transport={quizAnswers.transport} plural={quizAnswers.companion !== "solo"} onChange={(next) => setQuizAnswer("transport", next)} />}
               {stepId === "vibe" && <StepVibe vibe={quizAnswers.vibe} plural={quizAnswers.companion !== "solo"} onPick={(v) => setQuizAnswer("vibe", v)} />}
               {stepId === "styles" && <StepStyle styles={quizAnswers.styles} toggleStyle={toggleStyle} />}
-              {stepId === "when" && <StepWhen month={quizAnswers.month} setMonth={(m) => setQuizAnswer("month", m)} duration={quizAnswers.duration} setDuration={(d) => setQuizAnswer("duration", d)} />}
+              {stepId === "when" && <StepWhen tripType={quizAnswers.tripType} month={quizAnswers.month} setMonth={(m) => setQuizAnswer("month", m)} duration={quizAnswers.duration} setDuration={(d) => setQuizAnswer("duration", d)} />}
               {stepId === "departure" && <StepDeparture airports={quizAnswers.airports} setAirports={(v) => setQuizAnswer("airports", v)} flying={flying} />}
-              {stepId === "budget" && <StepBudget budget={quizAnswers.budget} flying={flying} together={(level) => crewBudgetTogether(level, quizAnswers.companion, quizAnswers.group)} onPick={(v) => setQuizAnswer("budget", v)} />}
+              {stepId === "budget" && <StepBudget budget={quizAnswers.budget} flying={flying} regions={effectiveRegions(quizAnswers)} together={(level) => crewBudgetTogether(level, quizAnswers.companion, quizAnswers.group)} onPick={(v) => setQuizAnswer("budget", v)} />}
             </motion.div>
           </AnimatePresence>
         </TitleFocusContext.Provider>
@@ -490,25 +522,70 @@ function StepCompanion({
   );
 }
 
+const TripSnowflake: IconFC = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" aria-hidden="true">
+    <path d="M12 2v20M3.3 7l17.4 10M3.3 17L20.7 7" /><path d="M9.5 3.8L12 6l2.5-2.2M9.5 20.2L12 18l2.5 2.2" />
+  </svg>
+);
+
+const TRIP_TYPE_ICONS: Record<TripType, IconFC> = {
+  zwiedzanie: IconCity,
+  wypoczynek: IconHouseSmall,
+  narty: TripSnowflake,
+  gory: IconMountain,
+  plaza: IconSunWave,
+  aktywny: IconLightning,
+  wieczory: IconMoon,
+};
+
+function StepTripType({ tripType, onPick }: { tripType: TripType | undefined; onPick: (v: TripType) => void }) {
+  return (
+    <div>
+      <StepHeader title="Jaki to wyjazd?" hint="To cel całego wyjazdu: pod niego dobieramy miejsce i plan każdego dnia. Bez wyboru układamy zwiedzanie." />
+      <div className="grid grid-cols-2 gap-3" role="group" aria-label="Wybierz rodzaj wyjazdu">
+        {TRIP_TYPE_OPTIONS.map((opt, i) => {
+          const Icon = TRIP_TYPE_ICONS[opt.value];
+          const last = i === TRIP_TYPE_OPTIONS.length - 1 && TRIP_TYPE_OPTIONS.length % 2 === 1;
+          return (
+            <OptionCard key={opt.value} className={last ? "col-span-2" : ""} selected={tripType === opt.value} onClick={() => onPick(opt.value)}>
+              <span style={{ color: tripType === opt.value ? "var(--accent)" : "var(--text-muted)" }}>
+                <Icon size={26} />
+              </span>
+              <p className="font-semibold text-[15px] mt-2">{opt.label}</p>
+              <p className="text-xs mt-0.5 leading-snug" style={{ color: "var(--text-muted)" }}>{opt.hint}</p>
+            </OptionCard>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function StepBudget({
   budget,
   flying,
+  regions,
   together,
   onPick,
 }: {
-  budget: "low" | "medium" | null;
+  budget: BudgetLevel | null;
   flying: boolean;
-  together: (level: "low" | "medium") => string | null;
-  onPick: (v: "low" | "medium") => void;
+  regions: readonly Region[];
+  together: (level: BudgetLevel) => string | null;
+  onPick: (v: BudgetLevel) => void;
 }) {
-  const opts: { value: "low" | "medium"; Icon: IconFC; label: string; desc: string }[] = [
+  const far = highBudgetAvailable(regions);
+  const opts: { value: BudgetLevel; Icon: IconFC; label: string; desc: string }[] = [
     { value: "low",    Icon: IconBackpack,  label: "Do 1500 zł",  desc: "Hostele, lokalne jedzenie, darmowe atrakcje" },
     { value: "medium", Icon: IconSuitcase,  label: "1500–3000 zł",  desc: "Apartament lub hotel, restauracje" },
+    // Wyższy przedział tylko dla dalekich regionów: tam sam lot potrafi zjeść zwykły budżet.
+    ...(far && flying ? [{ value: "high" as const, Icon: IconPlane, label: "Powyżej 3000 zł", desc: "Dalekie wyprawy: dłuższy lot, więcej dni na miejscu" }] : []),
   ];
 
   return (
     <div>
       <StepHeader title="Jaki budżet na osobę?" hint={flying ? "Za cały wyjazd: loty, noclegi i wydatki na miejscu." : "Za cały wyjazd: dojazd, noclegi i wydatki na miejscu."} />
+      {far && flying && <p className="text-xs mb-3 leading-snug" style={{ color: "var(--text-secondary)" }}>Do dalekich regionów lot potrafi kosztować więcej niż niższe przedziały, dlatego jest też wyższy. Ceny lotu pokażemy na karcie tylko, gdy je mamy; w innym razie sprawdzisz je w wyszukiwarce.</p>}
       <div className="flex flex-col gap-3" role="group" aria-label="Wybierz budżet">
         {opts.map((opt) => (
           <OptionCard key={opt.value} className="quiz-option--roomy" selected={budget === opt.value} onClick={() => onPick(opt.value)}>
@@ -529,6 +606,41 @@ function StepBudget({
           </OptionCard>
         ))}
       </div>
+    </div>
+  );
+}
+
+function StepRegion({
+  regions,
+  plural,
+  onPick,
+}: {
+  regions: readonly Region[];
+  plural: boolean;
+  onPick: (v: Region | "any") => void;
+}) {
+  const far = highBudgetAvailable(regions);
+  return (
+    <div>
+      <StepHeader
+        title={plural ? "Dokąd chcecie jechać?" : "Dokąd chcesz jechać?"}
+        hint="Wybierz jeden region albo kilka. Dobierzemy kierunki tylko stamtąd."
+      />
+      <div className="grid grid-cols-2 gap-3" role="group" aria-label="Wybierz regiony świata">
+        {REGION_OPTIONS.map((opt) => (
+          <OptionCard key={opt.value} selected={regions.includes(opt.value)} onClick={() => onPick(opt.value)}>
+            <p className="font-semibold text-[15px]">{opt.label}</p>
+            <p className="text-xs mt-0.5 leading-snug" style={{ color: "var(--text-muted)" }}>{opt.hint}</p>
+          </OptionCard>
+        ))}
+        <OptionCard className="col-span-2" selected={regions.length === 0} onClick={() => onPick("any")}>
+          <p className="font-semibold text-[15px]">{REGION_ANY_LABEL}</p>
+          <p className="text-xs mt-0.5 leading-snug" style={{ color: "var(--text-muted)" }}>{REGION_ANY_HINT}</p>
+        </OptionCard>
+      </div>
+      <p className="text-xs mt-3 leading-snug" style={{ color: "var(--text-secondary)" }} aria-live="polite">
+        {far ? "Dalekie regiony to dłuższy lot, więc przyda się więcej dni. W budżecie pojawi się wyższy przedział." : ""}
+      </p>
     </div>
   );
 }
@@ -625,8 +737,9 @@ function StepStyle({ styles, toggleStyle }: { styles: TravelStyle[]; toggleStyle
 }
 
 function StepWhen({
-  month, setMonth, duration, setDuration,
+  tripType, month, setMonth, duration, setDuration,
 }: {
+  tripType: TripType | undefined;
   month: number | null;
   setMonth: (m: number) => void;
   duration: TripDuration | null;
@@ -649,6 +762,7 @@ function StepWhen({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const season = tripTypeSeason(tripType, month);
   return (
     <div>
       <StepHeader
@@ -690,6 +804,11 @@ function StepWhen({
           </div>
         ))}
       </div>
+      {season.message && tripType && (
+        <p role="status" className="text-sm leading-snug mb-6 -mt-3" style={{ color: "var(--text-secondary)" }}>
+          <strong>{tripTypeLabel(tripType)}:</strong> {season.message}
+        </p>
+      )}
 
       {/* Duration presets */}
       <p className="text-sm font-semibold mb-2" style={{ color: "var(--text-secondary)" }}>Długość wyjazdu</p>
