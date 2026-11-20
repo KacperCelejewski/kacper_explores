@@ -500,7 +500,7 @@ function FlightModal({
   const [returnDate, setReturnDate]   = useState(priceDates?.returnDate ?? "");
   const [returnTime, setReturnTime]   = useState("");
 
-  const todayISO = new Date(Date.now() - new Date().getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
+  const [todayISO] = useState(() => new Date(Date.now() - new Date().getTimezoneOffset() * 60_000).toISOString().slice(0, 10));
   // Daty wyznaczają termin i liczbę dni planu; godziny lotu tylko dopasowują pierwszy i ostatni dzień.
   const hasDates = !!arrivalDate && !!returnDate;
   const range = hasDates ? checkDateRange(arrivalDate, returnDate) : null;
