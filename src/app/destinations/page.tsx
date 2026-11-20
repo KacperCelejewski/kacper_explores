@@ -361,7 +361,7 @@ function DestCard({
     >
       {/* Photo */}
       <div className="relative h-44 overflow-hidden">
-        <CityPhoto city={dest.city} photo={photo}>
+        <CityPhoto city={dest.city} photo={photo} sizes="(max-width: 448px) 100vw, 448px">
           {/* Gradient overlay */}
           <div
             className="absolute inset-0"

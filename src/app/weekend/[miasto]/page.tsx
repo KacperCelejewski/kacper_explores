@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import SiteNav from "@/app/components/SiteNav";
 import SiteFooter from "@/app/components/SiteFooter";
 import DropSignup from "@/app/components/DropSignup";
+import CityPhoto from "@/app/components/CityPhoto";
 import { ORIGIN_GENITIVE, formatLocal } from "@/lib/drop/email";
 import { getDealsForCity } from "@/lib/drop/read";
 import { dealsPriceNote } from "@/lib/priceTrust";
@@ -87,6 +88,11 @@ export default async function WeekendCityPage({ params }: { params: Params }) {
           <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: "var(--accent)" }}>{city.country}</p>
           <h1 className="text-3xl font-bold leading-tight">{city.city} na weekend</h1>
           <p className="text-base mt-3 leading-relaxed" style={{ color: "var(--text-muted)" }}>{city.description}</p>
+        </div>
+
+        {/* Zdjęcie z atrybucją albo ilustracja Włóczykija; ramka ma stałą wysokość, więc układ nie skacze */}
+        <div className="mb-8 rounded-2xl overflow-hidden" style={{ height: 224, border: "1px solid var(--border)" }}>
+          <CityPhoto city={city.city} width={900} sizes="(max-width: 672px) 100vw, 672px" />
         </div>
 
         {audience.length > 0 && (
