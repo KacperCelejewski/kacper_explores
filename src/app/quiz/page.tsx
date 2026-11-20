@@ -12,6 +12,7 @@ import { useAppStore } from "@/lib/store";
 import type { TravelStyle, TripDuration, TravelVibe, QuizAnswers } from "@/types";
 import { MONTH_NAMES } from "@/lib/constants";
 import { trackEvent, quizGaEventName, quizFoundationParams } from "@/lib/analytics";
+import { normalizeFoundation } from "@/lib/quizOptions";
 import { captureEntry, entryEventParams, entryStorage, landingReferrer, type EntryAttribution } from "@/lib/entryAttribution";
 import { cityAfterLogin, quizLoginNext } from "@/lib/quizLogin";
 import { parseDropParams } from "@/lib/drop/quizParams";
@@ -284,6 +285,7 @@ function QuizPageInner() {
   };
   const handleUseSaved = () => {
     if (!savedPrefs) return;
+    const foundation = normalizeFoundation(savedPrefs);
     const answers: QuizAnswers = {
       ...quizAnswers, ...savedPrefs,
       preferredCity: quizAnswers.preferredCity,
@@ -292,7 +294,7 @@ function QuizPageInner() {
       styles: savedPrefs.styles ?? [],
       airports: savedPrefs.airports?.length ? savedPrefs.airports : ["WRO"],
       // Nowe pola tylko z zapisanych preferencji: starsze ich nie mają, a stan bieżący nie może ich podtrzymać.
-      regions: savedPrefs.regions, tripType: savedPrefs.tripType, transport: savedPrefs.transport,
+      regions: foundation.regions, tripType: foundation.tripType, transport: foundation.transport,
     };
     resetQuiz();
     (Object.keys(answers) as (keyof QuizAnswers)[]).forEach((key) => setQuizAnswer(key, answers[key]));
