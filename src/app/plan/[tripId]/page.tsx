@@ -22,7 +22,7 @@ import type { DayPlan, DayActivity, TripPlan, DestinationRecommendation, QuizAns
 import { PRICES } from "@/lib/prices";
 import { PLAN_TOTAL_LABEL, PLAN_TOTAL_NOTE, PLAN_TOTAL_LABEL_GROUND, PLAN_TOTAL_NOTE_GROUND } from "@/lib/priceTrust";
 import TravelBlock from "@/app/components/TravelBlock";
-import { originCityName, planTravel, travelModeName } from "@/lib/transport";
+import { originCityName, planTravel } from "@/lib/transport";
 import { isFreeCost } from "@/lib/affiliate";
 import { groupFromCompanion, groupSize, scaleBudgetText, showGroupBudget } from "@/lib/group";
 import { CREW_COPY, crewSummary, sendPlanTitle } from "@/lib/groupFlow";
@@ -494,9 +494,6 @@ export default function PlanPage() {
         groundTravel && (
           <div className="px-5 mb-4 no-print">
             <div className="p-4 rounded-2xl" style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}>
-              <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{ color: "var(--text-muted)" }}>
-                {travelModeName(groundMode)} do {plan.city}
-              </p>
               <TravelBlock estimates={[groundTravel]} origin={originCityName(tripAirports)} city={plan.city} seats={people} />
             </div>
           </div>
