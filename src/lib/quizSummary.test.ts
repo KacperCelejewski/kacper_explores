@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { quizSummary } from "./quizSummary";
 import type { QuizAnswers } from "@/types";
 
+const NOW = new Date("2026-11-20T10:00:00Z");
 const base: QuizAnswers = {
   budget: null, vibe: null, styles: [], placeType: null,
   month: null, duration: null, airports: ["WRO"], companion: null,
@@ -9,8 +10,12 @@ const base: QuizAnswers = {
 
 describe("quizSummary", () => {
   it("pokazuje tylko to, co człowiek faktycznie odpowiedział", () => {
-    expect(quizSummary({ ...base, companion: "solo", budget: "low", month: 11, duration: 3 }))
-      .toEqual(["Sam/a", "do 1500 zł", "lis · 3 dni", "z Wrocławia"]);
+    expect(quizSummary({ ...base, companion: "solo", budget: "low", month: 11, duration: 3 }, NOW))
+      .toEqual(["Sam/a", "do 1500 zł", "lis 2026 · 3 dni", "z Wrocławia"]);
+  });
+  it("miesiąc z następnego roku pokazuje ten rok, także bez liczby dni", () => {
+    expect(quizSummary({ ...base, month: 1, duration: 4 }, NOW)).toEqual(["sty 2027 · 4 dni", "z Wrocławia"]);
+    expect(quizSummary({ ...base, month: 12 }, NOW)).toEqual(["gru 2026", "z Wrocławia"]);
   });
   it("bez odpowiedzi zostaje samo lotnisko", () => {
     expect(quizSummary(base)).toEqual(["z Wrocławia"]);

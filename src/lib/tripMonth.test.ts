@@ -5,6 +5,7 @@ import {
   resolveDepartureYear,
   resolveTripYear,
   upcomingMonths,
+  upcomingMonthsByYear,
 } from "./tripMonth";
 
 const at = (iso: string) => new Date(iso);
@@ -90,6 +91,21 @@ describe("upcomingMonths: 12 miesięcy po kolei od najbliższego", () => {
       const keys = list.map((x) => x.year * 12 + x.month);
       expect([...keys].sort((a, b) => a - b)).toEqual(keys);
     }
+  });
+});
+
+describe("upcomingMonthsByYear: nagłówki roku w pickerze", () => {
+  it("przełom roku: grudzień 2026 pod nagłówkiem 2026, styczeń 2027 pod nowym rokiem", () => {
+    expect(upcomingMonthsByYear(at("2026-11-20T10:00:00Z"))).toEqual([
+      { year: 2026, months: [11, 12] },
+      { year: 2027, months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] },
+    ]);
+  });
+
+  it("31 grudnia i 1 stycznia: jedna grupa, rok 2027", () => {
+    const expected = [{ year: 2027, months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] }];
+    expect(upcomingMonthsByYear(at("2026-12-31T12:00:00Z"))).toEqual(expected);
+    expect(upcomingMonthsByYear(at("2027-01-01T00:30:00Z"))).toEqual(expected);
   });
 });
 

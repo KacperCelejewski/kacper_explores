@@ -40,6 +40,17 @@ export function upcomingMonths(now: Date = new Date()): TripMonth[] {
     .sort((a, b) => a.year * 12 + a.month - (b.year * 12 + b.month));
 }
 
+/** Te same miesiące pogrupowane rokiem: nagłówek roku nad każdą grupą w pickerze. */
+export function upcomingMonthsByYear(now: Date = new Date()): { year: number; months: number[] }[] {
+  const groups: { year: number; months: number[] }[] = [];
+  for (const { month, year } of upcomingMonths(now)) {
+    const last = groups[groups.length - 1];
+    if (last && last.year === year) last.months.push(month);
+    else groups.push({ year, months: [month] });
+  }
+  return groups;
+}
+
 /** "grudzień 2026": pełna nazwa małą literą z rokiem. */
 export function monthYearLabel(month: number, now: Date = new Date()): string {
   return `${MONTH_NAMES[month - 1].toLowerCase()} ${resolveTripYear(month, now)}`;

@@ -4,7 +4,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { logGeminiCall } from "@/lib/geminiLog";
 import { guardAiCall } from "@/lib/aiGuard";
-import { MONTH_NAMES } from "@/lib/constants";
+import { monthYearLabel } from "@/lib/tripMonth";
 import type { QuizAnswers } from "@/types";
 
 export const maxDuration = 30;
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
   if (blocked) return blocked;
 
   const duration = quizAnswers?.duration ?? 3;
-  const month = quizAnswers?.month ? MONTH_NAMES[quizAnswers.month - 1] : "nieznany";
+  const month = quizAnswers?.month ? monthYearLabel(quizAnswers.month) : "nieznany";
   const budget = quizAnswers?.budget === "low" ? "backpacker (bardzo oszczędny)" : "komfortowy";
 
   const prompt = `Wygeneruj listę rzeczy do spakowania na ${duration}-dniowy wyjazd do ${city}, ${country}.
