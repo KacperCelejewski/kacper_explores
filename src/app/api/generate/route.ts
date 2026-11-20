@@ -5,8 +5,8 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { logGeminiCall } from "@/lib/geminiLog";
 
 export const maxDuration = 60;
-import { isValidISODate } from "@/lib/ics";
 import { buildPlanPrompt, parseNdjsonStream, validateAndFixPlan } from "@/lib/gemini";
+import { addDaysISO, dayLabel, resolveTripTerm } from "@/lib/tripTerm";
 import { checkRateLimit, LIMITS } from "@/lib/rateLimit";
 import { validateQuizAnswers, validateDestination, getClientIp } from "@/lib/validate";
 import { getUserProfile, canGenerate, isPro } from "@/lib/userProfile";
@@ -58,6 +58,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Nieprawidłowe dane wejściowe." }, { status: 400 });
   }
 
+  // Termin: zakres dat wyznacza liczbę dni planu, inaczej miesiąc + dni z quizu. Sprawdzamy przed
+  // zajęciem planu, żeby błędne daty nie kosztowały kredytu.
+  const term = resolveTripTerm(
+    quizAnswers as QuizAnswers,
+    flightDetails ?? null,
+    (destination as DestinationRecommendation).bestOffer
+  );
+  if (!term.ok) {
+    return NextResponse.json({ error: term.error, code: "INVALID_TERM" }, { status: 400 });
+  }
+
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: "Coś poszło nie tak. Spróbuj jeszcze raz — zwykle działa za drugim." }, { status: 500 });
@@ -102,9 +113,8 @@ export async function POST(req: NextRequest) {
         const genAI = new GoogleGenerativeAI(apiKey);
         const dest = destination as DestinationRecommendation;
         const quiz = quizAnswers as QuizAnswers;
-        const details = (flightDetails ?? null) as FlightDetails | null;
 
-        const prompt = buildPlanPrompt(dest, quiz, details);
+        const prompt = buildPlanPrompt(dest, quiz, term.flightDetails);
 
         // Tylko szybkie, bezthinkingowe modele — gemini-2.5-flash z thinking: true
         // i thinkingBudget: 0 to sprzeczność, która dodaje latencję bez korzyści
@@ -119,7 +129,7 @@ export async function POST(req: NextRequest) {
           return msg.includes("429") || msg.toLowerCase().includes("quota") || msg.includes("Too Many Requests");
         }
 
-        const duration = quiz.duration ?? 3;
+        const duration = term.duration;
         let plan = null;
         let lastErr: unknown;
         let usedModel = MODELS[0];
@@ -152,8 +162,13 @@ export async function POST(req: NextRequest) {
 
             const rawPlan = { ...header, days };
             plan = validateAndFixPlan(rawPlan, duration);
-            // Zapisz prawdziwą datę dnia 1, żeby eksport do kalendarza nie zgadywał.
-            if (isValidISODate(details?.arrivalDate)) plan.startDate = details?.arrivalDate;
+            // Data dnia 1 (kalendarz, nagłówek, mail przed wylotem) to data z wyboru użytkownika albo z oferty lotu, której cenę widział. Etykiety dni z dniem tygodnia:
+            // wpisujemy je sami, zamiast ufać, że model policzy kalendarz.
+            if (term.startDate) {
+              const start = term.startDate;
+              plan.startDate = start;
+              plan.days = plan.days.map((d, i) => ({ ...d, date: dayLabel(i + 1, addDaysISO(start, i)) }));
+            }
             break;
           } catch (err) {
             lastErr = err;
@@ -182,7 +197,8 @@ export async function POST(req: NextRequest) {
           country: (destination as DestinationRecommendation).country,
           flight_data: (destination as DestinationRecommendation).bestOffer,
           ai_plan_json: plan,
-          quiz_answers: quizAnswers,
+          // Zapisujemy długość i miesiąc, które faktycznie weszły do planu (zakres dat bije quiz).
+          quiz_answers: { ...quiz, duration: term.duration, month: term.month ?? quiz.month },
           destination_data: destination,
         });
         // Plan i tak trafia do użytkownika w odpowiedzi, więc plan nie wraca; błąd zostaje w logach

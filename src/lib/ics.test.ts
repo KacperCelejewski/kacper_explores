@@ -42,6 +42,20 @@ describe("generateICS", () => {
     expect(day2).toContain("DTSTART;VALUE=DATE:20260613");
   });
 
+  it("liczy dni przez przełom roku, tyle zdarzeń ile dni planu", () => {
+    const fourDays: TripPlan = {
+      ...plan,
+      duration: 4,
+      days: [1, 2, 3, 4].map((day) => ({ day, date: `Dzień ${day}`, theme: "t", activities: [] })),
+    };
+    const evs = events(generateICS(fourDays, "2026-12-30"));
+
+    expect(evs).toHaveLength(4);
+    expect(evs.map((e) => /DTSTART;VALUE=DATE:(\d+)/.exec(e)?.[1])).toEqual([
+      "20261230", "20261231", "20270101", "20270102",
+    ]);
+  });
+
   it("escapes commas in text fields", () => {
     const [day1] = events(generateICS(plan, "2026-06-12"));
 

@@ -97,9 +97,9 @@ export interface DestinationRecommendation {
 /** Manually entered flight details by the user */
 export interface FlightDetails {
   arrivalDate: string;   // "2026-06-12"
-  arrivalTime: string;   // "14:30" — local time at destination
+  arrivalTime?: string;  // "14:30" — local time at destination; brak = godzina nieznana
   returnDate: string;    // "2026-06-19"
-  returnTime: string;    // "06:00" — departure time from destination
+  returnTime?: string;   // "06:00" — departure time from destination; brak = godzina nieznana
 }
 
 export interface DayActivity {
@@ -132,7 +132,7 @@ export interface TripPlan {
   };
   generalTips: string[];
   days: DayPlan[];
-  /** Real calendar date of day 1 ("2026-11-27"), saved with the plan when the traveller gave flight dates. */
+  /** Calendar date of day 1 ("2026-11-27"): the traveller's flight dates, or the dates of the flight offer they saw. */
   startDate?: string;
 }
 
