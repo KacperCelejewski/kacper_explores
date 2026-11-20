@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { QuizAnswers } from "@/types";
-import { QUIZ_STEPS, DROP_QUIZ_STEPS, quizStepAt, quizStepIndex, migrateQuizStep, parseQuizStep, quizAnalyticsStep, canCompleteQuizStep, firstIncompleteQuizStep, resolveQuizStep } from "./quizSteps";
+import { QUIZ_STEPS, DROP_QUIZ_STEPS, quizStepAt, quizStepIndex, migrateQuizStep, migrateQuizStepV5, parseQuizStep, quizAnalyticsStep, canCompleteQuizStep, firstIncompleteQuizStep, resolveQuizStep } from "./quizSteps";
 
 const empty: QuizAnswers = {
   budget: null, vibe: null, styles: [], placeType: null, month: null,
@@ -10,7 +10,7 @@ const complete: QuizAnswers = { ...empty, budget: "low", vibe: "chill", month: 1
 
 describe("human quiz navigation", () => {
   it("puts practical details after the trip idea, and budget last in both flows", () => {
-    expect(QUIZ_STEPS).toEqual(["companion", "vibe", "styles", "when", "departure", "budget"]);
+    expect(QUIZ_STEPS).toEqual(["companion", "transport", "vibe", "styles", "when", "departure", "budget"]);
     expect(DROP_QUIZ_STEPS).toEqual(["companion", "vibe", "styles", "budget"]);
     // The shortened flow still persists the canonical full-flow budget index.
     expect(quizStepAt(quizStepIndex(DROP_QUIZ_STEPS[3]))).toBe("budget");
@@ -21,6 +21,19 @@ describe("human quiz navigation", () => {
       expect(quizStepAt(migrateQuizStep(oldIndex))).toBe(id);
       expect(quizAnalyticsStep(id)).toBe(oldIndex);
     });
+  });
+  it("transport is optional (no choice = plane), keeps its own analytics number after the legacy ones", () => {
+    expect(canCompleteQuizStep("transport", empty)).toBe(true);
+    expect(firstIncompleteQuizStep({ ...complete, transport: [] }, QUIZ_STEPS)).toBeUndefined();
+    expect(quizAnalyticsStep("transport")).toBe(6);
+    const used = QUIZ_STEPS.map(quizAnalyticsStep);
+    expect(new Set(used).size).toBe(QUIZ_STEPS.length);
+    expect(DROP_QUIZ_STEPS).not.toContain("transport");
+  });
+  it("moves a v5 saved position to the same question after inserting transport", () => {
+    const v5 = ["companion", "vibe", "styles", "when", "departure", "budget"] as const;
+    v5.forEach((id, oldIndex) => expect(quizStepAt(migrateQuizStepV5(oldIndex))).toBe(id));
+    for (const value of [undefined, null, -1, 6, 99, "2"]) expect(quizStepAt(migrateQuizStepV5(value))).toBe("companion");
   });
   it("handles malformed saved positions and accepts only named edit links", () => {
     for (const value of [undefined, null, -1, 6, 999, 1.5, "4"]) expect(migrateQuizStep(value)).toBe(0);

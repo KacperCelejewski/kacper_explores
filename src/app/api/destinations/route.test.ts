@@ -46,10 +46,10 @@ describe("POST /api/destinations: nowe pola quizu", () => {
     expect(gemini.prompts).toHaveLength(1);
   });
 
-  it("przyjmuje poprawne nowe pola, ale prompt Gemini się nie zmienia (to zakres P7-P9)", async () => {
+  it("przyjmuje poprawne nowe pola, a prompt lotów się nie zmienia (region i rodzaj to zakres P7 i P8, samolot to domyślny transport)", async () => {
     const plain = await post({ ...quiz, month: 8 });
     expect(plain.status).toBe(200);
-    const withFields = await post({ ...quiz, month: 8, regions: ["azja"], tripType: "narty", transport: ["auto"] });
+    const withFields = await post({ ...quiz, month: 8, regions: ["azja"], tripType: "narty", transport: ["samolot"] });
     expect(withFields.status).toBe(200);
     expect(gemini.prompts).toHaveLength(2);
     expect(gemini.prompts[1]).toBe(gemini.prompts[0]);

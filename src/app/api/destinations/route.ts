@@ -8,6 +8,9 @@ import { budgetPromptLabel, VIBE_LABELS, PLACE_LABELS, DESTINATION_CACHE_TTL_MS 
 import { destinationCacheKey } from "@/lib/destinationCacheKey";
 import { excludeOriginCities, originExclusionPrompt } from "@/lib/originCities";
 import { monthYearLabel } from "@/lib/tripMonth";
+import { groundModes, reachablePlaces, usesFlights } from "@/lib/transport";
+import { annotateTravel, groundDestinationPrompt, groundFallback, mixedPromptLine, NO_REACH_MESSAGE, reconcileGround } from "@/lib/transport/destinations";
+import type { QuizAnswers } from "@/types";
 import type { DestinationRecommendation, TravelStyle, TravelVibe, PlaceType } from "@/types";
 
 export const maxDuration = 30;
@@ -20,7 +23,7 @@ function cacheKey(body: Record<string, unknown>): string {
   return destinationCacheKey(body);
 }
 
-function buildPrompt(body: Record<string, unknown>): string {
+function buildPrompt(body: Record<string, unknown>, mixedExtra = ""): string {
   const styles = (body.styles as string[]) ?? [];
   const budget = (body.budget as string) ?? "low";
   const vibe = (body.vibe as string | null) ?? null;
@@ -47,7 +50,7 @@ PROFIL:
 - Miesiąc: ${monthName}
 - Długość: ${duration ? `${duration} dni` : "nieokreślona"}
 - ${originDesc}
-${originExclusionPrompt(airports)}
+${originExclusionPrompt(airports)}${mixedExtra}
 
 Zwróć tablicę JSON "destinations" z dokładnie 6 obiektami. Każdy obiekt MUSI mieć te pola:
 - city (string): nazwa miasta
@@ -109,7 +112,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ destinations: cached.data });
   }
 
-  const prompt = buildPrompt(body as Record<string, unknown>);
+  // Transport: sam samolot (i brak wyboru) działa jak dotąd; bez samolotu model wybiera z listy miejsc w zasięgu.
+  const answers = body as unknown as QuizAnswers;
+  const flying = usesFlights(answers);
+  const wantsGround = groundModes(answers).length > 0;
+  const candidates = wantsGround ? reachablePlaces(answers) : [];
+  if (!flying && candidates.length === 0) {
+    return NextResponse.json({ destinations: [], note: NO_REACH_MESSAGE });
+  }
+  const prompt = flying
+    ? buildPrompt(body as Record<string, unknown>, mixedPromptLine(candidates))
+    : groundDestinationPrompt(answers, candidates);
 
   // Szybszy model najpierw — flash-lite wystarczy do polecenia destynacji
   const MODELS = ["gemini-2.5-flash-lite", "gemini-2.5-flash"];
@@ -139,9 +152,16 @@ export async function POST(req: NextRequest) {
       const raw = Array.isArray(parsed.destinations) ? parsed.destinations : [];
       console.log(`[destinations] parsed ${raw.length} destinations`);
 
+      if (!flying) {
+        const destinations = reconcileGround(raw, candidates);
+        void logGeminiCall({ endpoint: "destinations", model: modelName, success: true });
+        destCache.set(key, { data: destinations, ts: Date.now() });
+        return NextResponse.json({ destinations });
+      }
+
       // Prompt prosi o pominięcie miast wylotu, ale model bywa nieposłuszny, więc filtrujemy też odpowiedź.
       const originAirports = (body as { airports?: string[] }).airports ?? ["WRO"];
-      const candidates: DestinationRecommendation[] = raw
+      const flightCandidates: DestinationRecommendation[] = raw
         .filter((d) => d && typeof d === "object" && d.city && d.country)
         .map((d) => ({
           city: String(d.city),
@@ -155,7 +175,7 @@ export async function POST(req: NextRequest) {
           vibes: ((d.vibes ?? []) as string[]) as TravelVibe[],
           placeTypes: ((d.placeTypes ?? []) as string[]) as PlaceType[],
         }));
-      const destinations = excludeOriginCities(candidates, originAirports);
+      const destinations = annotateTravel(excludeOriginCities(flightCandidates, originAirports), answers);
 
       void logGeminiCall({ endpoint: "destinations", model: modelName, success: true });
       destCache.set(key, { data: destinations, ts: Date.now() });
@@ -173,5 +193,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Bez lotów mamy własną listę z opisami: lepsza niż błąd, gdy model jest przeciążony.
+  if (!flying) return NextResponse.json({ destinations: groundFallback(candidates) });
   return NextResponse.json({ error: "Mamy teraz tłok. Spróbuj za minutę." }, { status: 503 });
 }

@@ -1,9 +1,12 @@
 import type { QuizAnswers } from "@/types";
 
-export const QUIZ_STEPS = ["companion", "vibe", "styles", "when", "departure", "budget"] as const;
+// "transport" (Czym jedziecie?) stoi po "companion"; region i rodzaj wyjazdu (P7, P8) wejdą między nimi.
+export const QUIZ_STEPS = ["companion", "transport", "vibe", "styles", "when", "departure", "budget"] as const;
 export type QuizStepId = typeof QUIZ_STEPS[number];
 export const DROP_QUIZ_STEPS: readonly QuizStepId[] = ["companion", "vibe", "styles", "budget"];
 const LEGACY_STEPS: readonly QuizStepId[] = ["companion", "budget", "vibe", "styles", "when", "departure"];
+// Kolejność zapisana w store v5 (przed pytaniem o transport).
+const STEPS_V5: readonly QuizStepId[] = ["companion", "vibe", "styles", "when", "departure", "budget"];
 
 export function quizStepIndex(id: QuizStepId): number {
   return QUIZ_STEPS.indexOf(id);
@@ -22,9 +25,16 @@ export function migrateQuizStep(index: unknown): number {
   return quizStepIndex(LEGACY_STEPS[typeof index === "number" ? index : -1] ?? "companion");
 }
 
-// Keep the historic meaning of step in quiz_events and GA4 reports.
+// Zapisany numer kroku ze store v5 na bieżący indeks: wstawienie pytania w środku nie przesuwa odpowiedzi.
+export function migrateQuizStepV5(index: unknown): number {
+  return quizStepIndex(STEPS_V5[typeof index === "number" ? index : -1] ?? "companion");
+}
+
+// Keep the historic meaning of step in quiz_events and GA4 reports; new questions get the numbers after them.
 export function quizAnalyticsStep(id: QuizStepId): number {
-  return LEGACY_STEPS.indexOf(id);
+  const legacy = LEGACY_STEPS.indexOf(id);
+  if (legacy >= 0) return legacy;
+  return LEGACY_STEPS.length + QUIZ_STEPS.filter((step) => !LEGACY_STEPS.includes(step)).indexOf(id);
 }
 
 export function canCompleteQuizStep(id: QuizStepId, answers: QuizAnswers): boolean {
@@ -32,6 +42,7 @@ export function canCompleteQuizStep(id: QuizStepId, answers: QuizAnswers): boole
     case "companion": return answers.companion !== null;
     case "vibe": return answers.vibe !== null;
     case "styles": return true;
+    case "transport": return true; // brak wyboru = samolot
     case "when": return answers.month !== null && answers.duration !== null;
     case "departure": return answers.airports.length > 0;
     case "budget": return answers.budget !== null;
