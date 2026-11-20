@@ -163,6 +163,8 @@ export interface TripPlan {
   days: DayPlan[];
   /** Calendar date of day 1 ("2026-11-27"): saved only when the traveller chose a date range. */
   startDate?: string;
+  /** Rodzaj wyjazdu, pod który ułożono plan; brak = zwiedzanie (plany sprzed tego pola). */
+  tripType?: TripType;
 }
 
 export interface Trip {
