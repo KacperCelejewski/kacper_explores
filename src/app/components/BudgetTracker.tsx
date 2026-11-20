@@ -12,6 +12,7 @@ interface Props {
     accommodation: string;
     food: string;
     attractions: string;
+    transport?: string;
   };
   plannedTotal: string;
 }
@@ -73,13 +74,13 @@ export default function BudgetTracker({ tripId, plannedBreakdown, plannedTotal }
               {/* Total */}
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>WYDANO (BEZ LOTÓW)</p>
+                  <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>WYDANO NA MIEJSCU (BEZ LOTU)</p>
                   <p className="text-2xl font-bold" style={{ color: overBudget ? "var(--error)" : "var(--text-primary)" }}>
                     {comparable.toLocaleString("pl-PL")} zł
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>PLAN</p>
+                  <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>PLAN NA MIEJSCU (BEZ LOTU)</p>
                   <p className="text-lg font-semibold" style={{ color: "var(--text-secondary)" }}>
                     {plannedTotal}
                   </p>
@@ -111,6 +112,7 @@ export default function BudgetTracker({ tripId, plannedBreakdown, plannedTotal }
                     : key === "accommodation" ? plannedUpperBound(plannedBreakdown.accommodation)
                     : key === "food" ? plannedUpperBound(plannedBreakdown.food)
                     : key === "attractions" ? plannedUpperBound(plannedBreakdown.attractions)
+                    : key === "transport" && plannedBreakdown.transport ? plannedUpperBound(plannedBreakdown.transport)
                     : null;
 
                   return (
@@ -120,10 +122,10 @@ export default function BudgetTracker({ tripId, plannedBreakdown, plannedTotal }
                           <Icon size={14} /> {label}
                         </span>
                         {key === "flights" ? (
-                          <span className="text-xs" style={{ color: "var(--text-muted)" }}>poza szacunkiem planu</span>
+                          <span className="text-xs" style={{ color: "var(--text-muted)" }}>poza sumą planu na miejscu</span>
                         ) : planned !== null && planned > 0 && (
                           <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-                            plan: ~{planned} zł
+                            szacunek planu: ~{planned} zł
                           </span>
                         )}
                       </div>

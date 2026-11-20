@@ -11,7 +11,7 @@ vi.stubGlobal("React", React);
 describe("messenger scene D", () => {
   it("ships the complete final frame and an accessible caption in SSR", () => {
     const html = renderToStaticMarkup(React.createElement(HomeChatAnimation));
-    for (const text of ["Ania", "Marek", "Tomek", "Kuba", "Grudniowy wyjazd", "online", "18:02", "18:03", "dostarczono", "+1", "Scenka", "Czat grupowy, dziś", "Włóczykij zbiera to tak", "Barcelona", "ok. 450 zł na osobę (szacunek)", "ok. 1 800 zł razem", "Plan na 3 dni, godzina po godzinie", HOME_ANIMATION_ALT]) expect(html).toContain(text);
+    for (const text of ["Ania", "Marek", "Tomek", "Kuba", "Grudniowy wyjazd", "online", "18:02", "18:03", "dostarczono", "+1", "Scenka", "Czat grupowy, dziś", "Włóczykij zbiera to tak", "Barcelona", "ok. 450 zł na osobę, bez lotu (szacunek)", "ok. 1 800 zł razem", "Plan na 3 dni, godzina po godzinie", HOME_ANIMATION_ALT]) expect(html).toContain(text);
     expect(html).not.toContain('hidden=""');
     expect(html).not.toContain('<style'); // Safari: no runtime CSS / keyframes in body.
     expect(html).toContain('<noscript><link rel="stylesheet" href="/home-chat-static.css"/></noscript>');

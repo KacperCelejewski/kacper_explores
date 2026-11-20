@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { FLIGHT_CACHE_TTL_MS } from "@/lib/constants";
 import { FORBIDDEN_COPY } from "@/lib/homeCopy";
 import { flightSearchLink } from "@/lib/affiliate";
-import { cardFlightPriceCopy, formatFlightPLN, selectCardFlightPrice, type CachedFlightPair } from "./card-price";
+import { CARD_FLIGHT_SCOPE, cardFlightPriceCopy, formatFlightPLN, selectCardFlightPrice, type CachedFlightPair } from "./card-price";
 import type { RealFlight } from "./rapidapi";
 
 const now = Date.parse("2026-11-15T23:30:00Z");
@@ -30,7 +30,7 @@ describe("destination card price", () => {
   it("uses no amount for missing/empty cache, without inventing an estimate", () => {
     for (const entries of [[], [{ ...pair, flights: [] }], [{ ...pair, expiresAt: now - 1 }]]) {
       expect(cardFlightPriceCopy(selectCardFlightPrice(entries, solo, now))).toEqual({
-        amount: "Sprawdź w wyszukiwarce", note: "Bez aktualnej ceny",
+        amount: "Sprawdź w wyszukiwarce", note: "Bez aktualnej ceny", scope: CARD_FLIGHT_SCOPE,
       });
     }
   });
@@ -63,8 +63,10 @@ describe("destination card price", () => {
   it("formats Polish PLN and labels the API quote with the Warsaw checked date", () => {
     expect(formatFlightPLN(12345.6).replace(/\s/g, " ")).toBe("12 346 zł");
     const copy = cardFlightPriceCopy(selectCardFlightPrice([pair], solo, now));
-    expect(copy).toEqual({ amount: "od 421 zł", note: "sprawdzone 16.11" });
-    for (const pattern of FORBIDDEN_COPY) expect(copy.amount + " " + copy.note).not.toMatch(pattern);
+    expect(copy).toEqual({ amount: "od 421 zł", note: "sprawdzone 16.11", scope: CARD_FLIGHT_SCOPE });
+    // karta mówi wprost, że kwota to sam lot (nie suma wyjazdu)
+    expect(copy.scope).toBe("Sam lot, bez noclegu i wydatków na miejscu");
+    for (const pattern of FORBIDDEN_COPY) expect(copy.amount + " " + copy.note + " " + copy.scope).not.toMatch(pattern);
     expect(copy.amount).not.toMatch(/najtań|najtaniej|prawdziw|szacunek/i);
   });
 

@@ -88,9 +88,10 @@ export function buildShareOgModel(row: ShareOgRow | null | undefined): ShareOgMo
   const together = crew ? crewTotalBudget(perPerson, crew) : null;
 
   let budgetLine: string | null = null;
-  // Szacunek planu nie obejmuje lotów (prompt liczy nocleg, jedzenie, atrakcje i transport na miejscu)
-  if (perPerson && together) budgetLine = `${perPerson} ${CREW_COPY.perPerson}, ${CREW_COPY.total} ${together}, bez lotów`;
-  else if (perPerson) budgetLine = `${perPerson}, bez lotów`;
+  // Szacunek planu nie obejmuje lotu (prompt liczy nocleg, jedzenie, atrakcje i transport na miejscu):
+  // ta sama etykieta co "Razem na miejscu (bez lotu)" na stronie planu.
+  if (perPerson && together) budgetLine = `${perPerson} ${CREW_COPY.perPerson}, ${CREW_COPY.total} ${together} (na miejscu, bez lotu)`;
+  else if (perPerson) budgetLine = `${perPerson} na miejscu, bez lotu`;
 
   return {
     city,

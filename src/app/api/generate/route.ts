@@ -7,6 +7,7 @@ import { logGeminiCall } from "@/lib/geminiLog";
 export const maxDuration = 60;
 import { buildPlanPrompt, parseNdjsonStream, validateAndFixPlan } from "@/lib/gemini";
 import { addDaysISO, dayLabel, resolveTripTerm } from "@/lib/tripTerm";
+import { costBasisFor } from "@/lib/costModel";
 import { checkRateLimit, LIMITS } from "@/lib/rateLimit";
 import { validateQuizAnswers, validateDestination, getClientIp } from "@/lib/validate";
 import { getUserProfile, canGenerate, isPro } from "@/lib/userProfile";
@@ -165,6 +166,8 @@ export async function POST(req: NextRequest) {
               plan.startDate = start;
               plan.days = plan.days.map((d, i) => ({ ...d, date: dayLabel(i + 1, addDaysISO(start, i)) }));
             }
+            // Założenia kosztów, które dostał model: strona planu pokazuje je pod kwotą
+            plan.costBasis = costBasisFor(quiz, plan.duration);
             break;
           } catch (err) {
             lastErr = err;

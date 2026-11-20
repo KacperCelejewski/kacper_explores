@@ -34,7 +34,7 @@ describe("buildShareOgModel", () => {
 
   it("plan solo: daty i budżet, bez ekipy", () => {
     const m = buildShareOgModel({ ...base, quiz_answers: { companion: "solo" } });
-    expect(m).toMatchObject({ city: "Budapeszt", when: "27–29 listopada 2026", crewLine: null, budgetLine: "ok. 1 200 zł, bez lotów" });
+    expect(m).toMatchObject({ city: "Budapeszt", when: "27–29 listopada 2026", crewLine: null, budgetLine: "ok. 1 200 zł na miejscu, bez lotu" });
   });
 
   it("ekipa znajomych: skład i koszt na osobę oraz razem", () => {

@@ -70,7 +70,7 @@ describe("homepage server-rendered content", () => {
       expect(html).toContain("home-destinations");
       const hero = html.match(/<section class="home-hero">([\s\S]*?)<\/section>/)?.[1];
       expect(hero).toContain("home-chat-frame");
-      expect(hero).toContain("ok. 450 zł na osobę (szacunek)");
+      expect(hero).toContain("ok. 450 zł na osobę, bez lotu (szacunek)");
       expect(hero).toContain("Przykład, nie Wasz wyjazd");
       expect(hero).not.toContain("home-poster-art");
       expect(html).not.toContain("hero-hop");

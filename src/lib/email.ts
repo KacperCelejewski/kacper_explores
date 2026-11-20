@@ -70,14 +70,14 @@ function airportsLabel(airports: string[]): string {
 export function dropConfirmationMail(verifyUrl: string, opts: { airports: string[]; maxPrice: number }) {
   const subject = "Potwierdź zapis na czwartkowy zrzut";
   const where = airportsLabel(opts.airports);
-  const preheader = `Co czwartek jeden mail z maksymalnie 3 wyjazdami z ${where} do ${opts.maxPrice} zł.`;
+  const preheader = `Co czwartek jeden mail z maksymalnie 3 wyjazdami z ${where} (lot w obie strony do ${opts.maxPrice} zł).`;
   const html = mailShell({
     title: subject,
     preheader,
     kicker: "Czwartkowy zrzut",
     heading: "Potwierdź zapis na czwartkowy zrzut",
     content:
-      mailParagraph(`Co czwartek dostaniesz jeden mail z maksymalnie 3 wyjazdami z ${esc(where)} do ${esc(opts.maxPrice)} zł. Wypiszesz się w każdej chwili.`) +
+      mailParagraph(`Co czwartek dostaniesz jeden mail z maksymalnie 3 wyjazdami z ${esc(where)} (lot w obie strony do ${esc(opts.maxPrice)} zł). Wypiszesz się w każdej chwili.`) +
       mailParagraph(`Na start dorzucamy <strong>kod na 10% zniżki</strong> na Pro Roczny. Odbierzesz go po potwierdzeniu.`) +
       `<div style="margin:8px 0 20px;">${mailButton(verifyUrl, "Potwierdź zapis")}</div>` +
       mailParagraph(`Link jest ważny 48 godzin. Jeśli to nie Ty, zignoruj tę wiadomość: bez potwierdzenia zrzut nie ruszy.`, { muted: true, size: 14 }) +
@@ -87,7 +87,7 @@ export function dropConfirmationMail(verifyUrl: string, opts: { airports: string
   const text = [
     "Potwierdź zapis na czwartkowy zrzut",
     "",
-    `Co czwartek dostaniesz jeden mail z maksymalnie 3 wyjazdami z ${where} do ${opts.maxPrice} zł. Wypiszesz się w każdej chwili.`,
+    `Co czwartek dostaniesz jeden mail z maksymalnie 3 wyjazdami z ${where} (lot w obie strony do ${opts.maxPrice} zł). Wypiszesz się w każdej chwili.`,
     "Na start dorzucamy kod na 10% zniżki na Pro Roczny. Odbierzesz go po potwierdzeniu.",
     "",
     `Potwierdź zapis: ${verifyUrl}`,

@@ -47,7 +47,7 @@ export default function HomeDreams() {
           <h2 id="home-destinations-heading">Ekipa jest. <em>Tylko dokąd?</em></h2>
         </div>
         <p id="home-dreams-note">Zmień budżet i liczbę osób, zobacz, jak reagują karty.
-          Wszystkie kwoty to umowne koszty całego wyjazdu. To przykład, nie oferta ani wyszukiwanie lotów.
+          Wszystkie kwoty to umowne koszty całego wyjazdu: lot, nocleg, jedzenie i atrakcje razem. To przykład, nie oferta ani wyszukiwanie lotów.
           Kartę można sprawdzić w quizie: zaczyna się od jej kierunku, wybranej liczby osób i przedziału budżetu.</p>
       </div>
 
@@ -87,7 +87,7 @@ export default function HomeDreams() {
               <h3>{city}</h3>
               <p>{reason}</p>
               <p className="home-dream-card-price"><strong>{pln(cost)}</strong> / os.<br />{pln(total)} razem</p>
-              <p className="home-dreams-note">Umowny koszt wyjazdu, nie oferta.</p>
+              <p className="home-dreams-note">Umowny koszt całego wyjazdu z lotem, nie oferta.</p>
               <p className="home-dreams-note" id={`home-dream-hint-${city}`}>
                 W quizie: {city}, {people} os., przedział budżetu: {BUDGET_PER_PERSON[dreamBudgetLevel(budget)]} na osobę.
               </p>
