@@ -11,9 +11,14 @@ const ALL_OFF: Record<FeatureKey, boolean> = {
 const strings = (): string[] => Object.values(HOME) as string[];
 
 describe("HOME", () => {
-  it("ma nagłówek zgodny z briefem", () => {
-    expect(HOME.h1).toBe("Wyjazd ze znajomymi: dokąd, za ile i jaki plan.");
+  it("ma nagłówek zgodny z bio na Instagramie (pytanie, bez wykrzyknika)", () => {
+    expect(HOME.h1).toBe("Brakuje Ci czasu na organizację wyjazdu?");
     expect(HOME.h1.length).toBeLessThanOrEqual(48);
+  });
+
+  it("słowa kluczowe poprzedniego H1 zostają w nagłówku sekcji pod hero", () => {
+    expect(HOME.lead).toBe("Wyjazd ze znajomymi: dokąd, za ile i jaki plan.");
+    expect(HOME.lead).toBe(`${META.title}.`);
   });
 
   it("podtytuł bez włączonych funkcji nie obiecuje części 2–6", () => {

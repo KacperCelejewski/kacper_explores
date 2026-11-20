@@ -155,28 +155,8 @@ export default function HomeClient({
           §1  HERO — two paths and the group chat story
           ════════════════════════════════════════════════════════════════════ */}
       <section className="home-hero">
-        <div className="home-container home-hero-grid">
-
-        {/* ── Content ── */}
-        <div className="home-hero-copy">
-          <motion.p
-            initial={false}
-            style={{
-              display: "inline-block",
-              background: "var(--accent)",
-              color: "white",
-              borderRadius: 999,
-              padding: "6px 14px",
-              fontSize: 12,
-              fontWeight: 700,
-              marginBottom: 12,
-              letterSpacing: "0.02em",
-            }}
-          >
-            {HOME.badge}
-          </motion.p>
-
-          {/* Headline — Cormorant Garamond */}
+        {/* Pierwszy ekran: tylko H1 i przyciski do quizu. Cała reszta jest niżej, w DOM-ie, nie schowana CSS-em. */}
+        <div className="home-container home-hero-first">
           <motion.h1 className="home-title"
             initial={false}
             style={{
@@ -185,25 +165,11 @@ export default function HomeClient({
               fontWeight: 700,
               color: "var(--text-primary)",
               letterSpacing: "-0.03em",
-              marginBottom: 12,
             }}
           >
             {HOME.h1}
           </motion.h1>
 
-          <motion.p className="home-subtitle"
-            initial={false}
-            style={{
-              color: "var(--text-secondary)",
-              fontSize: 15,
-              lineHeight: 1.5,
-              marginBottom: 16,
-            }}
-          >
-            {homeSubtitle()}
-          </motion.p>
-
-          {/* CTAs */}
           <motion.div className="home-hero-actions"
             initial={false}
           >
@@ -239,6 +205,36 @@ export default function HomeClient({
               {HOME.ctaSolo}
             </Link>
           </motion.div>
+        </div>
+
+        <div className="home-container home-hero-grid">
+        {/* ── Pod zgięciem: opis, mikrokopia i linki pomocnicze obok animacji ── */}
+        <div className="home-hero-copy">
+          <motion.h2 className="home-lead"
+            initial={false}
+            style={{
+              fontFamily: "var(--font-heading)",
+              lineHeight: 1.08,
+              fontWeight: 700,
+              color: "var(--text-primary)",
+              letterSpacing: "-0.025em",
+              marginBottom: 12,
+            }}
+          >
+            {HOME.lead}
+          </motion.h2>
+
+          <motion.p className="home-subtitle"
+            initial={false}
+            style={{
+              color: "var(--text-secondary)",
+              fontSize: 15,
+              lineHeight: 1.5,
+              marginBottom: 16,
+            }}
+          >
+            {homeSubtitle()}
+          </motion.p>
 
           <motion.p className="home-micro"
             initial={false}

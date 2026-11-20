@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import HomePage from "../page";
 import SiteFooter from "./SiteFooter";
 import { getDealsForOrigin } from "@/lib/drop/read";
-import { HOME } from "@/lib/homeCopy";
+import { HOME, homeSubtitle } from "@/lib/homeCopy";
 
 vi.mock("@/lib/drop/read", () => ({
   getCitiesWithDeals: vi.fn(async () => []),
@@ -41,6 +41,27 @@ describe("homepage server-rendered content", () => {
       expect(quizHrefs.filter((href) => href === HOME.ctaSoloHref)).toHaveLength(2);
       expect(html).toContain(HOME.h1);
       expect(html).toContain(HOME.micro);
+      expect(html.match(/<h1\b/g)).toHaveLength(1);
+
+      // Pierwszy ekran: tylko H1 i dwa przyciski, bez znaczka, podtytułu, mikrokopii i linków pomocniczych
+      const first = html.match(/<div class="[^"]*home-hero-first[^"]*">([\s\S]*?)<\/div><div class="home-container home-hero-grid">/)?.[1];
+      expect(first).toBeDefined();
+      expect(first).toContain(`>${HOME.h1}</h1>`);
+      expect([...first!.matchAll(/<a\b[^>]*href="([^"]*)"/g)].map((m) => m[1].replaceAll("&amp;", "&")))
+        .toEqual([HOME.ctaTeamHref, HOME.ctaSoloHref]);
+      expect(first).not.toContain("<p");
+      expect(first).not.toContain(HOME.micro);
+      expect(first).not.toContain("#zrzut");
+
+      // Reszta tekstu hero (słowa kluczowe, podtytuł, mikrokopia, linki) jest w DOM-ie pod zgięciem, nie schowana CSS-em
+      const rest = html.match(/<div class="home-container home-hero-grid">([\s\S]*?)<\/section>/)?.[1];
+      expect(rest).toContain(`>${HOME.lead}</h2>`);
+      expect(rest).toContain(homeSubtitle());
+      expect(rest).toContain(HOME.micro);
+      expect(rest).toContain(`href="${HOME.quickHref}"`);
+      expect(rest).toContain(`href="${HOME.dropHref}"`);
+      expect(rest).toContain("home-chat-frame");
+      expect(html).not.toContain("Dla ekipy i dla tych, co jadą sami");
       expect(html).toContain("home-destinations");
       const hero = html.match(/<section class="home-hero">([\s\S]*?)<\/section>/)?.[1];
       expect(hero).toContain("home-chat-frame");
