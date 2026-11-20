@@ -24,6 +24,10 @@ describe("validateQuizAnswers", () => {
     expect(validateQuizAnswers({ budget: "low", airports: ["WRO"] })).toBe(true);
   });
 
+  it("accepts the high budget level (shown only for far regions)", () => {
+    expect(validateQuizAnswers({ budget: "high", regions: ["ameryka_poludniowa"] })).toBe(true);
+  });
+
   it("accepts a partial quiz", () => {
     expect(validateQuizAnswers({ budget: "medium" })).toBe(true);
   });

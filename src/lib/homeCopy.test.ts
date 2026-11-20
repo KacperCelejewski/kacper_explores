@@ -1,4 +1,5 @@
 import fs from "fs";
+import { QUIZ_QUESTION_COUNT } from "./quizSteps";
 import path from "path";
 import { describe, expect, it } from "vitest";
 import { FORBIDDEN_COPY, HOME, META, homeSubtitle } from "./homeCopy";
@@ -63,7 +64,7 @@ describe("META", () => {
   });
 
   it("opis wymienia 6 pytań, plan godzina po godzinie i 7 polskich lotnisk", () => {
-    expect(META.description).toMatch(/6 pytań/);
+    expect(META.description).toContain(`${QUIZ_QUESTION_COUNT} pytań`);
     expect(META.description).toMatch(/plan godzina po godzinie/);
     expect(META.description).toMatch(/7 polskich lotnisk/);
   });

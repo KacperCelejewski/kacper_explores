@@ -1,4 +1,5 @@
 import { PRICES } from "@/lib/prices";
+import { QUIZ_QUESTION_COUNT } from "@/lib/quizSteps";
 
 export const FAQS = [
   {
@@ -15,7 +16,7 @@ export const FAQS = [
   },
   {
     q: "Jak działa planowanie podróży z AI?",
-    a: "Odpowiadasz na 6 krótkich pytań: budżet, styl, termin, kto jedzie. Na tej podstawie dostajesz plan godzina po godzinie, od śniadania po kolację, z konkretnymi miejscami, trasami w Google Maps i trikami, jak wydać mniej.",
+    a: `Odpowiadasz na ${QUIZ_QUESTION_COUNT} krótkich pytań: kto jedzie, dokąd, budżet, styl, termin. Na tej podstawie dostajesz plan godzina po godzinie, od śniadania po kolację, z konkretnymi miejscami, trasami w Google Maps i trikami, jak wydać mniej.`,
   },
   {
     q: "Skąd mogę planować wyjazd — tylko z Wrocławia?",

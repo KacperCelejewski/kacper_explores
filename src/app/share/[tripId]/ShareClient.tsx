@@ -1,6 +1,7 @@
 "use client";
 
 import { PLAN_TOTAL_NOTE_SHARED } from "@/lib/priceTrust";
+import { QUIZ_QUESTION_COUNT } from "@/lib/quizSteps";
 import { buildPlanCostModel } from "@/lib/costModel";
 import CostBreakdown from "@/app/components/CostBreakdown";
 import { useEffect, useState } from "react";
@@ -230,7 +231,7 @@ export default function ShareClient() {
             {crew ? CREW_COPY.shareStartOwn : "Ułóż swój plan"} →
           </p>
           <p className="text-xs mt-1 mb-4" style={{ color: "var(--text-muted)" }}>
-            Odpowiedz na 6 pytań, a ułożymy plan godzina po godzinie
+            Odpowiedz na {QUIZ_QUESTION_COUNT} pytań, a ułożymy plan godzina po godzinie
           </p>
           <Link
             href={crew ? "/quiz?companion=friends" : "/"}

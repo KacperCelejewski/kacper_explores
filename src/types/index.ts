@@ -1,6 +1,7 @@
 import type { FlightPassengers } from "@/lib/group";
 
-export type BudgetLevel = "low" | "medium";
+/** low: do 1500 zł, medium: 1500–3000 zł, high: powyżej 3000 zł (tylko po wyborze dalekiego regionu), na osobę */
+export type BudgetLevel = "low" | "medium" | "high";
 
 export type Companion = "solo" | "couple" | "family" | "friends";
 

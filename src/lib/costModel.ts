@@ -125,7 +125,8 @@ export function costBasisFor(
   return {
     nights: nightsFor(duration),
     seats: grouped && quiz.group ? groupSize(quiz.group) : 1,
-    standard: quiz.budget ?? null,
+    // Przedział "powyżej 3000 zł" (high) nie jest standardem noclegu, więc nie zapisujemy żadnego standardu
+    standard: quiz.budget === "low" || quiz.budget === "medium" ? quiz.budget : null,
   };
 }
 

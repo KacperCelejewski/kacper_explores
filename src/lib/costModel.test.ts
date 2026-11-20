@@ -186,6 +186,8 @@ describe("założenia noclegu", () => {
     expect(costBasisFor({ budget: "medium", companion: "friends", group: g }, 4)).toEqual({ nights: 3, seats: 4, standard: "medium" });
     // znajomi bez jawnego składu nie dostają liczby osób z powietrza
     expect(costBasisFor({ budget: "low", companion: "friends" }, 3).seats).toBe(1);
+    // przedział "powyżej 3000 zł" nie jest standardem noclegu: nie zapisujemy żadnego
+    expect(costBasisFor({ budget: "high", companion: "solo" }, 3).standard).toBeNull();
   });
   it("zepsute założenia z zapisanego planu nie dają 'NaN osób' ani 'undefined noc'", () => {
     for (const bad of [{ nights: "x", seats: 4, standard: null }, { nights: 2, seats: NaN, standard: null }, { nights: 2, seats: 1, standard: "luksus" }, {}, []]) {

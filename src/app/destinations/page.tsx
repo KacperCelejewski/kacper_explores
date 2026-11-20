@@ -10,6 +10,8 @@ import { groupFromCompanion, toFlightPassengers } from "@/lib/group";
 import { CREW_COPY, crewBudgetNote, crewSummary, flightTotalNote } from "@/lib/groupFlow";
 import { CATALOG } from "@/lib/destinations/catalog";
 import { PartnerNote } from "@/app/components/PartnerLinks";
+import Link from "next/link";
+import { MIN_CACHED_REGION_RESULTS } from "@/lib/regionFilter";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -24,6 +26,8 @@ import { cardFlightPriceCopy } from "@/lib/flights/card-price";
 import { dealPriceNotes, isDealPrice, type CardPrice } from "@/lib/flights/card-deals";
 import { buildFlightLink } from "@/lib/drop/links";
 import { useFlightPrices } from "./useFlightPrices";
+
+const REGION_EMPTY_MESSAGE = "Nie znaleźliśmy kierunków w wybranym regionie. Zmień region w quizie albo wybierz obojętnie.";
 
 interface UserStatus {
   authenticated: boolean;
@@ -388,7 +392,7 @@ function DestCard({
                 color: "#fff",
               }}
             >
-              {dest.budgetLevel === "low" ? "Tanie" : "Średnie"}
+              {dest.budgetLevel === "low" ? "Tanie" : dest.budgetLevel === "high" ? "Dalekie" : "Średnie"}
             </span>
           </div>
         </CityPhoto>
@@ -778,10 +782,16 @@ export default function DestinationsPage() {
     ])
       .then(([destData, profileData]) => {
         if (!destData.destinations?.length) {
-          setError("Tym razem nic nie wpadło. Spróbuj jeszcze raz — zwykle działa za drugim.");
+          setError(
+            quizAnswers.regions && quizAnswers.regions.length > 0 && !quizAnswers.preferredCity
+              ? REGION_EMPTY_MESSAGE
+              : "Tym razem nic nie wpadło. Spróbuj jeszcze raz — zwykle działa za drugim.",
+          );
         } else {
           setDestinations(destData.destinations);
-          if (!hasDestCache) {
+          // Za mało propozycji z regionu nie zapamiętujemy, tak jak serwer: kolejna próba może trafić lepiej.
+          const regionPick = !quizAnswers.preferredCity && (quizAnswers.regions?.length ?? 0) > 0;
+          if (!hasDestCache && (!regionPick || destData.destinations.length >= MIN_CACHED_REGION_RESULTS)) {
             setCachedDestinations(destCacheKey, destData.destinations);
           }
         }
@@ -906,6 +916,11 @@ export default function DestinationsPage() {
         >
           Spróbuj ponownie
         </button>
+        {error === REGION_EMPTY_MESSAGE && (
+          <Link href="/quiz?step=region" className="text-sm font-semibold underline" style={{ color: "var(--accent)" }}>
+            Zmień region w quizie
+          </Link>
+        )}
       </div>
     );
   }
