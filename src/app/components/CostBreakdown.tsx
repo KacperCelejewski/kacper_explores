@@ -24,7 +24,7 @@ function Row({ item }: { item: CostComponent }) {
           <span className="text-sm font-semibold text-right">{item.display}</span>
         </div>
         <p className="text-xs" style={muted}>
-          {item.statusLabel} · {item.inOnSiteTotal ? "wliczone w sumę na miejscu" : "poza sumą na miejscu"}
+          {item.statusLabel} · {item.scope}
         </p>
       </div>
     </li>

@@ -110,13 +110,14 @@ export default function ShareClient() {
   const { plan, destination } = trip;
   const crew = crewSummary(trip.crew?.companion, trip.crew?.group);
   const people = trip.crew ? groupSize(trip.crew.group) : 1;
-  // Publiczny podgląd nie zna standardu z quizu ani ceny lotu: nie zgadujemy ani jednego, ani drugiego.
+  // Publiczny podgląd nie zna ceny lotu: nie zgadujemy jej.
   const costModel = buildPlanCostModel({
     breakdown: plan.budgetBreakdown,
     totalEstimate: plan.totalBudgetEstimate,
-    duration: plan.duration,
     people,
     group: !!trip.crew && showGroupBudget(trip.crew.companion, trip.crew.group),
+    // Publiczny podgląd nie pokazuje standardu z quizu (poziomu budżetu), tylko noce i liczbę osób
+    basis: plan.costBasis ? { ...plan.costBasis, standard: null } : null,
   });
 
   return (

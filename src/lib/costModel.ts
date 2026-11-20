@@ -1,4 +1,5 @@
-import { extractBudgetNumbers, mapBudgetNumbers, scaleBudgetText } from "./group";
+import { extractBudgetNumbers, groupSize, mapBudgetNumbers, scaleBudgetText } from "./group";
+import type { QuizAnswers, TripPlan } from "@/types";
 import { PLAN_TOTAL_LABEL, isFreshDeal } from "./priceTrust";
 
 /**
@@ -25,6 +26,8 @@ export interface CostComponent {
   inOnSiteTotal: boolean;
   /** Jednozdaniowe wyjaśnienie, co ta pozycja znaczy i do czego się liczy. */
   note: string;
+  /** Krótko, do której sumy należy: "w sumie na miejscu", "poza sumą na miejscu" (starszy plan: "w szacunku planu"). */
+  scope: string;
 }
 
 /** Prawdziwa cena lotu: z wyszukiwania (cache lub okazja), z datą pobrania. */
@@ -46,14 +49,12 @@ export interface PlanCostInput {
   breakdown: { flights?: string; accommodation?: string; food?: string; attractions?: string; transport?: string };
   /** Szacunek planu na osobę, bez lotu ("1200-1500 PLN"). */
   totalEstimate: string;
-  /** Liczba dni planu. */
-  duration: number;
   /** Liczba osób, na którą policzono kwoty "na osobę" (1 dla solo i pary liczonych na osobę). */
   people: number;
   /** Czy pokazać "na osobę" i "razem" (grupa znajomych lub rodzina z jawnym składem). */
   group: boolean;
-  /** Poziom budżetu z quizu; null, gdy nieznany (np. publiczny podgląd). */
-  standard?: "low" | "medium" | null;
+  /** Założenia zapisane w planie (`plan.costBasis`); null dla planów sprzed ich zapisywania. */
+  basis?: CostBasis | null;
   flight?: FlightQuote | null;
   access?: AccessCost | null;
   now?: number;
@@ -109,20 +110,35 @@ export function nightsFor(duration: number): number {
   return Math.max(1, Math.round(duration) - 1);
 }
 
-/** Założenia szacunku: liczba nocy, osób i standard. To samo mówimy modelowi w prompcie. */
-export function costAssumptions(
+export type CostBasis = NonNullable<TripPlan["costBasis"]>;
+
+/**
+ * Założenia kosztów dla danego quizu i długości planu. Ten sam obiekt trafia do promptu, jest zapisywany w planie
+ * i pokazywany pod kwotą, więc użytkownik widzi dokładnie to, co dostał model. Osoby liczymy tylko w grupie
+ * znajomych lub rodziny z jawnym składem, poza nią kwoty są dla jednej osoby (jak w prompcie).
+ */
+export function costBasisFor(
+  quiz: Pick<QuizAnswers, "budget" | "companion" | "group">,
   duration: number,
-  seats: number,
-  standard?: "low" | "medium" | null,
-  /** Grupa: kwoty są na osobę, a liczba osób mówi, ile ich jedzie. Poza grupą liczymy dla jednej osoby. */
-  perPerson = false,
-): string {
-  const nights = nightsFor(duration);
-  const persons = Math.max(1, Math.round(seats));
+): CostBasis {
+  const grouped = (quiz.companion === "friends" || quiz.companion === "family") && !!quiz.group;
+  return {
+    nights: nightsFor(duration),
+    seats: grouped && quiz.group ? groupSize(quiz.group) : 1,
+    standard: quiz.budget ?? null,
+  };
+}
+
+const OLD_PLAN_ASSUMPTIONS = "Założeń szacunku (noce, osoby, standard) nie zapisaliśmy przy tym planie. Kwoty to szacunek modelu AI, nie rezerwacja ani oferta.";
+
+/** Założenia szacunku: liczba nocy, osób i standard. Bez zapisanych założeń mówimy to wprost. */
+export function costAssumptions(basis: CostBasis | null | undefined, perPerson = false): string {
+  if (!basis) return OLD_PLAN_ASSUMPTIONS;
+  const persons = Math.max(1, Math.round(basis.seats));
   const parts = [
-    `${nights} ${plural(nights, "noc", "noce", "nocy")}`,
+    `${basis.nights} ${plural(basis.nights, "noc", "noce", "nocy")}`,
     `${persons} ${plural(persons, "osoba", "osoby", "osób")}`,
-    ...(standard ? [`standard ${STANDARD_LABEL[standard]}`] : []),
+    ...(basis.standard ? [`standard ${STANDARD_LABEL[basis.standard]}`] : []),
     ...(perPerson && persons > 1 ? ["kwoty na osobę"] : []),
   ];
   return `Założenia szacunku: ${parts.join(", ")}. Kwoty to szacunek modelu AI, nie rezerwacja ani oferta.`;
@@ -135,7 +151,9 @@ export function usableFlight(flight: FlightQuote | null | undefined, now: number
   return fresh ? flight : null;
 }
 
-function estimateComponent(key: CostKey, label: string, value: string | undefined, note: string): CostComponent {
+type Draft = Omit<CostComponent, "scope">;
+
+function estimateComponent(key: CostKey, label: string, value: string | undefined, note: string): Draft {
   const known = hasAmount(value);
   return {
     key, label,
@@ -160,7 +178,7 @@ export function buildPlanCostModel(input: PlanCostInput): PlanCostModel {
   // Starszy plan: model wpisał w "flights" kwotę, więc jego suma mogła zawierać lot.
   const legacy = hasAmount(input.breakdown.flights);
 
-  const components: CostComponent[] = [
+  const drafts: Draft[] = [
     estimateComponent("accommodation", "Nocleg", input.breakdown.accommodation, "Szacunek modelu AI, wliczony w sumę na miejscu."),
     estimateComponent("food", "Jedzenie", input.breakdown.food, "Szacunek modelu AI, wliczony w sumę na miejscu."),
     estimateComponent("attractions", "Atrakcje", input.breakdown.attractions, "Szacunek modelu AI, wliczony w sumę na miejscu."),
@@ -168,9 +186,9 @@ export function buildPlanCostModel(input: PlanCostInput): PlanCostModel {
 
   // Transport na miejscu jest w sumie, ale starsze plany nie mają osobnej kwoty: mówimy to wprost.
   if (hasAmount(input.breakdown.transport)) {
-    components.push(estimateComponent("localTransport", "Transport na miejscu", input.breakdown.transport, "Szacunek modelu AI, wliczony w sumę na miejscu."));
+    drafts.push(estimateComponent("localTransport", "Transport na miejscu", input.breakdown.transport, "Szacunek modelu AI, wliczony w sumę na miejscu."));
   } else {
-    components.push({
+    drafts.push({
       key: "localTransport", label: "Transport na miejscu", value: null, display: "wliczony", status: "unknown",
       statusLabel: "bez osobnej kwoty", inOnSiteTotal: true,
       note: "Wliczony w sumę na miejscu, ale bez osobnej kwoty.",
@@ -178,7 +196,7 @@ export function buildPlanCostModel(input: PlanCostInput): PlanCostModel {
   }
 
   // Lot: nigdy tekst od modelu (mógłby być wymyślony), tylko prawdziwa cena z datą albo "sprawdź w wyszukiwarce".
-  components.push(flight
+  drafts.push(flight
     ? {
         key: "flight", label: "Lot", value: pln(flight.pricePerPerson), display: pln(flight.pricePerPerson), status: "verified",
         statusLabel: `cena z ${costDate(flight.checkedAt)}`, inOnSiteTotal: false,
@@ -191,12 +209,20 @@ export function buildPlanCostModel(input: PlanCostInput): PlanCostModel {
 
   // Miejsce na P9: dojazd autem, busem lub pociągiem zamiast lotu. Zawsze orientacyjny, zawsze poza sumą.
   if (input.access && hasAmount(input.access.value)) {
-    components.push({
+    drafts.push({
       key: "access", label: input.access.label ?? "Dojazd", value: input.access.value.trim(), display: input.access.value.trim(), status: "estimate",
       statusLabel: ROUGH_LABEL, inOnSiteTotal: false,
       note: "Orientacyjnie, w obie strony. Poza sumą na miejscu.",
     });
   }
+
+  const components: CostComponent[] = drafts.map((c) => ({
+    ...c,
+    scope: c.inOnSiteTotal
+      ? (legacy ? "w szacunku planu" : "w sumie na miejscu")
+      : legacy && c.key === "flight" ? (flight ? "osobno od szacunku planu" : "mógł być w szacunku planu")
+      : "poza sumą na miejscu",
+  }));
 
   const onSiteText = hasAmount(input.totalEstimate) ? input.totalEstimate.trim() : null;
   const onSite: CostTotal = onSiteText
@@ -223,7 +249,7 @@ export function buildPlanCostModel(input: PlanCostInput): PlanCostModel {
     flightLine: flight
       ? `Lot: ${pln(flight.pricePerPerson)} za osobę, w obie strony, cena z ${costDate(flight.checkedAt)}`
       : FLIGHT_UNKNOWN_LINE,
-    assumptions: costAssumptions(input.duration, group ? people : 1, input.standard, group),
+    assumptions: costAssumptions(input.basis, group),
     legacy,
   };
 }

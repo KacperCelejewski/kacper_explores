@@ -107,6 +107,8 @@ describe("buildPlanPrompt", () => {
   it("states the cost assumptions (nights, people, standard) and asks for a transport line in the breakdown", () => {
     const prompt = buildPlanPrompt(destination, { ...quiz, budget: "low" } as never, null);
     expect(prompt).toMatch(/Założenia kosztów: liczba nocy: \d+, liczba osób: 1, wszystkie kwoty na osobę, standard budżetowy/);
+    expect(prompt).toContain("650-880 PLN (suma czterech pozycji poniżej)");
+    expect(prompt).not.toContain("1200-1500 PLN");
     expect(prompt).toContain('"transport":"np. 50-80 PLN"');
     expect(prompt).toMatch(/suma accommodation, food, attractions i transport/);
   });

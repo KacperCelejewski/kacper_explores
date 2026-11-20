@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import {
   FLIGHT_UNKNOWN_LINE, ON_SITE_TOTAL_LABEL, WITH_FLIGHT_TOTAL_LABEL,
-  buildPlanCostModel, costAssumptions, nightsFor, usableFlight, type FlightQuote, type PlanCostInput,
+  buildPlanCostModel, costAssumptions, costBasisFor, nightsFor, usableFlight, type FlightQuote, type PlanCostInput,
 } from "./costModel";
 import { FORBIDDEN_COPY } from "./homeCopy";
 
@@ -13,7 +13,7 @@ const quote = (over: Partial<FlightQuote> = {}): FlightQuote => ({
 const base: PlanCostInput = {
   breakdown: { flights: "Sprawdź w wyszukiwarce", accommodation: "300-400 PLN", food: "200-250 PLN", attractions: "100-150 PLN", transport: "50-80 PLN" },
   totalEstimate: "650-880 PLN",
-  duration: 3, people: 1, group: false, standard: "low", now,
+  people: 1, group: false, basis: { nights: 2, seats: 1, standard: "low" }, now,
 };
 const key = (m: ReturnType<typeof buildPlanCostModel>, k: string) => m.components.find((c) => c.key === k)!;
 
@@ -38,7 +38,8 @@ describe("sumy: lot znany, nieznany, brak szacunku", () => {
     expect(m.withFlight?.note).toContain("cena z 18.11");
     expect(m.withFlight?.note).toMatch(/Reszta: szacunek modelu AI/);
     expect(m.flightLine).toBe("Lot: 320 zł za osobę, w obie strony, cena z 18.11");
-    expect(key(m, "flight")).toMatchObject({ value: "320 zł", status: "verified", statusLabel: "cena z 18.11", inOnSiteTotal: false });
+    expect(key(m, "flight")).toMatchObject({ value: "320 zł", status: "verified", statusLabel: "cena z 18.11", inOnSiteTotal: false, scope: "poza sumą na miejscu" });
+    expect(key(m, "food").scope).toBe("w sumie na miejscu");
   });
 
   it("suma na miejscu nie zmienia się po dodaniu lotu (lot jest poza nią)", () => {
@@ -144,6 +145,10 @@ describe("starszy plan z kwotą lotu w polu flights", () => {
     expect(m.withFlight).toBeNull();
     expect(m.legacy).toBe(true);
     expect(buildPlanCostModel(base).legacy).toBe(false);
+    // wiersze nie mówią "poza sumą na miejscu", skoro takiej sumy tu nie ma
+    expect(key(m, "food").scope).toBe("w szacunku planu");
+    expect(key(buildPlanCostModel(legacy), "flight").scope).toBe("mógł być w szacunku planu");
+    expect(key(m, "flight").scope).toBe("osobno od szacunku planu");
     expect(key(m, "flight").value).toBe("320 zł"); // sam lot z wyszukiwania nadal widać jako lot
   });
   it("kwota lotu od modelu nadal nie jest pokazywana jako cena lotu", () => {
@@ -157,28 +162,35 @@ describe("starszy plan z kwotą lotu w polu flights", () => {
 });
 
 describe("założenia noclegu", () => {
-  it("para (nie grupa) liczy się jak jedna osoba, tak jak w prompcie", () => {
-    expect(buildPlanCostModel({ ...base, people: 2, group: false }).assumptions).toContain("2 noce, 1 osoba, standard budżetowy");
-  });
-  it("grupa: liczba osób i jawne 'kwoty na osobę'", () => {
-    expect(buildPlanCostModel({ ...base, people: 4, group: true }).assumptions).toContain("4 osoby, standard budżetowy, kwoty na osobę");
-  });
   it("noce, osoby i standard w polskiej odmianie", () => {
     expect(nightsFor(3)).toBe(2);
     expect(nightsFor(1)).toBe(1);
     expect(nightsFor(6)).toBe(5);
-    expect(costAssumptions(3, 1, "low")).toContain("2 noce, 1 osoba, standard budżetowy");
-    expect(costAssumptions(6, 4, "medium")).toContain("5 nocy, 4 osoby, standard komfortowy");
-    expect(costAssumptions(2, 5, null)).toContain("1 noc, 5 osób");
-    expect(costAssumptions(2, 5, null)).not.toContain("standard");
+    expect(costAssumptions({ nights: 2, seats: 1, standard: "low" })).toContain("2 noce, 1 osoba, standard budżetowy");
+    expect(costAssumptions({ nights: 5, seats: 4, standard: "medium" })).toContain("5 nocy, 4 osoby, standard komfortowy");
+    expect(costAssumptions({ nights: 1, seats: 5, standard: null })).toContain("1 noc, 5 osób");
+    expect(costAssumptions({ nights: 1, seats: 5, standard: null })).not.toContain("standard");
   });
   it("mówi, że to szacunek modelu, nie rezerwacja", () => {
-    expect(costAssumptions(3, 1)).toMatch(/szacunek modelu AI/);
-    expect(costAssumptions(3, 1)).toMatch(/nie rezerwacja ani oferta/);
+    expect(costAssumptions({ nights: 2, seats: 1, standard: null })).toMatch(/szacunek modelu AI/);
+    expect(costAssumptions({ nights: 2, seats: 1, standard: null })).toMatch(/nie rezerwacja ani oferta/);
   });
-  it("model zawiera założenia zgodne z wejściem", () => {
-    expect(buildPlanCostModel({ ...base, people: 4, group: true, duration: 4, standard: "medium" }).assumptions)
-      .toContain("3 noce, 4 osoby, standard komfortowy");
+  it("grupa: liczba osób i jawne 'kwoty na osobę'", () => {
+    const m = buildPlanCostModel({ ...base, people: 4, group: true, basis: { nights: 3, seats: 4, standard: "medium" } });
+    expect(m.assumptions).toContain("3 noce, 4 osoby, standard komfortowy, kwoty na osobę");
+  });
+  it("costBasisFor: para i solo to jedna osoba (jak w prompcie), grupa to jej liczba miejsc", () => {
+    const g = { adults: 3, childrenAges: [4] };
+    expect(costBasisFor({ budget: "low", companion: "couple", group: undefined }, 3)).toEqual({ nights: 2, seats: 1, standard: "low" });
+    expect(costBasisFor({ budget: null, companion: "solo" }, 1)).toEqual({ nights: 1, seats: 1, standard: null });
+    expect(costBasisFor({ budget: "medium", companion: "friends", group: g }, 4)).toEqual({ nights: 3, seats: 4, standard: "medium" });
+    // znajomi bez jawnego składu nie dostają liczby osób z powietrza
+    expect(costBasisFor({ budget: "low", companion: "friends" }, 3).seats).toBe(1);
+  });
+  it("plan bez zapisanych założeń (sprzed zmiany) mówi to wprost zamiast zmyślać noce i osoby", () => {
+    const m = buildPlanCostModel({ ...base, basis: null });
+    expect(m.assumptions).toMatch(/nie zapisaliśmy/);
+    expect(m.assumptions).not.toMatch(/\d/); // żadnych wymyślonych liczb nocy ani osób
   });
 });
 

@@ -380,10 +380,9 @@ export default function PlanPage() {
   const costModel = buildPlanCostModel({
     breakdown: plan.budgetBreakdown,
     totalEstimate: plan.totalBudgetEstimate,
-    duration: plan.duration,
     people,
     group: groupBudget,
-    standard: currentTrip.quizAnswers?.budget ?? null,
+    basis: plan.costBasis ?? null,
   });
   const crew = crewSummary(tripCompanion, tripGroup);
 
