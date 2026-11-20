@@ -3,8 +3,10 @@ import { FEATURES, type FeatureKey } from "./features";
 // Teksty strony głównej w jednym miejscu, żeby dało się je przetestować pod kątem głosu marki
 // i obietnic funkcji, których jeszcze nie ma.
 export const HOME = {
-  badge: "Dla ekipy i dla tych, co jadą sami",
-  h1: "Wyjazd ze znajomymi: dokąd, za ile i jaki plan.",
+  // Jedno zdanie na pierwszym ekranie, to samo co w bio konta na Instagramie (pytanie, bez wykrzyknika)
+  h1: "Brakuje Ci czasu na organizację wyjazdu?",
+  // Dawny H1: słowa kluczowe zostają w nagłówku sekcji tuż pod pierwszym ekranem
+  lead: "Wyjazd ze znajomymi: dokąd, za ile i jaki plan.",
   ctaTeam: "Jedziemy ekipą →",
   ctaTeamHref: "/quiz?companion=friends&src=home-ekipa",
   ctaSolo: "Solo albo we dwoje →",
