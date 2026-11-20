@@ -287,6 +287,15 @@ function QuizPageInner() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, stepId]);
 
+  // Wybrane miasto (galeria, okazje) wygrywa z regionem, a pytanie o region wtedy odpada: stary wybór nie może
+  // po cichu zawężać propozycji ani odsłaniać wyższego budżetu z powodu regionu, którego nie widać.
+  useEffect(() => {
+    if (!ready || !quizAnswers.preferredCity || !quizAnswers.regions?.length) return;
+    setQuizAnswer("regions", undefined);
+    if (quizAnswers.budget === "high") setQuizAnswer("budget", null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, quizAnswers.preferredCity, quizAnswers.regions, quizAnswers.budget]);
+
   const goTo = (id: QuizStepId) => {
     setDir(steps.indexOf(id) > position ? 1 : -1);
     setHasMoved(true);

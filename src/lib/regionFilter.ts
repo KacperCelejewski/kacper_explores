@@ -38,6 +38,9 @@ export function regionsOfCountry(country: string): Region[] {
   return [base, ...(ALSO_IN[name.toLowerCase()] ?? [])];
 }
 
+/** Krótsze listy z regionu nie trafiają do cache (serwera ani przeglądarki): kolejna próba może trafić lepiej. */
+export const MIN_CACHED_REGION_RESULTS = 3;
+
 /** Pusta lista regionów = obojętnie (wszystko pasuje, także kraje spoza tabeli). */
 export function matchesRegions(country: string, regions: readonly Region[]): boolean {
   if (regions.length === 0) return true;

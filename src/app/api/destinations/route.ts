@@ -9,7 +9,7 @@ import { destinationCacheKey } from "@/lib/destinationCacheKey";
 import { excludeOriginCities, originExclusionPrompt } from "@/lib/originCities";
 import { monthYearLabel } from "@/lib/tripMonth";
 import { effectiveRegions, normalizeFoundation } from "@/lib/quizOptions";
-import { filterByRegions, regionPromptLine, regionRetryLine } from "@/lib/regionFilter";
+import { filterByRegions, MIN_CACHED_REGION_RESULTS, regionPromptLine, regionRetryLine } from "@/lib/regionFilter";
 import type { DestinationRecommendation, TravelStyle, TravelVibe, PlaceType, Region } from "@/types";
 
 export const maxDuration = 30;
@@ -81,33 +81,44 @@ Format odpowiedzi (wyłącznie JSON, bez markdown):
 }
 
 const MAX_DESTINATIONS = 6;
-const TOP_UP_DEADLINE_MS = 12_000; // po tylu ms od startu nie dopraszamy już o uzupełnienie (maxDuration = 30 s)
-const MIN_CACHED_REGION_RESULTS = 3;
+// Limity czasu uzupełnienia (maxDuration = 30 s): po TOP_UP_START_LIMIT_MS od startu już o nie nie prosimy,
+// a rozpoczęte przerywamy po TOP_UP_HARD_LIMIT_MS, żeby odpowiedź zdążyła wyjść przed końcem funkcji.
+const TOP_UP_START_LIMIT_MS = 8_000;
+const TOP_UP_HARD_LIMIT_MS = 25_000;
 const norm = (city: string) => city.trim().toLowerCase();
 
 /**
  * Zostawia tylko kierunki z wybranych regionów. Gdy po odfiltrowaniu jest ich mniej niż 6, prosi o uzupełnienie
- * (raz) i znów filtruje; kierunek spoza regionu nigdy nie trafia do wyniku.
+ * (raz) i znów filtruje; kierunek spoza regionu nigdy nie trafia do wyniku. `topUp` zwraca null, gdy uzupełnienia
+ * nie dało się zrobić (czas, błąd): wtedy `checked` jest false i pusty wynik nie znaczy "w regionie nic nie ma".
  */
 async function keepInRegions(
   candidates: DestinationRecommendation[],
   regions: readonly Region[],
-  topUp: (rejectedCities: string[], keptCities: string[]) => Promise<DestinationRecommendation[]>,
-): Promise<DestinationRecommendation[]> {
+  topUp: (rejectedCities: string[], keptCities: string[]) => Promise<DestinationRecommendation[] | null>,
+): Promise<{ items: DestinationRecommendation[]; checked: boolean }> {
   const firstPass = filterByRegions(candidates, regions);
-  if (firstPass.kept.length >= MAX_DESTINATIONS) return firstPass.kept.slice(0, MAX_DESTINATIONS);
+  if (firstPass.kept.length >= MAX_DESTINATIONS) return { items: firstPass.kept.slice(0, MAX_DESTINATIONS), checked: true };
   const extra = await topUp(firstPass.rejected.map((d) => d.city), firstPass.kept.map((d) => d.city));
   const seen = new Set(firstPass.kept.map((d) => norm(d.city)));
   const merged = [...firstPass.kept];
-  for (const d of filterByRegions(extra, regions).kept) {
+  for (const d of filterByRegions(extra ?? [], regions).kept) {
     if (seen.has(norm(d.city))) continue;
     seen.add(norm(d.city));
     merged.push(d);
   }
-  return merged.slice(0, MAX_DESTINATIONS);
+  return { items: merged.slice(0, MAX_DESTINATIONS), checked: extra !== null };
 }
 
+const TIMED_OUT = Symbol("timed-out");
+const withTimeout = <T>(work: Promise<T>, ms: number): Promise<T | typeof TIMED_OUT> =>
+  new Promise((resolve, reject) => {
+    const timer = setTimeout(() => resolve(TIMED_OUT), Math.max(0, ms));
+    work.then((v) => { clearTimeout(timer); resolve(v); }, (e) => { clearTimeout(timer); reject(e); });
+  });
+
 export async function POST(req: NextRequest) {
+  const startedAt = Date.now();
   const ip = getClientIp(req);
   const rl = checkRateLimit(`destinations:${ip}`, LIMITS.flights.limit, LIMITS.flights.windowMs);
   if (!rl.allowed) {
@@ -140,7 +151,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ destinations: cached.data });
   }
 
-  const startedAt = Date.now();
   const preferredCity = (body as { preferredCity?: string }).preferredCity ?? null;
   const prompt = buildPrompt(body as Record<string, unknown>);
   const regions = preferredCity ? [] : effectiveRegions(normalizeFoundation(body as Record<string, unknown>));
@@ -196,24 +206,34 @@ export async function POST(req: NextRequest) {
       void logGeminiCall({ endpoint: "destinations", model: modelName, success: true });
 
       let destinations = first;
-      if (regions.length > 0) destinations = await keepInRegions(first, regions, async (rejected, kept) => {
-        // Uzupełnienie: jedno powtórne zapytanie z listą odrzuconych; jego błąd nie psuje tego, co już mamy.
-        // Przy wolnej odpowiedzi pierwszego zapytania go pomijamy, bo funkcja ma limit czasu (maxDuration).
-        if (Date.now() - startedAt > TOP_UP_DEADLINE_MS) return [];
-        try {
-          const more = await ask(buildPrompt(body as Record<string, unknown>, regionRetryLine(regions, rejected, kept)));
-          void logGeminiCall({ endpoint: "destinations", model: modelName, success: more !== null });
-          return more ?? [];
-        } catch (err) {
-          console.error("[destinations] region top-up failed:", err instanceof Error ? err.message : String(err));
-          void logGeminiCall({ endpoint: "destinations", model: modelName, success: false, error_code: "error" });
-          return [];
-        }
-      });
+      let checked = true;
+      if (regions.length > 0) {
+        const kept = await keepInRegions(first, regions, async (rejected, keptCities) => {
+          // Uzupełnienie: jedno powtórne zapytanie z listą odrzuconych; jego błąd nie psuje tego, co już mamy.
+          // Przy wolnej pierwszej odpowiedzi go pomijamy, a rozpoczęte przerywamy (limit czasu funkcji).
+          const elapsed = Date.now() - startedAt;
+          if (elapsed > TOP_UP_START_LIMIT_MS) return null;
+          try {
+            const more = await withTimeout(ask(buildPrompt(body as Record<string, unknown>, regionRetryLine(regions, rejected, keptCities))), TOP_UP_HARD_LIMIT_MS - elapsed);
+            void logGeminiCall({ endpoint: "destinations", model: modelName, success: more !== TIMED_OUT && more !== null });
+            return more === TIMED_OUT ? null : (more ?? []);
+          } catch (err) {
+            console.error("[destinations] region top-up failed:", err instanceof Error ? err.message : String(err));
+            void logGeminiCall({ endpoint: "destinations", model: modelName, success: false, error_code: "error" });
+            return null;
+          }
+        });
+        destinations = kept.items;
+        checked = kept.checked;
+      }
 
-      // Model odpowiedział, ale nic nie mieściło się w regionie: pusta lista (to nie błąd dostawcy), bez ponawiania
-      // drugim modelem, żeby nie przekroczyć limitu czasu, i bez cache.
-      if (destinations.length === 0 && regions.length > 0) return NextResponse.json({ destinations: [] });
+      // Nic nie mieściło się w regionie: pusta lista (to nie błąd dostawcy), bez ponawiania drugim modelem
+      // (limit czasu) i bez cache. Gdy uzupełnienia nie zdążyliśmy zrobić, to zwykły "tłok", nie brak kierunków.
+      if (destinations.length === 0 && regions.length > 0) {
+        return checked
+          ? NextResponse.json({ destinations: [] })
+          : NextResponse.json({ error: "Mamy teraz tłok. Spróbuj za minutę." }, { status: 503 });
+      }
       // Za mało propozycji z regionu nie zostaje w cache, żeby kolejna próba mogła trafić lepiej.
       if (regions.length === 0 || destinations.length >= MIN_CACHED_REGION_RESULTS) destCache.set(key, { data: destinations, ts: Date.now() });
       return NextResponse.json({ destinations });

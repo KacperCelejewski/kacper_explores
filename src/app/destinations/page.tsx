@@ -11,6 +11,7 @@ import { CREW_COPY, crewBudgetNote, crewSummary, flightTotalNote } from "@/lib/g
 import { CATALOG } from "@/lib/destinations/catalog";
 import { PartnerNote } from "@/app/components/PartnerLinks";
 import Link from "next/link";
+import { MIN_CACHED_REGION_RESULTS } from "@/lib/regionFilter";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -787,7 +788,9 @@ export default function DestinationsPage() {
           );
         } else {
           setDestinations(destData.destinations);
-          if (!hasDestCache) {
+          // Za mało propozycji z regionu nie zapamiętujemy, tak jak serwer: kolejna próba może trafić lepiej.
+          const regionPick = !quizAnswers.preferredCity && (quizAnswers.regions?.length ?? 0) > 0;
+          if (!hasDestCache && (!regionPick || destData.destinations.length >= MIN_CACHED_REGION_RESULTS)) {
             setCachedDestinations(destCacheKey, destData.destinations);
           }
         }

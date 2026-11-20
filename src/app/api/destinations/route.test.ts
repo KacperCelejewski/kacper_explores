@@ -1,9 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 const gemini = vi.hoisted(() => ({
   prompts: [] as string[],
   // Kolejka odpowiedzi atrapy; pusta = domyślne Porto.
   replies: [] as unknown[],
+  // Atrapa zegara: każda odpowiedź Gemini "trwa" tyle ms (Date.now jest podmieniony w testach wolnej odpowiedzi).
+  skewMs: 0,
+  advancePerCallMs: 0,
 }));
 
 vi.mock("@google/generative-ai", () => ({
@@ -12,6 +15,7 @@ vi.mock("@google/generative-ai", () => ({
       return {
         generateContent: async (prompt: string) => {
           gemini.prompts.push(prompt);
+          gemini.skewMs += gemini.advancePerCallMs;
           const reply = gemini.replies.length > 0 ? gemini.replies.shift() : { destinations: [{ city: "Porto", country: "Portugalia" }] };
           return { response: { text: () => JSON.stringify(reply) } };
         },
@@ -34,7 +38,11 @@ beforeEach(() => {
   process.env.GEMINI_API_KEY = "dummy";
   gemini.prompts.length = 0;
   gemini.replies.length = 0;
+  gemini.skewMs = 0;
+  gemini.advancePerCallMs = 0;
 });
+
+afterEach(() => vi.restoreAllMocks());
 
 describe("POST /api/destinations: nowe pola quizu", () => {
   it("odrzuca nieznany region, rodzaj wyjazdu i transport (400, bez wywołania Gemini)", async () => {
@@ -184,5 +192,46 @@ describe("POST /api/destinations: region", () => {
     expect((await post({ ...quiz, regions: ["atlantyda"] })).status).toBe(400);
     gemini.replies.push({ destinations: southAmerica });
     expect((await post({ ...quiz, month: 7, budget: "high", regions: ["ameryka_poludniowa"] })).status).toBe(200);
+  });
+
+  it("granica cache: 3 kierunki z regionu są zapamiętane, 2 nie", async () => {
+    const three = [city("Kair", "Egipt"), city("Marakesz", "Maroko"), city("Nairobi", "Kenia")];
+    const q = { ...quiz, month: 2, duration: 6, regions: ["afryka"] };
+    gemini.replies.push({ destinations: three }, { destinations: [] }); // odpowiedź i uzupełnienie bez nowych
+    await post(q);
+    expect(gemini.prompts).toHaveLength(2);
+    await post(q);
+    expect(gemini.prompts).toHaveLength(2); // trzy kierunki: drugi raz z cache
+
+    const q2 = { ...quiz, month: 3, duration: 6, regions: ["afryka"] };
+    gemini.replies.push({ destinations: three.slice(0, 2) }, { destinations: [] });
+    await post(q2);
+    gemini.replies.push({ destinations: three.slice(0, 2) }, { destinations: [] });
+    await post(q2);
+    expect(gemini.prompts).toHaveLength(6); // dwa kierunki: za każdym razem nowe zapytanie (z uzupełnieniem)
+  });
+
+  describe("limit czasu", () => {
+    const slow = () => {
+      gemini.advancePerCallMs = 9_000;
+      const real = Date.now();
+      vi.spyOn(Date, "now").mockImplementation(() => real + gemini.skewMs);
+    };
+
+    it("wolna pierwsza odpowiedź: uzupełnienia nie ma, zostaje to, co pasuje do regionu", async () => {
+      slow();
+      gemini.replies.push({ destinations: [city("Lima", "Peru"), city("Cusco", "Peru"), city("Paryż", "Francja")] });
+      const res = await post({ ...quiz, month: 4, duration: 7, regions: ["ameryka_poludniowa"] });
+      expect(gemini.prompts).toHaveLength(1);
+      expect(await cities(res)).toEqual(["Lima", "Cusco"]);
+    });
+
+    it("wolna odpowiedź bez żadnego kierunku z regionu: 503 (tłok), a nie 'w regionie nic nie ma'", async () => {
+      slow();
+      gemini.replies.push({ destinations: [city("Paryż", "Francja")] });
+      const res = await post({ ...quiz, month: 5, duration: 7, regions: ["ameryka_poludniowa"] });
+      expect(res.status).toBe(503);
+      expect(gemini.prompts).toHaveLength(1);
+    });
   });
 });
