@@ -11,6 +11,7 @@ import { QUIZ_STEPS, DROP_QUIZ_STEPS, quizStepIndex, parseQuizStep, resolveQuizS
 import { useAppStore } from "@/lib/store";
 import type { TravelStyle, TripDuration, TravelVibe, QuizAnswers } from "@/types";
 import { MONTH_NAMES } from "@/lib/constants";
+import { monthYearLabel, monthYearShort, upcomingMonthsByYear } from "@/lib/tripMonth";
 import { trackEvent, quizGaEventName, quizFoundationParams } from "@/lib/analytics";
 import { normalizeFoundation } from "@/lib/quizOptions";
 import { captureEntry, entryEventParams, entryStorage, landingReferrer, type EntryAttribution } from "@/lib/entryAttribution";
@@ -42,7 +43,7 @@ import type { Companion, GroupComposition } from "@/types";
 import GroupSizePicker from "@/app/components/GroupSizePicker";
 import { groupFromCompanion } from "@/lib/group";
 import { CREW_COPY, companionTrailLabel, crewBudgetTogether } from "@/lib/groupFlow";
-import { parseHomeParams, homeFriendsAnswers, srcEventName, keepUtmQuery } from "@/lib/homeParams";
+import { parseHomeParams, homeFriendsAnswers, homeDreamAnswers, parseHomeDream, srcEventName, keepUtmQuery } from "@/lib/homeParams";
 
 type IconFC = React.FC<{ size?: number }>;
 
@@ -143,7 +144,7 @@ function answeredLabels(a: QuizAnswers, previous: readonly QuizStepId[]): string
       case "companion": return a.companion ? [companionTrailLabel(a.companion, a.group, COMPANION_LABELS[a.companion])] : [];
       case "vibe": return a.vibe ? [VIBE_LABELS[a.vibe]] : [];
       case "styles": return a.styles.length ? [`${a.styles.length} zainteresowań`] : [];
-      case "when": return a.month ? [`${MONTH_SHORT[a.month - 1]} · ${a.duration ?? 5} dni`] : [];
+      case "when": return a.month ? [`${monthYearShort(a.month)} · ${a.duration ?? 5} dni`] : [];
       case "departure": return a.airports.length ? [a.airports.join(", ")] : [];
       case "budget": return a.budget ? [BUDGET_LABELS[a.budget]] : [];
     }
@@ -240,6 +241,17 @@ function QuizPageInner() {
       setQuizAnswer("companion", next.companion);
       setQuizAnswer("group", next.group);
       setCurrentQuizStep(quizStepIndex("companion"));
+    }
+    // Karta-marzenie ze strony głównej: miasto, ekipa i budżet są już znane, quiz zaczyna od pierwszego brakującego pytania.
+    const dream = dropPrefill ? null : parseHomeDream(searchParams);
+    if (dream) {
+      const next = homeDreamAnswers(dream);
+      setQuizAnswer("preferredCity", next.preferredCity);
+      setQuizAnswer("companion", next.companion);
+      setQuizAnswer("group", next.group);
+      setQuizAnswer("budget", next.budget);
+      const missing = firstIncompleteQuizStep({ ...quizAnswers, ...next }, QUIZ_STEPS);
+      setCurrentQuizStep(quizStepIndex(missing ?? "budget"));
     }
     const requested = parseQuizStep(searchParams.get("step"));
     if (requested && !dropPrefill) setCurrentQuizStep(quizStepIndex(requested));
@@ -571,12 +583,16 @@ function StepWhen({
 }) {
   const value = duration ?? 5;
   const [monthPrefilled, setMonthPrefilled] = useState(false);
+  // Jedno "dzisiaj" dla całego kroku: miesiące, rok w nagłówkach i podsumowanie liczą się od niego
+  const [now] = useState(() => new Date());
+  const yearGroups = useMemo(() => upcomingMonthsByYear(now), [now]);
+  const nearest = yearGroups[0].months[0];
 
   useEffect(() => {
     if (duration === null) setDuration(5);
-    // Thursday-night decision: start from this month so the step is already answerable
+    // Thursday-night decision: start from the nearest month so the step is already answerable
     if (month === null) {
-      setMonth(new Date().getMonth() + 1);
+      setMonth(nearest);
       setMonthPrefilled(true);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -588,26 +604,39 @@ function StepWhen({
         title="Kiedy i na ile dni?"
         hint={
           monthPrefilled
-            ? "Zaznaczono bieżący miesiąc — zmień go, jeśli jedziesz później."
+            ? `Zaznaczono najbliższy miesiąc (${monthYearLabel(nearest, now)}). Zmień go, jeśli jedziesz później.`
             : undefined
         }
       />
 
-      {/* Month grid */}
+      {/* Month picker: chronologicznie od najbliższego, z rokiem w nagłówku każdej grupy */}
       <p className="text-sm font-semibold mb-2" style={{ color: "var(--text-secondary)" }}>Miesiąc wyjazdu</p>
-      <div className="grid grid-cols-4 gap-2 mb-6" role="group" aria-label="Wybierz miesiąc">
-        {MONTH_NAMES.map((name, i) => (
-          <button
-            key={name}
-            type="button"
-            className={`quiz-option quiz-option--center ${month === i + 1 ? "selected" : ""}`}
-            style={{ padding: "0 4px", minHeight: 48, textAlign: "center" }}
-            onClick={() => setMonth(i + 1)}
-            aria-pressed={month === i + 1}
-            aria-label={name}
-          >
-            <span className="font-semibold text-sm">{MONTH_SHORT[i]}</span>
-          </button>
+      <div className="mb-6" role="group" aria-label="Wybierz miesiąc wyjazdu">
+        {yearGroups.map(({ year, months }) => (
+          <div key={year} role="group" aria-labelledby={`when-year-${year}`} className="mb-3 last:mb-0">
+            <p
+              id={`when-year-${year}`}
+              className="text-sm font-bold mb-1.5"
+              style={{ color: "var(--text-secondary)", fontVariantNumeric: "tabular-nums" }}
+            >
+              {year}
+            </p>
+            <div className="grid grid-cols-4 gap-2">
+              {months.map((m) => (
+                <button
+                  key={`${year}-${m}`}
+                  type="button"
+                  className={`quiz-option quiz-option--center ${month === m ? "selected" : ""}`}
+                  style={{ padding: "0 4px", minHeight: 48, textAlign: "center" }}
+                  onClick={() => setMonth(m)}
+                  aria-pressed={month === m}
+                  aria-label={`${MONTH_NAMES[m - 1].toLowerCase()} ${year}`}
+                >
+                  <span className="font-semibold text-sm">{MONTH_SHORT[m - 1]}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         ))}
       </div>
 
@@ -659,6 +688,7 @@ function StepWhen({
       </div>
 
       <p className="text-sm" style={{ color: "var(--text-secondary)" }} aria-live="polite">
+        {month !== null && <span className="font-semibold">{monthYearLabel(month, now)} · </span>}
         <span className="font-bold" style={{ color: "var(--accent)", fontVariantNumeric: "tabular-nums" }}>{value} dni</span>
 
       </p>

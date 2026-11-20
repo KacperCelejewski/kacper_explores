@@ -16,6 +16,17 @@ export const CITY_ILLUSTRATION: CityPhoto = {
   url: "/illustrations/journey-poster.svg",
 };
 
+/** An image that already finished loading with no pixels failed before React attached onError (e.g. before hydration). */
+export function isBrokenImage(img: { complete: boolean; naturalWidth: number }): boolean {
+  return img.complete && img.naturalWidth === 0;
+}
+
+export function cityPhotoAlt(photo: CityPhoto, city: string): string {
+  const label = city.trim();
+  if (photo.source === "unsplash") return `${label}: zdjęcie miasta`;
+  return label ? `Ilustracja podróży: ${label}` : "Ilustracja podróży";
+}
+
 export function unsplashReferralUrl(url: string): string {
   const link = new URL(url);
   link.searchParams.set("utm_source", "wloczykij");

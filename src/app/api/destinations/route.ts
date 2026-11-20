@@ -4,9 +4,10 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { checkRateLimit, LIMITS } from "@/lib/rateLimit";
 import { validateQuizAnswers, getClientIp } from "@/lib/validate";
 import { logGeminiCall } from "@/lib/geminiLog";
-import { budgetPromptLabel, MONTH_NAMES, VIBE_LABELS, PLACE_LABELS, DESTINATION_CACHE_TTL_MS } from "@/lib/constants";
+import { budgetPromptLabel, VIBE_LABELS, PLACE_LABELS, DESTINATION_CACHE_TTL_MS } from "@/lib/constants";
 import { destinationCacheKey } from "@/lib/destinationCacheKey";
 import { excludeOriginCities, originExclusionPrompt } from "@/lib/originCities";
+import { monthYearLabel } from "@/lib/tripMonth";
 import type { DestinationRecommendation, TravelStyle, TravelVibe, PlaceType } from "@/types";
 
 export const maxDuration = 30;
@@ -29,7 +30,7 @@ function buildPrompt(body: Record<string, unknown>): string {
   const airports = (body.airports as string[]) ?? ["WRO"];
   const preferredCity = (body.preferredCity as string | undefined) ?? null;
 
-  const monthName = month ? MONTH_NAMES[month - 1] : "dowolny";
+  const monthName = month ? monthYearLabel(month) : "dowolny";
   const budgetLabel = budgetPromptLabel(budget === "low" ? "low" : "medium");
 
   const originDesc = airports.length === 1
