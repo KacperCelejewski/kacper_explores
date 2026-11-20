@@ -484,7 +484,8 @@ body:has([data-page="home"]) .global-fab {
 .home-dream-card-copy > .home-dreams-note { font-size: 12px; margin-top: 6px; }
 .home-dreams-note { font-size: 13px; line-height: 1.6; margin-top: 12px; }
 .home-dream-card .home-dream-try { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 44px; margin-top: 14px; padding: 10px; border: 1px solid #18324F; background: transparent; color: #18324F; font-size: 14px; font-weight: 700; text-decoration: none; cursor: pointer; }
-.home-dream-card .home-dream-try:hover, .home-dream-card .home-dream-try:focus-visible { background: #18324F; color: #F5EFE0; }
+.home-dream-card .home-dream-try:focus-visible { background: #18324F; color: #F5EFE0; }
+@media (hover: hover) { .home-dream-card .home-dream-try:hover { background: #18324F; color: #F5EFE0; } }
 .home-dreams-empty { padding: 28px 20px; border: 1px dashed var(--border); }
 .home-dreams-empty h3 { font-size: 28px; line-height: 1.1; margin-bottom: 12px; }
 .home-dreams-empty p { font-size: 14px; line-height: 1.6; }
