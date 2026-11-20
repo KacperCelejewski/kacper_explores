@@ -26,7 +26,15 @@ describe("persisted quiz v5", () => {
     expect(migrated.currentTrip).toBe(trip);
     expect(migrated.flightDetails).toBe(flightDetails);
     expect(migrated.selectedDestination).toBe(selectedDestination);
-    expect(useAppStore.persist.getOptions().version).toBe(5);
+    expect(useAppStore.persist.getOptions().version).toBe(6);
+  });
+  it("v5 -> v6: zapisany krok zostaje tym samym pytaniem mimo wstawionego pytania o rodzaj wyjazdu", async () => {
+    const v5Order = ["companion", "vibe", "styles", "when", "departure", "budget"];
+    for (const [oldIndex, id] of v5Order.entries()) {
+      const migrated = await useAppStore.persist.getOptions().migrate!({ quizAnswers: { budget: "low" }, currentQuizStep: oldIndex }, 5) as { currentQuizStep: number; quizAnswers: object };
+      expect(quizStepAt(migrated.currentQuizStep)).toBe(id);
+      expect(migrated.quizAnswers).toEqual({ budget: "low" });
+    }
   });
   it("retains the older airport and companion migrations", async () => {
     const migrated = await useAppStore.persist.getOptions().migrate!({ quizAnswers: {}, currentQuizStep: 2 }, 1) as { quizAnswers: { airports: string[]; companion: null }; currentQuizStep: number };

@@ -19,6 +19,8 @@ import type { DestinationRecommendation, FlightDetails } from "@/types";
 import { getCityPhoto, type CityPhoto as Photo } from "@/lib/cityPhotos";
 import CityPhoto from "@/app/components/CityPhoto";
 import { formatPlans } from "@/lib/formatPlans";
+import { activeTripType, tripTypeSeason } from "@/lib/tripType";
+import { tripTypeLabel } from "@/lib/quizOptions";
 import { IconPin, IconPlane, IconCheck } from "@/app/components/Icons";
 import { cardFlightPriceCopy } from "@/lib/flights/card-price";
 import { dealPriceNotes, isDealPrice, type CardPrice } from "@/lib/flights/card-deals";
@@ -736,6 +738,8 @@ export default function DestinationsPage() {
   const flightPrices = useFlightPrices(destinations, quizAnswers, _hasHydrated && !loading);
   const crew = crewSummary(quizAnswers.companion, quizAnswers.group);
   const budgetNote = crewBudgetNote(quizAnswers.budget, quizAnswers.companion, quizAnswers.group);
+  // Termin, który nie pasuje do rodzaju wyjazdu (np. narty w lipcu): mówimy to wprost nad listą.
+  const seasonCheck = tripTypeSeason(quizAnswers.tripType, quizAnswers.month);
 
   const [planModal, setPlanModal]       = useState<DestinationRecommendation | null>(null);
   // Daty z ceny lotu na karcie: modal podpowiada właśnie je, żeby cena i plan mówiły o tych samych dniach.
@@ -777,7 +781,9 @@ export default function DestinationsPage() {
     ])
       .then(([destData, profileData]) => {
         if (!destData.destinations?.length) {
-          setError("Tym razem nic nie wpadło. Spróbuj jeszcze raz — zwykle działa za drugim.");
+          setError(activeTripType(quizAnswers.tripType)
+            ? `Nie znaleźliśmy kierunków pasujących do wyjazdu „${tripTypeLabel(quizAnswers.tripType!).toLowerCase()}" w tym terminie. Zmień termin albo rodzaj wyjazdu.`
+            : "Tym razem nic nie wpadło. Spróbuj jeszcze raz — zwykle działa za drugim.");
         } else {
           setDestinations(destData.destinations);
           if (!hasDestCache) {
@@ -905,6 +911,15 @@ export default function DestinationsPage() {
         >
           Spróbuj ponownie
         </button>
+        {activeTripType(quizAnswers.tripType) && (
+          <button
+            onClick={() => router.push("/quiz?step=tripType")}
+            className="text-sm font-semibold underline"
+            style={{ color: "var(--accent)", minHeight: 44 }}
+          >
+            Zmień rodzaj wyjazdu
+          </button>
+        )}
       </div>
     );
   }
@@ -953,6 +968,23 @@ export default function DestinationsPage() {
             : "Dopasowane do Twojego budżetu i stylu. "}
           Kliknij &ldquo;Planuj wyjazd&rdquo; i podaj daty lotu.
         </p>
+        {seasonCheck.message && quizAnswers.tripType && (
+          <p
+            role="status"
+            className="mt-3 rounded-2xl px-4 py-3 text-sm leading-snug"
+            style={{ background: "var(--accent-light)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}
+          >
+            <strong style={{ color: "var(--text-primary)" }}>{tripTypeLabel(quizAnswers.tripType)}:</strong> {seasonCheck.message}{" "}
+            <button
+              type="button"
+              onClick={() => router.push("/quiz?step=when")}
+              className="font-semibold underline"
+              style={{ color: "var(--accent)", minHeight: 44 }}
+            >
+              Zmień termin
+            </button>
+          </p>
+        )}
         {crew && (
           <div
             className="mt-3 rounded-2xl px-4 py-3"

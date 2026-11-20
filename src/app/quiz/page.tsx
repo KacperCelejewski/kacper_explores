@@ -9,11 +9,12 @@ import Image from "next/image";
 import styles from "./quiz.module.css";
 import { QUIZ_STEPS, DROP_QUIZ_STEPS, quizStepIndex, parseQuizStep, resolveQuizStep, canCompleteQuizStep, firstIncompleteQuizStep, quizAnalyticsStep, type QuizStepId } from "@/lib/quizSteps";
 import { useAppStore } from "@/lib/store";
-import type { TravelStyle, TripDuration, TravelVibe, QuizAnswers } from "@/types";
+import type { TravelStyle, TripDuration, TravelVibe, QuizAnswers, TripType } from "@/types";
 import { MONTH_NAMES } from "@/lib/constants";
 import { monthYearLabel, monthYearShort, upcomingMonthsByYear } from "@/lib/tripMonth";
 import { trackEvent, quizGaEventName, quizFoundationParams } from "@/lib/analytics";
-import { normalizeFoundation } from "@/lib/quizOptions";
+import { normalizeFoundation, TRIP_TYPE_OPTIONS, tripTypeLabel } from "@/lib/quizOptions";
+import { tripTypeSeason } from "@/lib/tripType";
 import { captureEntry, entryEventParams, entryStorage, landingReferrer, type EntryAttribution } from "@/lib/entryAttribution";
 import { cityAfterLogin, quizLoginNext } from "@/lib/quizLogin";
 import { parseDropParams } from "@/lib/drop/quizParams";
@@ -38,12 +39,15 @@ import {
   IconArrowLeft,
   IconArrowRight,
   IconCheck,
+  IconCity,
+  IconHouseSmall,
+  IconSunWave,
 } from "@/app/components/Icons";
 import type { Companion, GroupComposition } from "@/types";
 import GroupSizePicker from "@/app/components/GroupSizePicker";
 import { groupFromCompanion } from "@/lib/group";
 import { CREW_COPY, companionTrailLabel, crewBudgetTogether } from "@/lib/groupFlow";
-import { parseHomeParams, homeFriendsAnswers, homeDreamAnswers, parseHomeDream, srcEventName, keepUtmQuery } from "@/lib/homeParams";
+import { parseHomeParams, parseFoundationParams, homeFriendsAnswers, homeDreamAnswers, parseHomeDream, srcEventName, keepUtmQuery } from "@/lib/homeParams";
 
 type IconFC = React.FC<{ size?: number }>;
 
@@ -142,6 +146,7 @@ function answeredLabels(a: QuizAnswers, previous: readonly QuizStepId[]): string
   return previous.flatMap((id): string[] => {
     switch (id) {
       case "companion": return a.companion ? [companionTrailLabel(a.companion, a.group, COMPANION_LABELS[a.companion])] : [];
+      case "tripType": return a.tripType ? [tripTypeLabel(a.tripType)] : [];
       case "vibe": return a.vibe ? [VIBE_LABELS[a.vibe]] : [];
       case "styles": return a.styles.length ? [`${a.styles.length} zainteresowań`] : [];
       case "when": return a.month ? [`${monthYearShort(a.month)} · ${a.duration ?? 5} dni`] : [];
@@ -253,10 +258,13 @@ function QuizPageInner() {
       const missing = firstIncompleteQuizStep({ ...quizAnswers, ...next }, QUIZ_STEPS);
       setCurrentQuizStep(quizStepIndex(missing ?? "budget"));
     }
+    // Rodzaj wyjazdu z adresu (?trip=narty, np. z reklamy): tylko wartość z listy; pytanie zostaje do potwierdzenia.
+    const entryTripType = dropPrefill ? undefined : parseFoundationParams(searchParams).tripType;
+    if (entryTripType) setQuizAnswer("tripType", entryTripType);
     const requested = parseQuizStep(searchParams.get("step"));
     if (requested && !dropPrefill) setCurrentQuizStep(quizStepIndex(requested));
     if (homeParams.src) track(srcEventName(homeParams.src));
-    if (homeParams.companion || homeParams.src || requested) {
+    if (homeParams.companion || homeParams.src || requested || entryTripType) {
       router.replace(`/quiz${keepUtmQuery(searchParams)}`, { scroll: false });
     }
     setEntryReady(true);
@@ -337,7 +345,7 @@ function QuizPageInner() {
   const trail = answeredLabels(quizAnswers, steps.slice(0, position));
   const ctaLabel = submitting ? "Przechodzimy dalej…" : isLast
     ? quizAnswers.preferredCity ? `Zaplanuj wyjazd: ${quizAnswers.preferredCity}` : "Dobierz kierunki"
-    : stepId === "styles" && quizAnswers.styles.length === 0 ? "Pomiń to pytanie" : "Dalej";
+    : (stepId === "styles" && quizAnswers.styles.length === 0) || (stepId === "tripType" && !quizAnswers.tripType) ? "Pomiń to pytanie" : "Dalej";
 
   if (!ready) return <div className={styles.loading} role="status">Przygotowujemy quiz…</div>;
 
@@ -360,9 +368,10 @@ function QuizPageInner() {
             <motion.div key={stepId} custom={dir} variants={reducedMotion ? undefined : slideVariants}
               initial={reducedMotion ? false : "enter"} animate="center" exit="exit" transition={slideTransition}>
               {stepId === "companion" && <StepCompanion companion={quizAnswers.companion} group={quizAnswers.group} onPick={pickCompanion} onGroupChange={(group) => setQuizAnswer("group", group)} />}
+              {stepId === "tripType" && <StepTripType tripType={quizAnswers.tripType} onPick={(v) => setQuizAnswer("tripType", quizAnswers.tripType === v ? undefined : v)} />}
               {stepId === "vibe" && <StepVibe vibe={quizAnswers.vibe} plural={quizAnswers.companion !== "solo"} onPick={(v) => setQuizAnswer("vibe", v)} />}
               {stepId === "styles" && <StepStyle styles={quizAnswers.styles} toggleStyle={toggleStyle} />}
-              {stepId === "when" && <StepWhen month={quizAnswers.month} setMonth={(m) => setQuizAnswer("month", m)} duration={quizAnswers.duration} setDuration={(d) => setQuizAnswer("duration", d)} />}
+              {stepId === "when" && <StepWhen tripType={quizAnswers.tripType} month={quizAnswers.month} setMonth={(m) => setQuizAnswer("month", m)} duration={quizAnswers.duration} setDuration={(d) => setQuizAnswer("duration", d)} />}
               {stepId === "departure" && <StepDeparture airports={quizAnswers.airports} setAirports={(v) => setQuizAnswer("airports", v)} />}
               {stepId === "budget" && <StepBudget budget={quizAnswers.budget} together={(level) => crewBudgetTogether(level, quizAnswers.companion, quizAnswers.group)} onPick={(v) => setQuizAnswer("budget", v)} />}
             </motion.div>
@@ -484,6 +493,45 @@ function StepCompanion({
   );
 }
 
+const TripSnowflake: IconFC = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" aria-hidden="true">
+    <path d="M12 2v20M3.3 7l17.4 10M3.3 17L20.7 7" /><path d="M9.5 3.8L12 6l2.5-2.2M9.5 20.2L12 18l2.5 2.2" />
+  </svg>
+);
+
+const TRIP_TYPE_ICONS: Record<TripType, IconFC> = {
+  zwiedzanie: IconCity,
+  wypoczynek: IconHouseSmall,
+  narty: TripSnowflake,
+  gory: IconMountain,
+  plaza: IconSunWave,
+  aktywny: IconLightning,
+  wieczory: IconMoon,
+};
+
+function StepTripType({ tripType, onPick }: { tripType: TripType | undefined; onPick: (v: TripType) => void }) {
+  return (
+    <div>
+      <StepHeader title="Jaki to wyjazd?" hint="To cel całego wyjazdu: pod niego dobieramy miejsce i plan każdego dnia. Bez wyboru układamy zwiedzanie." />
+      <div className="grid grid-cols-2 gap-3" role="group" aria-label="Wybierz rodzaj wyjazdu">
+        {TRIP_TYPE_OPTIONS.map((opt, i) => {
+          const Icon = TRIP_TYPE_ICONS[opt.value];
+          const last = i === TRIP_TYPE_OPTIONS.length - 1 && TRIP_TYPE_OPTIONS.length % 2 === 1;
+          return (
+            <OptionCard key={opt.value} className={last ? "col-span-2" : ""} selected={tripType === opt.value} onClick={() => onPick(opt.value)}>
+              <span style={{ color: tripType === opt.value ? "var(--accent)" : "var(--text-muted)" }}>
+                <Icon size={26} />
+              </span>
+              <p className="font-semibold text-[15px] mt-2">{opt.label}</p>
+              <p className="text-xs mt-0.5 leading-snug" style={{ color: "var(--text-muted)" }}>{opt.hint}</p>
+            </OptionCard>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function StepBudget({
   budget,
   together,
@@ -574,8 +622,9 @@ function StepStyle({ styles, toggleStyle }: { styles: TravelStyle[]; toggleStyle
 }
 
 function StepWhen({
-  month, setMonth, duration, setDuration,
+  tripType, month, setMonth, duration, setDuration,
 }: {
+  tripType: TripType | undefined;
   month: number | null;
   setMonth: (m: number) => void;
   duration: TripDuration | null;
@@ -598,6 +647,7 @@ function StepWhen({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const season = tripTypeSeason(tripType, month);
   return (
     <div>
       <StepHeader
@@ -639,6 +689,11 @@ function StepWhen({
           </div>
         ))}
       </div>
+      {season.message && tripType && (
+        <p role="status" className="text-sm leading-snug mb-6 -mt-3" style={{ color: "var(--text-secondary)" }}>
+          <strong>{tripTypeLabel(tripType)}:</strong> {season.message}
+        </p>
+      )}
 
       {/* Duration presets */}
       <p className="text-sm font-semibold mb-2" style={{ color: "var(--text-secondary)" }}>Długość wyjazdu</p>
