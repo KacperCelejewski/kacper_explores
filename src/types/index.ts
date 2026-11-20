@@ -182,6 +182,8 @@ export interface TripPlan {
   days: DayPlan[];
   /** Calendar date of day 1 ("2026-11-27"): saved only when the traveller chose a date range. */
   startDate?: string;
+  /** Środek lądowy, według którego powstał plan; brak = samolot (pozycja `budgetBreakdown.flights` to wtedy dojazd) */
+  transport?: GroundTransport;
 }
 
 export interface Trip {

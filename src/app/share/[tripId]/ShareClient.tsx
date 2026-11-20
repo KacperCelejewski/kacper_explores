@@ -1,10 +1,10 @@
 "use client";
 
-import { PLAN_TOTAL_LABEL, PLAN_TOTAL_NOTE_SHARED } from "@/lib/priceTrust";
+import { PLAN_TOTAL_LABEL, PLAN_TOTAL_NOTE_SHARED, PLAN_TOTAL_LABEL_GROUND, PLAN_TOTAL_NOTE_SHARED_GROUND } from "@/lib/priceTrust";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { IconPlane, IconBed, IconFork, IconTicket, IconCheck, IconPin } from "@/app/components/Icons";
+import { IconPlane, IconCar, IconBed, IconFork, IconTicket, IconCheck, IconPin } from "@/app/components/Icons";
 import type { TripPlan, DayPlan, DayActivity, DestinationRecommendation } from "@/types";
 import Link from "next/link";
 import { formatTripWhen } from "@/lib/shareOg";
@@ -150,14 +150,14 @@ export default function ShareClient() {
             <p className="mt-3 text-sm font-bold" style={{ color: "var(--accent)" }}>
               {CREW_COPY.shareCrewTitle}: {crew.detail}
               <span className="block text-xs font-normal mt-0.5" style={{ color: "var(--text-muted)" }}>
-                Kwoty poniżej są {CREW_COPY.perPerson}; szacunek na miejscu jest też podany {CREW_COPY.total}. Lot liczymy osobno.
+                Kwoty poniżej są {CREW_COPY.perPerson}; szacunek na miejscu jest też podany {CREW_COPY.total}. {plan.transport ? "Dojazd liczymy osobno." : "Lot liczymy osobno."}
               </span>
             </p>
           )}
 
           <div className="mt-4 pt-4 border-t grid grid-cols-2 gap-3" style={{ borderColor: "var(--border)" }}>
             {[
-              { label: "Loty", value: plan.budgetBreakdown.flights, Icon: IconPlane },
+              { label: plan.transport ? "Dojazd" : "Loty", value: plan.budgetBreakdown.flights, Icon: plan.transport ? IconCar : IconPlane },
               { label: "Nocleg", value: plan.budgetBreakdown.accommodation, Icon: IconBed },
               { label: "Jedzenie", value: plan.budgetBreakdown.food, Icon: IconFork },
               { label: "Atrakcje", value: plan.budgetBreakdown.attractions, Icon: IconTicket },
@@ -173,7 +173,7 @@ export default function ShareClient() {
           </div>
 
           <div className="mt-3 pt-3 border-t flex items-center justify-between" style={{ borderColor: "var(--border)" }}>
-            <span className="text-sm" style={{ color: "var(--text-muted)" }}>{PLAN_TOTAL_LABEL}</span>
+            <span className="text-sm" style={{ color: "var(--text-muted)" }}>{plan.transport ? PLAN_TOTAL_LABEL_GROUND : PLAN_TOTAL_LABEL}</span>
             {crewTotal ? (
               <div className="text-right">
                 <div className="text-base font-bold" style={{ color: "var(--accent)" }}>
@@ -189,7 +189,7 @@ export default function ShareClient() {
               <span className="text-base font-bold" style={{ color: "var(--accent)" }}>{plan.totalBudgetEstimate}</span>
             )}
           </div>
-        <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>{PLAN_TOTAL_NOTE_SHARED}</p>
+        <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>{plan.transport ? PLAN_TOTAL_NOTE_SHARED_GROUND : PLAN_TOTAL_NOTE_SHARED}</p>
         </motion.div>
       </div>
 

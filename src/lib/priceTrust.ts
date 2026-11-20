@@ -44,6 +44,10 @@ export function dealsPriceNote(deals: FetchedDeal[], now: number = Date.now()): 
 export const PLAN_TOTAL_LABEL = "Szacunek na miejscu, bez lotów";
 export const PLAN_TOTAL_NOTE_SHARED = "Lotu tu nie wliczamy: jego cenę trzeba sprawdzić w wyszukiwarce i doliczyć do kosztów wyjazdu.";
 export const PLAN_TOTAL_NOTE = "Lotu tu nie wliczamy: jego cenę trzeba sprawdzić w wyszukiwarce i doliczyć do budżetu z quizu.";
+// Plan na auto, pociąg lub bus albo rower: dojazd podajemy osobno jako szacunek z odległości.
+export const PLAN_TOTAL_LABEL_GROUND = "Szacunek na miejscu, bez dojazdu";
+export const PLAN_TOTAL_NOTE_GROUND = "Dojazdu tu nie wliczamy: jego orientacyjny koszt jest osobno, w pozycji Dojazd. Doliczysz go do budżetu z quizu.";
+export const PLAN_TOTAL_NOTE_SHARED_GROUND = "Dojazdu tu nie wliczamy: jego orientacyjny koszt jest osobno, w pozycji Dojazd, i trzeba go sprawdzić przed wyjazdem.";
 
 /** Upper end of a budget text ("1 200–1 500 PLN" -> 1500); 0 when there is no number. */
 export function plannedUpperBound(text: string): number {

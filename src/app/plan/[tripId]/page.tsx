@@ -17,10 +17,12 @@ import CheckoutButton from "@/app/components/CheckoutButton";
 import DropSignup from "@/app/components/DropSignup";
 import DropProfileButton from "@/app/components/DropProfileButton";
 import { FlightCard, HotelLinks, LuggageTile, TicketsLink } from "@/app/components/PartnerLinks";
-import { IconPlane, IconBed, IconFork, IconTicket, IconLock, IconDownload, IconCalendar, IconGlobe, IconCheck, IconClose, IconRefresh, IconPin, IconSuitcase } from "@/app/components/Icons";
+import { IconPlane, IconCar, IconBed, IconFork, IconTicket, IconLock, IconDownload, IconCalendar, IconGlobe, IconCheck, IconClose, IconRefresh, IconPin, IconSuitcase } from "@/app/components/Icons";
 import type { DayPlan, DayActivity, TripPlan, DestinationRecommendation, QuizAnswers } from "@/types";
 import { PRICES } from "@/lib/prices";
-import { PLAN_TOTAL_LABEL, PLAN_TOTAL_NOTE } from "@/lib/priceTrust";
+import { PLAN_TOTAL_LABEL, PLAN_TOTAL_NOTE, PLAN_TOTAL_LABEL_GROUND, PLAN_TOTAL_NOTE_GROUND } from "@/lib/priceTrust";
+import TravelBlock from "@/app/components/TravelBlock";
+import { originCityName, planTravel, travelModeName } from "@/lib/transport";
 import { isFreeCost } from "@/lib/affiliate";
 import { groupFromCompanion, groupSize, scaleBudgetText, showGroupBudget } from "@/lib/group";
 import { CREW_COPY, crewSummary, sendPlanTitle } from "@/lib/groupFlow";
@@ -376,6 +378,10 @@ export default function PlanPage() {
   const scaleForGroup = (text: string) => (groupBudget ? scaleBudgetText(text, people) ?? text : text);
   const totalForGroup = groupBudget ? scaleBudgetText(plan.totalBudgetEstimate, people) : null;
   const crew = crewSummary(tripCompanion, tripGroup);
+  // Plan na środek lądowy: pozycja kosztów to dojazd, a zamiast karty lotu jest szacunek drogi z odległości.
+  const groundMode = plan.transport ?? null;
+  const tripAirports = currentTrip.quizAnswers?.airports;
+  const groundTravel = groundMode ? planTravel({ transport: [groundMode], airports: tripAirports ?? [] }, plan.city) : null;
 
   return (
     <div className="flex flex-col flex-1 pb-8" id="plan-print-area">
@@ -431,7 +437,7 @@ export default function PlanPage() {
               {crew.title}: {crew.detail}
               {groupBudget && (
                 <span className="block text-xs font-normal mt-0.5" style={{ color: "var(--text-muted)" }}>
-                  Nocleg, jedzenie i atrakcje poniżej są {CREW_COPY.perPerson}; szacunek na miejscu podajemy też {CREW_COPY.total}. Lot liczymy osobno.
+                  Nocleg, jedzenie i atrakcje poniżej są {CREW_COPY.perPerson}; szacunek na miejscu podajemy też {CREW_COPY.total}. {groundMode ? "Dojazd liczymy osobno." : "Lot liczymy osobno."}
                 </span>
               )}
             </p>
@@ -439,7 +445,7 @@ export default function PlanPage() {
 
           {/* Budget breakdown */}
           <div className="grid grid-cols-2 gap-3">
-            <BudgetItem label="Loty" value={plan.budgetBreakdown.flights} Icon={IconPlane} />
+            <BudgetItem label={groundMode ? "Dojazd" : "Loty"} value={plan.budgetBreakdown.flights} Icon={groundMode ? IconCar : IconPlane} />
             <BudgetItem label="Nocleg" value={plan.budgetBreakdown.accommodation} Icon={IconBed} />
             <BudgetItem label="Jedzenie" value={plan.budgetBreakdown.food} Icon={IconFork} />
             <BudgetItem label="Atrakcje" value={plan.budgetBreakdown.attractions} Icon={IconTicket} />
@@ -447,7 +453,7 @@ export default function PlanPage() {
 
           <div className="mt-3 pt-3 border-t flex items-center justify-between" style={{ borderColor: "var(--border)" }}>
             <span className="text-sm" style={{ color: "var(--text-muted)" }}>
-              {PLAN_TOTAL_LABEL}
+              {groundMode ? PLAN_TOTAL_LABEL_GROUND : PLAN_TOTAL_LABEL}
             </span>
             {groupBudget && plan.totalBudgetEstimate ? (
               <div className="text-right">
@@ -468,7 +474,7 @@ export default function PlanPage() {
               </span>
             )}
           </div>
-        <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>{PLAN_TOTAL_NOTE}</p>
+        <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>{groundMode ? PLAN_TOTAL_NOTE_GROUND : PLAN_TOTAL_NOTE}</p>
         </motion.div>
       </div>
 
@@ -484,7 +490,20 @@ export default function PlanPage() {
       </div>
 
       {/* Lot i noclegi */}
-      <FlightCard offer={dest?.bestOffer} city={plan.city} group={group} />
+      {groundMode ? (
+        groundTravel && (
+          <div className="px-5 mb-4 no-print">
+            <div className="p-4 rounded-2xl" style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}>
+              <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{ color: "var(--text-muted)" }}>
+                {travelModeName(groundMode)} do {plan.city}
+              </p>
+              <TravelBlock estimates={[groundTravel]} origin={originCityName(tripAirports)} city={plan.city} seats={people} />
+            </div>
+          </div>
+        )
+      ) : (
+        <FlightCard offer={dest?.bestOffer} city={plan.city} group={group} />
+      )}
       <HotelLinks
         city={plan.city}
         country={plan.country}
