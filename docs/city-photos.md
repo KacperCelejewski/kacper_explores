@@ -62,3 +62,7 @@ Nie ruszano webhooka, auth, cronów, MDX, globals, HomePoster ani HomeDreams. Zm
 ## Commit / push
 
 Próba `git add` i `git commit` została zablokowana przez sandbox: `Unable to create .../.git/worktrees/wloczykij-app-photos/index.lock: Operation not permitted`. Zgodnie z briefem **brak nowego commita i pushu**; komplet zmian pozostaje niezacommitowany w worktree `fix/city-photos`. Lead może wykonać commit i push bez force po odbiorze.
+
+## Ramka nigdy nie jest pusta (2026-11-20)
+
+Przyczyna zgłoszenia "Budapeszt, Lizbona: nic nie ma": kadr `CityPhoto` nie miał tła pod zdjęciem, więc przy wolnym lub zablokowanym CDN Unsplash (albo obrazie, który zepsuł się przed hydracją i nie wywołał `onError`) zostawał pusty prostokąt. Adresy CDN obu miast odpowiadają HTTP 200 (sprawdzone 2026-11-20). Poprawka: plakat marki jako tło pod każdym zdjęciem, kontrola `complete && naturalWidth === 0` po montażu, `alt` z nazwą miasta, zdjęcie lub ilustracja na `/weekend/[miasto]`. Test `src/lib/cityPhotoCoverage.test.ts` sprawdza wszystkie miasta z katalogu. Miasta spoza białej listy (dziś 8 z 56 w katalogu) nadal dostają jedną wspólną ilustrację; własne zdjęcia z licencją wymagają ręcznej weryfikacji i dopisania do `VERIFIED_PHOTOS`.
